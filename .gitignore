@@ -1,0 +1,81 @@
+# ===========================
+# SwipeLingo — .gitignore
+# ===========================
+
+# Документация проекта (приватная)
+CLAUDE.md
+PRD.md
+
+# Firebase конфигурация (никогда не публиковать)
+GoogleService-Info.plist
+google-services.json
+
+# ===========================
+# Xcode
+# ===========================
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+*.xcworkspace/*
+!*.xcworkspace/contents.xcworkspacedata
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# ===========================
+# Swift Package Manager
+# ===========================
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# ===========================
+# CocoaPods (если вдруг)
+# ===========================
+Pods/
+Podfile.lock
+
+# ===========================
+# macOS
+# ===========================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+*.icloud
+
+# ===========================
+# Secrets и конфигурация
+# ===========================
+*.env
+.env.local
+Secrets.swift
+Config.xcconfig
+secrets/
+
+# ===========================
+# Тесты и coverage
+# ===========================
+*.gcda
+*.gcno
+
+# ===========================
+# Архивы и билды
+# ===========================
+*.ipa
+*.dSYM.zip
+*.dSYM
