@@ -23,7 +23,8 @@ struct StudyView: View {
                 }
         }
         .onAppear {
-            MockDataSeeder.seedIfNeeded(into: context)
+            // Seeding happens in SwipeLingoApp.init() before any view renders,
+            // so @Query results are already populated here.
             viewModel.startSessionIfNeeded(piles: piles, allCards: allCards, cardSets: cardSets)
         }
         .onChange(of: activePileID) {

@@ -8,6 +8,7 @@ struct TinderCardsView: View {
     @Environment(\.modelContext) private var context
     @AppStorage("studyDirection") private var studyDirection = "EN→RU"
     @State private var viewModel: TinderCardsViewModel
+    @State private var lookupCard: Card?
 
     private let swipeThreshold: CGFloat = 110
     private let pileTagsLine: String
@@ -62,6 +63,9 @@ struct TinderCardsView: View {
         }
         .animation(.spring(duration: 0.3), value: viewModel.currentIndex)
         .animation(.spring(duration: 0.3), value: viewModel.isFlipped)
+        .sheet(item: $lookupCard) { card in
+            DictionaryLookupView(card: card)
+        }
     }
 
     // MARK: - Progress Bar
@@ -177,6 +181,20 @@ struct TinderCardsView: View {
                     }
                 }
             }
+
+            // Dictionary lookup — only shown in EN→RU mode (English word on front)
+            if !isReversed {
+                Button {
+                    lookupCard = card
+                } label: {
+                    Label("Look up in dictionary", systemImage: "book.pages")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.borderless)
+                .padding(.top, 4)
+            }
+
             Spacer()
         }
     }

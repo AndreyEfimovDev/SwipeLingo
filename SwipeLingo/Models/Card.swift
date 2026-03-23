@@ -42,6 +42,11 @@ final class Card {
     var dueDate:     Date
     var lastReviewed: Date
 
+    // Dictionary cache — plain String, CloudKit compatible (empty = not yet fetched)
+    var dictTranscription: String
+    var dictAudioURL:      String
+    var dictDefinition:    String
+
     // Metadata
     var createdAt:  Date
     var importedAt: Date?
@@ -80,6 +85,9 @@ final class Card {
         repetitions: Int = 0,
         dueDate: Date = .now,
         lastReviewed: Date = .now,
+        dictTranscription: String = "",
+        dictAudioURL: String = "",
+        dictDefinition: String = "",
         createdAt: Date = .now,
         importedAt: Date? = nil,
         setId: UUID
@@ -96,9 +104,12 @@ final class Card {
         self.interval      = interval
         self.repetitions   = repetitions
         self.dueDate       = dueDate
-        self.lastReviewed  = lastReviewed
-        self.createdAt     = createdAt
-        self.importedAt    = importedAt
-        self.setId         = setId
+        self.lastReviewed      = lastReviewed
+        self.dictTranscription = dictTranscription
+        self.dictAudioURL      = dictAudioURL
+        self.dictDefinition    = dictDefinition
+        self.createdAt         = createdAt
+        self.importedAt        = importedAt
+        self.setId             = setId
     }
 }
