@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo/ -name *.md -not -path */.git/*)",
+      "Bash(BASE=\"/Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo/.claude/worktrees/exciting-brahmagupta/SwipeLingo\")",
+      "Bash(mkdir -p \"$BASE/App\" \"$BASE/Features/Study/TinderCards\" \"$BASE/Features/Study/EnglishPlus\" \"$BASE/Features/Library\" \"$BASE/Features/Onboarding\" \"$BASE/Features/Preferences\" \"$BASE/Models\" \"$BASE/Services\" \"$BASE/UI\" \"$BASE/Resources\")",
+      "Bash(mv \"$BASE/SwipeLingoApp.swift\" \"$BASE/App/SwipeLingoApp.swift\")",
+      "Bash(mv \"$BASE/Assets.xcassets\" \"$BASE/Resources/Assets.xcassets\")",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(git -C /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo status)"
+    ]
+  }
+}
