@@ -51,6 +51,61 @@ final class DictionaryLookupViewModel {
             audioService.play(urlString: urlString)
         }
     }
+
+    // MARK: - Card mutation
+    //
+    // Context and card are passed explicitly — same pattern as SRSService / PileBuilderViewModel.
+    // Using do-catch instead of try? so errors are visible in the console.
+
+    /// Keys of texts already added in this session — drives the ✓ indicator in the UI.
+    private(set) var addedItems: Set<String> = []
+
+    func addDefinition(_ definition: DictionaryDefinition, to card: Card, context: ModelContext) {
+        var samples = card.sampleEN
+        var changed = false
+
+        if !samples.contains(definition.text) {
+            samples.append(definition.text)
+            changed = true
+            print("[DictionaryLookup] [+] definition: \"\(definition.text.prefix(60))\"")
+        }
+        if let example = definition.example, !samples.contains(example) {
+            samples.append(example)
+            changed = true
+            print("[DictionaryLookup] [+] example:    \"\(example.prefix(60))\"")
+        }
+
+        guard changed else {
+            print("[DictionaryLookup] [+] already present — skipped")
+            return
+        }
+
+        card.sampleEN = samples
+        save(context: context)
+        addedItems.insert(definition.text)
+    }
+
+    func addSynonym(_ synonym: String, to card: Card, context: ModelContext) {
+        var samples = card.sampleEN
+        guard !samples.contains(synonym) else {
+            print("[DictionaryLookup] [+] '\(synonym)' already present — skipped")
+            return
+        }
+        samples.append(synonym)
+        card.sampleEN = samples
+        save(context: context)
+        addedItems.insert(synonym)
+        print("[DictionaryLookup] [+] synonym: '\(synonym)'")
+    }
+
+    private func save(context: ModelContext) {
+        do {
+            try context.save()
+            print("[DictionaryLookup] ✅ context.save() OK")
+        } catch {
+            print("[DictionaryLookup] ❌ context.save() failed: \(error)")
+        }
+    }
 }
 
 // MARK: - DictionaryLookupView
@@ -242,15 +297,17 @@ struct DictionaryLookupView: View {
             Spacer(minLength: 8)
 
             // [+] adds the definition (and example if any) to card.sampleEN
+            let alreadyAdded = viewModel.addedItems.contains(definition.text)
             Button {
-                addDefinitionToCard(definition)
+                viewModel.addDefinition(definition, to: card, context: context)
             } label: {
-                Image(systemName: "plus.circle")
+                Image(systemName: alreadyAdded ? "checkmark.circle.fill" : "plus.circle")
                     .font(.title3)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(alreadyAdded ? Color.green : Color.accentColor)
+                    .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel("Add to card examples")
+            .accessibilityLabel(alreadyAdded ? "Added" : "Add to card examples")
         }
         .padding(.leading, 4)
     }
@@ -274,48 +331,21 @@ struct DictionaryLookupView: View {
         HStack(spacing: 4) {
             Text(synonym)
                 .font(.subheadline)
+            let synonymAdded = viewModel.addedItems.contains(synonym)
             Button {
-                addSynonymToCard(synonym)
+                viewModel.addSynonym(synonym, to: card, context: context)
             } label: {
-                Image(systemName: "plus.circle.fill")
+                Image(systemName: synonymAdded ? "checkmark.circle.fill" : "plus.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(synonymAdded ? Color.green : Color.accentColor)
+                    .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel("Add \(synonym) to card")
+            .accessibilityLabel(synonymAdded ? "Added" : "Add \(synonym) to card")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
         .background(.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    // MARK: - Card mutation
-
-    private func addDefinitionToCard(_ definition: DictionaryDefinition) {
-        var samples = card.sampleEN
-        var changed = false
-
-        if !samples.contains(definition.text) {
-            samples.append(definition.text)
-            changed = true
-        }
-        if let example = definition.example, !samples.contains(example) {
-            samples.append(example)
-            changed = true
-        }
-
-        if changed {
-            card.sampleEN = samples
-            try? context.save()
-        }
-    }
-
-    private func addSynonymToCard(_ synonym: String) {
-        var samples = card.sampleEN
-        guard !samples.contains(synonym) else { return }
-        samples.append(synonym)
-        card.sampleEN = samples
-        try? context.save()
     }
 
     // MARK: - Cache entry to Card

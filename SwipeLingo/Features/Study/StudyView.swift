@@ -11,6 +11,28 @@ struct StudyView: View {
     @Query private var cardSets: [CardSet]
 
     @State private var viewModel = StudyViewModel()
+    @AppStorage("studyDirection") private var studyDirection = "EN→RU"
+    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+
+    /// ISO 639-1 two-letter abbreviation for the selected native language.
+    private var langAbbr: String {
+        switch nativeLanguage {
+        case "Русский":   return "RU"  // Russian
+        case "中文":       return "ZH"  // Chinese (Mandarin)
+        case "Español":   return "ES"  // Spanish
+        case "Français":  return "FR"  // French
+        case "العربية":   return "AR"  // Arabic
+        case "Português": return "PT"  // Portuguese
+        case "Deutsch":   return "DE"  // German
+        case "日本語":     return "JA"  // Japanese
+        default:          return String(nativeLanguage.prefix(2)).uppercased()
+        }
+    }
+
+    /// Button label reflecting the actual language, e.g. "EN→DE" or "JA→EN".
+    private var directionLabel: String {
+        studyDirection == "EN→RU" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
+    }
 
     var body: some View {
         NavigationStack {
@@ -55,6 +77,15 @@ struct StudyView: View {
         ToolbarItem(placement: .topBarTrailing) {
             Button { viewModel.isShowingAddCard = true } label: {
                 Image(systemName: "plus")
+            }
+        }
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                studyDirection = studyDirection == "EN→RU" ? "RU→EN" : "EN→RU"
+            } label: {
+                Text(directionLabel)
+                    .font(.subheadline.weight(.medium))
+                    .monospacedDigit()
             }
         }
     }

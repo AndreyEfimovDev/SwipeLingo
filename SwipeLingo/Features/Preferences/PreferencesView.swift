@@ -6,7 +6,6 @@ struct PreferencesView: View {
 
     // MARK: Stored preferences
     @AppStorage("nativeLanguage")  private var nativeLanguage  = "Русский"
-    @AppStorage("studyDirection")  private var studyDirection  = "EN→RU"
     @AppStorage("colorScheme")     private var colorSchemeKey  = "auto"
 
     private let languages = [
@@ -18,7 +17,6 @@ struct PreferencesView: View {
         NavigationStack {
             Form {
                 languageSection
-                studySection
                 appearanceSection
             }
             .navigationTitle("Settings")
@@ -38,29 +36,6 @@ struct PreferencesView: View {
             Text("Language")
         } footer: {
             Text("Defines which side of the card shows your native translation.")
-        }
-    }
-
-    // MARK: - Study
-
-    private var studySection: some View {
-        Section {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Study direction")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Picker("", selection: $studyDirection) {
-                    Text("EN → \(nativeLanguage)").tag("EN→RU")
-                    Text("\(nativeLanguage) → EN").tag("RU→EN")
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
-            .padding(.vertical, 4)
-        } header: {
-            Text("Study")
-        } footer: {
-            Text("EN→RU: see the English word, recall the translation.\n\(nativeLanguage)→EN: see the translation, recall the English word.")
         }
     }
 
