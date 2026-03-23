@@ -1,26 +1,24 @@
-import ComposableArchitecture
 import SwiftUI
 
-@Reducer
-struct AppFeature {
-    @ObservableState
-    struct State: Equatable {}
+// MARK: - AppViewModel
 
-    enum Action {}
+@Observable
+final class AppViewModel {
+    var selectedTab: AppTab = .study
 
-    var body: some ReducerOf<Self> {
-        Reduce { _, _ in
-            .none
-        }
+    enum AppTab {
+        case study, library, preferences
     }
 }
 
+// MARK: - AppView
+
 struct AppView: View {
-    let store: StoreOf<AppFeature>
+    @State private var viewModel = AppViewModel()
 
     var body: some View {
         // Placeholder — will be replaced by TabView with
-        // StudyFeature, LibraryFeature, PreferencesFeature in Stage 2
+        // StudyViewModel, LibraryViewModel, PreferencesViewModel in Stage 2
         Text("SwipeLingo")
     }
 }
