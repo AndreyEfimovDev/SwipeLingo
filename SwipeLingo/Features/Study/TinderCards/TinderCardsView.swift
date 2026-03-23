@@ -311,21 +311,20 @@ private struct FlippableCardView<Front: View, Back: View>: View {
 
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try ModelContainer(for: Card.self, configurations: config)
-    let ctx = container.mainContext
-
-    let setId = UUID()
-    let card1 = Card(en: "Serendipity", item: "счастливая случайность",
-                     sampleEN: ["What a serendipity to meet you here."],
-                     sampleItem: ["Какая счастливая случайность встретить тебя здесь."],
-                     setId: setId)
-    let card2 = Card(en: "Ephemeral", item: "мимолётный", setId: setId)
-    let card3 = Card(en: "Melancholy", item: "меланхолия", setId: setId)
-    ctx.insert(card1); ctx.insert(card2); ctx.insert(card3)
-
-    return TinderCardsView(
-        cards: [card1, card2, card3],
-        contextLabels: [setId: "Advanced · IELTS"]
-    )
-    .modelContainer(container)
+    if let container = try? ModelContainer(for: Card.self, configurations: config) {
+        let ctx = container.mainContext
+        let setId = UUID()
+        let card1 = Card(en: "Serendipity", item: "счастливая случайность",
+                         sampleEN: ["What a serendipity to meet you here."],
+                         sampleItem: ["Какая счастливая случайность встретить тебя здесь."],
+                         setId: setId)
+        let card2 = Card(en: "Ephemeral", item: "мимолётный", setId: setId)
+        let card3 = Card(en: "Melancholy", item: "меланхолия", setId: setId)
+        ctx.insert(card1); ctx.insert(card2); ctx.insert(card3)
+        TinderCardsView(
+            cards: [card1, card2, card3],
+            contextLabels: [setId: "Advanced · IELTS"]
+        )
+        .modelContainer(container)
+    }
 }
