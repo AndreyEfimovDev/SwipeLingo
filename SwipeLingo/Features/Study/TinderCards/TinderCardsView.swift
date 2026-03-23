@@ -311,7 +311,7 @@ private struct FlippableCardView<Front: View, Back: View>: View {
 
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Card.self, configurations: config)
+    let container = try ModelContainer(for: Card.self, configurations: config)
     let ctx = container.mainContext
 
     let setId = UUID()
