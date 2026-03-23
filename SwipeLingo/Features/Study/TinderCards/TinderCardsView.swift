@@ -320,7 +320,7 @@ private struct FlippableCardView<Front: View, Back: View>: View {
                          setId: setId)
         let card2 = Card(en: "Ephemeral", item: "мимолётный", setId: setId)
         let card3 = Card(en: "Melancholy", item: "меланхолия", setId: setId)
-        ctx.insert(card1); ctx.insert(card2); ctx.insert(card3)
+        let _ = [card1, card2, card3].map { ctx.insert($0) }
         TinderCardsView(
             cards: [card1, card2, card3],
             contextLabels: [setId: "Advanced · IELTS"]
