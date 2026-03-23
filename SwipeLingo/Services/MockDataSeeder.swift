@@ -97,6 +97,24 @@ struct MockDataSeeder {
         ]
 
         for card in cards { context.insert(card) }
+
+        // MARK: Inbox (special collection for unsorted cards)
+
+        let inbox = Collection(name: "Inbox", icon: "tray.fill", isOwned: true)
+        context.insert(inbox)
+        let inboxSet = CardSet(name: "Inbox", collectionId: inbox.id)
+        context.insert(inboxSet)
+
+        // MARK: Default active Pile
+
+        let pile = Pile(
+            name: "Morning Session",
+            setIds: [cardSet.id],
+            isActive: true,
+            shuffleMethod: .random
+        )
+        context.insert(pile)
+
         try? context.save()
     }
 }

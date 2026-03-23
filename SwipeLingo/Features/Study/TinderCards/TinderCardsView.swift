@@ -6,9 +6,12 @@ import SwiftData
 struct TinderCardsView: View {
 
     @Environment(\.modelContext) private var context
+    @AppStorage("studyDirection") private var studyDirection = "EN→RU"
     @State private var viewModel: TinderCardsViewModel
 
     private let swipeThreshold: CGFloat = 110
+    /// Drives which field appears on the front face (EN→RU = false, RU→EN = true)
+    private var isReversed: Bool { studyDirection == "RU→EN" }
 
     init(cards: [Card], contextLabels: [UUID: String] = [:]) {
         _viewModel = State(
@@ -111,9 +114,10 @@ struct TinderCardsView: View {
     // MARK: - Card Faces
 
     private func cardFront(_ card: Card) -> some View {
-        VStack(spacing: 12) {
+        let frontText = isReversed ? card.item : card.en
+        return VStack(spacing: 12) {
             Spacer()
-            Text(card.en)
+            Text(frontText)
                 .font(.system(size: 42, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
@@ -133,25 +137,28 @@ struct TinderCardsView: View {
     }
 
     private func cardBack(_ card: Card) -> some View {
-        VStack(spacing: 16) {
+        let backText    = isReversed ? card.en   : card.item
+        let sampleBack  = isReversed ? card.sampleEN.first  : card.sampleItem.first
+        let sampleFront = isReversed ? card.sampleItem.first : card.sampleEN.first
+        return VStack(spacing: 16) {
             Spacer()
-            Text(card.item)
+            Text(backText)
                 .font(.system(size: 38, weight: .semibold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 24)
 
-            if !card.sampleEN.isEmpty || !card.sampleItem.isEmpty {
+            if sampleFront != nil || sampleBack != nil {
                 Divider().padding(.horizontal, 32)
                 VStack(spacing: 6) {
-                    if let sample = card.sampleEN.first {
+                    if let sample = sampleFront {
                         Text(sample)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 24)
                     }
-                    if let sample = card.sampleItem.first {
+                    if let sample = sampleBack {
                         Text(sample)
                             .font(.subheadline)
                             .foregroundStyle(.tertiary)

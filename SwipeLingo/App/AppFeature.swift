@@ -1,5 +1,4 @@
 import SwiftUI
-import SwiftData
 
 // MARK: - AppViewModel
 
@@ -7,7 +6,7 @@ import SwiftData
 final class AppViewModel {
     var selectedTab: AppTab = .study
 
-    enum AppTab {
+    enum AppTab: Hashable {
         case study, library, preferences
     }
 }
@@ -15,50 +14,29 @@ final class AppViewModel {
 // MARK: - AppView
 
 struct AppView: View {
-    @Environment(\.modelContext) private var context
-    @Query private var allCards: [Card]
-    @Query private var cardSets: [CardSet]
-
     @State private var viewModel = AppViewModel()
+    @AppStorage("colorScheme") private var colorSchemeKey = "auto"
 
     var body: some View {
-        Group {
-            if studyCards.isEmpty {
-                seedingView
-            } else {
-                TinderCardsView(
-                    cards: studyCards,
-                    contextLabels: contextLabels
-                )
+        TabView(selection: Bindable(viewModel).selectedTab) {
+            Tab("Study", systemImage: "rectangle.stack.fill", value: AppViewModel.AppTab.study) {
+                StudyView()
+            }
+            Tab("Library", systemImage: "books.vertical.fill", value: AppViewModel.AppTab.library) {
+                LibraryView()
+            }
+            Tab("Settings", systemImage: "gear", value: AppViewModel.AppTab.preferences) {
+                PreferencesView()
             }
         }
-        // Stage 3: replace Group with TabView (Study / Library / Preferences)
+        .preferredColorScheme(preferredScheme)
     }
 
-    // MARK: - Derived
-
-    /// Cards available for the current study session.
-    private var studyCards: [Card] {
-        allCards.filter { $0.status == .active }
-    }
-
-    /// Maps setId → CardSet name for display inside TinderCardsView.
-    private var contextLabels: [UUID: String] {
-        Dictionary(uniqueKeysWithValues: cardSets.map { ($0.id, $0.name) })
-    }
-
-    // MARK: - Seeding Placeholder
-
-    /// Shown on first launch while MockDataSeeder writes cards into SwiftData.
-    private var seedingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text("Загрузка карточек…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .task {
-            MockDataSeeder.seedIfNeeded(into: context)
+    private var preferredScheme: ColorScheme? {
+        switch colorSchemeKey {
+        case "light": return .light
+        case "dark":  return .dark
+        default:      return nil
         }
     }
 }
