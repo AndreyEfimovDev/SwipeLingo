@@ -11,6 +11,8 @@ final class StudyViewModel {
     private(set) var studyCards: [Card] = []
     private(set) var contextLabels: [UUID: String] = [:]
     private(set) var activePileName: String = ""
+    /// "Set1 · Set2 · +3 (24 карточки)" — shown below the card stack in StudyView.
+    private(set) var pileTagsLine: String = ""
     /// Changes on every new session → forces TinderCardsView to reinitialise via .id()
     private(set) var sessionID: UUID = UUID()
 
@@ -40,12 +42,46 @@ final class StudyViewModel {
 
         if let active = piles.first(where: { $0.isActive }) {
             activePileName = active.name
-            studyCards = pileService.cards(for: active, from: allCards)
+            studyCards     = pileService.cards(for: active, from: allCards)
+            pileTagsLine   = makePileTagsLine(pile: active, cardSets: cardSets, allCards: allCards)
         } else {
             activePileName = "Все карточки"
-            studyCards = allCards.filter { $0.status == .active }.shuffled()
+            studyCards     = allCards.filter { $0.status == .active }.shuffled()
+            pileTagsLine   = ""
         }
 
         sessionID = UUID()
+    }
+
+    /// Builds the compact "Set1 · Set2 · +N (X карточек)" label.
+    private func makePileTagsLine(pile: Pile, cardSets: [CardSet], allCards: [Card]) -> String {
+        let sets = cardSets.filter { pile.setIds.contains($0.id) }
+        let totalCards = allCards.filter {
+            pile.setIds.contains($0.setId) && $0.status == .active
+        }.count
+
+        let maxShown = 2
+        let names = sets.map { $0.name }
+        var tagParts: [String]
+        if names.count <= maxShown {
+            tagParts = names
+        } else {
+            tagParts = Array(names.prefix(maxShown))
+            tagParts.append("+\(names.count - maxShown)")
+        }
+
+        let tagsString = tagParts.joined(separator: " · ")
+        return "\(tagsString) (\(totalCards) \(cardWord(totalCards)))"
+    }
+
+    private func cardWord(_ count: Int) -> String {
+        let rem100 = count % 100
+        let rem10  = count % 10
+        if rem100 >= 11 && rem100 <= 19 { return "карточек" }
+        switch rem10 {
+        case 1:        return "карточка"
+        case 2, 3, 4:  return "карточки"
+        default:       return "карточек"
+        }
     }
 }

@@ -10,13 +10,15 @@ struct TinderCardsView: View {
     @State private var viewModel: TinderCardsViewModel
 
     private let swipeThreshold: CGFloat = 110
+    private let pileTagsLine: String
     /// Drives which field appears on the front face (EN→RU = false, RU→EN = true)
     private var isReversed: Bool { studyDirection == "RU→EN" }
 
-    init(cards: [Card], contextLabels: [UUID: String] = [:]) {
+    init(cards: [Card], contextLabels: [UUID: String] = [:], pileTagsLine: String = "") {
         _viewModel = State(
             initialValue: TinderCardsViewModel(cards: cards, contextLabels: contextLabels)
         )
+        self.pileTagsLine = pileTagsLine
     }
 
     // MARK: Body
@@ -38,6 +40,14 @@ struct TinderCardsView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 460)
+
+            // Pile tags line — e.g. "Academic Words · Grammar (12 карточек)"
+            if !pileTagsLine.isEmpty && !viewModel.isDone {
+                Text(pileTagsLine)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 10)
+            }
 
             Spacer(minLength: 0)
 

@@ -40,8 +40,12 @@ struct StudyView: View {
         } else if viewModel.studyCards.isEmpty {
             ProgressView()
         } else {
-            TinderCardsView(cards: viewModel.studyCards, contextLabels: viewModel.contextLabels)
-                .id(viewModel.sessionID)
+            TinderCardsView(
+                cards: viewModel.studyCards,
+                contextLabels: viewModel.contextLabels,
+                pileTagsLine: viewModel.pileTagsLine
+            )
+            .id(viewModel.sessionID)
         }
     }
 

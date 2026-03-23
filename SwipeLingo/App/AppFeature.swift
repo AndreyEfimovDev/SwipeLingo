@@ -1,6 +1,9 @@
 import SwiftUI
 
 // MARK: - AppViewModel
+//
+// Injected into the environment so any descendant (e.g. PileBuilderView)
+// can switch the active tab without needing a Binding chain.
 
 @Observable
 final class AppViewModel {
@@ -29,6 +32,7 @@ struct AppView: View {
                 PreferencesView()
             }
         }
+        .environment(viewModel)          // ← makes AppViewModel available everywhere
         .preferredColorScheme(preferredScheme)
     }
 
