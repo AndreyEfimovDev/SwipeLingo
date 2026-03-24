@@ -6,14 +6,14 @@ import SwiftData
 struct TinderCardsView: View {
 
     @Environment(\.modelContext) private var context
-    @AppStorage("studyDirection") private var studyDirection = "EN→RU"
+    @AppStorage("studyDirection") private var studyDirection = "EN→Native"
     @State private var viewModel: TinderCardsViewModel
     @State private var lookupCard: Card?
 
     private let swipeThreshold: CGFloat = 110
     private let pileTagsLine: String
-    /// Drives which field appears on the front face (EN→RU = false, RU→EN = true)
-    private var isReversed: Bool { studyDirection == "RU→EN" }
+    /// Drives which field appears on the front face (EN→Native = false, Native→EN = true)
+    private var isReversed: Bool { studyDirection == "Native→EN" }
 
     init(cards: [Card], contextLabels: [UUID: String] = [:], pileTagsLine: String = "",
          onDone: (() -> Void)? = nil) {

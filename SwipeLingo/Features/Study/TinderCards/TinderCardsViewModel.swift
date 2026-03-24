@@ -73,7 +73,11 @@ final class TinderCardsViewModel {
 
     // MARK: Init
 
-    init(cards: [Card], contextLabels: [UUID: String] = [:], onDone: (() -> Void)? = nil) {
+    init(
+        cards: [Card],
+        contextLabels: [UUID: String] = [:],
+        onDone: (() -> Void)? = nil
+    ) {
         self.cards = cards
         self.originalCards = cards
         self.contextLabels = contextLabels

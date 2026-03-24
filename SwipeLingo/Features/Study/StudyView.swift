@@ -12,7 +12,7 @@ struct StudyView: View {
     @Query private var collections: [Collection]
 
     @State private var viewModel = StudyViewModel()
-    @AppStorage("studyDirection") private var studyDirection = "EN→RU"
+    @AppStorage("studyDirection") private var studyDirection = "EN→Native"
     @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
 
     /// ISO 639-1 two-letter abbreviation for the selected native language.
@@ -30,9 +30,9 @@ struct StudyView: View {
         }
     }
 
-    /// Button label reflecting the actual language, e.g. "EN→DE" or "JA→EN".
+    /// Button label reflecting the actual language, e.g. "EN→RU" or "RU→EN".
     private var directionLabel: String {
-        studyDirection == "EN→RU" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
+        studyDirection == "EN→Native" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
     }
 
     var body: some View {
@@ -95,7 +95,7 @@ struct StudyView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Button {
-                studyDirection = studyDirection == "EN→RU" ? "RU→EN" : "EN→RU"
+                studyDirection = studyDirection == "EN→Native" ? "Native→EN" : "EN→Native"
             } label: {
                 Text(directionLabel)
                     .font(.subheadline.weight(.medium))
