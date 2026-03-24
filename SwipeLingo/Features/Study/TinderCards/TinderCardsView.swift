@@ -50,14 +50,14 @@ struct TinderCardsView: View {
             Spacer(minLength: 0)
 
             if !viewModel.isDone {
-                progressBar
-                    .padding(.bottom, 8)
                 srsButtonsRow
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 32)
+                    .padding(.top, 8)
                     .opacity(viewModel.isFlipped ? 1 : 0)
                     .offset(y: viewModel.isFlipped ? 0 : 20)
                     .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+                progressBar
+                    .padding(.top, 8)
             } else {
                 doneActionsView
                     .padding(.horizontal, 24)
@@ -105,10 +105,16 @@ struct TinderCardsView: View {
                     let baseYOffset   = CGFloat(offset) * yStep
                     let targetYOffset = CGFloat(offset - 1) * yStep
                     let yOffset       = baseYOffset + (targetYOffset - baseYOffset) * dragProgress
-                    cardPlaceholder
-                        .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
-                        .scaleEffect(scale)
-                        .offset(y: yOffset)
+                    Group {
+                        if offset == 1 {
+                            nextCardPreview(viewModel.cards[idx])
+                        } else {
+                            cardPlaceholder
+                        }
+                    }
+                    .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
+                    .scaleEffect(scale)
+                    .offset(y: yOffset)
                 }
             }
 
@@ -220,6 +226,30 @@ struct TinderCardsView: View {
             .fill(Color(.systemBackground))
             .frame(maxWidth: .infinity)
             .frame(height: 420)
+    }
+
+    // Next card preview — shows the front text so it's visible when dragging the top card.
+    private func nextCardPreview(_ card: Card) -> some View {
+        let frontText = isReversed ? card.item : card.en
+        return ZStack {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color(.systemBackground))
+                .frame(maxWidth: .infinity)
+                .frame(height: 420)
+            VStack(spacing: 12) {
+                Spacer()
+                Text(frontText)
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 24)
+                Spacer()
+                Text("Tap to flip")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .padding(.bottom, 20)
+            }
+        }
     }
 
     // MARK: - Swipe Colour Overlay

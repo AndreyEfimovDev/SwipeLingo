@@ -24,10 +24,23 @@ final class StudyViewModel {
 
     // MARK: Session control
 
-    /// Loads a session only if one isn't already running.
+    /// Loads a session only if one isn't already running,
+    /// OR if more active cards are available than when the session was loaded.
     func startSessionIfNeeded(piles: [Pile], allCards: [Card], cardSets: [CardSet], collections: [Collection]) {
-        guard studyCards.isEmpty else { return }
-        load(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
+        if studyCards.isEmpty {
+            load(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
+            return
+        }
+        // Reload if new cards have been activated since the session started
+        let currentCount: Int
+        if let active = piles.first(where: { $0.isActive }) {
+            currentCount = allCards.filter { active.setIds.contains($0.setId) && $0.status == .active }.count
+        } else {
+            currentCount = allCards.filter { $0.status == .active }.count
+        }
+        if currentCount > studyCards.count {
+            load(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
+        }
     }
 
     /// Discards the current session and starts a fresh one.

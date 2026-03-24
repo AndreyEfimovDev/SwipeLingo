@@ -17,18 +17,15 @@ struct CollectionDetailView: View {
     }
 
     var body: some View {
-        List {
-            ForEach(cardSets) { cardSet in
-                NavigationLink {
-                    CardSetDetailView(cardSet: cardSet)
-                } label: {
-                    CardSetRow(cardSet: cardSet, allCards: [])
+        ScrollView {
+            VStack(spacing: 16) {
+                if !cardSets.isEmpty {
+                    setsSection
                 }
             }
-            .onDelete { offsets in
-                deleteCardSets(at: offsets)
-            }
+            .padding(.vertical, 16)
         }
+        .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle(collection.name)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
@@ -46,6 +43,49 @@ struct CollectionDetailView: View {
         }
     }
 
+    // MARK: - Sets Section
+
+    private var setsSection: some View {
+        VStack(spacing: 0) {
+            ForEach(cardSets) { cardSet in
+                NavigationLink {
+                    CardSetDetailView(cardSet: cardSet)
+                } label: {
+                    HStack {
+                        Text(cardSet.name)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .contextMenu {
+                    Button(role: .destructive) {
+                        context.delete(cardSet)
+                        try? context.save()
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+                if cardSet.id != cardSets.last?.id {
+                    Divider().padding(.leading, 16)
+                }
+            }
+        }
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .padding(.horizontal, 16)
+    }
+
+    // MARK: - Empty State
+
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
@@ -57,24 +97,5 @@ struct CollectionDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    private func deleteCardSets(at offsets: IndexSet) {
-        let list = cardSets
-        for index in offsets {
-            context.delete(list[index])
-        }
-        try? context.save()
-    }
-}
-
-// MARK: - CardSetRow
-
-private struct CardSetRow: View {
-    let cardSet: CardSet
-    let allCards: [Card]   // injected for card count badge (future use)
-
-    var body: some View {
-        Text(cardSet.name)
     }
 }

@@ -13,6 +13,8 @@ final class TinderCardsViewModel {
     // MARK: Data
 
     private(set) var cards: [Card]
+    /// Full original card list — used by restart() to restore all cards after restartDue() filtering.
+    private let originalCards: [Card]
     /// setId → display label shown below the word, e.g. "Daily Words · Travel"
     let contextLabels: [UUID: String]
     /// Called when the user taps "Done" on the session completion screen.
@@ -73,6 +75,7 @@ final class TinderCardsViewModel {
 
     init(cards: [Card], contextLabels: [UUID: String] = [:], onDone: (() -> Void)? = nil) {
         self.cards = cards
+        self.originalCards = cards
         self.contextLabels = contextLabels
         self.onDone = onDone
     }
@@ -106,6 +109,7 @@ final class TinderCardsViewModel {
 
     /// Restarts the session from the first card (all original cards).
     func restart() {
+        cards        = originalCards
         currentIndex = 0
         dragOffset   = .zero
         isFlipped    = false

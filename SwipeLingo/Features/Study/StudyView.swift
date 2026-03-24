@@ -48,10 +48,20 @@ struct StudyView: View {
         .onAppear {
             // Seeding happens in SwipeLingoApp.init() before any view renders,
             // so @Query results are already populated here.
-            viewModel.startSessionIfNeeded(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
+            viewModel.startSessionIfNeeded(
+                piles: piles,
+                allCards: allCards,
+                cardSets: cardSets,
+                collections: collections
+            )
         }
         .onChange(of: activePileID) {
-            viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
+            viewModel.startNewSession(
+                piles: piles,
+                allCards: allCards,
+                cardSets: cardSets,
+                collections: collections
+            )
         }
     }
 
@@ -69,7 +79,12 @@ struct StudyView: View {
                 contextLabels: viewModel.contextLabels,
                 pileTagsLine: viewModel.pileTagsLine,
                 onDone: {
-                    viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
+                    viewModel.startNewSession(
+                        piles: piles,
+                        allCards: allCards,
+                        cardSets: cardSets,
+                        collections: collections
+                    )
                 }
             )
             .id(viewModel.sessionID)
@@ -79,17 +94,17 @@ struct StudyView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            Button { viewModel.isShowingAddCard = true } label: {
-                Image(systemName: "plus")
-            }
-        }
-        ToolbarItem(placement: .topBarLeading) {
             Button {
                 studyDirection = studyDirection == "EN→RU" ? "RU→EN" : "EN→RU"
             } label: {
                 Text(directionLabel)
                     .font(.subheadline.weight(.medium))
                     .monospacedDigit()
+            }
+        }
+        ToolbarItem(placement: .topBarLeading) {
+            Button { viewModel.isShowingAddCard = true } label: {
+                Image(systemName: "plus")
             }
         }
     }

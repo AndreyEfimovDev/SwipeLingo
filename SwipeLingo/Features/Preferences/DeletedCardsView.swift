@@ -2,8 +2,6 @@ import SwiftUI
 import SwiftData
 
 // MARK: - DeletedCardsView
-// Shows all cards with status == .deleted.
-// Swipe actions: Restore → .active, Erase Forever → delete from DB (with confirmation).
 
 struct DeletedCardsView: View {
 
@@ -19,6 +17,7 @@ struct DeletedCardsView: View {
         List {
             ForEach(deletedCards) { card in
                 DeletedCardRow(card: card)
+                    .listRowBackground(Color(.systemBackground))
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
                             cardToErase = card
@@ -31,14 +30,16 @@ struct DeletedCardsView: View {
                         } label: {
                             Label("Restore", systemImage: "arrow.uturn.left")
                         }
-                        .tint(.green)
+                        .tint(.blue)
                     }
             }
         }
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+//        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("Deleted Cards")
         .navigationBarTitleDisplayMode(.large)
-        .scrollContentBackground(.hidden)
-        .background(Color(.systemBackground))
         .overlay {
             if deletedCards.isEmpty {
                 VStack(spacing: 12) {

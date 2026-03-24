@@ -17,17 +17,35 @@ final class PileBuilderViewModel {
     /// Non-nil when editing an existing Pile; nil when creating.
     let editingPile: Pile?
 
+    private let initialName: String
+    private let initialSetIds: Set<UUID>
+    private let initialShuffleMethod: ShuffleMethod
+
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !selectedSetIds.isEmpty
     }
 
+    /// True when the form values differ from the saved state.
+    /// For new piles always true (any filled form is a change).
+    var hasChanges: Bool {
+        guard editingPile != nil else { return true }
+        return name != initialName
+            || selectedSetIds != initialSetIds
+            || shuffleMethod != initialShuffleMethod
+    }
+
+    var canSave: Bool { isValid && hasChanges }
+
     // MARK: Init
 
     init(editingPile: Pile? = nil) {
-        self.editingPile    = editingPile
-        self.name           = editingPile?.name          ?? ""
-        self.selectedSetIds = Set(editingPile?.setIds    ?? [])
-        self.shuffleMethod  = editingPile?.shuffleMethod ?? .random
+        self.editingPile         = editingPile
+        self.name                = editingPile?.name          ?? ""
+        self.selectedSetIds      = Set(editingPile?.setIds    ?? [])
+        self.shuffleMethod       = editingPile?.shuffleMethod ?? .random
+        self.initialName         = editingPile?.name          ?? ""
+        self.initialSetIds       = Set(editingPile?.setIds    ?? [])
+        self.initialShuffleMethod = editingPile?.shuffleMethod ?? .random
     }
 
     // MARK: Actions

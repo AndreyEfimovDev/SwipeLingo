@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - PileBuilderView
 // Sheet for creating or editing a Pile.
-// "Study" activates the pile and switches to the Study tab.
+// Save activates the pile and switches to the Study tab.
 
 struct PileBuilderView: View {
 
@@ -24,54 +24,116 @@ struct PileBuilderView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                nameSection
-                shuffleSection
-                setsSection
+            ScrollView {
+                VStack(spacing: 16) {
+                    nameSection
+                    shuffleSection
+                    setsSection
+                }
+                .padding(.vertical, 16)
             }
+            .background(Color(.systemBackground).ignoresSafeArea())
             .navigationTitle(viewModel.editingPile == nil ? "New Pile" : "Edit Pile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarButtons }
         }
     }
 
-    // MARK: - Form Sections
+    // MARK: - Name Section
 
     private var nameSection: some View {
-        Section("Name") {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("NAME")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 32)
+
             TextField("e.g. Morning Session", text: $viewModel.name)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .padding(.horizontal, 16)
         }
     }
 
+    // MARK: - Shuffle Section
+
     private var shuffleSection: some View {
-        Section {
-            Picker("", selection: $viewModel.shuffleMethod) {
-                Label("Random",     systemImage: "shuffle")        .tag(ShuffleMethod.random)
-                Label("Sequential", systemImage: "arrow.down")     .tag(ShuffleMethod.sequential)
-                Label("Hardest first", systemImage: "flame")       .tag(ShuffleMethod.prioritized)
+        VStack(alignment: .leading, spacing: 6) {
+            Text("SHUFFLE METHOD")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 0) {
+                shuffleRow(.random,      icon: "shuffle",    name: "Random")
+                Divider().padding(.leading, 52)
+                shuffleRow(.sequential,  icon: "arrow.down", name: "Sequential")
+                Divider().padding(.leading, 52)
+                shuffleRow(.prioritized, icon: "flame",      name: "Hardest first")
             }
-            .pickerStyle(.inline)
-            .labelsHidden()
-        } header: {
-            Text("Shuffle method")
-        } footer: {
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .padding(.horizontal, 16)
+
             Text(shuffleFooter)
-                .font(.caption)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 32)
         }
     }
+
+    private func shuffleRow(_ method: ShuffleMethod, icon: String, name: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .frame(width: 28)
+                .foregroundStyle(.secondary)
+            Text(name)
+                .font(.body)
+            Spacer()
+            if viewModel.shuffleMethod == method {
+                Image(systemName: "checkmark")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+        .onTapGesture { viewModel.shuffleMethod = method }
+    }
+
+    // MARK: - Sets Section
 
     private var setsSection: some View {
         ForEach(setGroups, id: \.collectionID) { group in
-            Section(group.collectionName) {
-                ForEach(group.sets) { set in
-                    SetToggleRow(
-                        name: set.name,
-                        cardCount: activeCardCount(for: set.id),
-                        isSelected: viewModel.selectedSetIds.contains(set.id)
-                    ) {
-                        viewModel.toggleSet(set.id)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(group.collectionName.uppercased())
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 32)
+
+                VStack(spacing: 0) {
+                    ForEach(group.sets) { set in
+                        SetToggleRow(
+                            name: set.name,
+                            cardCount: activeCardCount(for: set.id),
+                            isSelected: viewModel.selectedSetIds.contains(set.id)
+                        ) {
+                            viewModel.toggleSet(set.id)
+                        }
+                        if set.id != group.sets.last?.id {
+                            Divider().padding(.leading, 52)
+                        }
                     }
                 }
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .padding(.horizontal, 16)
             }
         }
     }
@@ -83,26 +145,14 @@ struct PileBuilderView: View {
         ToolbarItem(placement: .cancellationAction) {
             Button("Cancel") { dismiss() }
         }
-        // "Study" — primary: save + activate + switch tab
         ToolbarItem(placement: .confirmationAction) {
-            Button("Study") {
+            Button("Save") {
                 viewModel.saveAndActivate(context: context, allPiles: allPiles)
                 appViewModel.selectedTab = .study
                 dismiss()
             }
-            .disabled(!viewModel.isValid)
+            .disabled(!viewModel.canSave)
             .fontWeight(.semibold)
-        }
-        // "Save" — secondary: save only, stay in Library
-        ToolbarItem(placement: .topBarLeading) {
-            if viewModel.editingPile != nil || !viewModel.name.isEmpty {
-                Button("Save") {
-                    viewModel.save(context: context)
-                    dismiss()
-                }
-                .disabled(!viewModel.isValid)
-                .foregroundStyle(.secondary)
-            }
         }
     }
 
@@ -151,7 +201,7 @@ private struct SetToggleRow: View {
     let onToggle:  () -> Void
 
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                 .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                 .font(.title3)
@@ -166,6 +216,8 @@ private struct SetToggleRow: View {
             }
             Spacer()
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
         .contentShape(Rectangle())
         .onTapGesture { onToggle() }
     }

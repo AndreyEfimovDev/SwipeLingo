@@ -11,6 +11,7 @@ struct CardSetDetailView: View {
 
     @Query(sort: \Card.createdAt) private var allCards: [Card]
     @State private var isShowingAddCard = false
+    @State private var cardToErase: Card?
 
     // MARK: Filtered sections
 
@@ -23,32 +24,59 @@ struct CardSetDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                if !activeCards.isEmpty || learntCards.isEmpty {
-                    cardSection(
-                        title: learntCards.isEmpty ? nil : "ACTIVE",
-                        cards: activeCards,
-                        isLearnt: false
-                    )
-                }
-                if !learntCards.isEmpty {
-                    cardSection(
-                        title: "LEARNT",
-                        cards: learntCards,
-                        isLearnt: true
-                    )
+        List {
+            if !activeCards.isEmpty {
+                Section(learntCards.isEmpty ? "" : "ACTIVE") {
+                    ForEach(activeCards) { card in
+                        CardRow(card: card)
+                            .listRowBackground(Color(.systemBackground))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    card.status = .deleted
+                                    try? context.save()
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                    }
                 }
             }
-            .padding(.vertical, 16)
+            if !learntCards.isEmpty {
+                Section("LEARNT") {
+                    ForEach(learntCards) { card in
+                        CardRow(card: card)
+                            .listRowBackground(Color(.systemBackground))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    card.status = .deleted
+                                    try? context.save()
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                Button {
+                                    card.status = .active
+                                    try? context.save()
+                                } label: {
+                                    Label("Restore", systemImage: "arrow.uturn.left")
+                                }
+                                .tint(.blue)
+                            }
+                    }
+                }
+            }
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+//        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle(cardSet.name)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { isShowingAddCard = true } label: {
-                    Image(systemName: "plus")
+            if cardSet.name != "Inbox" {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { isShowingAddCard = true } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }
@@ -57,51 +85,6 @@ struct CardSetDetailView: View {
         }
         .overlay {
             if activeCards.isEmpty && learntCards.isEmpty { emptyState }
-        }
-    }
-
-    // MARK: - Card Section
-
-    @ViewBuilder
-    private func cardSection(title: String?, cards: [Card], isLearnt: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if let title {
-                Text(title)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 32)
-            }
-
-            VStack(spacing: 0) {
-                ForEach(cards) { card in
-                    CardRow(card: card)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .contextMenu {
-                            if isLearnt {
-                                Button {
-                                    card.status = .active
-                                    try? context.save()
-                                } label: {
-                                    Label("Restore", systemImage: "arrow.uturn.left")
-                                }
-                            }
-                            Button(role: .destructive) {
-                                card.status = .deleted
-                                try? context.save()
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                    if card.id != cards.last?.id {
-                        Divider().padding(.leading, 16)
-                    }
-                }
-            }
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-            .padding(.horizontal, 16)
         }
     }
 
@@ -117,7 +100,10 @@ struct CardSetDetailView: View {
             Text("Tap + to add your first card")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -134,5 +120,6 @@ private struct CardRow: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
+        .padding(.vertical, 2)
     }
 }

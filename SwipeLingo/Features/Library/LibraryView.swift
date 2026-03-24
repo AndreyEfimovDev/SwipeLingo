@@ -23,7 +23,7 @@ struct LibraryView: View {
                 }
                 .padding(.vertical, 16)
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .background(Color(.systemBackground).ignoresSafeArea())
             .navigationTitle("Library")
             .sheet(isPresented: $viewModel.isShowingAddCollection) {
                 AddCollectionView()
@@ -135,7 +135,13 @@ struct LibraryView: View {
                 VStack(spacing: 0) {
                     ForEach(regularCollections) { collection in
                         NavigationLink {
-                            CollectionDetailView(collection: collection)
+                            // Inbox skips CollectionDetailView and goes straight to its CardSet
+                            if collection.name == "Inbox",
+                               let inboxSet = cardSets.first(where: { $0.collectionId == collection.id }) {
+                                CardSetDetailView(cardSet: inboxSet)
+                            } else {
+                                CollectionDetailView(collection: collection)
+                            }
                         } label: {
                             CollectionRow(collection: collection)
                                 .padding(.horizontal, 16)
