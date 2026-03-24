@@ -20,16 +20,9 @@ struct LibraryView: View {
                 pilesSection
                 collectionsSection
             }
+            .scrollContentBackground(.hidden)
+            .background(Color(.systemBackground))
             .navigationTitle("Library")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.isShowingAddCollection = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
             .sheet(isPresented: $viewModel.isShowingAddCollection) {
                 AddCollectionView()
             }
@@ -104,7 +97,17 @@ struct LibraryView: View {
                 deleteCollections(at: offsets, from: regularCollections)
             }
         } header: {
-            Text("Collections")
+            HStack {
+                Text("Collections")
+                Spacer()
+                Button {
+                    viewModel.isShowingAddCollection = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.borderless)
+            }
         }
     }
 

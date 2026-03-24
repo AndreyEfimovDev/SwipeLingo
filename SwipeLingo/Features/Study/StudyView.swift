@@ -66,7 +66,10 @@ struct StudyView: View {
             TinderCardsView(
                 cards: viewModel.studyCards,
                 contextLabels: viewModel.contextLabels,
-                pileTagsLine: viewModel.pileTagsLine
+                pileTagsLine: viewModel.pileTagsLine,
+                onDone: {
+                    viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets)
+                }
             )
             .id(viewModel.sessionID)
         }
@@ -95,9 +98,9 @@ struct StudyView: View {
             Image(systemName: "rectangle.stack")
                 .font(.system(size: 52))
                 .foregroundStyle(.secondary)
-            Text("Нет карточек для изучения")
+            Text("No cards to study")
                 .font(.title3.bold())
-            Text("Добавьте карточки в Library или создайте Pile")
+            Text("Add cards in Library or create a Pile")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

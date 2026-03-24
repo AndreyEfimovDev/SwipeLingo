@@ -15,9 +15,10 @@ struct TinderCardsView: View {
     /// Drives which field appears on the front face (EN→RU = false, RU→EN = true)
     private var isReversed: Bool { studyDirection == "RU→EN" }
 
-    init(cards: [Card], contextLabels: [UUID: String] = [:], pileTagsLine: String = "") {
+    init(cards: [Card], contextLabels: [UUID: String] = [:], pileTagsLine: String = "",
+         onDone: (() -> Void)? = nil) {
         _viewModel = State(
-            initialValue: TinderCardsViewModel(cards: cards, contextLabels: contextLabels)
+            initialValue: TinderCardsViewModel(cards: cards, contextLabels: contextLabels, onDone: onDone)
         )
         self.pileTagsLine = pileTagsLine
     }
@@ -34,7 +35,7 @@ struct TinderCardsView: View {
 
             ZStack {
                 if viewModel.isDone {
-                    doneView
+                    doneContentView
                 } else {
                     cardStack
                 }
@@ -42,7 +43,7 @@ struct TinderCardsView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 460)
 
-            // Pile tags line — e.g. "Academic Words · Grammar (12 карточек)"
+            // Pile tags line — e.g. "Academic Words · Grammar (12 cards)"
             if !pileTagsLine.isEmpty && !viewModel.isDone {
                 Text(pileTagsLine)
                     .font(.caption)
@@ -59,10 +60,16 @@ struct TinderCardsView: View {
                     .opacity(viewModel.isFlipped ? 1 : 0)
                     .offset(y: viewModel.isFlipped ? 0 : 20)
                     .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+            } else {
+                doneActionsView
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 32)
             }
         }
+        .background(Color(.systemBackground))
         .animation(.spring(duration: 0.3), value: viewModel.currentIndex)
         .animation(.spring(duration: 0.3), value: viewModel.isFlipped)
+        .animation(.spring(duration: 0.4), value: viewModel.isDone)
         .sheet(item: $lookupCard) { card in
             DictionaryLookupView(card: card)
         }
@@ -72,7 +79,7 @@ struct TinderCardsView: View {
 
     private var progressBar: some View {
         HStack {
-            Text("\(viewModel.remaining) карточек")
+            Text("\(viewModel.remaining) cards")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -89,20 +96,27 @@ struct TinderCardsView: View {
 
     private var cardStack: some View {
         ZStack {
-            // Background cards (index +2, +1) — shown behind for depth
+            // Background cards (index +2, +1) — physical stack effect: no opacity fade,
+            // just progressively smaller scale + downward offset + softer shadow.
             ForEach([2, 1], id: \.self) { offset in
                 let idx = viewModel.currentIndex + offset
                 if idx < viewModel.cards.count {
                     cardPlaceholder
+                        .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 4)
                         .scaleEffect(1.0 - CGFloat(offset) * 0.04)
-                        .offset(y: CGFloat(offset) * 10)
-                        .opacity(0.6 - Double(offset) * 0.15)
+                        .offset(y: CGFloat(offset) * 8)
                 }
             }
 
-            // Top interactive card
+            // Top interactive card — new card springs up from stack position (scale 0.96→1.0)
+            // No opacity fade: feels like physically lifting the top card off the pile.
             if let card = viewModel.currentCard {
                 topCard(card)
+                    .id(viewModel.currentIndex)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.96),
+                        removal: .identity
+                    ))
                     .zIndex(1)
             }
         }
@@ -143,7 +157,7 @@ struct TinderCardsView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text("Нажмите, чтобы перевернуть")
+            Text("Tap to flip")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .padding(.bottom, 20)
@@ -200,10 +214,11 @@ struct TinderCardsView: View {
     }
 
     // MARK: - Placeholder (background cards)
+    // Same white fill as the top card — depth is conveyed by scale + shadow, not colour.
 
     private var cardPlaceholder: some View {
         RoundedRectangle(cornerRadius: 24)
-            .fill(.background.secondary)
+            .fill(Color(.systemBackground))
             .frame(maxWidth: .infinity)
             .frame(height: 420)
     }
@@ -254,9 +269,9 @@ struct TinderCardsView: View {
 
     private var srsButtonsRow: some View {
         HStack(spacing: 12) {
-            srsButton(title: "Не знал", color: .red,    rating: .again)
-            srsButton(title: "Сложно",  color: .orange, rating: .hard)
-            srsButton(title: "Легко",   color: .green,  rating: .easy)
+            srsButton(title: "Again", color: .red,    rating: .again)
+            srsButton(title: "Hard",  color: .orange, rating: .hard)
+            srsButton(title: "Easy",  color: .green,  rating: .easy)
         }
     }
 
@@ -278,20 +293,90 @@ struct TinderCardsView: View {
         }
     }
 
-    // MARK: - Done View
+    // MARK: - Done: content (inside 460pt ZStack)
 
-    private var doneView: some View {
+    private var doneContentView: some View {
         VStack(spacing: 16) {
+            Spacer()
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
-            Text("Отлично!")
+            Text("All cards reviewed!")
                 .font(.title.bold())
-            Text("Все карточки пройдены")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 28) {
+                VStack(spacing: 3) {
+                    Text("\(viewModel.dueTomorrowCount)")
+                        .font(.title2.bold())
+                    Text("due tomorrow")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Divider()
+                    .frame(height: 36)
+                VStack(spacing: 3) {
+                    Text("\(viewModel.dueIn3DaysCount)")
+                        .font(.title2.bold())
+                    Text("due in 3 days")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.top, 4)
+            Spacer()
         }
-        .transition(.scale(scale: 0.8).combined(with: .opacity))
+        .frame(maxWidth: .infinity)
+        .transition(.scale(scale: 0.85).combined(with: .opacity))
+    }
+
+    // MARK: - Done: actions (replaces SRS buttons row)
+
+    private var doneActionsView: some View {
+        VStack(spacing: 10) {
+            Button {
+                withAnimation(.spring(duration: 0.4, bounce: 0.2)) { viewModel.restart() }
+            } label: {
+                Text("Repeat all")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.accentColor.opacity(0.15))
+                    .foregroundStyle(Color.accentColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+
+            HStack(spacing: 10) {
+                Button {
+                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) { viewModel.restartDue() }
+                } label: {
+                    Text("Only due")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(.secondary.opacity(0.1))
+                        .foregroundStyle(.secondary)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    viewModel.onDone?()
+                } label: {
+                    Text("Done")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(.secondary.opacity(0.1))
+                        .foregroundStyle(.secondary)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 
@@ -336,7 +421,7 @@ private struct FlippableCardView<Front: View, Back: View>: View {
 
     private var cardShape: some View {
         RoundedRectangle(cornerRadius: 24)
-            .fill(.background)
+            .fill(Color(.systemBackground))
             .frame(maxWidth: .infinity)
             .frame(height: 420)
     }

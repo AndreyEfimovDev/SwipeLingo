@@ -4,9 +4,8 @@ import SwiftUI
 
 struct PreferencesView: View {
 
-    // MARK: Stored preferences
-    @AppStorage("nativeLanguage")  private var nativeLanguage  = "Русский"
-    @AppStorage("colorScheme")     private var colorSchemeKey  = "auto"
+    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+    @AppStorage("colorScheme")    private var colorSchemeKey = "auto"
 
     private let languages = [
         "Русский", "中文", "Español", "Français",
@@ -18,7 +17,10 @@ struct PreferencesView: View {
             Form {
                 languageSection
                 appearanceSection
+                managingCardsSection
             }
+            .scrollContentBackground(.hidden)
+            .background(Color(.systemBackground))
             .navigationTitle("Settings")
         }
     }
@@ -28,9 +30,7 @@ struct PreferencesView: View {
     private var languageSection: some View {
         Section {
             Picker("Native language", selection: $nativeLanguage) {
-                ForEach(languages, id: \.self) { lang in
-                    Text(lang).tag(lang)
-                }
+                ForEach(languages, id: \.self) { Text($0).tag($0) }
             }
         } header: {
             Text("Language")
@@ -56,6 +56,24 @@ struct PreferencesView: View {
                 .labelsHidden()
             }
             .padding(.vertical, 4)
+        }
+    }
+
+    // MARK: - Managing Cards
+
+    private var managingCardsSection: some View {
+        Section("Managing Cards") {
+            NavigationLink {
+                DeletedCardsView()
+            } label: {
+                Label("Deleted Cards", systemImage: "trash")
+            }
+
+            Label("Share Cards", systemImage: "square.and.arrow.up")
+                .foregroundStyle(.secondary)
+
+            Label("Backup Cards", systemImage: "arrow.clockwise.icloud")
+                .foregroundStyle(.secondary)
         }
     }
 }

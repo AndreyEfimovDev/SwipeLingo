@@ -12,21 +12,65 @@ struct CardSetDetailView: View {
     @Query(sort: \Card.createdAt) private var allCards: [Card]
     @State private var isShowingAddCard = false
 
-    private var cards: [Card] {
-        allCards.filter { $0.setId == cardSet.id && $0.status != .deleted }
+    // MARK: Filtered sections
+
+    private var activeCards: [Card] {
+        allCards.filter { $0.setId == cardSet.id && $0.status == .active }
+    }
+
+    private var learntCards: [Card] {
+        allCards.filter { $0.setId == cardSet.id && $0.status == .learnt }
     }
 
     var body: some View {
         List {
-            ForEach(cards) { card in
-                CardRow(card: card)
+            // MARK: Active
+            Section {
+                ForEach(activeCards) { card in
+                    CardRow(card: card)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                card.status = .deleted
+                                try? context.save()
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                }
+            } header: {
+                if !learntCards.isEmpty {
+                    Text("Active")
+                }
             }
-            .onDelete { offsets in
-                softDeleteCards(at: offsets)
+
+            // MARK: Learnt
+            if !learntCards.isEmpty {
+                Section("Learnt") {
+                    ForEach(learntCards) { card in
+                        CardRow(card: card)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    card.status = .deleted
+                                    try? context.save()
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                Button {
+                                    card.status = .active
+                                    try? context.save()
+                                } label: {
+                                    Label("Restore", systemImage: "arrow.uturn.left")
+                                }
+                                .tint(.green)
+                            }
+                    }
+                }
             }
         }
         .navigationTitle(cardSet.name)
         .navigationBarTitleDisplayMode(.large)
+        .scrollContentBackground(.hidden)
+        .background(Color(.systemBackground))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { isShowingAddCard = true } label: {
@@ -38,9 +82,11 @@ struct CardSetDetailView: View {
             AddCardView(preselectedSetId: cardSet.id)
         }
         .overlay {
-            if cards.isEmpty { emptyState }
+            if activeCards.isEmpty && learntCards.isEmpty { emptyState }
         }
     }
+
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 12) {
@@ -53,14 +99,6 @@ struct CardSetDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    private func softDeleteCards(at offsets: IndexSet) {
-        let list = cards
-        for index in offsets {
-            list[index].status = .deleted
-        }
-        try? context.save()
     }
 }
 

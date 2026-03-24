@@ -12,9 +12,11 @@ final class TinderCardsViewModel {
 
     // MARK: Data
 
-    let cards: [Card]
+    private(set) var cards: [Card]
     /// setId → display label shown below the word, e.g. "Daily Words · Travel"
     let contextLabels: [UUID: String]
+    /// Called when the user taps "Done" on the session completion screen.
+    let onDone: (() -> Void)?
 
     // MARK: UI State
 
@@ -49,11 +51,30 @@ final class TinderCardsViewModel {
         return contextLabels[card.setId] ?? ""
     }
 
+    // MARK: Session completion stats
+
+    /// Cards whose dueDate falls in the next 24–48 h window ("tomorrow").
+    var dueTomorrowCount: Int {
+        let now   = Date.now
+        let start = now.addingTimeInterval(86400 * 1)
+        let end   = now.addingTimeInterval(86400 * 2)
+        return cards.filter { $0.dueDate >= start && $0.dueDate < end }.count
+    }
+
+    /// Cards whose dueDate falls in the 2–5 day window ("in 3 days").
+    var dueIn3DaysCount: Int {
+        let now   = Date.now
+        let start = now.addingTimeInterval(86400 * 2)
+        let end   = now.addingTimeInterval(86400 * 5)
+        return cards.filter { $0.dueDate >= start && $0.dueDate < end }.count
+    }
+
     // MARK: Init
 
-    init(cards: [Card], contextLabels: [UUID: String] = [:]) {
+    init(cards: [Card], contextLabels: [UUID: String] = [:], onDone: (() -> Void)? = nil) {
         self.cards = cards
         self.contextLabels = contextLabels
+        self.onDone = onDone
     }
 
     // MARK: Actions
@@ -81,6 +102,22 @@ final class TinderCardsViewModel {
         SRSService().evaluate(card: card, rating: rating)
         try? context.save()
         advance()
+    }
+
+    /// Restarts the session from the first card (all original cards).
+    func restart() {
+        currentIndex = 0
+        dragOffset   = .zero
+        isFlipped    = false
+    }
+
+    /// Restarts with only cards whose dueDate is within the next 24 h (due today).
+    func restartDue() {
+        let dueCards = cards.filter { $0.dueDate < Date.now.addingTimeInterval(86400) }
+        if !dueCards.isEmpty { cards = dueCards }
+        currentIndex = 0
+        dragOffset   = .zero
+        isFlipped    = false
     }
 
     // MARK: Private

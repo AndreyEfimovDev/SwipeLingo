@@ -45,7 +45,7 @@ final class StudyViewModel {
             studyCards     = pileService.cards(for: active, from: allCards)
             pileTagsLine   = makePileTagsLine(pile: active, cardSets: cardSets, allCards: allCards)
         } else {
-            activePileName = "Все карточки"
+            activePileName = "All Cards"
             studyCards     = allCards.filter { $0.status == .active }.shuffled()
             pileTagsLine   = ""
         }
@@ -53,7 +53,7 @@ final class StudyViewModel {
         sessionID = UUID()
     }
 
-    /// Builds the compact "Set1 · Set2 · +N (X карточек)" label.
+    /// Builds the compact "Set1 · Set2 · +N (X cards)" label.
     private func makePileTagsLine(pile: Pile, cardSets: [CardSet], allCards: [Card]) -> String {
         let sets = cardSets.filter { pile.setIds.contains($0.id) }
         let totalCards = allCards.filter {
@@ -71,17 +71,6 @@ final class StudyViewModel {
         }
 
         let tagsString = tagParts.joined(separator: " · ")
-        return "\(tagsString) (\(totalCards) \(cardWord(totalCards)))"
-    }
-
-    private func cardWord(_ count: Int) -> String {
-        let rem100 = count % 100
-        let rem10  = count % 10
-        if rem100 >= 11 && rem100 <= 19 { return "карточек" }
-        switch rem10 {
-        case 1:        return "карточка"
-        case 2, 3, 4:  return "карточки"
-        default:       return "карточек"
-        }
+        return "\(tagsString) (\(totalCards) \(totalCards == 1 ? "card" : "cards"))"
     }
 }
