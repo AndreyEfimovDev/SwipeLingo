@@ -27,10 +27,6 @@ struct TinderCardsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            progressBar
-                .padding(.horizontal)
-                .padding(.top, 16)
-
             Spacer(minLength: 0)
 
             ZStack {
@@ -54,6 +50,8 @@ struct TinderCardsView: View {
             Spacer(minLength: 0)
 
             if !viewModel.isDone {
+                progressBar
+                    .padding(.bottom, 8)
                 srsButtonsRow
                     .padding(.horizontal, 24)
                     .padding(.bottom, 32)
@@ -78,18 +76,11 @@ struct TinderCardsView: View {
     // MARK: - Progress Bar
 
     private var progressBar: some View {
-        HStack {
-            Text("\(viewModel.remaining) cards")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            ProgressView(
-                value: Double(max(0, viewModel.cards.count - viewModel.remaining)),
-                total: Double(max(1, viewModel.cards.count))
-            )
-            .frame(width: 120)
-            .tint(.accentColor)
-        }
+        ProgressView(
+            value: Double(max(0, viewModel.cards.count - viewModel.remaining)),
+            total: Double(max(1, viewModel.cards.count))
+        )
+        .tint(.accentColor)
     }
 
     // MARK: - Card Stack
@@ -103,10 +94,19 @@ struct TinderCardsView: View {
             ForEach([2, 1], id: \.self) { offset in
                 let idx = viewModel.currentIndex + offset
                 if idx < viewModel.cards.count {
-                    let scale   = 1.0 - CGFloat(offset) * 0.04 + 0.04 * dragProgress
-                    let yOffset = CGFloat(offset) * 8.0 - 8.0 * dragProgress
+                    // Animate each card toward the position of the card in front of it.
+                    // offset=1 animates from (scale 0.95, y +20) → (1.0, y 0) as top card is dragged.
+                    // offset=2 animates from (scale 0.90, y +40) → (0.95, y +20) in cascade.
+                    let step: CGFloat = 0.05
+                    let yStep: CGFloat = 20.0
+                    let baseScale     = 1.0 - CGFloat(offset) * step
+                    let targetScale   = 1.0 - CGFloat(offset - 1) * step
+                    let scale         = baseScale + (targetScale - baseScale) * dragProgress
+                    let baseYOffset   = CGFloat(offset) * yStep
+                    let targetYOffset = CGFloat(offset - 1) * yStep
+                    let yOffset       = baseYOffset + (targetYOffset - baseYOffset) * dragProgress
                     cardPlaceholder
-                        .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 4)
+                        .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
                         .scaleEffect(scale)
                         .offset(y: yOffset)
                 }
@@ -155,11 +155,6 @@ struct TinderCardsView: View {
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 24)
 
-            if !viewModel.currentContextLabel.isEmpty {
-                Text(viewModel.currentContextLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
             Spacer()
             Text("Tap to flip")
                 .font(.caption2)
@@ -273,7 +268,7 @@ struct TinderCardsView: View {
 
     private var srsButtonsRow: some View {
         HStack(spacing: 12) {
-            srsButton(title: "Again", color: .red,    rating: .again)
+            srsButton(title: "Forgot", color: .red,   rating: .again)
             srsButton(title: "Hard",  color: .orange, rating: .hard)
             srsButton(title: "Easy",  color: .green,  rating: .easy)
         }

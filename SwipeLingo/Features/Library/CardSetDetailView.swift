@@ -23,55 +23,28 @@ struct CardSetDetailView: View {
     }
 
     var body: some View {
-        List {
-            // MARK: Active
-            Section {
-                ForEach(activeCards) { card in
-                    CardRow(card: card)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                card.status = .deleted
-                                try? context.save()
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
+        ScrollView {
+            VStack(spacing: 16) {
+                if !activeCards.isEmpty || learntCards.isEmpty {
+                    cardSection(
+                        title: learntCards.isEmpty ? nil : "ACTIVE",
+                        cards: activeCards,
+                        isLearnt: false
+                    )
                 }
-            } header: {
                 if !learntCards.isEmpty {
-                    Text("Active")
+                    cardSection(
+                        title: "LEARNT",
+                        cards: learntCards,
+                        isLearnt: true
+                    )
                 }
             }
-
-            // MARK: Learnt
-            if !learntCards.isEmpty {
-                Section("Learnt") {
-                    ForEach(learntCards) { card in
-                        CardRow(card: card)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    card.status = .deleted
-                                    try? context.save()
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                                Button {
-                                    card.status = .active
-                                    try? context.save()
-                                } label: {
-                                    Label("Restore", systemImage: "arrow.uturn.left")
-                                }
-                                .tint(.green)
-                            }
-                    }
-                }
-            }
+            .padding(.vertical, 16)
         }
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
         .navigationTitle(cardSet.name)
         .navigationBarTitleDisplayMode(.large)
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(Color(.systemGroupedBackground))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { isShowingAddCard = true } label: {
@@ -84,6 +57,51 @@ struct CardSetDetailView: View {
         }
         .overlay {
             if activeCards.isEmpty && learntCards.isEmpty { emptyState }
+        }
+    }
+
+    // MARK: - Card Section
+
+    @ViewBuilder
+    private func cardSection(title: String?, cards: [Card], isLearnt: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let title {
+                Text(title)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 32)
+            }
+
+            VStack(spacing: 0) {
+                ForEach(cards) { card in
+                    CardRow(card: card)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contextMenu {
+                            if isLearnt {
+                                Button {
+                                    card.status = .active
+                                    try? context.save()
+                                } label: {
+                                    Label("Restore", systemImage: "arrow.uturn.left")
+                                }
+                            }
+                            Button(role: .destructive) {
+                                card.status = .deleted
+                                try? context.save()
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    if card.id != cards.last?.id {
+                        Divider().padding(.leading, 16)
+                    }
+                }
+            }
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .padding(.horizontal, 16)
         }
     }
 
@@ -116,6 +134,5 @@ private struct CardRow: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
     }
 }

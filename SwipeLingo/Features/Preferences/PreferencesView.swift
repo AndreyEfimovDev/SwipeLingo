@@ -36,13 +36,18 @@ struct PreferencesView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 32)
 
-            Picker("Native language", selection: $nativeLanguage) {
-                ForEach(languages, id: \.self) { Text($0).tag($0) }
+            HStack {
+                Text("Native language")
+                    .font(.body)
+                Spacer()
+                Picker("", selection: $nativeLanguage) {
+                    ForEach(languages, id: \.self) { Text($0).tag($0) }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
             }
-            .pickerStyle(.navigationLink)
             .padding(.horizontal, 16)
-            .padding(.vertical, 2)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 14)
             .background(Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)

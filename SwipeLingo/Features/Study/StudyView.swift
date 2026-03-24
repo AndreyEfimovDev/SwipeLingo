@@ -9,6 +9,7 @@ struct StudyView: View {
     @Query private var piles: [Pile]
     @Query private var allCards: [Card]
     @Query private var cardSets: [CardSet]
+    @Query private var collections: [Collection]
 
     @State private var viewModel = StudyViewModel()
     @AppStorage("studyDirection") private var studyDirection = "EN→RU"
@@ -47,10 +48,10 @@ struct StudyView: View {
         .onAppear {
             // Seeding happens in SwipeLingoApp.init() before any view renders,
             // so @Query results are already populated here.
-            viewModel.startSessionIfNeeded(piles: piles, allCards: allCards, cardSets: cardSets)
+            viewModel.startSessionIfNeeded(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
         }
         .onChange(of: activePileID) {
-            viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets)
+            viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
         }
     }
 

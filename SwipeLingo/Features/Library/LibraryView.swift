@@ -16,13 +16,14 @@ struct LibraryView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                pilesSection
-                collectionsSection
+            ScrollView {
+                VStack(spacing: 16) {
+                    pilesSection
+                    collectionsSection
+                }
+                .padding(.vertical, 16)
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(Color(.systemGroupedBackground))
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle("Library")
             .sheet(isPresented: $viewModel.isShowingAddCollection) {
                 AddCollectionView()
@@ -41,35 +42,11 @@ struct LibraryView: View {
     // MARK: - Piles Section
 
     private var pilesSection: some View {
-        Section {
-            ForEach(piles) { pile in
-                PileRow(
-                    pile: pile,
-                    cardCount: activeCardCount(for: pile)
-                )
-                .contentShape(Rectangle())
-                .onTapGesture { activatePile(pile) }
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        context.delete(pile)
-                        try? context.save()
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
-                .swipeActions(edge: .leading) {
-                    Button {
-                        viewModel.editingPile = pile
-                        viewModel.isShowingPileBuilder = true
-                    } label: {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    .tint(.blue)
-                }
-            }
-        } header: {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Piles")
+                Text("PILES")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     viewModel.editingPile = nil
@@ -80,26 +57,59 @@ struct LibraryView: View {
                 }
                 .buttonStyle(.borderless)
             }
+            .padding(.horizontal, 32)
+
+            if piles.isEmpty {
+                Text("No piles yet — tap + to create one")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 16)
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                    .padding(.horizontal, 16)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(piles) { pile in
+                        PileRow(
+                            pile: pile,
+                            cardCount: activeCardCount(for: pile),
+                            onActivate: { activatePile(pile) },
+                            onEdit: {
+                                viewModel.editingPile = pile
+                                viewModel.isShowingPileBuilder = true
+                            }
+                        )
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                context.delete(pile)
+                                try? context.save()
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        if pile.id != piles.last?.id {
+                            Divider().padding(.leading, 52)
+                        }
+                    }
+                }
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .padding(.horizontal, 16)
+            }
         }
     }
 
     // MARK: - Collections Section
 
     private var collectionsSection: some View {
-        Section {
-            ForEach(regularCollections) { collection in
-                NavigationLink {
-                    CollectionDetailView(collection: collection)
-                } label: {
-                    CollectionRow(collection: collection)
-                }
-            }
-            .onDelete { offsets in
-                deleteCollections(at: offsets, from: regularCollections)
-            }
-        } header: {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Collections")
+                Text("COLLECTIONS")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     viewModel.isShowingAddCollection = true
@@ -108,6 +118,48 @@ struct LibraryView: View {
                         .font(.caption.weight(.semibold))
                 }
                 .buttonStyle(.borderless)
+            }
+            .padding(.horizontal, 32)
+
+            if regularCollections.isEmpty {
+                Text("No collections yet — tap + to create one")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 16)
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                    .padding(.horizontal, 16)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(regularCollections) { collection in
+                        NavigationLink {
+                            CollectionDetailView(collection: collection)
+                        } label: {
+                            CollectionRow(collection: collection)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                context.delete(collection)
+                                try? context.save()
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        if collection.id != regularCollections.last?.id {
+                            Divider().padding(.leading, 52)
+                        }
+                    }
+                }
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .padding(.horizontal, 16)
             }
         }
     }
@@ -142,11 +194,6 @@ struct LibraryView: View {
         try? context.save()
     }
 
-    private func deleteCollections(at offsets: IndexSet, from list: [Collection]) {
-        for index in offsets { context.delete(list[index]) }
-        try? context.save()
-    }
-
     // MARK: - Helpers
 
     private func activeCardCount(for pile: Pile) -> Int {
@@ -157,16 +204,20 @@ struct LibraryView: View {
 // MARK: - PileRow
 
 private struct PileRow: View {
-    let pile:      Pile
-    let cardCount: Int
+    let pile:       Pile
+    let cardCount:  Int
+    let onActivate: () -> Void
+    let onEdit:     () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            // Active indicator
-            Image(systemName: pile.isActive ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(pile.isActive ? Color.accentColor : Color.secondary)
-                .font(.title3)
-                .animation(.spring(duration: 0.2), value: pile.isActive)
+            Button(action: onActivate) {
+                Image(systemName: pile.isActive ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(pile.isActive ? Color.accentColor : Color.secondary)
+                    .font(.title3)
+                    .animation(.spring(duration: 0.2), value: pile.isActive)
+            }
+            .buttonStyle(.borderless)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(pile.name)
@@ -181,7 +232,16 @@ private struct PileRow: View {
             }
 
             Spacer()
+
+            Button(action: onEdit) {
+                Image(systemName: "pencil")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 
     private func shuffleIcon(_ method: ShuffleMethod) -> String {
@@ -199,6 +259,13 @@ private struct CollectionRow: View {
     let collection: Collection
 
     var body: some View {
-        Label(collection.name, systemImage: collection.icon ?? "folder")
+        HStack {
+            Label(collection.name, systemImage: collection.icon ?? "folder")
+                .foregroundStyle(.primary)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
     }
 }
