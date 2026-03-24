@@ -35,7 +35,6 @@ struct DeletedCardsView: View {
             }
         }
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-//        .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("Deleted Cards")

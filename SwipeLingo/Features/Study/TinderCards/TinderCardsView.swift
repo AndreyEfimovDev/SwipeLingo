@@ -11,9 +11,18 @@ struct TinderCardsView: View {
     @State private var lookupCard: Card?
 
     private let swipeThreshold: CGFloat = 110
+    private let upSwipeThreshold: CGFloat = 100
     private let pileTagsLine: String
+
     /// Drives which field appears on the front face (EN→Native = false, Native→EN = true)
     private var isReversed: Bool { studyDirection == "Native→EN" }
+
+    /// 0…1 progress of an upward drag gesture (for trash icon and card scale).
+    private var upSwipeProgress: Double {
+        guard viewModel.dragOffset.height < -10,
+              abs(viewModel.dragOffset.width) < 55 else { return 0 }
+        return min(1.0, abs(Double(viewModel.dragOffset.height)) / Double(upSwipeThreshold))
+    }
 
     init(cards: [Card], contextLabels: [UUID: String] = [:], pileTagsLine: String = "",
          onDone: (() -> Void)? = nil) {
@@ -87,24 +96,21 @@ struct TinderCardsView: View {
 
     private var cardStack: some View {
         ZStack {
-            // Background cards animate in real-time as the top card is dragged:
-            // each card scales and rises toward the position of the card in front of it.
+            // Background cards stack UPWARD — offset=1 is above the top card.
+            // This hides "Tap to flip" (bottom of next card) under the current card.
             let dragProgress = min(1.0, abs(viewModel.dragOffset.width) / swipeThreshold)
 
             ForEach([2, 1], id: \.self) { offset in
                 let idx = viewModel.currentIndex + offset
                 if idx < viewModel.cards.count {
-                    // Animate each card toward the position of the card in front of it.
-                    // offset=1 animates from (scale 0.95, y +20) → (1.0, y 0) as top card is dragged.
-                    // offset=2 animates from (scale 0.90, y +40) → (0.95, y +20) in cascade.
-                    let step: CGFloat = 0.05
-                    let yStep: CGFloat = 20.0
-                    let baseScale     = 1.0 - CGFloat(offset) * step
-                    let targetScale   = 1.0 - CGFloat(offset - 1) * step
-                    let scale         = baseScale + (targetScale - baseScale) * dragProgress
-                    let baseYOffset   = CGFloat(offset) * yStep
-                    let targetYOffset = CGFloat(offset - 1) * yStep
-                    let yOffset       = baseYOffset + (targetYOffset - baseYOffset) * dragProgress
+                    let step: CGFloat     = 0.05
+                    let yStep: CGFloat    = -20.0           // negative = stack upward
+                    let baseScale         = 1.0 - CGFloat(offset) * step
+                    let targetScale       = 1.0 - CGFloat(offset - 1) * step
+                    let scale             = baseScale + (targetScale - baseScale) * dragProgress
+                    let baseYOffset       = CGFloat(offset) * yStep
+                    let targetYOffset     = CGFloat(offset - 1) * yStep
+                    let yOffset           = baseYOffset + (targetYOffset - baseYOffset) * dragProgress
                     Group {
                         if offset == 1 {
                             nextCardPreview(viewModel.cards[idx])
@@ -118,8 +124,7 @@ struct TinderCardsView: View {
                 }
             }
 
-            // Top interactive card — new card springs up from stack position (scale 0.96→1.0)
-            // No opacity fade: feels like physically lifting the top card off the pile.
+            // Top interactive card
             if let card = viewModel.currentCard {
                 topCard(card)
                     .id(viewModel.currentIndex)
@@ -129,6 +134,27 @@ struct TinderCardsView: View {
                     ))
                     .zIndex(1)
             }
+
+            // Trash icon — appears when dragging upward
+            if upSwipeProgress > 0 {
+                VStack {
+                    ZStack {
+                        Circle()
+                            .fill(.red.opacity(0.12 * upSwipeProgress))
+                            .frame(width: 72, height: 72)
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(.red)
+                            .scaleEffect(0.7 + 0.5 * upSwipeProgress)
+                    }
+                    .opacity(upSwipeProgress)
+                    .padding(.top, 12)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
+                .zIndex(2)
+            }
         }
         .padding(.horizontal, 24)
     }
@@ -136,16 +162,23 @@ struct TinderCardsView: View {
     // MARK: - Top Card
 
     private func topCard(_ card: Card) -> some View {
-        FlippableCardView(
+        let yOffset: CGFloat = viewModel.dragOffset.height < -5
+            ? viewModel.dragOffset.height           // full upward travel for delete gesture
+            : viewModel.dragOffset.height * 0.15    // dampened vertical movement on h-swipes
+        let scale = max(0.3, 1.0 - 0.5 * upSwipeProgress)
+
+        return FlippableCardView(
             isFlipped: viewModel.isFlipped,
             front: { cardFront(card) },
             back:  { cardBack(card)  }
         )
         .overlay(swipeColorOverlay)
-        .offset(x: viewModel.dragOffset.width, y: viewModel.dragOffset.height * 0.15)
+        .offset(x: viewModel.dragOffset.width, y: yOffset)
         .rotationEffect(viewModel.dragRotation)
+        .scaleEffect(scale)
         .gesture(dragGesture)
-        .onTapGesture { viewModel.flip() }
+        // Tap flips front → back only; back → front requires SRS button press
+        .onTapGesture { viewModel.flipToBack() }
         .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
     }
 
@@ -201,7 +234,7 @@ struct TinderCardsView: View {
                 }
             }
 
-            // Dictionary lookup — only shown in EN→RU mode (English word on front)
+            // Dictionary lookup — only shown in EN→Native mode (English word on front)
             if !isReversed {
                 Button {
                     lookupCard = card
@@ -219,7 +252,6 @@ struct TinderCardsView: View {
     }
 
     // MARK: - Placeholder (background cards)
-    // Same white fill as the top card — depth is conveyed by scale + shadow, not colour.
 
     private var cardPlaceholder: some View {
         RoundedRectangle(cornerRadius: 24)
@@ -228,7 +260,7 @@ struct TinderCardsView: View {
             .frame(height: 420)
     }
 
-    // Next card preview — shows the front text so it's visible when dragging the top card.
+    /// Next card preview — front text only, no hint label (card stacks above, hint not visible)
     private func nextCardPreview(_ card: Card) -> some View {
         let frontText = isReversed ? card.item : card.en
         return ZStack {
@@ -236,28 +268,27 @@ struct TinderCardsView: View {
                 .fill(Color(.systemBackground))
                 .frame(maxWidth: .infinity)
                 .frame(height: 420)
-            VStack(spacing: 12) {
-                Spacer()
-                Text(frontText)
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.5)
-                    .padding(.horizontal, 24)
-                Spacer()
-                Text("Tap to flip")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .padding(.bottom, 20)
-            }
+            Text(frontText)
+                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.5)
+                .padding(.horizontal, 24)
         }
     }
 
     // MARK: - Swipe Colour Overlay
 
     private var swipeColorOverlay: some View {
-        let progress = viewModel.swipeProgress
-        let color: Color = progress > 0 ? .green : .red
-        let opacity = abs(progress) * 0.45
+        let color: Color
+        let opacity: Double
+        if upSwipeProgress > 0 {
+            color   = .red
+            opacity = upSwipeProgress * 0.4
+        } else {
+            let p = viewModel.swipeProgress
+            color   = p > 0 ? .green : .red
+            opacity = abs(p) * 0.45
+        }
         return RoundedRectangle(cornerRadius: 24)
             .fill(color.opacity(opacity))
             .allowsHitTesting(false)
@@ -272,7 +303,10 @@ struct TinderCardsView: View {
             }
             .onEnded { value in
                 let dx = value.translation.width
+                let dy = value.translation.height
+
                 if dx > swipeThreshold {
+                    // Right swipe → learnt
                     withAnimation(.spring(duration: 0.35)) {
                         viewModel.dragOffset = CGSize(width: 600, height: dx * 0.3)
                     }
@@ -280,13 +314,23 @@ struct TinderCardsView: View {
                         viewModel.commitSwipe(direction: .right, context: context)
                     }
                 } else if dx < -swipeThreshold {
+                    // Left swipe → keep studying
                     withAnimation(.spring(duration: 0.35)) {
                         viewModel.dragOffset = CGSize(width: -600, height: dx * 0.3)
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                         viewModel.commitSwipe(direction: .left, context: context)
                     }
+                } else if dy < -upSwipeThreshold && abs(dx) < 55 {
+                    // Upward swipe → delete (send to trash)
+                    withAnimation(.spring(duration: 0.4)) {
+                        viewModel.dragOffset = CGSize(width: 0, height: -800)
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        viewModel.commitDelete(context: context)
+                    }
                 } else {
+                    // Spring back
                     withAnimation(.spring(duration: 0.4, bounce: 0.4)) {
                         viewModel.dragOffset = .zero
                     }
@@ -298,9 +342,9 @@ struct TinderCardsView: View {
 
     private var srsButtonsRow: some View {
         HStack(spacing: 12) {
-            srsButton(title: "Forgot", color: .red,   rating: .again)
-            srsButton(title: "Hard",  color: .orange, rating: .hard)
-            srsButton(title: "Easy",  color: .green,  rating: .easy)
+            srsButton(title: "Forgot", color: .red,    rating: .again)
+            srsButton(title: "Hard",   color: .orange, rating: .hard)
+            srsButton(title: "Easy",   color: .green,  rating: .easy)
         }
     }
 
@@ -364,7 +408,7 @@ struct TinderCardsView: View {
             Button {
                 withAnimation(.spring(duration: 0.4, bounce: 0.2)) { viewModel.restart() }
             } label: {
-                Text("Repeat all")
+                Text("Study again")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -378,30 +422,21 @@ struct TinderCardsView: View {
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: 10) {
+            if viewModel.weakCount > 0 {
                 Button {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) { viewModel.restartDue() }
+                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) { viewModel.restartWeak() }
                 } label: {
-                    Text("Only due")
+                    Text("Weak cards: \(viewModel.weakCount)")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(.secondary.opacity(0.1))
-                        .foregroundStyle(.secondary)
+                        .background(.orange.opacity(0.12))
+                        .foregroundStyle(.orange)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    viewModel.onDone?()
-                } label: {
-                    Text("Done")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(.secondary.opacity(0.1))
-                        .foregroundStyle(.secondary)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(.orange.opacity(0.3), lineWidth: 1)
+                        )
                 }
                 .buttonStyle(.plain)
             }
