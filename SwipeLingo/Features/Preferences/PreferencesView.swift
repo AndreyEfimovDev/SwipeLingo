@@ -14,13 +14,15 @@ struct PreferencesView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                languageSection
-                appearanceSection
-                managingCardsSection
+            ScrollView {
+                VStack(spacing: 16) {
+                    languageSection
+                    appearanceSection
+                    managingCardsSection
+                }
+                .padding(.vertical, 16)
             }
-            .scrollContentBackground(.hidden)
-            .background(Color(.systemBackground))
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle("Settings")
         }
     }
@@ -28,21 +30,40 @@ struct PreferencesView: View {
     // MARK: - Language
 
     private var languageSection: some View {
-        Section {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("LANGUAGE")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 32)
+
             Picker("Native language", selection: $nativeLanguage) {
                 ForEach(languages, id: \.self) { Text($0).tag($0) }
             }
-        } header: {
-            Text("Language")
-        } footer: {
+            .pickerStyle(.navigationLink)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .padding(.horizontal, 16)
+
             Text("Defines which side of the card shows your native translation.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 32)
         }
     }
 
     // MARK: - Appearance
 
     private var appearanceSection: some View {
-        Section("Appearance") {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("APPEARANCE")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 32)
+
             VStack(alignment: .leading, spacing: 8) {
                 Text("Theme")
                     .font(.subheadline)
@@ -55,25 +76,60 @@ struct PreferencesView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
             }
-            .padding(.vertical, 4)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .padding(.horizontal, 16)
         }
     }
 
     // MARK: - Managing Cards
 
     private var managingCardsSection: some View {
-        Section("Managing Cards") {
-            NavigationLink {
-                DeletedCardsView()
-            } label: {
-                Label("Deleted Cards", systemImage: "trash")
+        VStack(alignment: .leading, spacing: 6) {
+            Text("MANAGING CARDS")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 0) {
+                NavigationLink { DeletedCardsView() } label: {
+                    HStack {
+                        Label("Deleted Cards", systemImage: "trash")
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+
+                Divider().padding(.leading, 52)
+
+                HStack {
+                    Label("Share Cards", systemImage: "square.and.arrow.up")
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .foregroundStyle(.secondary)
+
+                Divider().padding(.leading, 52)
+
+                HStack {
+                    Label("Backup Cards", systemImage: "arrow.clockwise.icloud")
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .foregroundStyle(.secondary)
             }
-
-            Label("Share Cards", systemImage: "square.and.arrow.up")
-                .foregroundStyle(.secondary)
-
-            Label("Backup Cards", systemImage: "arrow.clockwise.icloud")
-                .foregroundStyle(.secondary)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .padding(.horizontal, 16)
         }
     }
 }

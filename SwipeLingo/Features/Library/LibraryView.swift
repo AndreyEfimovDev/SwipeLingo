@@ -20,8 +20,9 @@ struct LibraryView: View {
                 pilesSection
                 collectionsSection
             }
+            .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(Color(.systemBackground))
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Library")
             .sheet(isPresented: $viewModel.isShowingAddCollection) {
                 AddCollectionView()

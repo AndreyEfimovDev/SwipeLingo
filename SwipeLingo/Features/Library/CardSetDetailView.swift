@@ -69,8 +69,9 @@ struct CardSetDetailView: View {
         }
         .navigationTitle(cardSet.name)
         .navigationBarTitleDisplayMode(.large)
+        .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(Color(.systemBackground))
+        .background(Color(.systemGroupedBackground))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { isShowingAddCard = true } label: {

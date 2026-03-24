@@ -96,15 +96,19 @@ struct TinderCardsView: View {
 
     private var cardStack: some View {
         ZStack {
-            // Background cards (index +2, +1) — physical stack effect: no opacity fade,
-            // just progressively smaller scale + downward offset + softer shadow.
+            // Background cards animate in real-time as the top card is dragged:
+            // each card scales and rises toward the position of the card in front of it.
+            let dragProgress = min(1.0, abs(viewModel.dragOffset.width) / swipeThreshold)
+
             ForEach([2, 1], id: \.self) { offset in
                 let idx = viewModel.currentIndex + offset
                 if idx < viewModel.cards.count {
+                    let scale   = 1.0 - CGFloat(offset) * 0.04 + 0.04 * dragProgress
+                    let yOffset = CGFloat(offset) * 8.0 - 8.0 * dragProgress
                     cardPlaceholder
                         .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 4)
-                        .scaleEffect(1.0 - CGFloat(offset) * 0.04)
-                        .offset(y: CGFloat(offset) * 8)
+                        .scaleEffect(scale)
+                        .offset(y: yOffset)
                 }
             }
 
