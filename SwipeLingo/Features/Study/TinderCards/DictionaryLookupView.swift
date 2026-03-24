@@ -86,13 +86,13 @@ final class DictionaryLookupViewModel {
     }
 
     func addSynonym(_ synonym: String, to card: Card, context: ModelContext) {
-        var samples = card.sampleEN
-        guard !samples.contains(synonym) else {
+        var syns = card.synonyms
+        guard !syns.contains(synonym) else {
             print("[DictionaryLookup] [+] '\(synonym)' already present — skipped")
             return
         }
-        samples.append(synonym)
-        card.sampleEN = samples
+        syns.append(synonym)
+        card.synonyms = syns
         save(context: context)
         addedItems.insert(synonym)
         print("[DictionaryLookup] [+] synonym: '\(synonym)'")
@@ -297,7 +297,7 @@ struct DictionaryLookupView: View {
             Spacer(minLength: 8)
 
             // [+] adds the definition (and example if any) to card.sampleEN
-            let alreadyAdded = viewModel.addedItems.contains(definition.text)
+            let alreadyAdded = viewModel.addedItems.contains(definition.text) || card.sampleEN.contains(definition.text)
             Button {
                 viewModel.addDefinition(definition, to: card, context: context)
             } label: {
@@ -331,7 +331,7 @@ struct DictionaryLookupView: View {
         HStack(spacing: 4) {
             Text(synonym)
                 .font(.subheadline)
-            let synonymAdded = viewModel.addedItems.contains(synonym)
+            let synonymAdded = viewModel.addedItems.contains(synonym) || card.synonyms.contains(synonym)
             Button {
                 viewModel.addSynonym(synonym, to: card, context: context)
             } label: {

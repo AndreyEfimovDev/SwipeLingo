@@ -31,6 +31,7 @@ final class Card {
     private var sampleENRaw:   String
     private var sampleItemRaw: String
     private var tagsRaw:       String
+    private var synonymsRaw:   String
 
     var status: CardStatus
     var isFavorite: Bool
@@ -69,6 +70,11 @@ final class Card {
         set { tagsRaw = encodeArray(newValue) }
     }
 
+    var synonyms: [String] {
+        get { decodeArray(synonymsRaw) }
+        set { synonymsRaw = encodeArray(newValue) }
+    }
+
     // MARK: Init
 
     init(
@@ -80,6 +86,7 @@ final class Card {
         status: CardStatus = .active,
         isFavorite: Bool = false,
         tags: [String] = [],
+        synonyms: [String] = [],
         easeFactor: Double = 2.5,
         interval: Int = 1,
         repetitions: Int = 0,
@@ -100,6 +107,7 @@ final class Card {
         self.status        = status
         self.isFavorite    = isFavorite
         self.tagsRaw       = encodeArray(tags)
+        self.synonymsRaw   = encodeArray(synonyms)
         self.easeFactor    = easeFactor
         self.interval      = interval
         self.repetitions   = repetitions
