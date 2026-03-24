@@ -69,7 +69,7 @@ struct StudyView: View {
                 contextLabels: viewModel.contextLabels,
                 pileTagsLine: viewModel.pileTagsLine,
                 onDone: {
-                    viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets)
+                    viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets, collections: collections)
                 }
             )
             .id(viewModel.sessionID)
