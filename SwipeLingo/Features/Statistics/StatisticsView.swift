@@ -136,9 +136,11 @@ struct StatisticsView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 32)
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .background(Color(.systemBackground).ignoresSafeArea())
             .navigationTitle("Statistics")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color(.systemBackground), for: .tabBar)
+            .toolbarBackground(.visible, for: .tabBar)
         }
     }
 
@@ -179,43 +181,46 @@ private struct StreakCard: View {
     let current: Int
     let best: Int
 
+    private var progress: Double {
+        guard best > 0 else { return 0 }
+        return min(Double(current) / Double(best), 1.0)
+    }
+
     var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .lastTextBaseline, spacing: 6) {
-                    Text("\(current)")
-                        .font(.system(size: 52, weight: .bold, design: .rounded))
-                        .foregroundStyle(current > 0 ? Color.orange : Color.secondary)
-                    Text("days")
-                        .font(.title3)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Streak")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
-                        .padding(.bottom, 4)
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("\(current)")
+                            .font(.system(size: 32, weight: .medium))
+                        Text("days")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                HStack(spacing: 5) {
-                    Image(systemName: "flame.fill")
-                        .foregroundStyle(current > 0 ? Color.orange : Color.secondary)
-                    Text("Current streak")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("Best")
+                Spacer()
+                Text("Best \(best) days")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
-                Text("\(best) days")
-                    .font(.title2.bold())
-                    .foregroundStyle(.secondary)
-                Image(systemName: "trophy.fill")
-                    .font(.caption)
-                    .foregroundStyle(.yellow)
             }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(.systemGray5))
+                        .frame(height: 4)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.primary.opacity(0.8))
+                        .frame(width: geo.size.width * progress, height: 4)
+                }
+            }
+            .frame(height: 4)
         }
-        .padding()
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16))
+        .padding(16)
+        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 14))
         .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
     }
 }
@@ -311,18 +316,29 @@ private struct ActivityCalendarCard: View {
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Button {
-                    withAnimation(.easeInOut(duration: 0.25)) { isCompact.toggle() }
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+                        isCompact.toggle()
+                    }
                 } label: {
                     Text(isCompact ? "Show full" : "Show compact")
                         .font(.caption)
                         .foregroundStyle(Color.accentColor)
+                        .animation(nil, value: isCompact) // label меняется без анимации
                 }
             }
 
             if isCompact {
-                compactView.transition(.opacity)
+                compactView
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.97, anchor: .top)),
+                        removal:   .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
+                    ))
             } else {
-                monthlyGridView.transition(.opacity)
+                monthlyGridView
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.97, anchor: .top)),
+                        removal:   .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
+                    ))
             }
 
             // Intensity legend
@@ -340,9 +356,12 @@ private struct ActivityCalendarCard: View {
                     .foregroundStyle(.tertiary)
             }
         }
+        // spring здесь анимирует изменение высоты карточки (frame expansion)
+        .animation(.spring(response: 0.45, dampingFraction: 0.82), value: isCompact)
         .padding()
         .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .clipped(antialiased: true)
     }
 
     // MARK: Intensity

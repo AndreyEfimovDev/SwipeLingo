@@ -5,24 +5,23 @@ import SwiftData
 
 struct TinderCardsView: View {
 
-    @Environment(\.modelContext) private var context
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
-    @AppStorage("studyDirection") private var studyDirection = "EN→Native"
+    @Environment(\.modelContext)       private var context
+    @Environment(\.verticalSizeClass)  private var verticalSizeClass
+    @Environment(AppViewModel.self)    private var appViewModel
+    @AppStorage("studyDirection")      private var studyDirection = "EN→Native"
     @State private var viewModel: TinderCardsViewModel
     @State private var lookupCard: Card?
-    @State private var audioService = AudioPlayerService()
+    @State private var audioService  = AudioPlayerService()
     @State private var examplePageIndex: Int = 0
 
-    private let swipeThreshold: CGFloat   = 110
+    private let swipeThreshold:   CGFloat = 110
     private let upSwipeThreshold: CGFloat = 100
     private let pileTagsLine: String
 
-    private var isReversed: Bool  { studyDirection == "Native→EN" }
+    private var isReversed:  Bool { studyDirection == "Native→EN" }
     private var isLandscape: Bool { verticalSizeClass == .compact }
-    /// Card height adapts to orientation.
-    private var cardHeight: CGFloat { isLandscape ? 250 : 420 }
 
-    /// 0…1 progress of an upward drag (trash icon + card scale). Zero when card is flipped.
+    /// 0…1 upward-drag progress for trash animation. Zero when card is flipped.
     private var upSwipeProgress: Double {
         guard !viewModel.isFlipped,
               viewModel.dragOffset.height < -10,
@@ -30,130 +29,132 @@ struct TinderCardsView: View {
         return min(1.0, abs(Double(viewModel.dragOffset.height)) / Double(upSwipeThreshold))
     }
 
-    init(cards: [Card], contextLabels: [UUID: String] = [:], pileTagsLine: String = "",
+    init(cards: [Card],
+         contextLabels: [UUID: String] = [:],
+         pileTagsLine: String = "",
          onDone: (() -> Void)? = nil) {
-        _viewModel = State(
-            initialValue: TinderCardsViewModel(cards: cards, contextLabels: contextLabels, onDone: onDone)
-        )
+        _viewModel   = State(initialValue: TinderCardsViewModel(
+                                cards: cards,
+                                contextLabels: contextLabels,
+                                onDone: onDone))
         self.pileTagsLine = pileTagsLine
     }
 
-    // MARK: Body
+    // MARK: - Body
 
     var body: some View {
         Group {
-            if isLandscape {
-                landscapeBody
-            } else {
-                portraitBody
-            }
+            if isLandscape { landscapeBody } else { portraitBody }
         }
         .background(Color(.systemBackground))
         .animation(.spring(duration: 0.3), value: viewModel.currentIndex)
         .animation(.spring(duration: 0.3), value: viewModel.isFlipped)
         .animation(.spring(duration: 0.4), value: viewModel.isDone)
-        .sheet(item: $lookupCard) { card in
-            DictionaryLookupView(card: card)
-        }
+        .sheet(item: $lookupCard) { DictionaryLookupView(card: $0) }
         .onDisappear { audioService.stop() }
         .onChange(of: viewModel.currentIndex) { _, _ in examplePageIndex = 0 }
     }
 
-    // MARK: - Portrait Layout (unchanged)
+    // MARK: - Portrait
 
     private var portraitBody: some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 0)
-
             ZStack {
-                if viewModel.isDone { doneContentView } else { cardStack }
+                if viewModel.isDone { doneFullCard } else { cardStack }
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 460)
-
-            if !pileTagsLine.isEmpty && !viewModel.isDone {
-                Text(pileTagsLine)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 10)
-            }
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
 
             if !viewModel.isDone {
-                srsButtonsRow
-                    .padding(.horizontal, 24)
-                    .padding(.top, 8)
-                    .opacity(viewModel.isFlipped ? 1 : 0)
-                    .offset(y: viewModel.isFlipped ? 0 : 20)
-                    .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
-                progressBar
-                    .padding(.top, 8)
-            } else {
-                doneActionsView
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 32)
+                progressStatsRow
             }
         }
     }
 
-    // MARK: - Landscape Layout
+    // MARK: - Landscape
 
     private var landscapeBody: some View {
         HStack(spacing: 0) {
-
-            // Left: card + pile tags + progress bar
-            VStack(spacing: 0) {
-                ZStack {
-                    if viewModel.isDone { doneContentView } else { cardStack }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                if !pileTagsLine.isEmpty && !viewModel.isDone {
-                    Text(pileTagsLine)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 6)
-                }
-
-                if !viewModel.isDone {
-                    progressBar
-                        .padding(.top, 6)
-                        .padding(.horizontal, 24)
-                }
+            landscapeStatsColumn
+            Divider()
+            ZStack {
+                if viewModel.isDone { doneFullCard } else { cardStack }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        // System tab bar is already hidden by AppView in landscape
+    }
 
-            // Right: SRS buttons (~140pt) or done actions
-            if !viewModel.isDone {
-                VStack(spacing: 10) {
-                    Spacer()
-                    srsButtonsColumn
-                    Spacer()
-                }
-                .frame(width: 140)
-                .opacity(viewModel.isFlipped ? 1 : 0)
-                .offset(x: viewModel.isFlipped ? 0 : 20)
-                .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
-            } else {
-                VStack(spacing: 10) {
-                    Spacer()
-                    doneActionsView
-                    Spacer()
-                }
-                .frame(width: 160)
-                .padding(.horizontal, 12)
-            }
+    // MARK: - Landscape Stats Column
+
+    private var landscapeStatsColumn: some View {
+        let total   = viewModel.cards.count
+        let learned = viewModel.learnedInSession
+        let active  = total - learned
+        return VStack(spacing: 0) {
+            Spacer()
+            statLabel("Learned", value: learned)
+            Spacer()
+            Text("\(total)").font(.caption2).foregroundStyle(.tertiary)
+            Spacer()
+            statLabel("Active", value: active)
+            Spacer()
+        }
+        .frame(width: 56)
+    }
+
+    private func statLabel(_ title: String, value: Int) -> some View {
+        VStack(spacing: 2) {
+            Text(title).font(.system(size: 9)).foregroundStyle(.tertiary)
+            Text("\(value)").font(.system(size: 16, weight: .semibold)).foregroundStyle(.secondary)
         }
     }
 
-    // MARK: - Progress Bar
+    // MARK: - Portrait Stats Row
 
-    private var progressBar: some View {
-        ProgressView(
-            value: Double(max(0, viewModel.cards.count - viewModel.remaining)),
-            total: Double(max(1, viewModel.cards.count))
-        )
-        .tint(.accentColor)
+    private var progressStatsRow: some View {
+        let total   = viewModel.cards.count
+        let learned = viewModel.learnedInSession
+        let active  = total - learned
+        return HStack {
+            Text("Active ").foregroundStyle(.tertiary)
+            + Text("\(active)").foregroundStyle(.secondary).bold()
+            Spacer()
+            Text("\(total) cards").foregroundStyle(.tertiary)
+            Spacer()
+            Text("Learned ").foregroundStyle(.tertiary)
+            + Text("\(learned)").foregroundStyle(.secondary).bold()
+        }
+        .font(.caption2)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+    }
+
+    // MARK: - Breadcrumb
+
+    /// "Collection › Set" label for the *current* card — per-card, not pile-level.
+    private var cardBreadcrumb: String {
+        guard let card = viewModel.currentCard else { return "" }
+        return viewModel.contextLabels[card.setId] ?? ""
+    }
+
+    @ViewBuilder
+    private var breadcrumbRow: some View {
+        let label = cardBreadcrumb
+        if !label.isEmpty {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+            Divider()
+        }
     }
 
     // MARK: - Card Stack
@@ -165,14 +166,14 @@ struct TinderCardsView: View {
             ForEach([2, 1], id: \.self) { offset in
                 let idx = viewModel.currentIndex + offset
                 if idx < viewModel.cards.count {
-                    let step: CGFloat  = 0.05
-                    let yStep: CGFloat = -20.0
-                    let baseScale      = 1.0 - CGFloat(offset) * step
-                    let targetScale    = 1.0 - CGFloat(offset - 1) * step
-                    let scale          = baseScale + (targetScale - baseScale) * dragProgress
-                    let baseYOffset    = CGFloat(offset) * yStep
-                    let targetYOffset  = CGFloat(offset - 1) * yStep
-                    let yOffset        = baseYOffset + (targetYOffset - baseYOffset) * dragProgress
+                    let step:        CGFloat = 0.05
+                    let yStep:       CGFloat = -20.0
+                    let baseScale    = 1.0 - CGFloat(offset) * step
+                    let targetScale  = 1.0 - CGFloat(offset - 1) * step
+                    let scale        = baseScale + (targetScale - baseScale) * dragProgress
+                    let baseY        = CGFloat(offset) * yStep
+                    let targetY      = CGFloat(offset - 1) * yStep
+                    let yOffset      = baseY + (targetY - baseY) * dragProgress
                     Group {
                         if offset == 1 { nextCardPreview(viewModel.cards[idx]) }
                         else           { cardPlaceholder }
@@ -190,7 +191,7 @@ struct TinderCardsView: View {
                     .zIndex(1)
             }
 
-            // Trash icon — appears when dragging upward on front face
+            // Trash icon — upward drag on front face
             if upSwipeProgress > 0 {
                 VStack {
                     ZStack {
@@ -211,7 +212,6 @@ struct TinderCardsView: View {
                 .zIndex(2)
             }
         }
-        .padding(.horizontal, 24)
     }
 
     // MARK: - Top Card
@@ -223,19 +223,78 @@ struct TinderCardsView: View {
                 : viewModel.dragOffset.height * 0.15)
         let scale = max(0.3, 1.0 - 0.5 * upSwipeProgress)
 
-        return FlippableCardView(
-            isFlipped: viewModel.isFlipped,
-            cardHeight: cardHeight,
-            front: { cardFront(card) },
-            back:  { cardBack(card)  }
-        )
-        .overlay(swipeColorOverlay)
-        .offset(x: viewModel.dragOffset.width, y: yOffset)
-        .rotationEffect(viewModel.dragRotation)
-        .scaleEffect(scale)
-        .simultaneousGesture(dragGesture)
-        .onTapGesture { viewModel.flipToBack() }
-        .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
+        return fullCardContainer(card)
+            .overlay(swipeColorOverlay)
+            .offset(x: viewModel.dragOffset.width, y: yOffset)
+            .rotationEffect(viewModel.dragRotation)
+            .scaleEffect(scale)
+            .simultaneousGesture(dragGesture)
+            .onTapGesture { viewModel.flipToBack() }
+            .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
+    }
+
+    // MARK: - Full Card Container
+
+    private func fullCardContainer(_ card: Card) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 24).fill(Color(.systemBackground))
+            if isLandscape {
+                landscapeCardContent(card)
+            } else {
+                portraitCardContent(card)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+    }
+
+    private func portraitCardContent(_ card: Card) -> some View {
+        VStack(spacing: 0) {
+            breadcrumbRow
+            flipContent(card: card).frame(maxHeight: .infinity)
+            // SRS pinned to bottom — always in layout, fades in after flip
+            Divider()
+            srsButtonsRow
+                .padding(12)
+                .opacity(viewModel.isFlipped ? 1 : 0)
+                .allowsHitTesting(viewModel.isFlipped)
+                .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+        }
+    }
+
+    private func landscapeCardContent(_ card: Card) -> some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                breadcrumbRow
+                flipContent(card: card).frame(maxHeight: .infinity)
+            }
+            // SRS column pinned to right — fades in after flip
+            Divider()
+            srsButtonsColumn
+                .frame(width: 90)
+                .opacity(viewModel.isFlipped ? 1 : 0)
+                .allowsHitTesting(viewModel.isFlipped)
+                .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+        }
+    }
+
+    // MARK: - Flip Content
+
+    private func flipContent(card: Card) -> some View {
+        ZStack {
+            cardFront(card)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .rotation3DEffect(.degrees(viewModel.isFlipped ? 180 : 0),
+                                  axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                .opacity(viewModel.isFlipped ? 0 : 1)
+
+            cardBack(card)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .rotation3DEffect(.degrees(viewModel.isFlipped ? 0 : -180),
+                                  axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                .opacity(viewModel.isFlipped ? 1 : 0)
+        }
+        .animation(.spring(duration: 0.5, bounce: 0.15), value: viewModel.isFlipped)
     }
 
     // MARK: - Card Front
@@ -295,7 +354,7 @@ struct TinderCardsView: View {
                         }
                     }
 
-                    // 3. Examples — single page display with slide transition (natural height)
+                    // 3. Examples — paged with slide transition
                     if !card.sampleEN.isEmpty {
                         let page = examplePageIndex
                         Divider().padding(.horizontal, 20)
@@ -324,7 +383,6 @@ struct TinderCardsView: View {
                         ))
                         .animation(.spring(duration: 0.3), value: page)
 
-                        // Tappable dots — navigate between examples
                         if card.sampleEN.count > 1 {
                             HStack(spacing: 7) {
                                 ForEach(card.sampleEN.indices, id: \.self) { i in
@@ -375,9 +433,7 @@ struct TinderCardsView: View {
             // Dictionary lookup — pinned to bottom, EN→Native only
             if !isReversed {
                 Divider()
-                Button {
-                    lookupCard = card
-                } label: {
+                Button { lookupCard = card } label: {
                     Label("Look up in dictionary", systemImage: "book.pages")
                         .font(.subheadline)
                         .foregroundStyle(Color.accentColor)
@@ -387,16 +443,14 @@ struct TinderCardsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
     }
 
-    // MARK: - Placeholder (background cards)
+    // MARK: - Background Cards
 
     private var cardPlaceholder: some View {
         RoundedRectangle(cornerRadius: 24)
             .fill(Color(.systemBackground))
-            .frame(maxWidth: .infinity)
-            .frame(height: cardHeight)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func nextCardPreview(_ card: Card) -> some View {
@@ -404,14 +458,13 @@ struct TinderCardsView: View {
         return ZStack {
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color(.systemBackground))
-                .frame(maxWidth: .infinity)
-                .frame(height: cardHeight)
             Text(frontText)
                 .font(.system(size: 42, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 24)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Swipe Colour Overlay
@@ -420,12 +473,10 @@ struct TinderCardsView: View {
         let color: Color
         let opacity: Double
         if upSwipeProgress > 0 {
-            color   = .red
-            opacity = upSwipeProgress * 0.4
+            color = .red; opacity = upSwipeProgress * 0.4
         } else {
             let p = viewModel.swipeProgress
-            color   = p > 0 ? .green : .blue
-            opacity = abs(p) * 0.45
+            color = p > 0 ? .green : .blue; opacity = abs(p) * 0.45
         }
         return RoundedRectangle(cornerRadius: 24)
             .fill(color.opacity(opacity))
@@ -476,29 +527,32 @@ struct TinderCardsView: View {
 
     // MARK: - SRS Buttons
 
-    /// Horizontal row — used in portrait layout (below card).
+    /// Portrait — horizontal row.
     private var srsButtonsRow: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             srsButton(title: "Forgot", color: .indigo, rating: .again)
             srsButton(title: "Hard",   color: .orange, rating: .hard)
             srsButton(title: "Easy",   color: .green,  rating: .easy)
         }
     }
 
-    /// Vertical column — used in landscape layout (right side panel).
+    /// Landscape — vertical column, buttons evenly distributed top-to-bottom.
     private var srsButtonsColumn: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 0) {
+            Spacer()
             srsButton(title: "Forgot", color: .indigo, rating: .again)
+            Spacer()
             srsButton(title: "Hard",   color: .orange, rating: .hard)
+            Spacer()
             srsButton(title: "Easy",   color: .green,  rating: .easy)
+            Spacer()
         }
-        .padding(.trailing, 16)
+        .padding(10)
     }
 
+    @ViewBuilder
     private func srsButton(title: String, color: Color, rating: SRSRating) -> some View {
-        Button {
-            viewModel.evaluate(rating: rating, context: context)
-        } label: {
+        Button { viewModel.evaluate(rating: rating, context: context) } label: {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
@@ -506,14 +560,26 @@ struct TinderCardsView: View {
                 .background(color.opacity(0.15))
                 .foregroundStyle(color)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(color.opacity(0.35), lineWidth: 1)
-                )
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.35), lineWidth: 1))
         }
     }
 
-    // MARK: - Done: content
+    // MARK: - Done State
+
+    private var doneFullCard: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 24).fill(Color(.systemBackground))
+            VStack(spacing: 0) {
+                doneContentView
+                doneActionsView
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 28)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
+        .transition(.scale(scale: 0.95).combined(with: .opacity))
+    }
 
     private var doneContentView: some View {
         VStack(spacing: 16) {
@@ -525,19 +591,13 @@ struct TinderCardsView: View {
                 .font(.title.bold())
             HStack(spacing: 28) {
                 VStack(spacing: 3) {
-                    Text("\(viewModel.dueTomorrowCount)")
-                        .font(.title2.bold())
-                    Text("due tomorrow")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text("\(viewModel.dueTomorrowCount)").font(.title2.bold())
+                    Text("due tomorrow").font(.caption).foregroundStyle(.secondary)
                 }
                 Divider().frame(height: 36)
                 VStack(spacing: 3) {
-                    Text("\(viewModel.dueIn3DaysCount)")
-                        .font(.title2.bold())
-                    Text("due in 3 days")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text("\(viewModel.dueIn3DaysCount)").font(.title2.bold())
+                    Text("due in 3 days").font(.caption).foregroundStyle(.secondary)
                 }
             }
             .padding(.top, 4)
@@ -546,8 +606,6 @@ struct TinderCardsView: View {
         .frame(maxWidth: .infinity)
         .transition(.scale(scale: 0.85).combined(with: .opacity))
     }
-
-    // MARK: - Done: actions
 
     private var doneActionsView: some View {
         VStack(spacing: 10) {
@@ -561,10 +619,7 @@ struct TinderCardsView: View {
                     .background(Color.accentColor.opacity(0.15))
                     .foregroundStyle(Color.accentColor)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
-                    )
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.accentColor.opacity(0.3), lineWidth: 1))
             }
             .buttonStyle(.plain)
 
@@ -579,56 +634,11 @@ struct TinderCardsView: View {
                         .background(.orange.opacity(0.12))
                         .foregroundStyle(.orange)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(.orange.opacity(0.3), lineWidth: 1)
-                        )
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.orange.opacity(0.3), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
         }
-    }
-}
-
-// MARK: - FlippableCardView
-
-private struct FlippableCardView<Front: View, Back: View>: View {
-
-    let isFlipped:  Bool
-    var cardHeight: CGFloat = 420
-    @ViewBuilder let front: () -> Front
-    @ViewBuilder let back:  () -> Back
-
-    var body: some View {
-        ZStack {
-            cardShape
-                .overlay(
-                    front()
-                        .rotation3DEffect(.degrees(isFlipped ? 180 : 0),
-                                          axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                )
-                .rotation3DEffect(.degrees(isFlipped ? 180 : 0),
-                                  axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                .opacity(isFlipped ? 0 : 1)
-
-            cardShape
-                .overlay(
-                    back()
-                        .rotation3DEffect(.degrees(isFlipped ? 0 : -180),
-                                          axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                )
-                .rotation3DEffect(.degrees(isFlipped ? 0 : -180),
-                                  axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                .opacity(isFlipped ? 1 : 0)
-        }
-        .animation(.spring(duration: 0.5, bounce: 0.15), value: isFlipped)
-    }
-
-    private var cardShape: some View {
-        RoundedRectangle(cornerRadius: 24)
-            .fill(Color(.systemBackground))
-            .frame(maxWidth: .infinity)
-            .frame(height: cardHeight)
     }
 }
 
@@ -639,44 +649,45 @@ private struct CardFlowLayout: Layout {
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let maxWidth = proposal.width ?? 0
-        var x: CGFloat = 0; var y: CGFloat = 0; var rowHeight: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > maxWidth, x > 0 { x = 0; y += rowHeight + spacing; rowHeight = 0 }
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
+        var x: CGFloat = 0; var y: CGFloat = 0; var rowH: CGFloat = 0
+        for sv in subviews {
+            let s = sv.sizeThatFits(.unspecified)
+            if x + s.width > maxWidth, x > 0 { x = 0; y += rowH + spacing; rowH = 0 }
+            x += s.width + spacing; rowH = max(rowH, s.height)
         }
-        return CGSize(width: maxWidth, height: y + rowHeight)
+        return CGSize(width: maxWidth, height: y + rowH)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX; var y = bounds.minY; var rowHeight: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > bounds.maxX, x > bounds.minX { x = bounds.minX; y += rowHeight + spacing; rowHeight = 0 }
-            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
+        var x = bounds.minX; var y = bounds.minY; var rowH: CGFloat = 0
+        for sv in subviews {
+            let s = sv.sizeThatFits(.unspecified)
+            if x + s.width > bounds.maxX, x > bounds.minX { x = bounds.minX; y += rowH + spacing; rowH = 0 }
+            sv.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(s))
+            x += s.width + spacing; rowH = max(rowH, s.height)
         }
     }
 }
 
+
 // MARK: - Preview
 
 #Preview {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    if let container = try? ModelContainer(for: Card.self, configurations: config) {
-        let ctx = container.mainContext
-        let setId = UUID()
-        let card1 = Card(en: "Serendipity", item: "счастливая случайность",
-                         sampleEN: ["What a serendipity to meet you here."],
-                         sampleItem: ["Какая счастливая случайность встретить тебя здесь."],
-                         synonyms: ["luck", "chance", "fortune"],
-                         setId: setId)
-        let card2 = Card(en: "Ephemeral", item: "мимолётный", setId: setId)
-        let card3 = Card(en: "Melancholy", item: "меланхолия", setId: setId)
-        let _ = [card1, card2, card3].map { ctx.insert($0) }
-        TinderCardsView(cards: [card1, card2, card3], contextLabels: [setId: "Advanced · IELTS"])
-            .modelContainer(container)
-    }
+    let config    = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Card.self, configurations: config)
+    let ctx       = container.mainContext
+    let setId     = UUID()
+    let c1 = Card(en: "Serendipity", item: "счастливая случайность",
+                  sampleEN:   ["What a serendipity to meet you here."],
+                  sampleItem: ["Какая счастливая случайность встретить тебя здесь."],
+                  synonyms: ["luck", "chance", "fortune"],
+                  setId: setId)
+    let c2 = Card(en: "Ephemeral",  item: "мимолётный", setId: setId)
+    let c3 = Card(en: "Melancholy", item: "меланхолия", setId: setId)
+    [c1, c2, c3].forEach { ctx.insert($0) }
+    return TinderCardsView(cards: [c1, c2, c3],
+                           contextLabels: [setId: "IELTS Vocabulary · Academic Words"],
+                           pileTagsLine:  "IELTS Vocabulary › Academic Words (8 cards)")
+        .modelContainer(container)
+        .environment(AppViewModel())
 }

@@ -51,7 +51,12 @@ final class StudyViewModel {
     // MARK: Private helpers
 
     private func load(piles: [Pile], allCards: [Card], cardSets: [CardSet], collections: [Collection]) {
-        contextLabels = Dictionary(uniqueKeysWithValues: cardSets.map { ($0.id, $0.name) })
+        // Map setId → "Collection › SetName" for per-card breadcrumb display.
+        contextLabels = Dictionary(uniqueKeysWithValues: cardSets.map { set in
+            let collName = collections.first(where: { $0.id == set.collectionId })?.name
+            let label    = collName.map { "\($0) › \(set.name)" } ?? set.name
+            return (set.id, label)
+        })
 
         if let active = piles.first(where: { $0.isActive }) {
             activePileName = active.name

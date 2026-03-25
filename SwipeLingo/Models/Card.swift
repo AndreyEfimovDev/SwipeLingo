@@ -23,35 +23,35 @@ private func decodeArray(_ raw: String) -> [String] {
 
 @Model
 final class Card {
-    var id: UUID
-    var en: String
-    var item: String
+    var id: UUID = UUID()
+    var en: String = ""
+    var item: String = ""
 
     // Backing stores — String is fully CloudKit-compatible
-    private var sampleENRaw:   String
-    private var sampleItemRaw: String
-    private var tagsRaw:       String
-    private var synonymsRaw:   String
+    private var sampleENRaw:   String = ""
+    private var sampleItemRaw: String = ""
+    private var tagsRaw:       String = ""
+    private var synonymsRaw:   String = ""
 
-    var status: CardStatus
-    var isFavorite: Bool
+    var status: CardStatus = CardStatus.active
+    var isFavorite: Bool = false
 
     // SRS fields (SM-2)
-    var easeFactor:  Double
-    var interval:    Int
-    var repetitions: Int
-    var dueDate:     Date
-    var lastReviewed: Date
+    var easeFactor:  Double = 2.5
+    var interval:    Int    = 1
+    var repetitions: Int    = 0
+    var dueDate:     Date   = Date.now
+    var lastReviewed: Date  = Date.now
 
     // Dictionary cache — plain String, CloudKit compatible (empty = not yet fetched)
-    var dictTranscription: String
-    var dictAudioURL:      String
-    var dictDefinition:    String
+    var dictTranscription: String = ""
+    var dictAudioURL:      String = ""
+    var dictDefinition:    String = ""
 
     // Metadata
-    var createdAt:  Date
-    var importedAt: Date?
-    var setId:      UUID
+    var createdAt:  Date  = Date.now
+    var importedAt: Date? = nil
+    var setId:      UUID  = UUID()
 
     // MARK: Computed [String] accessors (same public API as before)
 

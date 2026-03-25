@@ -23,8 +23,12 @@ final class TinderCardsViewModel {
     // MARK: Weak cards (rated Forgot or Hard this session)
 
     private(set) var weakCards: [Card] = []
-
     var weakCount: Int { weakCards.count }
+
+    // MARK: In-session stats
+
+    /// Cards rated Easy this session (used for "Learned N" in progress stats row).
+    private(set) var learnedInSession: Int = 0
 
     // MARK: UI State
 
@@ -125,27 +129,30 @@ final class TinderCardsViewModel {
         if rating == .again || rating == .hard {
             weakCards.append(card)
         }
+        if rating == .easy { learnedInSession += 1 }
         try? context.save()
         advance()
     }
 
     /// Study Again — restarts with all .active original cards. .learnt cards are NOT reset.
     func restart() {
-        cards        = originalCards.filter { $0.status == .active }
-        weakCards    = []
-        currentIndex = 0
-        dragOffset   = .zero
-        isFlipped    = false
+        cards            = originalCards.filter { $0.status == .active }
+        weakCards        = []
+        learnedInSession = 0
+        currentIndex     = 0
+        dragOffset       = .zero
+        isFlipped        = false
     }
 
     /// Weak cards — restarts with only cards rated Forgot/Hard this session.
     func restartWeak() {
         let active = weakCards.filter { $0.status == .active }
         if !active.isEmpty { cards = active }
-        weakCards    = []
-        currentIndex = 0
-        dragOffset   = .zero
-        isFlipped    = false
+        weakCards        = []
+        learnedInSession = 0
+        currentIndex     = 0
+        dragOffset       = .zero
+        isFlipped        = false
     }
 
     // MARK: Private

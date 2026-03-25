@@ -6,6 +6,7 @@ import SwiftData
 struct StudyView: View {
 
     @Environment(\.modelContext) private var context
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Query private var piles: [Pile]
     @Query private var allCards: [Card]
     @Query private var cardSets: [CardSet]
@@ -14,6 +15,8 @@ struct StudyView: View {
     @State private var viewModel = StudyViewModel()
     @AppStorage("studyDirection") private var studyDirection = "EN→Native"
     @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+
+    private var isLandscape: Bool { verticalSizeClass == .compact }
 
     /// ISO 639-1 two-letter abbreviation for the selected native language.
     private var langAbbr: String {

@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - MockDataSeeder
 //
-// Seeds one Collection, one CardSet and 8 Cards on first launch.
+// Seeds mock collections, sets and cards on first launch.
 // Remove or gate behind a flag before App Store submission.
 
 struct MockDataSeeder {
@@ -11,33 +11,31 @@ struct MockDataSeeder {
     /// Inserts mock data into `context` if no Cards exist yet.
     /// Safe to call on every launch — the `guard` prevents double-seeding.
     static func seedIfNeeded(into context: ModelContext) {
-        // Check for existing data
         let descriptor = FetchDescriptor<Card>()
         let count = (try? context.fetchCount(descriptor)) ?? 0
         guard count == 0 else { return }
 
-        // MARK: Collection
+        // ─────────────────────────────────────────────
+        // MARK: Collection 1 — IELTS Vocabulary
+        // ─────────────────────────────────────────────
 
-        let collection = Collection(
+        let ielts = Collection(
             name: "IELTS Vocabulary",
             icon: "book.fill",
             isOwned: true
         )
-        context.insert(collection)
+        context.insert(ielts)
 
-        // MARK: CardSet
-
-        let cardSet = CardSet(
+        let academicSet = CardSet(
             name: "Academic Words",
-            collectionId: collection.id
+            collectionId: ielts.id
         )
-        context.insert(cardSet)
+        context.insert(academicSet)
+        let sid = academicSet.id
 
-        let sid = cardSet.id
+        let academicCards: [Card] = [
 
-        // MARK: Cards
-
-        let cards: [Card] = [
+            // ── original 8 ──────────────────────────
             Card(
                 en: "Serendipity",
                 item: "счастливая случайность",
@@ -94,22 +92,303 @@ struct MockDataSeeder {
                 sampleItem: ["С приходом осени им овладела глубокая меланхолия."],
                 setId: sid
             ),
+
+            // ── new 18 ──────────────────────────────
+            Card(
+                en: "Ubiquitous",
+                item: "вездесущий, повсеместный",
+                sampleEN:   ["Smartphones have become ubiquitous in modern society."],
+                sampleItem: ["Смартфоны стали повсеместными в современном обществе."],
+                setId: sid
+            ),
+            Card(
+                en: "Pragmatic",
+                item: "прагматичный, практичный",
+                sampleEN:   ["We need a pragmatic approach to solve this budget issue."],
+                sampleItem: ["Нам нужен прагматичный подход для решения этой бюджетной проблемы."],
+                setId: sid
+            ),
+            Card(
+                en: "Mitigate",
+                item: "смягчать, уменьшать",
+                sampleEN:   ["Planting trees can help mitigate the effects of climate change."],
+                sampleItem: ["Посадка деревьев может помочь смягчить последствия изменения климата."],
+                setId: sid
+            ),
+            Card(
+                en: "Exacerbate",
+                item: "усугублять, обострять",
+                sampleEN:   ["Poor sleep can exacerbate feelings of anxiety."],
+                sampleItem: ["Плохой сон может усугублять чувство тревоги."],
+                setId: sid
+            ),
+            Card(
+                en: "Meticulous",
+                item: "скрупулёзный, педантичный",
+                sampleEN:   ["The scientist kept meticulous records of every experiment."],
+                sampleItem: ["Учёный вёл скрупулёзные записи каждого эксперимента."],
+                setId: sid
+            ),
+            Card(
+                en: "Alleviate",
+                item: "облегчать, смягчать",
+                sampleEN:   ["Exercise can alleviate symptoms of mild depression."],
+                sampleItem: ["Физические упражнения могут облегчить симптомы лёгкой депрессии."],
+                setId: sid
+            ),
+            Card(
+                en: "Deteriorate",
+                item: "ухудшаться, деградировать",
+                sampleEN:   ["Air quality in the city continues to deteriorate each year."],
+                sampleItem: ["Качество воздуха в городе продолжает ухудшаться каждый год."],
+                setId: sid
+            ),
+            Card(
+                en: "Facilitate",
+                item: "облегчать, способствовать",
+                sampleEN:   ["The new software will facilitate communication between teams."],
+                sampleItem: ["Новое программное обеспечение облегчит коммуникацию между командами."],
+                setId: sid
+            ),
+            Card(
+                en: "Coherent",
+                item: "связный, последовательный",
+                sampleEN:   ["Please present your ideas in a coherent and logical order."],
+                sampleItem: ["Пожалуйста, изложите свои идеи в связном и логичном порядке."],
+                setId: sid
+            ),
+            Card(
+                en: "Substantial",
+                item: "существенный, значительный",
+                sampleEN:   ["The company made a substantial profit in the third quarter."],
+                sampleItem: ["Компания получила существенную прибыль в третьем квартале."],
+                setId: sid
+            ),
+            Card(
+                en: "Conspicuous",
+                item: "заметный, бросающийся в глаза",
+                sampleEN:   ["The bright red car was conspicuous in the grey parking lot."],
+                sampleItem: ["Ярко-красная машина выделялась на сером парковочном месте."],
+                setId: sid
+            ),
+            Card(
+                en: "Benevolent",
+                item: "доброжелательный, благосклонный",
+                sampleEN:   ["The benevolent donor funded a new wing of the hospital."],
+                sampleItem: ["Благожелательный спонсор профинансировал новый корпус больницы."],
+                setId: sid
+            ),
+            Card(
+                en: "Vindicate",
+                item: "оправдывать, реабилитировать",
+                sampleEN:   ["New evidence finally vindicated the wrongly accused man."],
+                sampleItem: ["Новые доказательства наконец оправдали несправедливо обвинённого человека."],
+                setId: sid
+            ),
+            Card(
+                en: "Disparate",
+                item: "разрозненный, несхожий",
+                sampleEN:   ["The committee included people from disparate backgrounds."],
+                sampleItem: ["В состав комиссии вошли люди из разных слоёв общества."],
+                setId: sid
+            ),
+            Card(
+                en: "Profound",
+                item: "глубокий, значительный",
+                sampleEN:   ["Losing his job had a profound impact on his sense of identity."],
+                sampleItem: ["Потеря работы оказала глубокое влияние на его ощущение себя."],
+                setId: sid
+            ),
+            Card(
+                en: "Inevitable",
+                item: "неизбежный, неотвратимый",
+                sampleEN:   ["Some degree of conflict in a team is inevitable."],
+                sampleItem: ["Определённая степень конфликта в команде неизбежна."],
+                setId: sid
+            ),
+            Card(
+                en: "Implications",
+                item: "последствия, подтекст",
+                sampleEN:   ["The researchers discussed the broader implications of their findings."],
+                sampleItem: ["Исследователи обсудили более широкие последствия своих открытий."],
+                setId: sid
+            ),
         ]
 
-        for card in cards { context.insert(card) }
+        for card in academicCards { context.insert(card) }
 
-        // MARK: Inbox (special collection for unsorted cards)
+        // ── IELTS Set 2: Writing Task 2 Phrases ─────
+
+        let writingSet = CardSet(
+            name: "Writing Task 2",
+            collectionId: ielts.id
+        )
+        context.insert(writingSet)
+        let wid = writingSet.id
+
+        let writingCards: [Card] = [
+            Card(
+                en: "Notwithstanding",
+                item: "несмотря на, тем не менее",
+                sampleEN:   ["Notwithstanding the challenges, the project was completed on time."],
+                sampleItem: ["Несмотря на трудности, проект был завершён в срок."],
+                setId: wid
+            ),
+            Card(
+                en: "Albeit",
+                item: "хотя, пусть и",
+                sampleEN:   ["The policy was effective, albeit controversial among critics."],
+                sampleItem: ["Политика была эффективной, хотя и вызывала споры среди критиков."],
+                setId: wid
+            ),
+            Card(
+                en: "Hitherto",
+                item: "до сих пор, прежде",
+                sampleEN:   ["Hitherto unknown species were discovered in the deep ocean."],
+                sampleItem: ["В глубинах океана были обнаружены до сих пор неизвестные виды."],
+                setId: wid
+            ),
+            Card(
+                en: "Insofar as",
+                item: "в той мере, в какой; постольку поскольку",
+                sampleEN:   ["The law applies insofar as it does not conflict with human rights."],
+                sampleItem: ["Закон применяется в той мере, в какой он не противоречит правам человека."],
+                setId: wid
+            ),
+            Card(
+                en: "Paradoxically",
+                item: "как ни парадоксально",
+                sampleEN:   ["Paradoxically, working fewer hours can increase overall productivity."],
+                sampleItem: ["Как ни парадоксально, меньшее количество рабочих часов может повысить общую продуктивность."],
+                setId: wid
+            ),
+            Card(
+                en: "Irrefutable",
+                item: "неопровержимый",
+                sampleEN:   ["The prosecution presented irrefutable evidence of the defendant's guilt."],
+                sampleItem: ["Обвинение представило неопровержимые доказательства вины подсудимого."],
+                setId: wid
+            ),
+            Card(
+                en: "Proliferation",
+                item: "распространение, разрастание",
+                sampleEN:   ["The proliferation of social media has changed how people consume news."],
+                sampleItem: ["Распространение социальных сетей изменило то, как люди потребляют новости."],
+                setId: wid
+            ),
+            Card(
+                en: "Contentious",
+                item: "спорный, вызывающий разногласия",
+                sampleEN:   ["Capital punishment remains a contentious issue in many democracies."],
+                sampleItem: ["Смертная казнь остаётся спорным вопросом во многих демократических странах."],
+                setId: wid
+            ),
+            Card(
+                en: "Holistic",
+                item: "целостный, комплексный",
+                sampleEN:   ["A holistic approach to education addresses academic and emotional needs."],
+                sampleItem: ["Целостный подход к образованию учитывает как академические, так и эмоциональные потребности."],
+                setId: wid
+            ),
+            Card(
+                en: "Incumbent",
+                item: "обязательный; занимающий должность",
+                sampleEN:   ["It is incumbent on governments to protect the rights of all citizens."],
+                sampleItem: ["На правительствах лежит обязанность защищать права всех граждан."],
+                setId: wid
+            ),
+        ]
+
+        for card in writingCards { context.insert(card) }
+
+        // ─────────────────────────────────────────────
+        // MARK: Collection 2 — Psychology & Mind
+        // ─────────────────────────────────────────────
+
+        let psych = Collection(
+            name: "Psychology & Mind",
+            icon: "brain.head.profile",
+            isOwned: true
+        )
+        context.insert(psych)
+
+        let biasSet = CardSet(
+            name: "Cognitive Biases",
+            collectionId: psych.id
+        )
+        context.insert(biasSet)
+        let bid = biasSet.id
+
+        let biasCards: [Card] = [
+            Card(
+                en: "Confirmation bias",
+                item: "предвзятость подтверждения",
+                sampleEN:   [
+                    "Confirmation bias leads us to favour information that supports our existing beliefs.",
+                    "Avoiding confirmation bias requires actively seeking opposing viewpoints."
+                ],
+                sampleItem: [
+                    "Предвзятость подтверждения заставляет нас отдавать предпочтение информации, подкрепляющей наши убеждения.",
+                    "Чтобы избежать предвзятости подтверждения, нужно активно искать противоположные точки зрения."
+                ],
+                setId: bid
+            ),
+            Card(
+                en: "Cognitive dissonance",
+                item: "когнитивный диссонанс",
+                sampleEN:   ["He felt cognitive dissonance when his actions contradicted his values."],
+                sampleItem: ["Он испытал когнитивный диссонанс, когда его поступки противоречили его ценностям."],
+                setId: bid
+            ),
+            Card(
+                en: "Heuristic",
+                item: "эвристика; практический приём",
+                sampleEN:   ["Using a simple heuristic, she made a quick decision without all the facts."],
+                sampleItem: ["Используя простую эвристику, она быстро приняла решение, не располагая всей информацией."],
+                setId: bid
+            ),
+            Card(
+                en: "Anchoring effect",
+                item: "эффект якоря",
+                sampleEN:   ["The high initial price created an anchoring effect on buyers' perception of value."],
+                sampleItem: ["Высокая первоначальная цена создала эффект якоря в восприятии покупателями ценности товара."],
+                setId: bid
+            ),
+            Card(
+                en: "Introspection",
+                item: "интроспекция, самоанализ",
+                sampleEN:   ["Regular introspection helps you understand your own motivations and fears."],
+                sampleItem: ["Регулярный самоанализ помогает понять собственные мотивы и страхи."],
+                setId: bid
+            ),
+            Card(
+                en: "Metacognition",
+                item: "метакогниция; мышление о мышлении",
+                sampleEN:   ["Metacognition — thinking about how you think — is a key skill for effective learning."],
+                sampleItem: ["Метакогниция — умение размышлять о собственном мышлении — ключевой навык для эффективного обучения."],
+                setId: bid
+            ),
+        ]
+
+        for card in biasCards { context.insert(card) }
+
+        // ─────────────────────────────────────────────
+        // MARK: Inbox
+        // ─────────────────────────────────────────────
 
         let inbox = Collection(name: "Inbox", icon: "tray.fill", isOwned: true)
         context.insert(inbox)
         let inboxSet = CardSet(name: "Inbox", collectionId: inbox.id)
         context.insert(inboxSet)
 
-        // MARK: Default active Pile
+        // ─────────────────────────────────────────────
+        // MARK: Pile — Morning Session
+        // Contains both Academic Words and Cognitive Biases
+        // ─────────────────────────────────────────────
 
         let pile = Pile(
             name: "Morning Session",
-            setIds: [cardSet.id],
+            setIds: [academicSet.id, biasSet.id],
             isActive: true,
             shuffleMethod: .random
         )
