@@ -10,7 +10,7 @@ final class AppViewModel {
     var selectedTab: AppTab = .study
 
     enum AppTab: Hashable {
-        case study, library, preferences
+        case study, library, statistics, preferences
     }
 }
 
@@ -27,6 +27,9 @@ struct AppView: View {
             }
             Tab("Library", systemImage: "books.vertical.fill", value: AppViewModel.AppTab.library) {
                 LibraryView()
+            }
+            Tab("Stats", systemImage: "chart.line.uptrend.xyaxis", value: AppViewModel.AppTab.statistics) {
+                StatisticsView()
             }
             Tab("Settings", systemImage: "gear", value: AppViewModel.AppTab.preferences) {
                 PreferencesView()

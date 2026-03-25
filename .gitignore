@@ -5,6 +5,7 @@
 # Документация проекта (приватная)
 CLAUDE.md
 PRD.md
+DECISIONS.md
 
 # Firebase конфигурация (никогда не публиковать)
 GoogleService-Info.plist
