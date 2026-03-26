@@ -11,23 +11,40 @@ final class AppViewModel {
     }
 }
 
+enum Theme: String, CaseIterable {
+    case light
+    case dark
+    case system
+    
+    var displayName: String {
+        switch self {
+        case .light: return "Light"
+        case .dark: return "Dark"
+        case .system: return "System"
+        }
+    }
+    
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .light: return .light
+        case .dark: return .dark
+        case .system: return nil
+        }
+    }
+}
+
+
 // MARK: - AppView
 
 struct AppView: View {
     @State private var viewModel = AppViewModel()
-    @AppStorage("colorScheme") private var colorSchemeKey = "auto"
+    @AppStorage("colorScheme") private var theme: Theme = .system
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
     init() {
-        // Remove tab bar separator line (configureWithTransparentBackground
-        // clears the shadow automatically; backgroundColor restores white fill)
-        let appearance = UITabBarAppearance()
-        appearance.configureWithTransparentBackground()
-        appearance.backgroundColor = .systemBackground
-        UITabBar.appearance().standardAppearance   = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
+        configureNavigationBarAppearance()
     }
 
 
@@ -40,7 +57,42 @@ struct AppView: View {
             }
         }
         .environment(viewModel)
-        .preferredColorScheme(preferredScheme)
+        .preferredColorScheme(theme.colorScheme)
+        .foregroundStyle(Color.myColors.myAccent)
+    }
+
+    // MARK: - Configuration Methods
+    
+    private func configureNavigationBarAppearance() {
+        
+        // Remove tab bar separator line (configureWithTransparentBackground
+        // clears the shadow automatically; backgroundColor restores white fill)
+        let tabBarappearance = UITabBarAppearance()
+        tabBarappearance.configureWithTransparentBackground()
+        tabBarappearance.backgroundColor = UIColor(Color.myColors.myBackground)
+        UITabBar.appearance().standardAppearance   = tabBarappearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarappearance
+
+        let navBarAppearance = UINavigationBarAppearance()
+        navBarAppearance.configureWithTransparentBackground()
+        navBarAppearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+        
+        let accentColor = UIColor(Color.myColors.myAccent)
+        navBarAppearance.largeTitleTextAttributes = [
+            .foregroundColor: accentColor,
+            .font: UIFont.systemFont(ofSize: 34, weight: .bold)
+        ]
+        navBarAppearance.titleTextAttributes = [
+            .foregroundColor: accentColor,
+            .font: UIFont.systemFont(ofSize: 17, weight: .semibold)
+        ]
+        
+        UINavigationBar.appearance().standardAppearance = navBarAppearance
+        UINavigationBar.appearance().compactAppearance = navBarAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
+        UINavigationBar.appearance().compactScrollEdgeAppearance = navBarAppearance
+        UINavigationBar.appearance().tintColor = accentColor
+        UITableView.appearance().backgroundColor = UIColor.clear
     }
 
     // MARK: - Portrait: system TabView
@@ -50,7 +102,7 @@ struct AppView: View {
             Tab("Study",    systemImage: "rectangle.stack.fill",      value: AppViewModel.AppTab.study)       { StudyView() }
             Tab("Library",  systemImage: "books.vertical.fill",       value: AppViewModel.AppTab.library)     { LibraryView() }
             Tab("Stats",    systemImage: "chart.line.uptrend.xyaxis", value: AppViewModel.AppTab.statistics)  { StatisticsView() }
-            Tab("Settings", systemImage: "gear",                      value: AppViewModel.AppTab.preferences) { PreferencesView() }
+            Tab("Settings", systemImage: "gear",                      value: AppViewModel.AppTab.preferences) { SettingsView() }
         }
         .toolbarBackground(.hidden, for: .tabBar)
     }
@@ -71,7 +123,7 @@ struct AppView: View {
         case .study:       StudyView()
         case .library:     LibraryView()
         case .statistics:  StatisticsView()
-        case .preferences: PreferencesView()
+        case .preferences: SettingsView()
         }
     }
 
@@ -92,7 +144,7 @@ struct AppView: View {
         .frame(width: 56)
         // Background extends into leading safe area to fill the gap,
         // while icons stay within the safe area and are always visible.
-        .background(Color(.systemBackground).ignoresSafeArea(edges: .leading))
+        .background(Color.myColors.myBackground.ignoresSafeArea(edges: .leading))
     }
 
     @ViewBuilder
@@ -110,13 +162,4 @@ struct AppView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Color scheme
-
-    private var preferredScheme: ColorScheme? {
-        switch colorSchemeKey {
-        case "light": return .light
-        case "dark":  return .dark
-        default:      return nil
-        }
-    }
 }

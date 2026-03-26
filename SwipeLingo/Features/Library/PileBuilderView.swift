@@ -32,7 +32,7 @@ struct PileBuilderView: View {
                 }
                 .padding(.vertical, 16)
             }
-            .background(Color(.systemBackground).ignoresSafeArea())
+            .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle(viewModel.editingPile == nil ? "New Pile" : "Edit Pile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarButtons }
@@ -45,15 +45,15 @@ struct PileBuilderView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("NAME")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
                 .padding(.horizontal, 32)
 
             TextField("e.g. Morning Session", text: $viewModel.name)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(Color(.systemBackground))
+                .background(Color.myColors.myBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .myShadow()
                 .padding(.horizontal, 16)
         }
     }
@@ -64,7 +64,7 @@ struct PileBuilderView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("SHUFFLE METHOD")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
@@ -74,14 +74,14 @@ struct PileBuilderView: View {
                 Divider().padding(.leading, 52)
                 shuffleRow(.prioritized, icon: "flame",      name: "Hardest first")
             }
-            .background(Color(.systemBackground))
+            .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .myShadow()
             .padding(.horizontal, 16)
 
             Text(shuffleFooter)
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
                 .padding(.horizontal, 32)
         }
     }
@@ -90,7 +90,7 @@ struct PileBuilderView: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .frame(width: 28)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
             Text(name)
                 .font(.body)
             Spacer()
@@ -113,7 +113,7 @@ struct PileBuilderView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(group.collectionName.uppercased())
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.myColors.mySecondary)
                     .padding(.horizontal, 32)
 
                 VStack(spacing: 0) {
@@ -130,9 +130,9 @@ struct PileBuilderView: View {
                         }
                     }
                 }
-                .background(Color(.systemBackground))
+                .background(Color.myColors.myBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .myShadow()
                 .padding(.horizontal, 16)
             }
         }
@@ -212,7 +212,7 @@ private struct SetToggleRow: View {
                     .font(.body)
                 Text("\(cardCount) active cards")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.myColors.mySecondary)
             }
             Spacer()
         }

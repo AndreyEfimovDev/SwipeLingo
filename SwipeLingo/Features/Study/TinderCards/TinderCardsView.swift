@@ -8,7 +8,10 @@ struct TinderCardsView: View {
     @Environment(\.modelContext)       private var context
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
     @Environment(AppViewModel.self)    private var appViewModel
-    @AppStorage("studyDirection")      private var studyDirection = "EN→Native"
+    
+    @AppStorage("studyDirection")       private var studyDirection      = "EN→Native"
+    @AppStorage("ttsVoiceIdentifier")   private var ttsVoiceIdentifier  = ""
+
     @State private var viewModel: TinderCardsViewModel
     @State private var lookupCard: Card?
     @State private var audioService  = AudioPlayerService()
@@ -46,13 +49,16 @@ struct TinderCardsView: View {
         Group {
             if isLandscape { landscapeBody } else { portraitBody }
         }
-        .background(Color(.systemBackground))
+        .background(Color.myColors.myBackground)
         .animation(.spring(duration: 0.3), value: viewModel.currentIndex)
         .animation(.spring(duration: 0.3), value: viewModel.isFlipped)
         .animation(.spring(duration: 0.4), value: viewModel.isDone)
         .sheet(item: $lookupCard) { DictionaryLookupView(card: $0) }
         .onDisappear { audioService.stop() }
-        .onChange(of: viewModel.currentIndex) { _, _ in examplePageIndex = 0 }
+        .onChange(of: viewModel.currentIndex) { _, _ in
+            examplePageIndex = 0
+            audioService.stop()
+        }
     }
 
     // MARK: - Portrait
@@ -78,7 +84,6 @@ struct TinderCardsView: View {
     private var landscapeBody: some View {
         HStack(spacing: 0) {
             landscapeStatsColumn
-            Divider()
             ZStack {
                 if viewModel.isDone { doneFullCard } else { cardStack }
             }
@@ -93,13 +98,13 @@ struct TinderCardsView: View {
 
     private var landscapeStatsColumn: some View {
         let total   = viewModel.cards.count
-        let learned = viewModel.learnedInSession
-        let active  = total - learned
+        let learnt = viewModel.learntInSession
+        let active  = total - learnt
         return VStack(spacing: 0) {
             Spacer()
-            statLabel("Learned", value: learned)
+            statLabel("Learnt", value: learnt)
             Spacer()
-            Text("\(total)").font(.caption2).foregroundStyle(.tertiary)
+            Text("\(total)").font(.caption2)
             Spacer()
             statLabel("Active", value: active)
             Spacer()
@@ -109,8 +114,9 @@ struct TinderCardsView: View {
 
     private func statLabel(_ title: String, value: Int) -> some View {
         VStack(spacing: 2) {
-            Text(title).font(.system(size: 9)).foregroundStyle(.tertiary)
-            Text("\(value)").font(.system(size: 16, weight: .semibold)).foregroundStyle(.secondary)
+            Text(title).font(.system(size: 9))
+            Text("\(value)")
+                .font(.system(size: 16, weight: .semibold))
         }
     }
 
@@ -118,16 +124,16 @@ struct TinderCardsView: View {
 
     private var progressStatsRow: some View {
         let total   = viewModel.cards.count
-        let learned = viewModel.learnedInSession
-        let active  = total - learned
+        let learnt = viewModel.learntInSession
+        let active  = total - learnt
         return HStack {
-            Text("Active ").foregroundStyle(.tertiary)
-            + Text("\(active)").foregroundStyle(.secondary).bold()
+            Text("Active ")
+            + Text("\(active)").bold()
             Spacer()
-            Text("\(total) cards").foregroundStyle(.tertiary)
+            Text("\(total) cards")
             Spacer()
-            Text("Learned ").foregroundStyle(.tertiary)
-            + Text("\(learned)").foregroundStyle(.secondary).bold()
+            Text("Learnt ")
+            + Text("\(learnt)").bold()
         }
         .font(.caption2)
         .padding(.horizontal, 16)
@@ -148,12 +154,10 @@ struct TinderCardsView: View {
         if !label.isEmpty {
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
                 .padding(.bottom, 8)
-            Divider()
         }
     }
 
@@ -178,7 +182,7 @@ struct TinderCardsView: View {
                         if offset == 1 { nextCardPreview(viewModel.cards[idx]) }
                         else           { cardPlaceholder }
                     }
-                    .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
+                    .myShadow()
                     .scaleEffect(scale)
                     .offset(y: yOffset)
                 }
@@ -230,14 +234,15 @@ struct TinderCardsView: View {
             .scaleEffect(scale)
             .simultaneousGesture(dragGesture)
             .onTapGesture { viewModel.flipToBack() }
-            .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
+            .myShadow()
     }
 
     // MARK: - Full Card Container
 
     private func fullCardContainer(_ card: Card) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 24).fill(Color(.systemBackground))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.myColors.myBackground)
             if isLandscape {
                 landscapeCardContent(card)
             } else {
@@ -253,7 +258,6 @@ struct TinderCardsView: View {
             breadcrumbRow
             flipContent(card: card).frame(maxHeight: .infinity)
             // SRS pinned to bottom — always in layout, fades in after flip
-            Divider()
             srsButtonsRow
                 .padding(12)
                 .opacity(viewModel.isFlipped ? 1 : 0)
@@ -269,7 +273,6 @@ struct TinderCardsView: View {
                 flipContent(card: card).frame(maxHeight: .infinity)
             }
             // SRS column pinned to right — fades in after flip
-            Divider()
             srsButtonsColumn
                 .frame(width: 90)
                 .opacity(viewModel.isFlipped ? 1 : 0)
@@ -297,6 +300,32 @@ struct TinderCardsView: View {
         .animation(.spring(duration: 0.5, bounce: 0.15), value: viewModel.isFlipped)
     }
 
+    // MARK: - Audio Button
+
+    /// Reusable audio button: myBlue when idle, myRed when this specific audio is playing.
+    /// - Parameters:
+    ///   - text:  URL string for network audio, or plain text for TTS.
+    ///   - isTTS: `true` → uses AVSpeechSynthesizer; `false` → uses AVPlayer.
+    @ViewBuilder
+    private func audioButton(for text: String, isTTS: Bool = false) -> some View {
+        let key = isTTS ? "tts:\(text)" : text
+        let isThisPlaying = audioService.isPlaying && audioService.currentURL == key
+        Button {
+            if isThisPlaying {
+                audioService.stop()
+            } else if isTTS {
+                audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier)
+            } else {
+                audioService.play(urlString: text)
+            }
+        } label: {
+            Image(systemName: isThisPlaying ? "stop.circle" : "speaker.wave.2.circle")
+                .foregroundStyle(isThisPlaying ? Color.myColors.myRed : Color.myColors.myBlue)
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .buttonStyle(.borderless)
+    }
+
     // MARK: - Card Front
 
     private func cardFront(_ card: Card) -> some View {
@@ -308,10 +337,19 @@ struct TinderCardsView: View {
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 24)
+            // Audio button — EN→Native only (front shows the English word)
+            if !isReversed {
+                if !card.dictAudioURL.isEmpty {
+                    audioButton(for: card.dictAudioURL)
+                        .font(.largeTitle)
+                } else {
+                    audioButton(for: card.en, isTTS: true)
+                        .font(.largeTitle)
+                }
+            }
             Spacer()
             Text("Tap to flip")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
                 .padding(.bottom, 20)
         }
     }
@@ -338,69 +376,77 @@ struct TinderCardsView: View {
                     HStack(spacing: 6) {
                         Text(backSmallText)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
                         if !card.dictAudioURL.isEmpty {
-                            Button {
-                                if audioService.isPlaying { audioService.stop() }
-                                else { audioService.play(urlString: card.dictAudioURL) }
-                            } label: {
-                                Image(systemName: audioService.isPlaying
-                                      ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
-                                    .font(.subheadline)
-                                    .foregroundStyle(Color.accentColor)
-                                    .contentTransition(.symbolEffect(.replace))
-                            }
-                            .buttonStyle(.borderless)
+                            audioButton(for: card.dictAudioURL)
+                                .font(.subheadline)
+                        } else if !isReversed {
+                            // Fallback TTS when no dictionary audio
+                            audioButton(for: card.en, isTTS: true)
+                                .font(.subheadline)
                         }
                     }
 
-                    // 3. Examples — paged with slide transition
+                    // 3. Examples — paged with arrow navigation
                     if !card.sampleEN.isEmpty {
                         let page = examplePageIndex
+                        let count = card.sampleEN.count
+                        let hasMany = count > 1
                         Divider().padding(.horizontal, 20)
 
-                        VStack(spacing: 5) {
-                            Text(card.sampleEN[page])
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .fixedSize(horizontal: false, vertical: true)
-                            if page < card.sampleItem.count {
-                                Text(card.sampleItem[page])
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                        HStack(spacing: 0) {
+                            // Left arrow — invisible on first page, keeps space always
+                            Button {
+                                withAnimation(.spring(duration: 0.3)) {
+                                    examplePageIndex -= 1
+                                }
+                            } label: {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Color.myColors.myBlue)
+                                    .frame(width: 36, height: 36)
+                            }
+                            .opacity(hasMany && page > 0 ? 1 : 0)
+                            .disabled(!hasMany || page == 0)
+
+                            // Example content
+                            VStack(spacing: 5) {
+                                Text(card.sampleEN[page])
+                                    .font(.subheadline)
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 4)
-                        .frame(maxWidth: .infinity)
-                        .id(page)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal:   .move(edge: .leading).combined(with: .opacity)
-                        ))
-                        .animation(.spring(duration: 0.3), value: page)
-
-                        if card.sampleEN.count > 1 {
-                            HStack(spacing: 7) {
-                                ForEach(card.sampleEN.indices, id: \.self) { i in
-                                    Circle()
-                                        .strokeBorder(
-                                            i == page ? Color.accentColor : Color(.systemGray3),
-                                            lineWidth: 1.5
-                                        )
-                                        .frame(width: 7, height: 7)
-                                        .onTapGesture {
-                                            withAnimation(.spring(duration: 0.3)) {
-                                                examplePageIndex = i
-                                            }
-                                        }
+                                audioButton(for: card.sampleEN[page], isTTS: true)
+                                    .font(.subheadline)
+                                if page < card.sampleItem.count {
+                                    Text(card.sampleItem[page])
+                                        .font(.caption)
+                                        .multilineTextAlignment(.center)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
-                            .padding(.top, 4)
+                            .padding(.vertical, 4)
+                            .frame(maxWidth: .infinity)
+                            .id(page)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal:   .move(edge: .leading).combined(with: .opacity)
+                            ))
+                            .animation(.spring(duration: 0.3), value: page)
+
+                            // Right arrow — invisible on last page, keeps space always
+                            Button {
+                                withAnimation(.spring(duration: 0.3)) {
+                                    examplePageIndex += 1
+                                }
+                            } label: {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Color.myColors.myBlue)
+                                    .frame(width: 36, height: 36)
+                            }
+                            .opacity(hasMany && page < count - 1 ? 1 : 0)
+                            .disabled(!hasMany || page == count - 1)
                         }
+                        .padding(.horizontal, 4)
                     }
 
                     // 4. Synonyms chips
@@ -409,7 +455,6 @@ struct TinderCardsView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Synonyms")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
                             CardFlowLayout(spacing: 6) {
                                 ForEach(card.synonyms, id: \.self) { syn in
                                     Text(syn)
@@ -436,7 +481,7 @@ struct TinderCardsView: View {
                 Button { lookupCard = card } label: {
                     Label("Look up in dictionary", systemImage: "book.pages")
                         .font(.subheadline)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color.myColors.myBlue)
                 }
                 .buttonStyle(.borderless)
                 .padding(.vertical, 10)
@@ -449,7 +494,7 @@ struct TinderCardsView: View {
 
     private var cardPlaceholder: some View {
         RoundedRectangle(cornerRadius: 24)
-            .fill(Color(.systemBackground))
+            .fill(Color.myColors.myBackground)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -457,12 +502,28 @@ struct TinderCardsView: View {
         let frontText = isReversed ? card.item : card.en
         return ZStack {
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color(.systemBackground))
-            Text(frontText)
-                .font(.system(size: 42, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.5)
-                .padding(.horizontal, 24)
+                .fill(Color.myColors.myBackground)
+            VStack(spacing: 12) {
+                Spacer()
+                Text(frontText)
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 24)
+                if !isReversed {
+                    if !card.dictAudioURL.isEmpty {
+                        audioButton(for: card.dictAudioURL)
+                            .font(.largeTitle)
+                    } else {
+                        audioButton(for: card.en, isTTS: true)
+                            .font(.largeTitle)
+                    }
+                }
+                Spacer()
+                Text("Tap to flip")
+                    .font(.caption2)
+                    .padding(.bottom, 20)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -530,9 +591,9 @@ struct TinderCardsView: View {
     /// Portrait — horizontal row.
     private var srsButtonsRow: some View {
         HStack(spacing: 8) {
-            srsButton(title: "Forgot", color: .indigo, rating: .again)
-            srsButton(title: "Hard",   color: .orange, rating: .hard)
-            srsButton(title: "Easy",   color: .green,  rating: .easy)
+            srsButton(title: "Forgot", color: Color.myColors.myPurple, rating: .again)
+            srsButton(title: "Hard",   color: Color.myColors.myOrange, rating: .hard)
+            srsButton(title: "Easy",   color: Color.myColors.myGreen,  rating: .easy)
         }
     }
 
@@ -540,11 +601,11 @@ struct TinderCardsView: View {
     private var srsButtonsColumn: some View {
         VStack(spacing: 0) {
             Spacer()
-            srsButton(title: "Forgot", color: .indigo, rating: .again)
+            srsButton(title: "Forgot", color: Color.myColors.myPurple, rating: .again)
             Spacer()
-            srsButton(title: "Hard",   color: .orange, rating: .hard)
+            srsButton(title: "Hard",   color: Color.myColors.myOrange, rating: .hard)
             Spacer()
-            srsButton(title: "Easy",   color: .green,  rating: .easy)
+            srsButton(title: "Easy",   color: Color.myColors.myGreen,  rating: .easy)
             Spacer()
         }
         .padding(10)
@@ -568,7 +629,7 @@ struct TinderCardsView: View {
 
     private var doneFullCard: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 24).fill(Color(.systemBackground))
+            RoundedRectangle(cornerRadius: 24).fill(Color.myColors.myBackground)
             VStack(spacing: 0) {
                 doneContentView
                 doneActionsView
@@ -577,7 +638,7 @@ struct TinderCardsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
+        .myShadow()
         .transition(.scale(scale: 0.95).combined(with: .opacity))
     }
 
@@ -592,12 +653,12 @@ struct TinderCardsView: View {
             HStack(spacing: 28) {
                 VStack(spacing: 3) {
                     Text("\(viewModel.dueTomorrowCount)").font(.title2.bold())
-                    Text("due tomorrow").font(.caption).foregroundStyle(.secondary)
+                    Text("due tomorrow").font(.caption)
                 }
                 Divider().frame(height: 36)
                 VStack(spacing: 3) {
                     Text("\(viewModel.dueIn3DaysCount)").font(.title2.bold())
-                    Text("due in 3 days").font(.caption).foregroundStyle(.secondary)
+                    Text("due in 3 days").font(.caption)
                 }
             }
             .padding(.top, 4)

@@ -23,6 +23,16 @@ enum TimeRange: String, CaseIterable {
     case month = "Month"
     case year  = "Year"
     case all   = "All"
+    
+    var displayName: String {
+        switch self {
+        case .today: return "Today"
+        case .week: return "Week"
+        case .month: return "Month"
+        case .year: return "Year"
+        case .all: return "All"
+        }
+    }
 }
 
 // MARK: - Mock Data
@@ -109,13 +119,17 @@ struct StatisticsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-
-                    timeRangePicker
-                        .padding(.top, 4)
-
+                    
                     if isEmpty {
                         emptyState
                     } else {
+                        UnderlineSegmentedPickerNotOptional(
+                            selection: $selectedRange,
+                            allItems: TimeRange.allCases,
+                            titleForCase: { $0.displayName }
+                        )
+                        .padding(.vertical, 8)
+
                         StreakCard(
                             current: StatisticsMockData.currentStreak,
                             best:    StatisticsMockData.bestStreak
@@ -136,10 +150,10 @@ struct StatisticsView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 32)
             }
-            .background(Color(.systemBackground).ignoresSafeArea())
+            .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Statistics")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color(.systemBackground), for: .tabBar)
+            .toolbarBackground(Color.myColors.myBackground, for: .tabBar)
             .toolbarBackground(.visible, for: .tabBar)
         }
     }
@@ -162,12 +176,10 @@ struct StatisticsView: View {
             Spacer(minLength: 60)
             Image(systemName: "chart.line.uptrend.xyaxis")
                 .font(.system(size: 56))
-                .foregroundStyle(.secondary.opacity(0.5))
             Text("No data yet")
                 .font(.title3.bold())
             Text("Start studying to see your progress")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Spacer(minLength: 60)
         }
@@ -191,37 +203,36 @@ private struct StreakCard: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Streak")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption.uppercaseSmallCaps())
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("\(current)")
-                            .font(.system(size: 32, weight: .medium))
+                            .font(.title)
+                            .fontWeight(.medium)
                         Text("days")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
                 Text("Best \(best) days")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .font(.caption.uppercaseSmallCaps())
             }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(.systemGray5))
+                        .fill(Color.myColors.mySecondary.opacity(0.5))
                         .frame(height: 4)
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.primary.opacity(0.8))
+                        .fill(Color.myColors.myGreen)
                         .frame(width: geo.size.width * progress, height: 4)
                 }
             }
             .frame(height: 4)
         }
         .padding(16)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .myShadow()
     }
 }
 
@@ -237,7 +248,6 @@ private struct CardsStudiedCard: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Cards Studied")
                 .font(.caption.uppercaseSmallCaps())
-                .foregroundStyle(.secondary)
 
             Text("\(total)")
                 .font(.system(size: 52, weight: .bold, design: .rounded))
@@ -266,10 +276,12 @@ private struct CardsStudiedCard: View {
                 legendDot(color: .orange, label: "Hard",   count: hard)
                 legendDot(color: .indigo, label: "Forgot", count: forgot)
             }
+            .frame(maxWidth: .infinity)
         }
         .padding()
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .myShadow()
     }
 
     private func barSegment(color: Color, width: CGFloat) -> some View {
@@ -283,7 +295,6 @@ private struct CardsStudiedCard: View {
             Circle().fill(color).frame(width: 8, height: 8)
             Text("\(label) \(count)")
                 .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 }
@@ -322,7 +333,7 @@ private struct ActivityCalendarCard: View {
                 } label: {
                     Text(isCompact ? "Show full" : "Show compact")
                         .font(.caption)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color.myColors.myBlue)
                         .animation(nil, value: isCompact) // label меняется без анимации
                 }
             }
@@ -345,7 +356,6 @@ private struct ActivityCalendarCard: View {
             HStack(spacing: 6) {
                 Text("Less")
                     .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
                 ForEach([0, 5, 15, 35], id: \.self) { n in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(intensityColor(cards: n))
@@ -353,15 +363,14 @@ private struct ActivityCalendarCard: View {
                 }
                 Text("More")
                     .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
             }
+            .frame(maxWidth: .infinity)
         }
-        // spring здесь анимирует изменение высоты карточки (frame expansion)
         .animation(.spring(response: 0.45, dampingFraction: 0.82), value: isCompact)
         .padding()
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
-        .clipped(antialiased: true)
+        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .myShadow()
     }
 
     // MARK: Intensity
@@ -406,12 +415,9 @@ private struct ActivityCalendarCard: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(name)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.secondary)
                 Text(String(yearNum))
-                    .font(.system(size: 8, weight: .regular))
-                    .foregroundStyle(.tertiary)
             }
+            .font(.system(size: 9, weight: .semibold))
 
             VStack(spacing: 1) {
                 ForEach(0..<rows, id: \.self) { row in
@@ -445,17 +451,16 @@ private struct ActivityCalendarCard: View {
         let labelColW: CGFloat = 22   // width reserved for sticky day labels
 
         // Day-label overlay — sticky on the left, white background hides cells scrolling behind
-        let dayLabelColumn = VStack(alignment: .trailing, spacing: gap) {
+        let dayLabelColumn = VStack(alignment: .leading, spacing: gap) {
             Color.clear.frame(height: monthRowH)
             ForEach(dayLabels.indices, id: \.self) { i in
                 Text(dayLabels[i])
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 9, weight: .semibold))
                     .frame(width: labelColW - 2, height: cell, alignment: .trailing)
             }
         }
         .frame(width: labelColW)
-        .background(Color(.systemBackground))  // mask scrolled-behind content
+        .background(Color.myColors.myBackground)  // mask scrolled-behind content
 
         return ScrollViewReader { proxy in
             // ScrollView occupies the FULL card width
@@ -469,8 +474,7 @@ private struct ActivityCalendarCard: View {
                             Group {
                                 if shouldShowMonthLabel(for: weeks[wi]) {
                                     Text(monthLabel(for: weeks[wi]))
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
+                                        .font(.system(size: 9, weight: .semibold))
                                         .fixedSize()
                                 } else {
                                     Color.clear
@@ -504,6 +508,7 @@ private struct ActivityCalendarCard: View {
                 .fixedSize(horizontal: true, vertical: false)
                 .padding(.trailing, 4)
             }
+            .background(Color.myColors.myBackground)
             .overlay(alignment: .leading) { dayLabelColumn }  // sticky day labels
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -554,7 +559,7 @@ private struct ActivityCalendarCard: View {
         let cal  = Calendar.current
         let yr   = cal.component(.year, from: date) % 100   // last 2 digits
         let mon  = date.formatted(.dateTime.month(.abbreviated))
-        return "\(mon) '\(String(format: "%02d", yr))"
+        return "\(mon)-\(String(format: "%02d", yr))"
     }
 }
 
@@ -567,7 +572,6 @@ private struct DeckProgressCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Deck Progress")
                 .font(.caption.uppercaseSmallCaps())
-                .foregroundStyle(.secondary)
 
             ForEach(decks.indices, id: \.self) { i in
                 deckRow(decks[i])
@@ -575,8 +579,9 @@ private struct DeckProgressCard: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .myShadow()
     }
 
     private func deckRow(_ deck: DeckProgress) -> some View {
@@ -586,15 +591,14 @@ private struct DeckProgressCard: View {
                 Spacer()
                 Text("\(Int(deck.percent * 100))%")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(.systemGray5))
+                        .fill(Color.myColors.mySecondary.opacity(0.5))
                         .frame(height: 6)
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.green)
+                        .fill(Color.myColors.myGreen)
                         .frame(width: geo.size.width * deck.percent, height: 6)
                 }
             }

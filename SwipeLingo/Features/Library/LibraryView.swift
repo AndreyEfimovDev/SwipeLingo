@@ -23,8 +23,9 @@ struct LibraryView: View {
                 }
                 .padding(.vertical, 16)
             }
-            .background(Color(.systemBackground).ignoresSafeArea())
+            .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Library")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $viewModel.isShowingAddCollection) {
                 AddCollectionView()
             }
@@ -46,7 +47,6 @@ struct LibraryView: View {
             HStack {
                 Text("PILES")
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     viewModel.editingPile = nil
@@ -57,17 +57,18 @@ struct LibraryView: View {
                 }
                 .buttonStyle(.borderless)
             }
+            .foregroundStyle(Color.myColors.myAccent)
             .padding(.horizontal, 32)
 
             if piles.isEmpty {
                 Text("No piles yet — tap + to create one")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.myColors.mySecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 16)
-                    .background(Color(.systemBackground))
+                    .background(Color.myColors.myBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                    .myShadow()
                     .padding(.horizontal, 16)
             } else {
                 VStack(spacing: 0) {
@@ -94,9 +95,9 @@ struct LibraryView: View {
                         }
                     }
                 }
-                .background(Color(.systemBackground))
+                .background(Color.myColors.myBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .myShadow()
                 .padding(.horizontal, 16)
             }
         }
@@ -109,7 +110,6 @@ struct LibraryView: View {
             HStack {
                 Text("COLLECTIONS")
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     viewModel.isShowingAddCollection = true
@@ -124,12 +124,12 @@ struct LibraryView: View {
             if regularCollections.isEmpty {
                 Text("No collections yet — tap + to create one")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.myColors.mySecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 16)
-                    .background(Color(.systemBackground))
+                    .background(Color.myColors.myBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                    .myShadow()
                     .padding(.horizontal, 16)
             } else {
                 VStack(spacing: 0) {
@@ -162,9 +162,9 @@ struct LibraryView: View {
                         }
                     }
                 }
-                .background(Color(.systemBackground))
+                .background(Color.myColors.myBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .myShadow()
                 .padding(.horizontal, 16)
             }
         }
@@ -183,12 +183,12 @@ struct LibraryView: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
             Text("No collections yet")
                 .font(.title3.bold())
             Text("Tap + to create your first collection")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
         }
     }
 
@@ -219,7 +219,7 @@ private struct PileRow: View {
         HStack(spacing: 12) {
             Button(action: onActivate) {
                 Image(systemName: pile.isActive ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(pile.isActive ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(pile.isActive ? Color.myColors.myAccent : Color.myColors.mySecondary)
                     .font(.title3)
                     .animation(.spring(duration: 0.2), value: pile.isActive)
             }
@@ -234,7 +234,7 @@ private struct PileRow: View {
                     Text("\(cardCount) active cards")
                         .font(.caption)
                 }
-                .foregroundStyle(.secondary)
+//                .foregroundStyle(Color.myColors.mySecondary)
             }
 
             Spacer()
@@ -242,7 +242,7 @@ private struct PileRow: View {
             Button(action: onEdit) {
                 Image(systemName: "pencil")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+//                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
         }
@@ -267,11 +267,11 @@ private struct CollectionRow: View {
     var body: some View {
         HStack {
             Label(collection.name, systemImage: collection.icon ?? "folder")
-                .foregroundStyle(.primary)
+//                .foregroundStyle(.primary)
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.myColors.mySecondary)
         }
     }
 }

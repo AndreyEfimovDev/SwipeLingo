@@ -177,7 +177,7 @@ struct DictionaryLookupView: View {
             ProgressView()
             Text("Looking up \"\(card.en)\"…")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -193,7 +193,7 @@ struct DictionaryLookupView: View {
                 .font(.title3.bold())
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button("Try Again") {
@@ -228,7 +228,7 @@ struct DictionaryLookupView: View {
                 if !entry.transcription.isEmpty {
                     Text(entry.transcription)
                         .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.myColors.mySecondary)
                 }
             }
             Spacer()
@@ -258,7 +258,7 @@ struct DictionaryLookupView: View {
             if !meaning.partOfSpeech.isEmpty {
                 Text(meaning.partOfSpeech)
                     .font(.caption.uppercaseSmallCaps())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.myColors.mySecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.1), in: Capsule())
@@ -288,7 +288,7 @@ struct DictionaryLookupView: View {
                 if let example = definition.example {
                     Text("\"\(example)\"")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.myColors.mySecondary)
                         .italic()
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -318,7 +318,6 @@ struct DictionaryLookupView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Synonyms")
                 .font(.caption)
-                .foregroundStyle(.secondary)
             DictionaryFlowLayout(spacing: 8) {
                 ForEach(synonyms, id: \.self) { synonym in
                     synonymChip(synonym)

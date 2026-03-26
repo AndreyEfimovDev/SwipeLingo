@@ -17,7 +17,7 @@ struct DeletedCardsView: View {
         List {
             ForEach(deletedCards) { card in
                 DeletedCardRow(card: card)
-                    .listRowBackground(Color(.systemBackground))
+                    .listRowBackground(Color.myColors.myBackground)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
                             cardToErase = card
@@ -36,7 +36,7 @@ struct DeletedCardsView: View {
         }
         .myShadow()
         .scrollContentBackground(.hidden)
-        .background(Color(.systemBackground).ignoresSafeArea())
+        .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle("Deleted Cards")
         .navigationBarTitleDisplayMode(.large)
         .overlay {
@@ -44,12 +44,12 @@ struct DeletedCardsView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "trash.slash")
                         .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.myColors.mySecondary)
                     Text("No deleted cards")
                         .font(.title3.bold())
                     Text("Cards you delete will appear here")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.myColors.mySecondary)
                 }
             }
         }
@@ -88,7 +88,7 @@ private struct DeletedCardRow: View {
                 .font(.body)
             Text(card.item)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
         }
         .padding(.vertical, 2)
     }

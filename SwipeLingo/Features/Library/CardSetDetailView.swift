@@ -29,7 +29,7 @@ struct CardSetDetailView: View {
                 Section(learntCards.isEmpty ? "" : "ACTIVE") {
                     ForEach(activeCards) { card in
                         CardRow(card: card)
-                            .listRowBackground(Color(.systemBackground))
+                            .listRowBackground(Color.myColors.myBackground)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     card.status = .deleted
@@ -45,7 +45,7 @@ struct CardSetDetailView: View {
                 Section("LEARNT") {
                     ForEach(learntCards) { card in
                         CardRow(card: card)
-                            .listRowBackground(Color(.systemBackground))
+                            .listRowBackground(Color.myColors.myBackground)
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
                                     card.status = .deleted
@@ -65,11 +65,11 @@ struct CardSetDetailView: View {
                 }
             }
         }
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .myShadow()
         .scrollContentBackground(.hidden)
-        .background(Color(.systemBackground).ignoresSafeArea())
+        .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle(cardSet.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if cardSet.name != "Inbox" {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -93,12 +93,12 @@ struct CardSetDetailView: View {
         VStack(spacing: 12) {
             Image(systemName: "rectangle.stack")
                 .font(.system(size: 42))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
             Text("No cards yet")
                 .font(.title3.bold())
             Text("Tap + to add your first card")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -117,7 +117,6 @@ private struct CardRow: View {
                 .font(.body)
             Text(card.item)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
     }

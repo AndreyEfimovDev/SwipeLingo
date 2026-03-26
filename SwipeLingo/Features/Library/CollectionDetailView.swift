@@ -25,9 +25,9 @@ struct CollectionDetailView: View {
             }
             .padding(.vertical, 16)
         }
-        .background(Color(.systemBackground).ignoresSafeArea())
+        .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle(collection.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { isShowingAddSet = true } label: {
@@ -58,7 +58,6 @@ struct CollectionDetailView: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
@@ -78,9 +77,9 @@ struct CollectionDetailView: View {
                 }
             }
         }
-        .background(Color(.systemBackground))
+        .background(Color.myColors.myBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .myShadow()
         .padding(.horizontal, 16)
     }
 
@@ -90,12 +89,12 @@ struct CollectionDetailView: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 42))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
             Text("No sets yet")
                 .font(.title3.bold())
             Text("Tap + to add a set")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.myColors.mySecondary)
         }
     }
 }

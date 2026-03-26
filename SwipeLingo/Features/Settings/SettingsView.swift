@@ -1,11 +1,20 @@
+import AVFoundation
 import SwiftUI
 
 // MARK: - PreferencesView
 
-struct PreferencesView: View {
+struct SettingsView: View {
 
-    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
-    @AppStorage("colorScheme")    private var colorSchemeKey = "auto"
+    @AppStorage("nativeLanguage")     private var nativeLanguage      = "Русский"
+    @AppStorage("colorScheme")        private var theme: Theme         = .system
+    @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier  = ""
+
+    private var currentVoiceName: String {
+        guard !ttsVoiceIdentifier.isEmpty,
+              let voice = AVSpeechSynthesisVoice(identifier: ttsVoiceIdentifier)
+        else { return "Default" }
+        return voice.name
+    }
 
     private let languages = [
         "Русский", "中文", "Español", "Français",
@@ -17,13 +26,15 @@ struct PreferencesView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     languageSection
+                    voiceSection
                     appearanceSection
                     managingCardsSection
                 }
                 .padding(.vertical, 16)
             }
-            .background(Color(.systemBackground).ignoresSafeArea())
+            .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -33,7 +44,6 @@ struct PreferencesView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("LANGUAGE")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
                 .padding(.horizontal, 32)
 
             HStack {
@@ -48,14 +58,46 @@ struct PreferencesView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(Color(.systemBackground))
+            .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .myShadow()
             .padding(.horizontal, 16)
 
-            Text("Defines which side of the card shows your native translation.")
+            Text("Select your native language for translation.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .padding(.horizontal, 32)
+        }
+    }
+
+    // MARK: - Voice
+
+    private var voiceSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("VOICE")
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, 32)
+
+            NavigationLink { VoiceSettingsView() } label: {
+                HStack {
+                    Label("Pronunciation Voice", systemImage: "waveform")
+                    Spacer()
+                    Text(currentVoiceName)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.mySecondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .foregroundStyle(Color.myColors.myAccent)
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+
+            Text("Voice used when reading English words aloud.")
+                .font(.footnote)
+                .foregroundStyle(Color.myColors.mySecondary)
                 .padding(.horizontal, 32)
         }
     }
@@ -66,26 +108,19 @@ struct PreferencesView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("APPEARANCE")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
                 .padding(.horizontal, 32)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Theme")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Picker("", selection: $colorSchemeKey) {
-                    Text("Auto").tag("auto")
-                    Text("Light").tag("light")
-                    Text("Dark").tag("dark")
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
+            UnderlineSegmentedPickerNotOptional(
+                selection: $theme,
+                allItems: Theme.allCases,
+                titleForCase: { $0.displayName },
+                selectedFont: .subheadline
+            )
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(Color(.systemBackground))
+            .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .myShadow()
             .padding(.horizontal, 16)
         }
     }
@@ -96,7 +131,6 @@ struct PreferencesView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("MANAGING CARDS")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
@@ -119,7 +153,6 @@ struct PreferencesView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .foregroundStyle(.secondary)
 
                 Divider().padding(.leading, 52)
 
@@ -129,16 +162,15 @@ struct PreferencesView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .foregroundStyle(.secondary)
             }
-            .background(Color(.systemBackground))
+            .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .myShadow()
             .padding(.horizontal, 16)
         }
     }
 }
 
 #Preview {
-    PreferencesView()
+    SettingsView()
 }

@@ -91,6 +91,7 @@ struct StudyView: View {
                 }
             )
             .id(viewModel.sessionID)
+            .padding(.vertical)
         }
     }
 
@@ -116,12 +117,10 @@ struct StudyView: View {
         VStack(spacing: 16) {
             Image(systemName: "rectangle.stack")
                 .font(.system(size: 52))
-                .foregroundStyle(.secondary)
             Text("No cards to study")
                 .font(.title3.bold())
             Text("Add cards in Library or create a Pile")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
