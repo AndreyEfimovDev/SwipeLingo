@@ -1,5 +1,6 @@
 import Foundation
 
+// Common European Framework of Reference for Languages
 enum CEFRLevel: String, CaseIterable, Codable {
     case a0a1 = "A0/A1"
     case a2   = "A2"
