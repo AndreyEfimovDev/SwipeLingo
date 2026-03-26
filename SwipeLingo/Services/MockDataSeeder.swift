@@ -28,7 +28,8 @@ struct MockDataSeeder {
 
         let academicSet = CardSet(
             name: "Academic Words",
-            collectionId: ielts.id
+            collectionId: ielts.id,
+            level: .b2
         )
         context.insert(academicSet)
         let sid = academicSet.id
@@ -221,7 +222,8 @@ struct MockDataSeeder {
 
         let writingSet = CardSet(
             name: "Writing Task 2",
-            collectionId: ielts.id
+            collectionId: ielts.id,
+            level: .b2
         )
         context.insert(writingSet)
         let wid = writingSet.id
@@ -314,7 +316,8 @@ struct MockDataSeeder {
 
         let biasSet = CardSet(
             name: "Cognitive Biases",
-            collectionId: psych.id
+            collectionId: psych.id,
+            level: .c1
         )
         context.insert(biasSet)
         let bid = biasSet.id

@@ -48,6 +48,14 @@ final class Card {
     var dictAudioURL:      String = ""
     var dictDefinition:    String = ""
 
+    // CEFR level — stored as String for CloudKit/SwiftData compatibility
+    var level: String = CEFRLevel.a0a1.rawValue
+
+    var cefrLevel: CEFRLevel {
+        get { CEFRLevel(rawValue: level) ?? .a0a1 }
+        set { level = newValue.rawValue }
+    }
+
     // Metadata
     var createdAt:  Date  = Date.now
     var importedAt: Date? = nil

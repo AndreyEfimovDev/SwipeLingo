@@ -34,6 +34,8 @@
 		47EA2FCD2F75541500A84C9D /* TinderCardsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F9E2F75541500A84C9D /* TinderCardsViewModel.swift */; };
 		47EA2FCE2F75541500A84C9D /* StudyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FA02F75541500A84C9D /* StudyView.swift */; };
 		47EA2FCF2F75541500A84C9D /* StudyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FA12F75541500A84C9D /* StudyViewModel.swift */; };
+		EF0001012F75541500A84C9D /* CEFRLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0001002F75541500A84C9D /* CEFRLevel.swift */; };
+		EF0001032F75541500A84C9D /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0001022F75541500A84C9D /* UserProfile.swift */; };
 		47EA2FD02F75541500A84C9D /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FA42F75541500A84C9D /* Card.swift */; };
 		47EA2FD12F75541500A84C9D /* CardSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FA52F75541500A84C9D /* CardSet.swift */; };
 		47EA2FD22F75541500A84C9D /* CardStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FA62F75541500A84C9D /* CardStatus.swift */; };
@@ -102,6 +104,8 @@
 		47EA2F9E2F75541500A84C9D /* TinderCardsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinderCardsViewModel.swift; sourceTree = "<group>"; };
 		47EA2FA02F75541500A84C9D /* StudyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyView.swift; sourceTree = "<group>"; };
 		47EA2FA12F75541500A84C9D /* StudyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyViewModel.swift; sourceTree = "<group>"; };
+		EF0001002F75541500A84C9D /* CEFRLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CEFRLevel.swift; sourceTree = "<group>"; };
+		EF0001022F75541500A84C9D /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		47EA2FA42F75541500A84C9D /* Card.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Card.swift; sourceTree = "<group>"; };
 		47EA2FA52F75541500A84C9D /* CardSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSet.swift; sourceTree = "<group>"; };
 		47EA2FA62F75541500A84C9D /* CardStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStatus.swift; sourceTree = "<group>"; };
@@ -261,11 +265,13 @@
 				47EA2FA42F75541500A84C9D /* Card.swift */,
 				47EA2FA52F75541500A84C9D /* CardSet.swift */,
 				47EA2FA62F75541500A84C9D /* CardStatus.swift */,
+				EF0001002F75541500A84C9D /* CEFRLevel.swift */,
 				47EA2FA72F75541500A84C9D /* Collection.swift */,
 				47EA2FA82F75541500A84C9D /* DictionaryModels.swift */,
 				47EA2FA92F75541500A84C9D /* EnglishPlusCard.swift */,
 				47EA2FAA2F75541500A84C9D /* Pile.swift */,
 				47EA2FAB2F75541500A84C9D /* ShuffleMethod.swift */,
+				EF0001022F75541500A84C9D /* UserProfile.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -489,6 +495,8 @@
 				47EA2FD02F75541500A84C9D /* Card.swift in Sources */,
 				47EA2FD12F75541500A84C9D /* CardSet.swift in Sources */,
 				47EA2FD22F75541500A84C9D /* CardStatus.swift in Sources */,
+				EF0001012F75541500A84C9D /* CEFRLevel.swift in Sources */,
+				EF0001032F75541500A84C9D /* UserProfile.swift in Sources */,
 				47EA2FD32F75541500A84C9D /* Collection.swift in Sources */,
 				47EA2FD42F75541500A84C9D /* DictionaryModels.swift in Sources */,
 				47EA2FD52F75541500A84C9D /* EnglishPlusCard.swift in Sources */,

@@ -12,7 +12,8 @@ struct SwipeLingoApp: App {
             CardSet.self,
             Collection.self,
             Pile.self,
-            EnglishPlusCard.self
+            EnglishPlusCard.self,
+            UserProfile.self
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
