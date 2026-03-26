@@ -83,7 +83,6 @@ struct VoiceSettingsView: View {
                 .padding(.top, 1)
             Text("Enhanced and Premium voices sound more natural but must be downloaded first: **iOS Settings → Accessibility → Spoken Content → Voices → English → Voices**")
                 .font(.footnote)
-                .foregroundStyle(Color.myColors.mySecondary)
         }
         .padding(14)
         .background(Color.myColors.myBackground)
@@ -99,12 +98,11 @@ struct VoiceSettingsView: View {
         return VStack(alignment: .leading, spacing: 6) {
             Text("DEFAULT")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.myColors.mySecondary)
                 .padding(.horizontal, 32)
 
             HStack(spacing: 12) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.mySecondary)
+                    .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.myAccent)
                     .font(.title3)
                     .frame(width: 28)
 
@@ -113,7 +111,6 @@ struct VoiceSettingsView: View {
                         .font(.body)
                     Text("iOS picks the voice automatically")
                         .font(.caption)
-                        .foregroundStyle(Color.myColors.mySecondary)
                 }
                 Spacer()
             }
@@ -138,7 +135,6 @@ struct VoiceSettingsView: View {
                 Text(group.subtitle)
             }
             .font(.footnote.weight(.semibold))
-            .foregroundStyle(Color.myColors.mySecondary)
             .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
@@ -165,7 +161,7 @@ struct VoiceSettingsView: View {
         return HStack(spacing: 12) {
             // Selection indicator
             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.mySecondary)
+                .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.myAccent)
                 .font(.title3)
                 .frame(width: 28)
 
@@ -175,7 +171,6 @@ struct VoiceSettingsView: View {
                     .font(.body)
                 Text(Locale.current.localizedString(forIdentifier: voice.language) ?? voice.language)
                     .font(.caption)
-                    .foregroundStyle(Color.myColors.mySecondary)
             }
 
             Spacer()

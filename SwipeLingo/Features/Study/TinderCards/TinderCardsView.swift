@@ -65,17 +65,16 @@ struct TinderCardsView: View {
 
     private var portraitBody: some View {
         VStack(spacing: 0) {
+            if !viewModel.isDone {
+                progressStatsRow
+                    .padding(.bottom, 24)
+            }
+
             ZStack {
                 if viewModel.isDone { doneFullCard } else { cardStack }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-
-            if !viewModel.isDone {
-                progressStatsRow
-            }
         }
     }
 
@@ -97,14 +96,13 @@ struct TinderCardsView: View {
     // MARK: - Landscape Stats Column
 
     private var landscapeStatsColumn: some View {
-        let total   = viewModel.cards.count
         let learnt = viewModel.learntInSession
-        let active  = total - learnt
+        let active = viewModel.cards.filter { $0.status == .active }.count
         return VStack(spacing: 0) {
             Spacer()
             statLabel("Learnt", value: learnt)
             Spacer()
-            Text("\(total)").font(.caption2)
+            Text("\(active + learnt)").font(.caption2)
             Spacer()
             statLabel("Active", value: active)
             Spacer()
@@ -123,19 +121,41 @@ struct TinderCardsView: View {
     // MARK: - Portrait Stats Row
 
     private var progressStatsRow: some View {
-        let total   = viewModel.cards.count
-        let learnt = viewModel.learntInSession
-        let active  = total - learnt
-        return HStack {
-            Text("Active ")
-            + Text("\(active)").bold()
-            Spacer()
-            Text("\(total) cards")
-            Spacer()
-            Text("Learnt ")
-            + Text("\(learnt)").bold()
+        let allCards = viewModel.cards
+        let effTotal = allCards.filter { $0.status != .deleted }.count
+        let learnt   = viewModel.learntInSession
+        let active   = allCards.filter { $0.status == .active }.count
+        let deletedSoFar = allCards.prefix(viewModel.currentIndex).filter { $0.status == .deleted }.count
+        let current  = min(viewModel.currentIndex - deletedSoFar + 1, max(effTotal, 1))
+        let progress = effTotal > 0 ? CGFloat(max(0, viewModel.currentIndex - deletedSoFar)) / CGFloat(effTotal) : 0
+
+        return VStack(spacing: 6) {
+            HStack {
+                Text("Active ")
+                + Text("\(active)").bold()
+                Spacer()
+                Text("\(current) / \(effTotal)")
+                    .bold()
+                Spacer()
+                Text("Learnt ")
+                + Text("\(learnt)").bold()
+            }
+            .font(.caption2)
+
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.myColors.mySecondary.opacity(0.15))
+                        .frame(height: 3)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.myColors.myAccent.opacity(0.5))
+                        .frame(width: geo.size.width * progress, height: 3)
+                        .animation(.spring(duration: 0.4), value: progress)
+                }
+            }
+            .frame(height: 3)
         }
-        .font(.caption2)
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
     }
@@ -170,8 +190,8 @@ struct TinderCardsView: View {
             ForEach([2, 1], id: \.self) { offset in
                 let idx = viewModel.currentIndex + offset
                 if idx < viewModel.cards.count {
-                    let step:        CGFloat = 0.05
-                    let yStep:       CGFloat = -20.0
+                    let step:        CGFloat = isLandscape ? 0.05 : 0.06
+                    let yStep:       CGFloat = isLandscape ? -20.0 : -28.0
                     let baseScale    = 1.0 - CGFloat(offset) * step
                     let targetScale  = 1.0 - CGFloat(offset - 1) * step
                     let scale        = baseScale + (targetScale - baseScale) * dragProgress
@@ -233,7 +253,7 @@ struct TinderCardsView: View {
             .rotationEffect(viewModel.dragRotation)
             .scaleEffect(scale)
             .simultaneousGesture(dragGesture)
-            .onTapGesture { viewModel.flipToBack() }
+            .onTapGesture { viewModel.flipToggle() }
             .myShadow()
     }
 
@@ -272,13 +292,17 @@ struct TinderCardsView: View {
                 breadcrumbRow
                 flipContent(card: card).frame(maxHeight: .infinity)
             }
-            // SRS column pinned to right — fades in after flip
-            srsButtonsColumn
-                .frame(width: 90)
-                .opacity(viewModel.isFlipped ? 1 : 0)
-                .allowsHitTesting(viewModel.isFlipped)
-                .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+            .frame(maxWidth: .infinity)
+
+            // SRS column — only present on back side, no reserved space on front
+            if viewModel.isFlipped {
+                Divider()
+                srsButtonsColumn
+                    .frame(width: 90)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.isFlipped)
     }
 
     // MARK: - Flip Content
@@ -370,7 +394,6 @@ struct TinderCardsView: View {
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.4)
                         .padding(.horizontal, 20)
-                        .padding(.top, 14)
 
                     // 2. EN word + 🔊 audio
                     HStack(spacing: 6) {
@@ -471,9 +494,16 @@ struct TinderCardsView: View {
                     }
 
                     Spacer(minLength: 8)
+                    
+
                 }
             }
             .frame(maxHeight: .infinity)
+
+            // Tap to flip hint — front side
+            Text("Tap to flip")
+                .font(.caption2)
+                .padding(.bottom, 20)
 
             // Dictionary lookup — pinned to bottom, EN→Native only
             if !isReversed {

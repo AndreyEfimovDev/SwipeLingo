@@ -55,9 +55,10 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
+                .font(.subheadline.weight(.bold))
             }
+            .frame(height: 52)
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
@@ -74,7 +75,7 @@ struct SettingsView: View {
     private var voiceSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("VOICE")
-                .font(.footnote.weight(.semibold))
+                .font(.footnote)
                 .padding(.horizontal, 32)
 
             NavigationLink { VoiceSettingsView() } label: {
@@ -83,13 +84,11 @@ struct SettingsView: View {
                     Spacer()
                     Text(currentVoiceName)
                         .font(.subheadline)
-                        .foregroundStyle(Color.myColors.mySecondary)
                 }
+                .frame(height: 52)
                 .padding(.horizontal, 16)
-                .padding(.vertical, 14)
                 .contentShape(Rectangle())
             }
-            .foregroundStyle(Color.myColors.myAccent)
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
@@ -97,7 +96,6 @@ struct SettingsView: View {
 
             Text("Voice used when reading English words aloud.")
                 .font(.footnote)
-                .foregroundStyle(Color.myColors.mySecondary)
                 .padding(.horizontal, 32)
         }
     }
@@ -107,7 +105,7 @@ struct SettingsView: View {
     private var appearanceSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("APPEARANCE")
-                .font(.footnote.weight(.semibold))
+                .font(.footnote)
                 .padding(.horizontal, 32)
 
             UnderlineSegmentedPickerNotOptional(
@@ -116,8 +114,8 @@ struct SettingsView: View {
                 titleForCase: { $0.displayName },
                 selectedFont: .subheadline
             )
+            .frame(height: 52)
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
@@ -130,7 +128,7 @@ struct SettingsView: View {
     private var managingCardsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("MANAGING CARDS")
-                .font(.footnote.weight(.semibold))
+                .font(.footnote)
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {

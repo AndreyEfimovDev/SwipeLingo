@@ -28,7 +28,7 @@ struct UnderlineSegmentedPickerNotOptional<T: Hashable>: View {
                 VStack(spacing: 5) {
                     Text(titleForCase(item))
                         .font(selectedFont)
-                        .fontWeight(selection == item ? .bold : .regular)
+//                        .fontWeight(selection == item ? .bold : .regular)
                         .frame(maxWidth: .infinity)
                     
                     if isSelected {

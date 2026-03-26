@@ -96,10 +96,15 @@ final class TinderCardsViewModel {
 
     // MARK: Actions
 
-    /// Toggles the card face front → back only. Back → front is via SRS buttons only.
+    /// Flips front → back.
     func flipToBack() {
         guard !isFlipped else { return }
         isFlipped = true
+    }
+
+    /// Toggles flip in both directions. Tap anywhere on the card calls this.
+    func flipToggle() {
+        isFlipped.toggle()
     }
 
     /// Called when a drag gesture ends beyond the swipe threshold.
@@ -109,6 +114,7 @@ final class TinderCardsViewModel {
         guard let card = currentCard else { return }
         if direction == .right {
             card.status = .learnt
+            learntInSession += 1
             try? context.save()
         }
         advance()
@@ -138,7 +144,7 @@ final class TinderCardsViewModel {
     func restart() {
         cards            = originalCards.filter { $0.status == .active }
         weakCards        = []
-        learntInSession = 0
+        learntInSession  = 0
         currentIndex     = 0
         dragOffset       = .zero
         isFlipped        = false
@@ -149,7 +155,7 @@ final class TinderCardsViewModel {
         let active = weakCards.filter { $0.status == .active }
         if !active.isEmpty { cards = active }
         weakCards        = []
-        learntInSession = 0
+        learntInSession  = 0
         currentIndex     = 0
         dragOffset       = .zero
         isFlipped        = false

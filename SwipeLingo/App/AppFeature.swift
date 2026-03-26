@@ -70,12 +70,17 @@ struct AppView: View {
         let tabBarappearance = UITabBarAppearance()
         tabBarappearance.configureWithTransparentBackground()
         tabBarappearance.backgroundColor = UIColor(Color.myColors.myBackground)
+        let inactiveColor = UIColor(Color.myColors.myAccent).withAlphaComponent(0.5)
+        tabBarappearance.stackedLayoutAppearance.normal.iconColor    = inactiveColor
+        tabBarappearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: inactiveColor]
         UITabBar.appearance().standardAppearance   = tabBarappearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarappearance
 
         let navBarAppearance = UINavigationBarAppearance()
-        navBarAppearance.configureWithTransparentBackground()
-        navBarAppearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+        navBarAppearance.configureWithOpaqueBackground()
+        navBarAppearance.backgroundColor = UIColor(Color.myColors.myBackground)
+        navBarAppearance.backgroundEffect = nil
+        navBarAppearance.shadowColor = .clear
         
         let accentColor = UIColor(Color.myColors.myAccent)
         navBarAppearance.largeTitleTextAttributes = [
@@ -155,7 +160,7 @@ struct AppView: View {
                 Image(systemName: icon).font(.system(size: 18))
                 Text(label).font(.system(size: 9))
             }
-            .foregroundStyle(active ? Color.accentColor : Color(.systemGray))
+            .foregroundStyle(active ? Color.accentColor : Color.myColors.myAccent.opacity(0.5))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
         }
