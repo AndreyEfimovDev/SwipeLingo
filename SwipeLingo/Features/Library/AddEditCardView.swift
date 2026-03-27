@@ -244,6 +244,7 @@ struct AddEditCardView: View {
     private func handleAutoFill() async {
         let word = en.trimmingCharacters(in: .whitespaces)
         guard !word.isEmpty else { return }
+        focused = nil          // dismiss keyboard before filling
         isAutoFilling = true
         defer { isAutoFilling = false }
 
@@ -267,11 +268,13 @@ struct AddEditCardView: View {
 
         do {
             let entry = try await DictionaryService().lookup(word: word)
+            // Prefer example sentences; fall back to definition text if none available.
             var examples: [String] = []
             for meaning in entry.meanings {
                 for def in meaning.definitions {
-                    if let ex = def.example, !examples.contains(ex) {
-                        examples.append(ex)
+                    let text = def.example ?? def.text
+                    if !examples.contains(text) {
+                        examples.append(text)
                         if examples.count >= 3 { break }
                     }
                 }
@@ -320,7 +323,7 @@ struct AddEditCardView: View {
     private var enSection: some View {
         fieldSection(label: "ENGLISH") {
             HStack(spacing: 8) {
-                TextField("Word or phrase", text: $en)
+                TextField("Word or phrase", text: $en, axis: .vertical)
                     .font(.body)
                     .focused($focused, equals: .en)
                     .submitLabel(.next)
@@ -337,7 +340,7 @@ struct AddEditCardView: View {
     private var itemSection: some View {
         fieldSection(label: "TRANSLATION") {
             HStack(spacing: 8) {
-                TextField("Native translation", text: $item)
+                TextField("Native translation", text: $item, axis: .vertical)
                     .font(.body)
                     .focused($focused, equals: .item)
                     .submitLabel(.next)
