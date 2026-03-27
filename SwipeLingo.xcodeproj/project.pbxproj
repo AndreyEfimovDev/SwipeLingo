@@ -47,6 +47,7 @@
 		47EA2FD82F75541500A84C9D /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FAF2F75541500A84C9D /* AudioPlayerService.swift */; };
 		47EA2FD92F75541500A84C9D /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FB02F75541500A84C9D /* DictionaryService.swift */; };
 		47EA2FDA2F75541500A84C9D /* MockDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FB12F75541500A84C9D /* MockDataSeeder.swift */; };
+		4CEE5C3C7CC643F1A178D884 /* FirestoreImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A36CAE0B97490185771DE6 /* FirestoreImportService.swift */; };
 		47EA2FDB2F75541500A84C9D /* PileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FB22F75541500A84C9D /* PileService.swift */; };
 		47EA2FDC2F75541500A84C9D /* SRSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FB32F75541500A84C9D /* SRSService.swift */; };
 		47EA2FDD2F75541500A84C9D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 47EA2FAD2F75541500A84C9D /* Assets.xcassets */; };
@@ -118,6 +119,7 @@
 		47EA2FAF2F75541500A84C9D /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
 		47EA2FB02F75541500A84C9D /* DictionaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryService.swift; sourceTree = "<group>"; };
 		47EA2FB12F75541500A84C9D /* MockDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDataSeeder.swift; sourceTree = "<group>"; };
+		36A36CAE0B97490185771DE6 /* FirestoreImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreImportService.swift; sourceTree = "<group>"; };
 		47EA2FB22F75541500A84C9D /* PileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PileService.swift; sourceTree = "<group>"; };
 		47EA2FB32F75541500A84C9D /* SRSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRSService.swift; sourceTree = "<group>"; };
 		47EA2FDE2F75541D00A84C9D /* SRSServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRSServiceTests.swift; sourceTree = "<group>"; };
@@ -290,6 +292,7 @@
 				47EA2FAF2F75541500A84C9D /* AudioPlayerService.swift */,
 				47EA2FB02F75541500A84C9D /* DictionaryService.swift */,
 				47EA2FB12F75541500A84C9D /* MockDataSeeder.swift */,
+				36A36CAE0B97490185771DE6 /* FirestoreImportService.swift */,
 				47EA2FB22F75541500A84C9D /* PileService.swift */,
 				47EA2FB32F75541500A84C9D /* SRSService.swift */,
 			);
@@ -505,6 +508,7 @@
 				47EA2FD82F75541500A84C9D /* AudioPlayerService.swift in Sources */,
 				47EA2FD92F75541500A84C9D /* DictionaryService.swift in Sources */,
 				47EA2FDA2F75541500A84C9D /* MockDataSeeder.swift in Sources */,
+				4CEE5C3C7CC643F1A178D884 /* FirestoreImportService.swift in Sources */,
 				47EA2FDB2F75541500A84C9D /* PileService.swift in Sources */,
 				47EA2FDC2F75541500A84C9D /* SRSService.swift in Sources */,
 			);

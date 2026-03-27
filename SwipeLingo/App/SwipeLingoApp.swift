@@ -40,7 +40,7 @@ struct SwipeLingoApp: App {
             }
         }
 
-        MockDataSeeder.seedIfNeeded(into: container.mainContext)
+        FirestoreImportService().importIfNeeded(into: container.mainContext)
         MockDataSeeder.ensureSystemCollections(into: container.mainContext)
     }
 
