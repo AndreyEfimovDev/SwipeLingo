@@ -114,14 +114,9 @@ struct TinderCardsView: View {
                 Spacer()
                 statLabel("Learnt", value: learnt, status: .learnt)
                 Spacer()
-                VStack(spacing: 2) {
-                    Text("\(current) / \(effTotal)")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                    Text(String(format: "%.1f%%", effTotal > 0 ? Double(current) / Double(effTotal) * 100 : 0))
-                        .font(.system(size: 9))
-                        .opacity(0.9)
-                }
+                Text("\(current) / \(effTotal)")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
                 Spacer()
                 statLabel("Active", value: active, status: .active)
                 Spacer()
@@ -179,11 +174,7 @@ struct TinderCardsView: View {
                 
                 Spacer()
                 
-                let percentageLine = String(format: "%.1f", effTotal > 0 ? Double(current) / Double(effTotal) * 100 : 0)
-                
-                Text("\(current) / \(effTotal) (")
-                + Text(percentageLine)
-                + Text("%)")
+                Text("\(current) / \(effTotal)")
                     .bold()
                             
                 Spacer()

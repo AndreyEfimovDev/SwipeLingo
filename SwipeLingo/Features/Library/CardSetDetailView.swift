@@ -16,16 +16,20 @@ struct CardSetDetailView: View {
 
     @Environment(\.modelContext) private var context
     let cardSet: CardSet
+    var allowsEditing: Bool = false
 
     @Query(sort: \Card.createdAt) private var allCards: [Card]
-    @State private var isShowingAddCard  = false
     @State private var isActiveExpanded  = true
     @State private var isLearntExpanded  = false
+    @State private var isShowingAddCard  = false
+    @State private var editingCard: Card? = nil
 
     // Fallback covers first render; updated by PreferenceKey after layout
     @State private var rowHeight: CGFloat = 68
 
     // MARK: Filtered sections
+
+    private var isInbox: Bool { cardSet.name == "Inbox" }
 
     private var activeCards: [Card] {
         allCards.filter { $0.setId == cardSet.id && $0.status == .active }
@@ -41,53 +45,28 @@ struct CardSetDetailView: View {
 
                 // MARK: Active section
                 if !activeCards.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        collapsibleHeader(
-                            title: "ACTIVE",
-                            count: activeCards.count,
-                            color: CardStatus.active.color,
-                            isExpanded: $isActiveExpanded
-                        )
-                        .padding(.horizontal, 32)
+                    if isInbox {
+                        // Inbox: flat list, no section header, pencil visible
+                        cardList(cards: activeCards, showRestore: false)
+                    } else {
+                        VStack(alignment: .leading, spacing: 6) {
+                            collapsibleHeader(
+                                title: "ACTIVE",
+                                count: activeCards.count,
+                                color: CardStatus.active.color,
+                                isExpanded: $isActiveExpanded
+                            )
+                            .padding(.horizontal, 32)
 
-                        if isActiveExpanded {
-                            List {
-                                ForEach(activeCards) { card in
-                                    CardRow(card: card)
-                                        .background(GeometryReader { geo in
-                                            Color.clear.preference(
-                                                key: CardRowHeightKey.self,
-                                                value: geo.size.height
-                                            )
-                                        })
-                                        .listRowBackground(Color.myColors.myBackground)
-                                        .listRowInsets(EdgeInsets())
-                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                            Button(role: .destructive) {
-                                                card.status = .deleted
-                                                try? context.save()
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                        }
-                                }
+                            if isActiveExpanded {
+                                cardList(cards: activeCards, showRestore: false)
                             }
-                            .listStyle(.plain)
-                            .scrollDisabled(true)
-                            .scrollContentBackground(.hidden)
-                            .onPreferenceChange(CardRowHeightKey.self) { value in
-                                if value > 0 { rowHeight = value }
-                            }
-                            .frame(height: CGFloat(activeCards.count) * rowHeight)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .myShadow()
-                            .padding(.horizontal, 16)
                         }
                     }
                 }
 
-                // MARK: Learnt section
-                if !learntCards.isEmpty {
+                // MARK: Learnt section (not shown for Inbox)
+                if !isInbox && !learntCards.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         collapsibleHeader(
                             title: "LEARNT",
@@ -98,44 +77,7 @@ struct CardSetDetailView: View {
                         .padding(.horizontal, 32)
 
                         if isLearntExpanded {
-                            List {
-                                ForEach(learntCards) { card in
-                                    CardRow(card: card)
-                                        .background(GeometryReader { geo in
-                                            Color.clear.preference(
-                                                key: CardRowHeightKey.self,
-                                                value: geo.size.height
-                                            )
-                                        })
-                                        .listRowBackground(Color.myColors.myBackground)
-                                        .listRowInsets(EdgeInsets())
-                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                            Button(role: .destructive) {
-                                                card.status = .deleted
-                                                try? context.save()
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                            Button {
-                                                card.status = .active
-                                                try? context.save()
-                                            } label: {
-                                                Label("Restore", systemImage: "arrow.uturn.up")
-                                            }
-                                            .tint(Color.myColors.myBlue)
-                                        }
-                                }
-                            }
-                            .listStyle(.plain)
-                            .scrollDisabled(true)
-                            .scrollContentBackground(.hidden)
-                            .onPreferenceChange(CardRowHeightKey.self) { value in
-                                if value > 0 { rowHeight = value }
-                            }
-                            .frame(height: CGFloat(learntCards.count) * rowHeight)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .myShadow()
-                            .padding(.horizontal, 16)
+                            cardList(cards: learntCards, showRestore: true)
                         }
                     }
                 }
@@ -147,7 +89,7 @@ struct CardSetDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .frame(maxWidth: .infinity)
         .toolbar {
-            if cardSet.name != "Inbox" {
+            if allowsEditing && !isInbox {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { isShowingAddCard = true } label: {
                         Image(systemName: "plus")
@@ -156,13 +98,58 @@ struct CardSetDetailView: View {
             }
         }
         .sheet(isPresented: $isShowingAddCard) {
-            AddCardView(preselectedSetId: cardSet.id)
+            AddEditCardView(preselectedSetId: cardSet.id)
+        }
+        .sheet(item: $editingCard) { card in
+            AddEditCardView(card: card)
         }
         .overlay {
             if activeCards.isEmpty && learntCards.isEmpty {
                 emptyState
             }
         }
+    }
+
+    // MARK: - Card List
+
+    private func cardList(cards: [Card], showRestore: Bool) -> some View {
+        List {
+            ForEach(cards) { card in
+                CardRow(card: card, onEdit: (allowsEditing || isInbox) ? { editingCard = card } : nil)
+                    .background(GeometryReader { geo in
+                        Color.clear.preference(key: CardRowHeightKey.self, value: geo.size.height)
+                    })
+                    .listRowBackground(Color.myColors.myBackground)
+                    .listRowInsets(EdgeInsets())
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            card.status = .deleted
+                            try? context.save()
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        if showRestore {
+                            Button {
+                                card.status = .active
+                                try? context.save()
+                            } label: {
+                                Label("Restore", systemImage: "arrow.uturn.up")
+                            }
+                            .tint(Color.myColors.myBlue)
+                        }
+                    }
+            }
+        }
+        .listStyle(.plain)
+        .scrollDisabled(true)
+        .scrollContentBackground(.hidden)
+        .onPreferenceChange(CardRowHeightKey.self) { value in
+            if value > 0 { rowHeight = value }
+        }
+        .frame(height: CGFloat(cards.count) * rowHeight)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .myShadow()
+        .padding(.horizontal, 16)
     }
 
     // MARK: - Collapsible Header
@@ -210,16 +197,28 @@ struct CardSetDetailView: View {
 
 private struct CardRow: View {
     let card: Card
+    var onEdit: (() -> Void)? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(card.en)
-                .font(.headline)
-            Text(card.item)
-                .font(.subheadline)
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(card.en)
+                    .font(.headline)
+                Text(card.item)
+                    .font(.subheadline)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let onEdit {
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.mySecondary)
+                }
+                .buttonStyle(.borderless)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

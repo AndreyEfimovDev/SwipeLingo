@@ -30,7 +30,8 @@ struct MockDataSeeder {
         let academicSet = CardSet(
             name: "Academic Words",
             collectionId: ielts.id,
-            level: .b2
+            level: .b2,
+            isUserCreated: false
         )
         context.insert(academicSet)
         let sid = academicSet.id
@@ -224,7 +225,8 @@ struct MockDataSeeder {
         let writingSet = CardSet(
             name: "Writing Task 2",
             collectionId: ielts.id,
-            level: .b2
+            level: .b2,
+            isUserCreated: false
         )
         context.insert(writingSet)
         let wid = writingSet.id
@@ -319,7 +321,8 @@ struct MockDataSeeder {
         let biasSet = CardSet(
             name: "Cognitive Biases",
             collectionId: psych.id,
-            level: .c1
+            level: .c1,
+            isUserCreated: false
         )
         context.insert(biasSet)
         let bid = biasSet.id
@@ -389,6 +392,15 @@ struct MockDataSeeder {
         context.insert(inbox)
         let inboxSet = CardSet(name: "Inbox", collectionId: inbox.id)
         context.insert(inboxSet)
+        let iid = inboxSet.id
+
+        // Inbox cards — only English words, no translation yet (sent from outside the app)
+        let inboxCards: [Card] = [
+            Card(en: "Serendipity",    item: "", setId: iid),
+            Card(en: "Idiosyncratic", item: "", setId: iid),
+            Card(en: "Perseverance",  item: "", setId: iid),
+        ]
+        for card in inboxCards { context.insert(card) }
 
         // ─────────────────────────────────────────────
         // MARK: Pile — Morning Session
@@ -402,6 +414,37 @@ struct MockDataSeeder {
             shuffleMethod: .random
         )
         context.insert(pile)
+
+        try? context.save()
+    }
+
+    // MARK: - System Collections
+
+    /// Ensures "Inbox" and "My Sets" always exist, regardless of seed state.
+    /// Safe to call on every launch — creates only what's missing.
+    static func ensureSystemCollections(into context: ModelContext) {
+        let existing = (try? context.fetch(FetchDescriptor<Collection>())) ?? []
+        let names = Set(existing.map { $0.name })
+
+
+        if !names.contains("My Sets") {
+            let mySets = Collection(name: "My Sets", icon: "folder.fill", isOwned: true, isUserCreated: true)
+            context.insert(mySets)
+        }
+
+        if !names.contains("Inbox") {
+            let inbox = Collection(name: "Inbox", icon: "tray.fill", isOwned: true, isUserCreated: true)
+            context.insert(inbox)
+            let inboxSet = CardSet(name: "Inbox", collectionId: inbox.id)
+            context.insert(inboxSet)
+        } else if let inbox = existing.first(where: { $0.name == "Inbox" }) {
+            // Ensure Inbox has its CardSet
+            let sets = (try? context.fetch(FetchDescriptor<CardSet>())) ?? []
+            if !sets.contains(where: { $0.collectionId == inbox.id }) {
+                let inboxSet = CardSet(name: "Inbox", collectionId: inbox.id)
+                context.insert(inboxSet)
+            }
+        }
 
         try? context.save()
     }

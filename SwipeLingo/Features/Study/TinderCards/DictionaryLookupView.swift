@@ -32,6 +32,23 @@ final class DictionaryLookupViewModel {
 
     private let service = DictionaryService()
 
+    // MARK: - Language helpers
+
+    /// Maps display name ("Русский", "Español" …) → BCP-47 identifier used by Translation framework.
+    static func targetLangId(for nativeLanguage: String) -> String {
+        switch nativeLanguage {
+        case "Русский":   return "ru"
+        case "中文":       return "zh"
+        case "Español":   return "es"
+        case "Français":  return "fr"
+        case "العربية":   return "ar"
+        case "Português": return "pt"
+        case "Deutsch":   return "de"
+        case "日本語":     return "ja"
+        default:          return String(nativeLanguage.prefix(2)).lowercased()
+        }
+    }
+
     // MARK: Actions
 
     func load(word: String) async {
@@ -140,26 +157,11 @@ struct DictionaryLookupView: View {
     @State private var translationSession: TranslationSession?
     @State private var translationConfig: TranslationSession.Configuration?
 
-    /// Maps display name ("Русский", "Español" …) → BCP-47 identifier used by Translation framework.
-    private var targetLangId: String {
-        switch nativeLanguage {
-        case "Русский":   return "ru"
-        case "中文":       return "zh"
-        case "Español":   return "es"
-        case "Français":  return "fr"
-        case "العربية":   return "ar"
-        case "Português": return "pt"
-        case "Deutsch":   return "de"
-        case "日本語":     return "ja"
-        default:          return String(nativeLanguage.prefix(2)).lowercased()
-        }
-    }
-
     private func buildTranslationConfig() {
         #if !targetEnvironment(simulator)
         translationConfig = TranslationSession.Configuration(
             source: Locale.Language(identifier: "en"),
-            target: Locale.Language(identifier: targetLangId)
+            target: Locale.Language(identifier: DictionaryLookupViewModel.targetLangId(for: nativeLanguage))
         )
         #endif
     }

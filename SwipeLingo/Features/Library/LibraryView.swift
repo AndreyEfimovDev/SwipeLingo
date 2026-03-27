@@ -124,7 +124,6 @@ struct LibraryView: View {
             if regularCollections.isEmpty {
                 Text("No collections yet — tap + to create one")
                     .font(.subheadline)
-                    .foregroundStyle(Color.myColors.mySecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 16)
                     .background(Color.myColors.myBackground)
@@ -274,7 +273,6 @@ private struct CollectionRow: View {
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.myColors.mySecondary)
         }
     }
 }

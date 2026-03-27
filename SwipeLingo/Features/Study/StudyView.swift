@@ -18,19 +18,9 @@ struct StudyView: View {
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
-    /// ISO 639-1 two-letter abbreviation for the selected native language.
+    /// ISO 639-1 two-letter abbreviation for the selected native language (uppercase, e.g. "RU").
     private var langAbbr: String {
-        switch nativeLanguage {
-        case "Русский":   return "RU"  // Russian
-        case "中文":       return "ZH"  // Chinese (Mandarin)
-        case "Español":   return "ES"  // Spanish
-        case "Français":  return "FR"  // French
-        case "العربية":   return "AR"  // Arabic
-        case "Português": return "PT"  // Portuguese
-        case "Deutsch":   return "DE"  // German
-        case "日本語":     return "JA"  // Japanese
-        default:          return String(nativeLanguage.prefix(2)).uppercased()
-        }
+        DictionaryLookupViewModel.targetLangId(for: nativeLanguage).uppercased()
     }
 
     /// Button label reflecting the actual language, e.g. "EN→RU" or "RU→EN".
@@ -45,7 +35,7 @@ struct StudyView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
                 .sheet(isPresented: $viewModel.isShowingAddCard) {
-                    AddCardView(preselectedSetId: activeSetId)
+                    AddEditCardView()
                 }
         }
         .onAppear {

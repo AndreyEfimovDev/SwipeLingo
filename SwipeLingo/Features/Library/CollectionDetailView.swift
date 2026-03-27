@@ -28,6 +28,7 @@ struct CollectionDetailView: View {
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle(collection.name)
         .navigationBarTitleDisplayMode(.inline)
+        .frame(maxWidth: .infinity)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { isShowingAddSet = true } label: {
@@ -49,7 +50,7 @@ struct CollectionDetailView: View {
         VStack(spacing: 0) {
             ForEach(cardSets) { cardSet in
                 NavigationLink {
-                    CardSetDetailView(cardSet: cardSet)
+                    CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated)
                 } label: {
                     HStack {
                         Text(cardSet.name)
@@ -99,12 +100,10 @@ struct CollectionDetailView: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 42))
-                .foregroundStyle(Color.myColors.mySecondary)
             Text("No sets yet")
                 .font(.title3.bold())
             Text("Tap + to add a set")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
         }
     }
 }

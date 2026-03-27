@@ -41,6 +41,7 @@ struct SwipeLingoApp: App {
         }
 
         MockDataSeeder.seedIfNeeded(into: container.mainContext)
+        MockDataSeeder.ensureSystemCollections(into: container.mainContext)
     }
 
     var body: some Scene {

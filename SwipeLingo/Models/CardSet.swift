@@ -10,6 +10,10 @@ final class CardSet {
     var collectionId: UUID
     var createdAt: Date
 
+    // false = developer content (IELTS sets, Psychology sets)
+    // true  = user-created content (sets inside My Sets)
+    var isUserCreated: Bool = true
+
     // CEFR level — stored as String for CloudKit/SwiftData compatibility
     var level: String = CEFRLevel.a0a1.rawValue
 
@@ -23,12 +27,14 @@ final class CardSet {
         name: String,
         collectionId: UUID,
         level: CEFRLevel = .a0a1,
+        isUserCreated: Bool = true,
         createdAt: Date = .now
     ) {
         self.id = id
         self.name = name
         self.collectionId = collectionId
         self.level = level.rawValue
+        self.isUserCreated = isUserCreated
         self.createdAt = createdAt
     }
 }
