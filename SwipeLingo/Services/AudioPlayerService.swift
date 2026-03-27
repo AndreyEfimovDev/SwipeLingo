@@ -11,7 +11,7 @@ import Foundation
 //   • "tts:<text>"        — speech synthesis
 //   • ""                  — nothing playing
 //
-// Diagnostics: all key events are printed with [AudioPlayer] prefix.
+// Diagnostics: all key events are logged via log() from Logger.swift.
 
 @Observable
 final class AudioPlayerService: NSObject {
@@ -40,22 +40,22 @@ final class AudioPlayerService: NSObject {
         stop()
 
         guard !urlString.isEmpty else {
-            print("[AudioPlayer] ❌ play() called with empty URL string")
+            log("play() called with empty URL string", level: .error)
             return
         }
         guard let url = URL(string: urlString) else {
-            print("[AudioPlayer] ❌ Invalid URL: '\(urlString)'")
+            log("Invalid URL: '\(urlString)'", level: .error)
             return
         }
 
-        print("[AudioPlayer] ▶ Attempting to play: \(url.absoluteString)")
+        log("▶ Attempting to play: \(url.absoluteString)")
 
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
-            print("[AudioPlayer] ✅ AVAudioSession configured (.playback)")
+            log("AVAudioSession configured (.playback)", level: .info)
         } catch {
-            print("[AudioPlayer] ⚠️ AVAudioSession setup failed: \(error)")
+            log("AVAudioSession setup failed: \(error)", level: .warning)
         }
 
         let item = AVPlayerItem(url: url)
@@ -66,7 +66,7 @@ final class AudioPlayerService: NSObject {
             object: item,
             queue: .main
         ) { [weak self] _ in
-            print("[AudioPlayer] ✅ Playback finished")
+            log("Playback finished", level: .info)
             self?.isPlaying  = false
             self?.currentURL = ""
             self?.player     = nil
@@ -78,7 +78,7 @@ final class AudioPlayerService: NSObject {
             queue: .main
         ) { [weak self] notification in
             let err = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
-            print("[AudioPlayer] ❌ Failed to play to end: \(err?.localizedDescription ?? "unknown")")
+            log("Failed to play to end: \(err?.localizedDescription ?? "unknown")", level: .error)
             self?.isPlaying  = false
             self?.currentURL = ""
             self?.player     = nil
@@ -88,15 +88,15 @@ final class AudioPlayerService: NSObject {
             Task { @MainActor [weak self] in
                 switch item.status {
                 case .readyToPlay:
-                    print("[AudioPlayer] ✅ AVPlayerItem ready to play")
+                    log("AVPlayerItem ready to play", level: .info)
                 case .failed:
                     let msg = item.error?.localizedDescription ?? "unknown load error"
-                    print("[AudioPlayer] ❌ AVPlayerItem failed: \(msg)")
+                    log("AVPlayerItem failed: \(msg)", level: .error)
                     self?.isPlaying  = false
                     self?.currentURL = ""
                     self?.player     = nil
                 case .unknown:
-                    print("[AudioPlayer] ⏳ AVPlayerItem status: buffering…")
+                    log("⏳ AVPlayerItem status: buffering…")
                 @unknown default:
                     break
                 }
@@ -107,19 +107,19 @@ final class AudioPlayerService: NSObject {
             Task { @MainActor [weak self] in
                 switch player.timeControlStatus {
                 case .playing:
-                    print("[AudioPlayer] ▶ timeControlStatus: playing")
+                    log("▶ timeControlStatus: playing")
                 case .paused:
                     if let reason = player.reasonForWaitingToPlay {
-                        print("[AudioPlayer] ⏳ timeControlStatus: waiting — \(reason.rawValue)")
+                        log("⏳ timeControlStatus: waiting — \(reason.rawValue)")
                     } else {
-                        print("[AudioPlayer] ⏹ timeControlStatus: paused (stalled or timed out)")
+                        log("⏹ timeControlStatus: paused (stalled or timed out)")
                         self?.isPlaying  = false
                         self?.currentURL = ""
                         self?.player     = nil
                     }
                 case .waitingToPlayAtSpecifiedRate:
                     let reason = player.reasonForWaitingToPlay?.rawValue ?? "unknown"
-                    print("[AudioPlayer] ⏳ timeControlStatus: waitingToPlay — \(reason)")
+                    log("⏳ timeControlStatus: waitingToPlay — \(reason)")
                 @unknown default:
                     break
                 }
@@ -129,7 +129,7 @@ final class AudioPlayerService: NSObject {
         currentURL = urlString
         player?.play()
         isPlaying = true
-        print("[AudioPlayer] ▶ player.play() called — waiting for buffer")
+        log("▶ player.play() called — waiting for buffer")
     }
 
     // MARK: Public API — TTS
@@ -155,7 +155,7 @@ final class AudioPlayerService: NSObject {
         isPlaying  = true
         synthesizer.delegate = self
         synthesizer.speak(utterance)
-        print("[AudioPlayer] 🔈 TTS started: \(text.prefix(40))")
+        log("🔈 TTS started: \(text.prefix(40))")
     }
 
     // MARK: Public API — Stop
@@ -191,13 +191,13 @@ extension AudioPlayerService: AVSpeechSynthesizerDelegate {
                            didFinish utterance: AVSpeechUtterance) {
         isPlaying  = false
         currentURL = ""
-        print("[AudioPlayer] ✅ TTS finished")
+        log("TTS finished", level: .info)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer,
                            didCancel utterance: AVSpeechUtterance) {
         isPlaying  = false
         currentURL = ""
-        print("[AudioPlayer] ⏹ TTS cancelled")
+        log("⏹ TTS cancelled")
     }
 }

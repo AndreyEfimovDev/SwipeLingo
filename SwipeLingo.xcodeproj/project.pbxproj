@@ -10,6 +10,7 @@
 		47EA2FB62F75541500A84C9D /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F822F75541500A84C9D /* AppFeature.swift */; };
 		47EA2FB72F75541500A84C9D /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F832F75541500A84C9D /* SwipeLingoApp.swift */; };
 		47EA2FB82F75541500A84C9D /* Bundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F852F75541500A84C9D /* Bundle.swift */; };
+		004C7A64EFC14005A4EB8219BB082754 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7530F0C7FCFA48C4BC413B8DB553C2C8 /* Logger.swift */; };
 		47EA2FB92F75541500A84C9D /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F862F75541500A84C9D /* Colors.swift */; };
 		47EA2FBA2F75541500A84C9D /* DateFormater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F872F75541500A84C9D /* DateFormater.swift */; };
 		47EA2FBB2F75541500A84C9D /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F882F75541500A84C9D /* JSON.swift */; };
@@ -81,6 +82,7 @@
 		47EA2F822F75541500A84C9D /* AppFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
 		47EA2F832F75541500A84C9D /* SwipeLingoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoApp.swift; sourceTree = "<group>"; };
 		47EA2F852F75541500A84C9D /* Bundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bundle.swift; sourceTree = "<group>"; };
+		7530F0C7FCFA48C4BC413B8DB553C2C8 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		47EA2F862F75541500A84C9D /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		47EA2F872F75541500A84C9D /* DateFormater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormater.swift; sourceTree = "<group>"; };
 		47EA2F882F75541500A84C9D /* JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
@@ -187,6 +189,7 @@
 			children = (
 				47EA2F852F75541500A84C9D /* Bundle.swift */,
 				47EA2F862F75541500A84C9D /* Colors.swift */,
+				7530F0C7FCFA48C4BC413B8DB553C2C8 /* Logger.swift */,
 				47EA2F872F75541500A84C9D /* DateFormater.swift */,
 				47EA2F882F75541500A84C9D /* JSON.swift */,
 				47EA2F892F75541500A84C9D /* UnderlineSermentedPicker.swift */,
@@ -471,6 +474,7 @@
 				47EA2FB62F75541500A84C9D /* AppFeature.swift in Sources */,
 				47EA2FB72F75541500A84C9D /* SwipeLingoApp.swift in Sources */,
 				47EA2FB82F75541500A84C9D /* Bundle.swift in Sources */,
+				004C7A64EFC14005A4EB8219BB082754 /* Logger.swift in Sources */,
 				47EA2FB92F75541500A84C9D /* Colors.swift in Sources */,
 				47EA2FBA2F75541500A84C9D /* DateFormater.swift in Sources */,
 				47EA2FBB2F75541500A84C9D /* JSON.swift in Sources */,

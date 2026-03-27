@@ -93,19 +93,19 @@ final class DictionaryLookupViewModel {
             samplesEN.append(definition.text)
             samplesItem.append(translatedText ?? "")
             changed = true
-            print("[DictionaryLookup] [+] definition: \"\(definition.text.prefix(60))\"")
-            if let t = translatedText { print("[DictionaryLookup]     translation: \"\(t.prefix(60))\"") }
+            log("[+] definition: \"\(definition.text.prefix(60))\"")
+            if let t = translatedText { log("    translation: \"\(t.prefix(60))\"") }
         }
         if let example = definition.example, !samplesEN.contains(example) {
             samplesEN.append(example)
             samplesItem.append(translatedExample ?? "")
             changed = true
-            print("[DictionaryLookup] [+] example: \"\(example.prefix(60))\"")
-            if let t = translatedExample { print("[DictionaryLookup]     translation: \"\(t.prefix(60))\"") }
+            log("[+] example: \"\(example.prefix(60))\"")
+            if let t = translatedExample { log("    translation: \"\(t.prefix(60))\"") }
         }
 
         guard changed else {
-            print("[DictionaryLookup] [+] already present — skipped")
+            log("[+] already present — skipped")
             return
         }
 
@@ -118,22 +118,22 @@ final class DictionaryLookupViewModel {
     func addSynonym(_ synonym: String, to card: Card, context: ModelContext) {
         var syns = card.synonyms
         guard !syns.contains(synonym) else {
-            print("[DictionaryLookup] [+] '\(synonym)' already present — skipped")
+            log("[+] '\(synonym)' already present — skipped")
             return
         }
         syns.append(synonym)
         card.synonyms = syns
         save(context: context)
         addedItems.insert(synonym)
-        print("[DictionaryLookup] [+] synonym: '\(synonym)'")
+        log("[+] synonym: '\(synonym)'")
     }
 
     private func save(context: ModelContext) {
         do {
             try context.save()
-            print("[DictionaryLookup] ✅ context.save() OK")
+            log("context.save() OK", level: .info)
         } catch {
-            print("[DictionaryLookup] ❌ context.save() failed: \(error)")
+            log("context.save() failed: \(error)", level: .error)
         }
     }
 }
@@ -247,7 +247,7 @@ struct DictionaryLookupView: View {
             let example = responses.first { $0.clientIdentifier == "ex" }?.targetText
             return (text, example)
         } catch {
-            print("[DictionaryLookup] ⚠️ Translation failed: \(error)")
+            log("Translation failed: \(error)", level: .warning)
             return (nil, nil)
         }
     }
@@ -443,11 +443,11 @@ struct DictionaryLookupView: View {
         card.dictAudioURL      = entry.audioURL
         card.dictDefinition    = entry.meanings.first?.definitions.first?.text ?? ""
         try? context.save()
-        print("[DictionaryLookup] cached to card '\(card.en)':")
-        print("  transcription : '\(card.dictTranscription)'")
-        print("  audioURL      : '\(card.dictAudioURL)'")
-        print("  definition    : '\(card.dictDefinition.prefix(60))…'")
-        print("  audioButton visible: \(!card.dictAudioURL.isEmpty)")
+        log("cached to card '\(card.en)':")
+        log("  transcription : '\(card.dictTranscription)'")
+        log("  audioURL      : '\(card.dictAudioURL)'")
+        log("  definition    : '\(card.dictDefinition.prefix(60))…'")
+        log("  audioButton visible: \(!card.dictAudioURL.isEmpty)")
     }
 }
 

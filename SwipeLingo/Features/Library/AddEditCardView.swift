@@ -258,7 +258,7 @@ struct AddEditCardView: View {
                     item = translated
                 }
             } catch {
-                print("[AutoFill] ⚠️ word translation failed: \(error)")
+                log("word translation failed: \(error)", level: .warning)
             }
         }
 
@@ -302,10 +302,10 @@ struct AddEditCardView: View {
                 samplesItem = translated
             } catch {
                 samplesItem = Array(repeating: "", count: examples.count)
-                print("[AutoFill] ⚠️ examples translation failed: \(error)")
+                log("examples translation failed: \(error)", level: .warning)
             }
         } catch {
-            print("[AutoFill] ⚠️ dictionary lookup failed: \(error)")
+            log("dictionary lookup failed: \(error)", level: .warning)
         }
     }
 

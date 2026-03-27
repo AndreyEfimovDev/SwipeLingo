@@ -24,7 +24,7 @@ struct FirestoreImportService {
 
         importStubContent(into: context)
         try? context.save()
-        print("[FirestoreImportService] ✅ Developer content imported (stub)")
+        log("Developer content imported (stub)", level: .info)
     }
 
     // MARK: - Stub implementation
