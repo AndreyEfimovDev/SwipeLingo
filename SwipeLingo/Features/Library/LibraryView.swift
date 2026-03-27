@@ -218,7 +218,7 @@ private struct PileRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Button(action: onActivate) {
-                Image(systemName: pile.isActive ? "checkmark.circle.fill" : "circle")
+                Image(systemName: pile.isActive ? "checkmark.circle" : "circle")
                     .foregroundStyle(pile.isActive ? Color.myColors.myAccent : Color.myColors.mySecondary)
                     .font(.title3)
                     .animation(.spring(duration: 0.2), value: pile.isActive)

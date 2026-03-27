@@ -202,7 +202,7 @@ private struct SetToggleRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+            Image(systemName: isSelected ? "checkmark.circle" : "circle")
                 .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                 .font(.title3)
                 .animation(.spring(duration: 0.2), value: isSelected)

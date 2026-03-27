@@ -6,6 +6,7 @@ import SwiftUI
 struct SettingsView: View {
 
     @AppStorage("nativeLanguage")     private var nativeLanguage      = "Русский"
+    @AppStorage("englishVariant")     private var englishVariant      = "en-US"
     @AppStorage("colorScheme")        private var theme: Theme         = .system
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier  = ""
 
@@ -46,27 +47,49 @@ struct SettingsView: View {
                 .font(.footnote.weight(.semibold))
                 .padding(.horizontal, 32)
 
-            HStack {
-                Text("Native language")
-                    .font(.body)
-                Spacer()
-                Picker("", selection: $nativeLanguage) {
-                    ForEach(languages, id: \.self) { Text($0).tag($0) }
+            VStack(spacing: 0) {
+                // Native language
+                HStack {
+                    Text("Native language")
+                        .font(.body)
+                    Spacer()
+                    Picker("", selection: $nativeLanguage) {
+                        ForEach(languages, id: \.self) { Text($0).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .font(.subheadline.weight(.bold))
                 }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .font(.subheadline.weight(.bold))
+                .frame(height: 52)
+                .padding(.horizontal, 16)
+
+                Divider().padding(.leading, 16)
+
+                // English variant
+                HStack {
+                    Text("Preferred English")
+                        .font(.body)
+                    Spacer()
+                    Picker("", selection: $englishVariant) {
+                        Text("American").tag("en-US")
+                        Text("British").tag("en-GB")
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .font(.subheadline.weight(.bold))
+                }
+                .frame(height: 52)
+                .padding(.horizontal, 16)
             }
-            .frame(height: 52)
-            .padding(.horizontal, 16)
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
 
-            Text("Select your native language for translation.")
-                .font(.footnote)
-                .padding(.horizontal, 32)
+//            Text("Select your native language for translation and preferred English variant.")
+//                .font(.footnote)
+//                .opacity(0.75)
+//                .padding(.horizontal, 32)
         }
     }
 
@@ -94,9 +117,10 @@ struct SettingsView: View {
             .myShadow()
             .padding(.horizontal, 16)
 
-            Text("Voice used when reading English words aloud.")
-                .font(.footnote)
-                .padding(.horizontal, 32)
+//            Text("Voice used when reading English words aloud.")
+//                .font(.footnote)
+//                .opacity(0.75)
+//                .padding(.horizontal, 32)
         }
     }
 

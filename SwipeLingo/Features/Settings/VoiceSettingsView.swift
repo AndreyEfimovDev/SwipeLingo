@@ -6,6 +6,7 @@ import SwiftUI
 struct VoiceSettingsView: View {
 
     @AppStorage("ttsVoiceIdentifier") private var selectedIdentifier = ""
+    @AppStorage("englishVariant")     private var englishVariant    = "en-US"
     @State private var previewService       = AudioPlayerService()
     @State private var previewingVoiceId    = ""
 
@@ -43,10 +44,15 @@ struct VoiceSettingsView: View {
             .filter { $0.language.hasPrefix("en-") && allowed.contains($0.quality) }
         let grouped = Dictionary(grouping: english, by: \.quality)
         let qualityOrder: [AVSpeechSynthesisVoiceQuality] = [.premium, .enhanced, .default]
+        let preferred = englishVariant  // e.g. "en-US" or "en-GB"
         return qualityOrder.compactMap { q in
             guard let voices = grouped[q], !voices.isEmpty else { return nil }
             let sorted = voices.sorted {
-                $0.language == $1.language ? $0.name < $1.name : $0.language < $1.language
+                let aPreferred = $0.language == preferred
+                let bPreferred = $1.language == preferred
+                if aPreferred != bPreferred { return aPreferred }           // preferred dialect first
+                if $0.language != $1.language { return $0.language < $1.language } // then alphabetical by locale
+                return $0.name < $1.name                                    // then by name
             }
             return VoiceGroup(quality: q, voices: sorted)
         }
@@ -101,7 +107,7 @@ struct VoiceSettingsView: View {
                 .padding(.horizontal, 32)
 
             HStack(spacing: 12) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                Image(systemName: isSelected ? "checkmark.circle" : "circle")
                     .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.myAccent)
                     .font(.title3)
                     .frame(width: 28)
@@ -160,7 +166,7 @@ struct VoiceSettingsView: View {
 
         return HStack(spacing: 12) {
             // Selection indicator
-            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+            Image(systemName: isSelected ? "checkmark.circle" : "circle")
                 .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.myAccent)
                 .font(.title3)
                 .frame(width: 28)
@@ -188,7 +194,7 @@ struct VoiceSettingsView: View {
                     )
                 }
             } label: {
-                Image(systemName: isPreviewing ? "stop.circle" : "speaker.wave.2.circle.fill")
+                Image(systemName: isPreviewing ? "stop.circle" : "speaker.wave.2.circle")
                     .foregroundStyle(isPreviewing ? Color.myColors.myRed : Color.myColors.myBlue)
                     .font(.title3)
                     .contentTransition(.symbolEffect(.replace))

@@ -11,11 +11,14 @@ struct TinderCardsView: View {
     
     @AppStorage("studyDirection")       private var studyDirection      = "EN→Native"
     @AppStorage("ttsVoiceIdentifier")   private var ttsVoiceIdentifier  = ""
+    @AppStorage("englishVariant")       private var englishVariant      = "en-US"
 
     @State private var viewModel: TinderCardsViewModel
     @State private var lookupCard: Card?
     @State private var audioService  = AudioPlayerService()
     @State private var examplePageIndex: Int = 0
+    /// Automatically resets to false when DragGesture ends OR is cancelled (e.g. second finger).
+    @GestureState private var dragIsActive = false
 
     private let swipeThreshold:   CGFloat = 110
     private let upSwipeThreshold: CGFloat = 100
@@ -67,7 +70,7 @@ struct TinderCardsView: View {
         VStack(spacing: 0) {
             if !viewModel.isDone {
                 progressStatsRow
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 8)
             }
 
             ZStack {
@@ -75,6 +78,7 @@ struct TinderCardsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 16)
+            .padding(.top, 16)
         }
     }
 
@@ -86,35 +90,70 @@ struct TinderCardsView: View {
             ZStack {
                 if viewModel.isDone { doneFullCard } else { cardStack }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 12)
-            .padding(.vertical, 8)
         }
-        // System tab bar is already hidden by AppView in landscape
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 16)
+
     }
 
     // MARK: - Landscape Stats Column
 
     private var landscapeStatsColumn: some View {
-        let learnt = viewModel.learntInSession
-        let active = viewModel.cards.filter { $0.status == .active }.count
-        return VStack(spacing: 0) {
-            Spacer()
-            statLabel("Learnt", value: learnt)
-            Spacer()
-            Text("\(active + learnt)").font(.caption2)
-            Spacer()
-            statLabel("Active", value: active)
-            Spacer()
+        let allCards    = viewModel.cards
+        let effTotal    = allCards.filter { $0.status != .deleted }.count
+        let learnt      = viewModel.learntInSession
+        let active      = allCards.filter { $0.status == .active }.count
+        let deletedSoFar = allCards.prefix(viewModel.currentIndex).filter { $0.status == .deleted }.count
+        let current     = min(viewModel.currentIndex - deletedSoFar + 1, max(effTotal, 1))
+        let progress    = effTotal > 0 ? CGFloat(max(0, viewModel.currentIndex - deletedSoFar)) / CGFloat(effTotal) : 0
+
+        return HStack(spacing: 0) {
+            // Stats content
+            VStack(spacing: 0) {
+                Spacer()
+                statLabel("Learnt", value: learnt, status: .learnt)
+                Spacer()
+                VStack(spacing: 2) {
+                    Text("\(current) / \(effTotal)")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                    Text(String(format: "%.1f%%", effTotal > 0 ? Double(current) / Double(effTotal) * 100 : 0))
+                        .font(.system(size: 9))
+                        .opacity(0.9)
+                }
+                Spacer()
+                statLabel("Active", value: active, status: .active)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+
+            // Vertical progress bar — right edge, replaces Divider with meaning
+            GeometryReader { geo in
+                ZStack(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(Color.myColors.mySecondary.opacity(0.15))
+                        .frame(width: 3, height: geo.size.height)
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(Color.myColors.myAccent.opacity(0.5))
+                        .frame(width: 3, height: geo.size.height * progress)
+                        .animation(.spring(duration: 0.4), value: progress)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .frame(width: 8)
         }
-        .frame(width: 56)
+        .frame(maxWidth: 64)
     }
 
-    private func statLabel(_ title: String, value: Int) -> some View {
+    private func statLabel(_ title: String, value: Int, status: CardStatus) -> some View {
         VStack(spacing: 2) {
-            Text(title).font(.system(size: 9))
+            Text(title)
+                .font(.system(size: 9))
             Text("\(value)")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.callout)
+                .fontWeight(.semibold)
+                .foregroundStyle(status.color)
         }
     }
 
@@ -131,14 +170,29 @@ struct TinderCardsView: View {
 
         return VStack(spacing: 6) {
             HStack {
-                Text("Active ")
-                + Text("\(active)").bold()
-                Spacer()
-                Text("\(current) / \(effTotal)")
+                Text("\(active)")
+                    .font(.subheadline)
                     .bold()
+                    .foregroundStyle(CardStatus.active.color)
+                + Text(" Active")
+                    .font(.caption2)
+                
                 Spacer()
+                
+                let percentageLine = String(format: "%.1f", effTotal > 0 ? Double(current) / Double(effTotal) * 100 : 0)
+                
+                Text("\(current) / \(effTotal) (")
+                + Text(percentageLine)
+                + Text("%)")
+                    .bold()
+                            
+                Spacer()
+                
                 Text("Learnt ")
-                + Text("\(learnt)").bold()
+                + Text("\(learnt)")
+                    .font(.subheadline)
+                    .bold()
+                    .foregroundStyle(CardStatus.learnt.color)
             }
             .font(.caption2)
 
@@ -253,7 +307,30 @@ struct TinderCardsView: View {
             .rotationEffect(viewModel.dragRotation)
             .scaleEffect(scale)
             .simultaneousGesture(dragGesture)
-            .onTapGesture { viewModel.flipToggle() }
+            .onTapGesture {
+                // Block tap while drag is active OR while card is spring-animating back.
+                guard !dragIsActive, !viewModel.isDragging else { return }
+                viewModel.flipToggle()
+            }
+            .onChange(of: dragIsActive) { _, isActive in
+                guard !isActive else { return }
+                // Drag ended or was cancelled (e.g. second finger tap).
+                // onEnded sets dragOffset to ±600 / -800 only when a swipe is fully
+                // committed. Any smaller value means the gesture was cancelled mid-drag
+                // and the card must return to centre regardless of swipeThreshold.
+                let isFlying = abs(viewModel.dragOffset.width) > 400
+                            || viewModel.dragOffset.height < -400
+
+                if !isFlying {
+                    withAnimation(.spring(duration: 0.4, bounce: 0.4)) {
+                        viewModel.dragOffset = .zero
+                    }
+                }
+                // Clear isDragging after spring settles (covers both normal & cancel paths)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+                    viewModel.isDragging = false
+                }
+            }
             .myShadow()
     }
 
@@ -296,7 +373,7 @@ struct TinderCardsView: View {
 
             // SRS column — only present on back side, no reserved space on front
             if viewModel.isFlipped {
-                Divider()
+//                Divider()
                 srsButtonsColumn
                     .frame(width: 90)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -338,7 +415,7 @@ struct TinderCardsView: View {
             if isThisPlaying {
                 audioService.stop()
             } else if isTTS {
-                audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier)
+                audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier, language: englishVariant)
             } else {
                 audioService.play(urlString: text)
             }
@@ -375,6 +452,7 @@ struct TinderCardsView: View {
             Text("Tap to flip")
                 .font(.caption2)
                 .padding(.bottom, 20)
+                .opacity(0.75)
         }
     }
 
@@ -385,12 +463,13 @@ struct TinderCardsView: View {
         let backSmallText = isReversed ? card.item : card.en
 
         return VStack(spacing: 0) {
-            ScrollView(.vertical, showsIndicators: false) {
+            ScrollView(.vertical, showsIndicators: true) {
                 VStack(spacing: 14) {
 
                     // 1. Translation — large
                     Text(backLargeText)
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+                        .font(.system(.largeTitle, design: .rounded))
+                        .fontWeight(.semibold)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.4)
                         .padding(.horizontal, 20)
@@ -401,7 +480,7 @@ struct TinderCardsView: View {
                             .font(.subheadline)
                         if !card.dictAudioURL.isEmpty {
                             audioButton(for: card.dictAudioURL)
-                                .font(.subheadline)
+                                .font(.headline)
                         } else if !isReversed {
                             // Fallback TTS when no dictionary audio
                             audioButton(for: card.en, isTTS: true)
@@ -434,18 +513,16 @@ struct TinderCardsView: View {
                             // Example content
                             VStack(spacing: 5) {
                                 Text(card.sampleEN[page])
-                                    .font(.subheadline)
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
                                 audioButton(for: card.sampleEN[page], isTTS: true)
-                                    .font(.subheadline)
                                 if page < card.sampleItem.count {
                                     Text(card.sampleItem[page])
-                                        .font(.caption)
                                         .multilineTextAlignment(.center)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
+                            .font(.subheadline)
                             .padding(.vertical, 4)
                             .frame(maxWidth: .infinity)
                             .id(page)
@@ -494,20 +571,17 @@ struct TinderCardsView: View {
                     }
 
                     Spacer(minLength: 8)
-                    
-
                 }
             }
             .frame(maxHeight: .infinity)
-
+            
             // Tap to flip hint — front side
             Text("Tap to flip")
                 .font(.caption2)
-                .padding(.bottom, 20)
+                .opacity(0.75)
 
             // Dictionary lookup — pinned to bottom, EN→Native only
             if !isReversed {
-                Divider()
                 Button { lookupCard = card } label: {
                     Label("Look up in dictionary", systemImage: "book.pages")
                         .font(.subheadline)
@@ -553,6 +627,7 @@ struct TinderCardsView: View {
                 Text("Tap to flip")
                     .font(.caption2)
                     .padding(.bottom, 20)
+                    .opacity(0.75)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -564,10 +639,13 @@ struct TinderCardsView: View {
         let color: Color
         let opacity: Double
         if upSwipeProgress > 0 {
-            color = .red; opacity = upSwipeProgress * 0.4
+            // Swipe up = delete
+            color = CardStatus.deleted.color; opacity = upSwipeProgress * 0.4
         } else {
             let p = viewModel.swipeProgress
-            color = p > 0 ? .green : .blue; opacity = abs(p) * 0.45
+            // Swipe right = learnt (green), swipe left = active/again (blue)
+            color = p > 0 ? CardStatus.learnt.color : CardStatus.active.color
+            opacity = abs(p) * 0.45
         }
         return RoundedRectangle(cornerRadius: 24)
             .fill(color.opacity(opacity))
@@ -578,8 +656,11 @@ struct TinderCardsView: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 15)
+            // updating fires on every change AND resets automatically on end OR cancel
+            .updating($dragIsActive) { _, state, _ in state = true }
             .onChanged { value in
                 guard !viewModel.isFlipped else { return }
+                viewModel.isDragging = true
                 viewModel.dragOffset = value.translation
             }
             .onEnded { value in
@@ -608,11 +689,9 @@ struct TinderCardsView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         viewModel.commitDelete(context: context)
                     }
-                } else {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.4)) {
-                        viewModel.dragOffset = .zero
-                    }
                 }
+                // Return-to-centre is handled by onChange(of: dragIsActive) below —
+                // this covers both normal release AND gesture cancellation (second finger).
             }
     }
 

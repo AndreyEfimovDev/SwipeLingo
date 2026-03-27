@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Translation
 
 // MARK: - DictionaryLookupViewModel
 
@@ -60,19 +61,30 @@ final class DictionaryLookupViewModel {
     /// Keys of texts already added in this session — drives the ✓ indicator in the UI.
     private(set) var addedItems: Set<String> = []
 
-    func addDefinition(_ definition: DictionaryDefinition, to card: Card, context: ModelContext) {
-        var samples = card.sampleEN
+    func addDefinition(
+        _ definition: DictionaryDefinition,
+        to card: Card,
+        context: ModelContext,
+        translatedText: String? = nil,
+        translatedExample: String? = nil
+    ) {
+        var samplesEN   = card.sampleEN
+        var samplesItem = card.sampleItem
         var changed = false
 
-        if !samples.contains(definition.text) {
-            samples.append(definition.text)
+        if !samplesEN.contains(definition.text) {
+            samplesEN.append(definition.text)
+            samplesItem.append(translatedText ?? "")
             changed = true
             print("[DictionaryLookup] [+] definition: \"\(definition.text.prefix(60))\"")
+            if let t = translatedText { print("[DictionaryLookup]     translation: \"\(t.prefix(60))\"") }
         }
-        if let example = definition.example, !samples.contains(example) {
-            samples.append(example)
+        if let example = definition.example, !samplesEN.contains(example) {
+            samplesEN.append(example)
+            samplesItem.append(translatedExample ?? "")
             changed = true
-            print("[DictionaryLookup] [+] example:    \"\(example.prefix(60))\"")
+            print("[DictionaryLookup] [+] example: \"\(example.prefix(60))\"")
+            if let t = translatedExample { print("[DictionaryLookup]     translation: \"\(t.prefix(60))\"") }
         }
 
         guard changed else {
@@ -80,7 +92,8 @@ final class DictionaryLookupViewModel {
             return
         }
 
-        card.sampleEN = samples
+        card.sampleEN   = samplesEN
+        card.sampleItem = samplesItem
         save(context: context)
         addedItems.insert(definition.text)
     }
@@ -118,6 +131,38 @@ struct DictionaryLookupView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel = DictionaryLookupViewModel()
+
+    // Reads native language from the same AppStorage key used across the app.
+    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+
+    // Translation session — prepared once (or re-prepared if language changes) via .translationTask.
+    // Simulator does not support Translation — config stays nil to suppress the error dialog.
+    @State private var translationSession: TranslationSession?
+    @State private var translationConfig: TranslationSession.Configuration?
+
+    /// Maps display name ("Русский", "Español" …) → BCP-47 identifier used by Translation framework.
+    private var targetLangId: String {
+        switch nativeLanguage {
+        case "Русский":   return "ru"
+        case "中文":       return "zh"
+        case "Español":   return "es"
+        case "Français":  return "fr"
+        case "العربية":   return "ar"
+        case "Português": return "pt"
+        case "Deutsch":   return "de"
+        case "日本語":     return "ja"
+        default:          return String(nativeLanguage.prefix(2)).lowercased()
+        }
+    }
+
+    private func buildTranslationConfig() {
+        #if !targetEnvironment(simulator)
+        translationConfig = TranslationSession.Configuration(
+            source: Locale.Language(identifier: "en"),
+            target: Locale.Language(identifier: targetLangId)
+        )
+        #endif
+    }
 
     var body: some View {
         NavigationStack {
@@ -165,8 +210,43 @@ struct DictionaryLookupView: View {
                 cacheEntry(entry)
             }
         }
+        .onAppear {
+            buildTranslationConfig()
+        }
+        .onChange(of: nativeLanguage) { _, _ in
+            // Rebuild session when user changes native language in Settings.
+            translationSession = nil
+            buildTranslationConfig()
+        }
         .onDisappear {
             viewModel.audioService.stop()
+        }
+        // Prepare translation session for selected target language.
+        .translationTask(translationConfig) { session in
+            translationSession = session
+        }
+    }
+
+    // MARK: - Translation helper
+
+    /// Translates definition + optional example in one batch call.
+    /// Falls back silently (empty strings) if session unavailable or translation fails.
+    private func translate(_ definition: DictionaryDefinition) async -> (text: String?, example: String?) {
+        guard let session = translationSession else { return (nil, nil) }
+        do {
+            var requests: [TranslationSession.Request] = [
+                TranslationSession.Request(sourceText: definition.text, clientIdentifier: "def")
+            ]
+            if let ex = definition.example {
+                requests.append(TranslationSession.Request(sourceText: ex, clientIdentifier: "ex"))
+            }
+            let responses = try await session.translations(from: requests)
+            let text    = responses.first { $0.clientIdentifier == "def" }?.targetText
+            let example = responses.first { $0.clientIdentifier == "ex" }?.targetText
+            return (text, example)
+        } catch {
+            print("[DictionaryLookup] ⚠️ Translation failed: \(error)")
+            return (nil, nil)
         }
     }
 
@@ -237,8 +317,8 @@ struct DictionaryLookupView: View {
                     viewModel.toggleAudio(urlString: entry.audioURL)
                 } label: {
                     Image(systemName: viewModel.audioService.isPlaying
-                          ? "stop.circle.fill"
-                          : "speaker.wave.2.circle.fill")
+                          ? "stop.circle"
+                          : "speaker.wave.2.circle")
                         .font(.system(size: 40))
                         .foregroundStyle(Color.accentColor)
                         .contentTransition(.symbolEffect(.replace))
@@ -296,12 +376,19 @@ struct DictionaryLookupView: View {
 
             Spacer(minLength: 8)
 
-            // [+] adds the definition (and example if any) to card.sampleEN
+            // [+] adds the definition (+ example) to card.sampleEN / sampleItem with translation
             let alreadyAdded = viewModel.addedItems.contains(definition.text) || card.sampleEN.contains(definition.text)
             Button {
-                viewModel.addDefinition(definition, to: card, context: context)
+                Task {
+                    let (translatedText, translatedExample) = await translate(definition)
+                    viewModel.addDefinition(
+                        definition, to: card, context: context,
+                        translatedText: translatedText,
+                        translatedExample: translatedExample
+                    )
+                }
             } label: {
-                Image(systemName: alreadyAdded ? "checkmark.circle.fill" : "plus.circle")
+                Image(systemName: alreadyAdded ? "checkmark.circle" : "plus.circle")
                     .font(.title3)
                     .foregroundStyle(alreadyAdded ? Color.green : Color.accentColor)
                     .contentTransition(.symbolEffect(.replace))
@@ -334,7 +421,7 @@ struct DictionaryLookupView: View {
             Button {
                 viewModel.addSynonym(synonym, to: card, context: context)
             } label: {
-                Image(systemName: synonymAdded ? "checkmark.circle.fill" : "plus.circle.fill")
+                Image(systemName: synonymAdded ? "checkmark.circle" : "plus.circle")
                     .font(.caption)
                     .foregroundStyle(synonymAdded ? Color.green : Color.accentColor)
                     .contentTransition(.symbolEffect(.replace))

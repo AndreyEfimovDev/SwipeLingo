@@ -35,6 +35,9 @@ final class TinderCardsViewModel {
     private(set) var currentIndex: Int = 0
     var dragOffset: CGSize = .zero
     var isFlipped: Bool = false
+    /// True while a drag is active OR while the card is still animating back to centre.
+    /// Tap-to-flip is blocked when this flag is set.
+    var isDragging: Bool = false
 
     // MARK: Derived
 

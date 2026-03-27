@@ -117,7 +117,6 @@ struct AppView: View {
     private var landscapeLayout: some View {
         HStack(spacing: 0) {
             verticalTabBar
-            Divider()
             currentTabContent
         }
     }
