@@ -49,6 +49,9 @@ struct AddEditCardView: View {
     @State private var translationConfig: TranslationSession.Configuration?
     @State private var isAutoFilling = false
 
+    // Keyboard
+    @State private var keyboard = KeyboardManager()
+
     enum Field: Hashable {
         case en, item, newSetName
         case sampleEN(Int), sampleItem(Int)
@@ -74,10 +77,14 @@ struct AddEditCardView: View {
 
     private func buildTranslationConfig() {
         #if !targetEnvironment(simulator)
+        let langId = DictionaryLookupViewModel.targetLangId(for: nativeLanguage)
+        log("buildTranslationConfig: nativeLanguage=\(nativeLanguage) → langId=\(langId)", level: .info)
         translationConfig = TranslationSession.Configuration(
             source: Locale.Language(identifier: "en"),
-            target: Locale.Language(identifier: DictionaryLookupViewModel.targetLangId(for: nativeLanguage))
+            target: Locale.Language(identifier: langId)
         )
+        #else
+        log("buildTranslationConfig: skipped on simulator", level: .warning)
         #endif
     }
 
@@ -141,6 +148,7 @@ struct AddEditCardView: View {
                     setPickerSection               // visible in both add and edit modes
                     examplesENSection
                     examplesItemSection
+                    autoFillButton
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
@@ -159,8 +167,34 @@ struct AddEditCardView: View {
                 buildTranslationConfig()
             }
             .translationTask(translationConfig) { session in
+                log("translationTask: session received ✓", level: .info)
                 translationSession = session
             }
+            .overlay(alignment: .bottomTrailing) {
+                hideKeyboardButton
+            }
+        }
+    }
+
+    // MARK: - Hide Keyboard Button
+
+    @ViewBuilder
+    private var hideKeyboardButton: some View {
+        if focused != nil && keyboard.shouldShowHideButton {
+            Button {
+                focused = nil
+            } label: {
+                Image(systemName: "keyboard.chevron.compact.down")
+                    .font(.title2)
+                    .foregroundStyle(Color.myColors.myBlue)
+                    .frame(width: 48, height: 48)
+                    .background(Color.myColors.myBackground)
+                    .clipShape(Circle())
+                    .myShadow()
+            }
+            .padding(.trailing, 16)
+            .padding(.bottom, 16)
+            .transition(.scale.combined(with: .opacity))
         }
     }
 
@@ -183,21 +217,6 @@ struct AddEditCardView: View {
                     .fontWeight(.semibold)
             }
             .disabled(isShowingExitConfirm)
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-            if !en.trimmingCharacters(in: .whitespaces).isEmpty {
-                Button {
-                    Task { await handleAutoFill() }
-                } label: {
-                    if isAutoFilling {
-                        ProgressView().scaleEffect(0.8)
-                    } else {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(Color.myColors.myBlue)
-                    }
-                }
-                .disabled(isAutoFilling || isShowingExitConfirm)
-            }
         }
     }
 
@@ -247,6 +266,8 @@ struct AddEditCardView: View {
         focused = nil          // dismiss keyboard before filling
         isAutoFilling = true
         defer { isAutoFilling = false }
+
+        log("handleAutoFill: word='\(word)', session=\(translationSession == nil ? "nil ❌" : "ready ✓")", level: .info)
 
         // Step 1: translate the word itself → fill item if empty
         if item.trimmingCharacters(in: .whitespaces).isEmpty,
@@ -444,6 +465,36 @@ struct AddEditCardView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+    }
+
+    // MARK: - Auto-fill Button
+
+    @ViewBuilder
+    private var autoFillButton: some View {
+        if !en.trimmingCharacters(in: .whitespaces).isEmpty {
+            Button {
+                Task { await handleAutoFill() }
+            } label: {
+                HStack(spacing: 8) {
+                    if isAutoFilling {
+                        ProgressView().scaleEffect(0.85)
+                    } else {
+                        Image(systemName: "sparkles")
+                    }
+                    Text(isAutoFilling ? "Filling…" : "Fill automatically")
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundStyle(isAutoFilling ? Color.myColors.mySecondary : Color.myColors.myBlue)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.myColors.myBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .myShadow()
+            }
+            .buttonStyle(.plain)
+            .disabled(isAutoFilling || isShowingExitConfirm)
+            .padding(.horizontal, 16)
         }
     }
 

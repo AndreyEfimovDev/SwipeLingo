@@ -17,6 +17,7 @@
 		47EA2FBC2F75541500A84C9D /* UnderlineSermentedPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F892F75541500A84C9D /* UnderlineSermentedPicker.swift */; };
 		47EA2FBD2F75541500A84C9D /* UnderlineSermentedPickerNotOptional.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F8A2F75541500A84C9D /* UnderlineSermentedPickerNotOptional.swift */; };
 		47EA2FBE2F75541500A84C9D /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F8B2F75541500A84C9D /* Views.swift */; };
+		47EA2FF42F75541500A84C9D /* KeyboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FF52F75541500A84C9D /* KeyboardManager.swift */; };
 		47EA2FBF2F75541500A84C9D /* AddCardSetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F8D2F75541500A84C9D /* AddCardSetView.swift */; };
 		47EA2FC12F75541500A84C9D /* AddCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2F8F2F75541500A84C9D /* AddCollectionView.swift */; };
 		47EA2FF22F75541500A84C9D /* AddEditCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FF32F75541500A84C9D /* AddEditCardView.swift */; };
@@ -89,6 +90,7 @@
 		47EA2F892F75541500A84C9D /* UnderlineSermentedPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnderlineSermentedPicker.swift; sourceTree = "<group>"; };
 		47EA2F8A2F75541500A84C9D /* UnderlineSermentedPickerNotOptional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnderlineSermentedPickerNotOptional.swift; sourceTree = "<group>"; };
 		47EA2F8B2F75541500A84C9D /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
+		47EA2FF52F75541500A84C9D /* KeyboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardManager.swift; sourceTree = "<group>"; };
 		47EA2F8D2F75541500A84C9D /* AddCardSetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCardSetView.swift; sourceTree = "<group>"; };
 		47EA2FF32F75541500A84C9D /* AddEditCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditCardView.swift; sourceTree = "<group>"; };
 		47EA2F8F2F75541500A84C9D /* AddCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCollectionView.swift; sourceTree = "<group>"; };
@@ -195,6 +197,7 @@
 				47EA2F892F75541500A84C9D /* UnderlineSermentedPicker.swift */,
 				47EA2F8A2F75541500A84C9D /* UnderlineSermentedPickerNotOptional.swift */,
 				47EA2F8B2F75541500A84C9D /* Views.swift */,
+				47EA2FF52F75541500A84C9D /* KeyboardManager.swift */,
 			);
 			path = CustomFeatures;
 			sourceTree = "<group>";
@@ -481,6 +484,7 @@
 				47EA2FBC2F75541500A84C9D /* UnderlineSermentedPicker.swift in Sources */,
 				47EA2FBD2F75541500A84C9D /* UnderlineSermentedPickerNotOptional.swift in Sources */,
 				47EA2FBE2F75541500A84C9D /* Views.swift in Sources */,
+				47EA2FF42F75541500A84C9D /* KeyboardManager.swift in Sources */,
 				47EA2FBF2F75541500A84C9D /* AddCardSetView.swift in Sources */,
 				47EA2FF22F75541500A84C9D /* AddEditCardView.swift in Sources */,
 				47EA2FC12F75541500A84C9D /* AddCollectionView.swift in Sources */,
