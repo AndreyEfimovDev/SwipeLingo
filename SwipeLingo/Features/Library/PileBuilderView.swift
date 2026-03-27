@@ -17,6 +17,7 @@ struct PileBuilderView: View {
     @Query                              private var allPiles:    [Pile]
 
     @State private var viewModel: PileBuilderViewModel
+    @State private var isShowingDeleteConfirm = false
 
     init(editingPile: Pile? = nil) {
         _viewModel = State(initialValue: PileBuilderViewModel(editingPile: editingPile))
@@ -36,6 +37,22 @@ struct PileBuilderView: View {
             .navigationTitle(viewModel.editingPile == nil ? "New Pile" : "Edit Pile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarButtons }
+            .confirmationDialog(
+                "Delete \"\(viewModel.name)\"?",
+                isPresented: $isShowingDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Pile", role: .destructive) {
+                    if let pile = viewModel.editingPile {
+                        context.delete(pile)
+                        try? context.save()
+                    }
+                    dismiss()
+                }
+
+            } message: {
+                Text("This action cannot be undone.")
+            }
         }
     }
 
@@ -144,7 +161,11 @@ struct PileBuilderView: View {
     private var toolbarButtons: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             Button("Cancel") { dismiss() }
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.myColors.myBlue)
+
         }
+
         ToolbarItem(placement: .confirmationAction) {
             Button("Save") {
                 viewModel.saveAndActivate(context: context, allPiles: allPiles)
@@ -153,6 +174,18 @@ struct PileBuilderView: View {
             }
             .disabled(!viewModel.canSave)
             .fontWeight(.semibold)
+            .foregroundStyle(viewModel.canSave ? Color.myColors.myGreen : Color.myColors.mySecondary)
+        }
+        if viewModel.editingPile != nil {
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    isShowingDeleteConfirm = true
+                } label: {
+                    Text("Delete Pile")
+                        .foregroundStyle(Color.myColors.myRed)
+                        .fontWeight(.semibold)
+                }
+            }
         }
     }
 

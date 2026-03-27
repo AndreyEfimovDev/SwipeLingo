@@ -30,7 +30,7 @@ struct DeletedCardsView: View {
                         } label: {
                             Label("Restore", systemImage: "arrow.uturn.left")
                         }
-                        .tint(.blue)
+                        .tint(Color.myColors.myGreen)
                     }
             }
         }
@@ -38,18 +38,16 @@ struct DeletedCardsView: View {
         .scrollContentBackground(.hidden)
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle("Deleted Cards")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .overlay {
             if deletedCards.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "trash.slash")
                         .font(.system(size: 48))
-                        .foregroundStyle(Color.myColors.mySecondary)
                     Text("No deleted cards")
                         .font(.title3.bold())
                     Text("Cards you delete will appear here")
                         .font(.subheadline)
-                        .foregroundStyle(Color.myColors.mySecondary)
                 }
             }
         }
@@ -85,10 +83,9 @@ private struct DeletedCardRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(card.en)
-                .font(.body)
+                .font(.headline)
             Text(card.item)
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
         }
         .padding(.vertical, 2)
     }

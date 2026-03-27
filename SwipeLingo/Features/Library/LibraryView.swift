@@ -150,11 +150,14 @@ struct LibraryView: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
-                            Button(role: .destructive) {
-                                context.delete(collection)
-                                try? context.save()
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+                            let isProtected = collection.name == "Inbox" || collection.name == "My Sets"
+                            if !isProtected {
+                                Button(role: .destructive) {
+                                    context.delete(collection)
+                                    try? context.save()
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
                         }
                         if collection.id != regularCollections.last?.id {
@@ -170,11 +173,13 @@ struct LibraryView: View {
         }
     }
 
-    // Inbox first, then the rest sorted by creation date
+    // Order: Inbox → My Sets → other user-created → developer collections (with CEFR)
     private var regularCollections: [Collection] {
-        let inbox = collections.filter { $0.name == "Inbox" }
-        let rest  = collections.filter { $0.name != "Inbox" }
-        return inbox + rest
+        let inbox    = collections.filter { $0.name == "Inbox" }
+        let mySets   = collections.filter { $0.name == "My Sets" }
+        let userRest = collections.filter { $0.isUserCreated && $0.name != "Inbox" && $0.name != "My Sets" }
+        let devCols  = collections.filter { !$0.isUserCreated }
+        return inbox + mySets + userRest + devCols
     }
 
     // MARK: - Empty State
@@ -219,7 +224,7 @@ private struct PileRow: View {
         HStack(spacing: 12) {
             Button(action: onActivate) {
                 Image(systemName: pile.isActive ? "checkmark.circle" : "circle")
-                    .foregroundStyle(pile.isActive ? Color.myColors.myAccent : Color.myColors.mySecondary)
+                    .foregroundStyle(pile.isActive ? Color.myColors.myGreen : Color.myColors.mySecondary)
                     .font(.title3)
                     .animation(.spring(duration: 0.2), value: pile.isActive)
             }
@@ -234,7 +239,6 @@ private struct PileRow: View {
                     Text("\(cardCount) active cards")
                         .font(.caption)
                 }
-//                .foregroundStyle(Color.myColors.mySecondary)
             }
 
             Spacer()
@@ -242,7 +246,7 @@ private struct PileRow: View {
             Button(action: onEdit) {
                 Image(systemName: "pencil")
                     .font(.subheadline)
-//                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.myColors.myBlue)
             }
             .buttonStyle(.borderless)
         }
@@ -267,7 +271,6 @@ private struct CollectionRow: View {
     var body: some View {
         HStack {
             Label(collection.name, systemImage: collection.icon ?? "folder")
-//                .foregroundStyle(.primary)
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))

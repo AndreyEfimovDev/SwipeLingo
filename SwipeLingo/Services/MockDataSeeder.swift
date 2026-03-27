@@ -22,7 +22,8 @@ struct MockDataSeeder {
         let ielts = Collection(
             name: "IELTS Vocabulary",
             icon: "book.fill",
-            isOwned: true
+            isOwned: true,
+            isUserCreated: false
         )
         context.insert(ielts)
 
@@ -310,7 +311,8 @@ struct MockDataSeeder {
         let psych = Collection(
             name: "Psychology & Mind",
             icon: "brain.head.profile",
-            isOwned: true
+            isOwned: true,
+            isUserCreated: false
         )
         context.insert(psych)
 
@@ -379,7 +381,11 @@ struct MockDataSeeder {
         // MARK: Inbox
         // ─────────────────────────────────────────────
 
-        let inbox = Collection(name: "Inbox", icon: "tray.fill", isOwned: true)
+        // My Sets — fixed user collection for ad-hoc words
+        let mySets = Collection(name: "My Sets", icon: "folder.fill", isOwned: true, isUserCreated: true)
+        context.insert(mySets)
+
+        let inbox = Collection(name: "Inbox", icon: "tray.fill", isOwned: true, isUserCreated: true)
         context.insert(inbox)
         let inboxSet = CardSet(name: "Inbox", collectionId: inbox.id)
         context.insert(inboxSet)
