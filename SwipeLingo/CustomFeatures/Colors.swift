@@ -30,6 +30,9 @@ struct MyColors {
     let myPurple = Color("myPurple")
     let myRed = Color("myRed")
     let myYellow = Color("myYellow")
+    
+    let buttonTextAccent = Color("buttonTextAccent")
+
 }
 
 

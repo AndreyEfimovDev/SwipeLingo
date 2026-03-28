@@ -94,11 +94,14 @@ struct StudyView: View {
                 Text(directionLabel)
                     .font(.subheadline.weight(.medium))
                     .monospacedDigit()
+                    .foregroundStyle(Color.myColors.myBlue)
             }
         }
         ToolbarItem(placement: .topBarLeading) {
             Button { viewModel.isShowingAddCard = true } label: {
                 Image(systemName: "plus")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myBlue)
             }
         }
     }

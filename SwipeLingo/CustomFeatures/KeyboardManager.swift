@@ -19,8 +19,9 @@ final class KeyboardManager {
     }
 
     private func observeShow() {
-        Task {
+        Task { [weak self] in
             for await note in NotificationCenter.default.notifications(named: UIResponder.keyboardWillShowNotification) {
+                guard let self else { return }
                 guard let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { continue }
                 // Magic Keyboard (physical) reports height < 100 pt → no dismiss button needed
                 let isSoftwareKeyboard = frame.height >= 100
@@ -32,8 +33,9 @@ final class KeyboardManager {
     }
 
     private func observeHide() {
-        Task {
+        Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: UIResponder.keyboardWillHideNotification) {
+                guard let self else { return }
                 isKeyboardVisible    = false
                 shouldShowHideButton = false
             }

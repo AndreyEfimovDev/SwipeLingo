@@ -54,6 +54,7 @@ struct LibraryView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
                 }
                 .buttonStyle(.borderless)
             }
@@ -116,6 +117,7 @@ struct LibraryView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
                 }
                 .buttonStyle(.borderless)
             }
@@ -273,6 +275,7 @@ private struct CollectionRow: View {
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.myColors.myBlue)
         }
     }
 }

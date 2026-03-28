@@ -34,6 +34,7 @@ struct CollectionDetailView: View {
                 Button { isShowingAddSet = true } label: {
                     Image(systemName: "plus")
                 }
+                .foregroundStyle(Color.myColors.myBlue)
             }
         }
         .sheet(isPresented: $isShowingAddSet) {
@@ -68,7 +69,7 @@ struct CollectionDetailView: View {
                         }
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.myColors.mySecondary)
+                            .foregroundStyle(Color.myColors.myBlue)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)

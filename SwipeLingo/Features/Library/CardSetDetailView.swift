@@ -94,6 +94,7 @@ struct CardSetDetailView: View {
                     Button { isShowingAddCard = true } label: {
                         Image(systemName: "plus")
                     }
+                    .foregroundStyle(Color.myColors.myBlue)
                 }
             }
         }
@@ -170,7 +171,7 @@ struct CardSetDetailView: View {
                 Spacer()
                 Image(systemName: isExpanded.wrappedValue ? "chevron.up" : "chevron.down")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.myColors.myAccent)
+                    .foregroundStyle(Color.myColors.myBlue)
             }
         }
         .buttonStyle(.plain)
@@ -213,7 +214,7 @@ private struct CardRow: View {
                 Button(action: onEdit) {
                     Image(systemName: "pencil")
                         .font(.subheadline)
-                        .foregroundStyle(Color.myColors.mySecondary)
+                        .foregroundStyle(Color.myColors.myBlue)
                 }
                 .buttonStyle(.borderless)
             }

@@ -75,6 +75,13 @@ struct AddEditCardView: View {
 
     private var isEditMode: Bool { originalCard != nil }
 
+    // Кнопка видна пока есть хотя бы одно незаполненное поле
+    private var hasEmptyAutoFillFields: Bool {
+        item.trimmingCharacters(in: .whitespaces).isEmpty
+        || samplesEN.allSatisfy  { $0.trimmingCharacters(in: .whitespaces).isEmpty }
+        || samplesItem.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
+    }
+
     private func buildTranslationConfig() {
         #if !targetEnvironment(simulator)
         let langId = DictionaryLookupViewModel.targetLangId(for: nativeLanguage)
@@ -102,7 +109,7 @@ struct AddEditCardView: View {
 
     private var selectedSetName: String {
         guard let id = selectedSetId else { return "Choose or add a new set…" }
-        return userSets.first(where: { $0.id == id })?.name ?? "Choose…"
+        return userSets.first(where: { $0.id == id })?.name ?? "Choose a set"
     }
 
     private var hasChanges: Bool {
@@ -145,7 +152,7 @@ struct AddEditCardView: View {
                 VStack(spacing: 20) {
                     enSection
                     itemSection
-                    setPickerSection               // visible in both add and edit modes
+                    setPickerSection
                     examplesENSection
                     examplesItemSection
                     autoFillButton
@@ -160,7 +167,7 @@ struct AddEditCardView: View {
             .toolbar { toolbarContent }
             .overlay { if isShowingExitConfirm { exitConfirmOverlay } }
             .onAppear {
-                focused = .en
+                focused = nil // prevent popup keyboard when started
                 if !isEditMode && userSets.isEmpty {
                     isCreatingNewSet = true
                 }
@@ -283,50 +290,50 @@ struct AddEditCardView: View {
             }
         }
 
-        // Step 2: fetch dictionary examples → fill samplesEN if empty
-        let isSamplesEmpty = samplesEN.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
-        guard isSamplesEmpty else { return }
+        // Step 2: fetch EN examples from dictionary if empty
+        let isENEmpty = samplesEN.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
+        if isENEmpty {
+            do {
+                let entry = try await DictionaryService().lookup(word: word)
+                // Prefer example sentences; fall back to definition text if none available.
+                var examples: [String] = []
+                for meaning in entry.meanings {
+                    for def in meaning.definitions {
+                        let text = def.example ?? def.text
+                        if !examples.contains(text) {
+                            examples.append(text)
+                            if examples.count >= 3 { break }
+                        }
+                    }
+                    if examples.count >= 3 { break }
+                }
+                if !examples.isEmpty { samplesEN = examples }
+            } catch {
+                log("dictionary lookup failed: \(error)", level: .warning)
+            }
+        }
+
+        // Step 3: translate EN examples → fill native examples if empty
+        // Runs whether EN examples were just fetched or already existed
+        let isNativeEmpty = samplesItem.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
+        let enExamples = samplesEN.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        guard isNativeEmpty, !enExamples.isEmpty, let session = translationSession else { return }
 
         do {
-            let entry = try await DictionaryService().lookup(word: word)
-            // Prefer example sentences; fall back to definition text if none available.
-            var examples: [String] = []
-            for meaning in entry.meanings {
-                for def in meaning.definitions {
-                    let text = def.example ?? def.text
-                    if !examples.contains(text) {
-                        examples.append(text)
-                        if examples.count >= 3 { break }
-                    }
-                }
-                if examples.count >= 3 { break }
+            let requests = enExamples.enumerated().map {
+                TranslationSession.Request(sourceText: $1, clientIdentifier: "\($0)")
             }
-            guard !examples.isEmpty else { return }
-            samplesEN = examples
-
-            // Step 3: translate examples → fill samplesItem
-            guard let session = translationSession else {
-                samplesItem = Array(repeating: "", count: examples.count)
-                return
-            }
-            do {
-                let requests = examples.enumerated().map {
-                    TranslationSession.Request(sourceText: $1, clientIdentifier: "\($0)")
+            let responses = try await session.translations(from: requests)
+            var translated = Array(repeating: "", count: enExamples.count)
+            for response in responses {
+                if let id = response.clientIdentifier, let idx = Int(id) {
+                    translated[idx] = response.targetText
                 }
-                let responses = try await session.translations(from: requests)
-                var translated = Array(repeating: "", count: examples.count)
-                for response in responses {
-                    if let id = response.clientIdentifier, let idx = Int(id) {
-                        translated[idx] = response.targetText
-                    }
-                }
-                samplesItem = translated
-            } catch {
-                samplesItem = Array(repeating: "", count: examples.count)
-                log("examples translation failed: \(error)", level: .warning)
             }
+            samplesItem = translated
         } catch {
-            log("dictionary lookup failed: \(error)", level: .warning)
+            samplesItem = Array(repeating: "", count: enExamples.count)
+            log("examples translation failed: \(error)", level: .warning)
         }
     }
 
@@ -411,6 +418,7 @@ struct AddEditCardView: View {
                 }
             } label: {
                 Label("New set…", systemImage: "plus")
+                    .foregroundStyle(Color.myColors.myBlue)
             }
         } label: {
             HStack {
@@ -422,7 +430,7 @@ struct AddEditCardView: View {
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption)
-                    .foregroundStyle(Color.myColors.mySecondary)
+                    .foregroundStyle(Color.myColors.myBlue)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -456,7 +464,7 @@ struct AddEditCardView: View {
                     HStack {
                         Image(systemName: "chevron.left")
                             .font(.caption.weight(.semibold))
-                        Text("Choose existing set")
+                        Text("Choose a set")
                             .font(.subheadline)
                     }
                     .foregroundStyle(Color.myColors.myBlue)
@@ -472,29 +480,30 @@ struct AddEditCardView: View {
 
     @ViewBuilder
     private var autoFillButton: some View {
-        if !en.trimmingCharacters(in: .whitespaces).isEmpty {
+        if !en.trimmingCharacters(in: .whitespaces).isEmpty && (isAutoFilling || hasEmptyAutoFillFields) {
             Button {
+                guard !isAutoFilling else { return }
                 Task { await handleAutoFill() }
             } label: {
-                HStack(spacing: 8) {
+                Group {
                     if isAutoFilling {
-                        ProgressView().scaleEffect(0.85)
+                        ProgressView()
+                            .tint(Color.myColors.myBlue)
+                            .frame(width: 20, height: 20)
+                            .transition(.scale.combined(with: .opacity))
                     } else {
-                        Image(systemName: "sparkles")
+                        Text("Auto-fill card")
+                            .font(.headline)
+                            .foregroundStyle(Color.myColors.myBlue)
+                            .transition(.scale.combined(with: .opacity))
                     }
-                    Text(isAutoFilling ? "Filling…" : "Fill automatically")
-                        .font(.subheadline.weight(.medium))
                 }
-                .foregroundStyle(isAutoFilling ? Color.myColors.mySecondary : Color.myColors.myBlue)
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, isAutoFilling ? 14 : 20)
                 .padding(.vertical, 14)
-                .background(Color.myColors.myBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .myShadow()
+                .overlay { Capsule().strokeBorder(Color.myColors.myBlue, lineWidth: 1.5) }
             }
             .buttonStyle(.plain)
-            .disabled(isAutoFilling || isShowingExitConfirm)
-            .padding(.horizontal, 16)
+            .animation(.spring(response: 0.45, dampingFraction: 0.72), value: isAutoFilling)
         }
     }
 
@@ -577,8 +586,8 @@ struct AddEditCardView: View {
 
     private func clearButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: "xmark.circle.fill")
-                .foregroundStyle(Color.myColors.myRed.opacity(0.5))
+            Image(systemName: "xmark.circle")
+                .foregroundStyle(Color.myColors.myRed.opacity(0.8))
         }
         .buttonStyle(.borderless)
     }
@@ -616,13 +625,12 @@ struct AddEditCardView: View {
 
             VStack(spacing: 10) {
                 Text("Discard changes?")
-                    .font(.headline)
                     .foregroundStyle(Color.myColors.myAccent)
 
                 Button { dismiss() } label: {
                     Text("Discard")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.myColors.buttonTextAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(Color.myColors.myRed)
@@ -638,7 +646,7 @@ struct AddEditCardView: View {
                         .foregroundStyle(Color.myColors.myAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color.myColors.mySecondary.opacity(0.12))
+                        .background(.ultraThinMaterial)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             }
