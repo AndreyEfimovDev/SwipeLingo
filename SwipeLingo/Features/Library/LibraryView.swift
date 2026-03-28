@@ -12,7 +12,10 @@ struct LibraryView: View {
     @Query                              private var allCards:    [Card]
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
 
-    @State private var viewModel = LibraryViewModel()
+    @State private var isShowingAddCollection = false
+    @State private var isShowingPileBuilder   = false
+    /// Non-nil when editing an existing pile; nil when creating a new one.
+    @State private var editingPile: Pile?
     @State private var collectionToDelete: Collection?
 
     private var deletedCardsCount: Int {
@@ -32,13 +35,13 @@ struct LibraryView: View {
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Library")
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $viewModel.isShowingAddCollection) {
+            .sheet(isPresented: $isShowingAddCollection) {
                 AddCollectionView()
             }
-            .sheet(isPresented: $viewModel.isShowingPileBuilder, onDismiss: {
-                viewModel.editingPile = nil
+            .sheet(isPresented: $isShowingPileBuilder, onDismiss: {
+                editingPile = nil
             }) {
-                PileBuilderView(editingPile: viewModel.editingPile)
+                PileBuilderView(editingPile: editingPile)
             }
             .overlay {
                 if collections.isEmpty && piles.isEmpty { emptyState }
@@ -79,8 +82,8 @@ struct LibraryView: View {
                     .font(.footnote.weight(.semibold))
                 Spacer()
                 Button {
-                    viewModel.editingPile = nil
-                    viewModel.isShowingPileBuilder = true
+                    editingPile = nil
+                    isShowingPileBuilder = true
                 } label: {
                     Image(systemName: "plus")
                         .font(.caption.weight(.semibold))
@@ -109,8 +112,8 @@ struct LibraryView: View {
                             cardCount: activeCardCount(for: pile),
                             onActivate: { activatePile(pile) },
                             onEdit: {
-                                viewModel.editingPile = pile
-                                viewModel.isShowingPileBuilder = true
+                                editingPile = pile
+                                isShowingPileBuilder = true
                             }
                         )
                         .contextMenu {
@@ -143,7 +146,7 @@ struct LibraryView: View {
                     .font(.footnote.weight(.semibold))
                 Spacer()
                 Button {
-                    viewModel.isShowingAddCollection = true
+                    isShowingAddCollection = true
                 } label: {
                     Image(systemName: "plus")
                         .font(.caption.weight(.semibold))
