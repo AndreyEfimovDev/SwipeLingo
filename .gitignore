@@ -2,6 +2,11 @@
 # SwipeLingo — .gitignore
 # ===========================
 
+# ===========================
+# Secrets (never commit keys)
+# ===========================
+Secrets.swift
+
 # Документация проекта (приватная)
 CLAUDE.md
 PRD.md

@@ -7,7 +7,7 @@ struct SettingsView: View {
 
     @AppStorage("nativeLanguage")     private var nativeLanguage     = "Русский"
     @AppStorage("englishVariant")     private var englishVariant     = "en-US"
-    @AppStorage("colorScheme")        private var theme: Theme        = .system
+    @AppStorage("colorScheme")        private var theme: Theme       = .system
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
 
     private var currentVoiceName: String {
