@@ -15,7 +15,7 @@ struct UnderlineSegmentedPickerNotOptional<T: Hashable>: View {
     
     var selectedFont: Font = .footnote
     var selectedTextColor: Color = Color.myColors.myBlue
-    var unselectedTextColor: Color = Color.myColors.mySecondary
+    var unselectedTextColor: Color = Color.myColors.myAccent
         
     @Namespace private var namespace
 
