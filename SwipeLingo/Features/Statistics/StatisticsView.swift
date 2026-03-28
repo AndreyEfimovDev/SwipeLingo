@@ -127,18 +127,16 @@ struct StatisticsView: View {
                             selection: $selectedRange,
                             allItems: TimeRange.allCases,
                             titleForCase: { $0.displayName }
-                        )
-                        .padding(.vertical, 8)
-
-                        StreakCard(
-                            current: StatisticsMockData.currentStreak,
-                            best:    StatisticsMockData.bestStreak
-                        )
+                        ).padding(.vertical, 8)
                         CardsStudiedCard(
                             total:  totalStudied,
                             easy:   totalEasy,
                             hard:   totalHard,
                             forgot: totalForgot
+                        )
+                        StreakCard(
+                            current: StatisticsMockData.currentStreak,
+                            best:    StatisticsMockData.bestStreak
                         )
                         ActivityCalendarCard(
                             activities: StatisticsMockData.activities,
