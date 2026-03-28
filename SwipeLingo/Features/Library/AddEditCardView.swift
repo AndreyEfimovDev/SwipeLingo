@@ -48,6 +48,7 @@ struct AddEditCardView: View {
     @State private var translationSession: TranslationSession?
     @State private var translationConfig: TranslationSession.Configuration?
     @State private var isAutoFilling = false
+    @State private var autoFillTask: Task<Void, Never>?
 
     // Keyboard
     @State private var keyboard = KeyboardManager()
@@ -173,6 +174,9 @@ struct AddEditCardView: View {
                 }
                 buildTranslationConfig()
             }
+            .onDisappear {
+                autoFillTask?.cancel()
+            }
             .translationTask(translationConfig) { session in
                 log("translationTask: session received ✓", level: .info)
                 translationSession = session
@@ -290,6 +294,8 @@ struct AddEditCardView: View {
             }
         }
 
+        guard !Task.isCancelled else { return }
+
         // Step 2: fetch EN examples from dictionary if empty
         let isENEmpty = samplesEN.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
         if isENEmpty {
@@ -312,6 +318,8 @@ struct AddEditCardView: View {
                 log("dictionary lookup failed: \(error)", level: .warning)
             }
         }
+
+        guard !Task.isCancelled else { return }
 
         // Step 3: translate EN examples → fill native examples if empty
         // Runs whether EN examples were just fetched or already existed
@@ -483,7 +491,7 @@ struct AddEditCardView: View {
         if !en.trimmingCharacters(in: .whitespaces).isEmpty && (isAutoFilling || hasEmptyAutoFillFields) {
             Button {
                 guard !isAutoFilling else { return }
-                Task { await handleAutoFill() }
+                autoFillTask = Task { await handleAutoFill() }
             } label: {
                 Group {
                     if isAutoFilling {
