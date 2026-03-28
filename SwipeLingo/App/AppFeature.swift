@@ -9,7 +9,7 @@ final class AppViewModel {
     enum AppTab: Hashable, CaseIterable {
         case study, library, statistics, preferences
 
-        var label: String {
+        var label: LocalizedStringKey {
             switch self {
             case .study:       return "Study"
             case .library:     return "Library"
@@ -122,10 +122,18 @@ struct AppView: View {
 
     private var portraitTabView: some View {
         TabView(selection: Bindable(viewModel).selectedTab) {
-            Tab("Study",    systemImage: "rectangle.stack",           value: AppViewModel.AppTab.study)       { StudyView() }
-            Tab("Library",  systemImage: "books.vertical",            value: AppViewModel.AppTab.library)     { LibraryView() }
-            Tab("Stats",    systemImage: "chart.line.uptrend.xyaxis", value: AppViewModel.AppTab.statistics)  { StatisticsView() }
-            Tab("Settings", systemImage: "gear",                      value: AppViewModel.AppTab.preferences) { SettingsView() }
+            Tab(AppViewModel.AppTab.study.label,
+                systemImage: AppViewModel.AppTab.study.icon,
+                value: AppViewModel.AppTab.study)       { StudyView() }
+            Tab(AppViewModel.AppTab.library.label,
+                systemImage: AppViewModel.AppTab.library.icon,
+                value: AppViewModel.AppTab.library)     { LibraryView() }
+            Tab(AppViewModel.AppTab.statistics.label,
+                systemImage: AppViewModel.AppTab.statistics.icon,
+                value: AppViewModel.AppTab.statistics)  { StatisticsView() }
+            Tab(AppViewModel.AppTab.preferences.label,
+                systemImage: AppViewModel.AppTab.preferences.icon,
+                value: AppViewModel.AppTab.preferences) { SettingsView() }
         }
         .toolbarBackground(.hidden, for: .tabBar)
     }
