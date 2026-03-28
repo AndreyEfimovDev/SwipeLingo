@@ -70,6 +70,7 @@ struct StudyView: View {
             TinderCardsView(
                 cards: viewModel.studyCards,
                 contextLabels: viewModel.contextLabels,
+                cefrLabels: viewModel.cefrLabels,
                 pileTagsLine: viewModel.pileTagsLine,
                 onDone: {
                     viewModel.startNewSession(

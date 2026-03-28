@@ -54,6 +54,7 @@
 		47EA2FF02F75541500A84C9D /* VoiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FF12F75541500A84C9D /* VoiceSettingsView.swift */; };
 		47EA2FF22F75541500A84C9D /* AddEditCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FF32F75541500A84C9D /* AddEditCardView.swift */; };
 		47EA2FF42F75541500A84C9D /* KeyboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EA2FF52F75541500A84C9D /* KeyboardManager.swift */; };
+		47FCD27F2F7809D100AF86E1 /* CEFRBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FCD27E2F7809D100AF86E1 /* CEFRBadgeView.swift */; };
 		4CEE5C3C7CC643F1A178D884 /* FirestoreImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A36CAE0B97490185771DE6 /* FirestoreImportService.swift */; };
 		EF0001012F75541500A84C9D /* CEFRLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0001002F75541500A84C9D /* CEFRLevel.swift */; };
 		EF0001032F75541500A84C9D /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0001022F75541500A84C9D /* UserProfile.swift */; };
@@ -127,6 +128,7 @@
 		47EA2FF12F75541500A84C9D /* VoiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsView.swift; sourceTree = "<group>"; };
 		47EA2FF32F75541500A84C9D /* AddEditCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditCardView.swift; sourceTree = "<group>"; };
 		47EA2FF52F75541500A84C9D /* KeyboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardManager.swift; sourceTree = "<group>"; };
+		47FCD27E2F7809D100AF86E1 /* CEFRBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CEFRBadgeView.swift; sourceTree = "<group>"; };
 		7530F0C7FCFA48C4BC413B8DB553C2C8 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		EF0001002F75541500A84C9D /* CEFRLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CEFRLevel.swift; sourceTree = "<group>"; };
 		EF0001022F75541500A84C9D /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
@@ -197,6 +199,7 @@
 				47EA2F892F75541500A84C9D /* UnderlineSermentedPicker.swift */,
 				47EA2F8A2F75541500A84C9D /* UnderlineSermentedPickerNotOptional.swift */,
 				47EA2F8B2F75541500A84C9D /* Views.swift */,
+				47FCD27E2F7809D100AF86E1 /* CEFRBadgeView.swift */,
 				47EA2FF52F75541500A84C9D /* KeyboardManager.swift */,
 			);
 			path = CustomFeatures;
@@ -239,9 +242,9 @@
 		47EA2F9F2F75541500A84C9D /* TinderCards */ = {
 			isa = PBXGroup;
 			children = (
-				47EA2F9C2F75541500A84C9D /* DictionaryLookupView.swift */,
-				47EA2F9D2F75541500A84C9D /* TinderCardsView.swift */,
 				47EA2F9E2F75541500A84C9D /* TinderCardsViewModel.swift */,
+				47EA2F9D2F75541500A84C9D /* TinderCardsView.swift */,
+				47EA2F9C2F75541500A84C9D /* DictionaryLookupView.swift */,
 			);
 			path = TinderCards;
 			sourceTree = "<group>";
@@ -249,8 +252,8 @@
 		47EA2FA22F75541500A84C9D /* Study */ = {
 			isa = PBXGroup;
 			children = (
-				47EA2FA02F75541500A84C9D /* StudyView.swift */,
 				47EA2FA12F75541500A84C9D /* StudyViewModel.swift */,
+				47EA2FA02F75541500A84C9D /* StudyView.swift */,
 				47EA2F9F2F75541500A84C9D /* TinderCards */,
 			);
 			path = Study;
@@ -478,6 +481,7 @@
 				47EA2FB72F75541500A84C9D /* SwipeLingoApp.swift in Sources */,
 				47EA2FB82F75541500A84C9D /* Bundle.swift in Sources */,
 				004C7A64EFC14005A4EB8219BB082754 /* Logger.swift in Sources */,
+				47FCD27F2F7809D100AF86E1 /* CEFRBadgeView.swift in Sources */,
 				47EA2FB92F75541500A84C9D /* Colors.swift in Sources */,
 				47EA2FBA2F75541500A84C9D /* DateFormater.swift in Sources */,
 				47EA2FBB2F75541500A84C9D /* JSON.swift in Sources */,

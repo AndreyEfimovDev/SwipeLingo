@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // Common European Framework of Reference for Languages
 enum CEFRLevel: String, CaseIterable, Codable {
@@ -17,6 +18,17 @@ enum CEFRLevel: String, CaseIterable, Codable {
         case .b2:   return "Upper-Intermediate"
         case .c1:   return "Advanced"
         case .c2:   return "Proficiency"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .a0a1: return Color.myColors.myGreen
+        case .a2:   return Color.myColors.myBlue
+        case .b1:   return Color.myColors.myYellow
+        case .b2:   return Color.myColors.myOrange
+        case .c1:   return Color.myColors.myPurple
+        case .c2:   return Color.myColors.myRed
         }
     }
 }

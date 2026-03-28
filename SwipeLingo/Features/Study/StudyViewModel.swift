@@ -10,6 +10,8 @@ final class StudyViewModel {
 
     private(set) var studyCards: [Card] = []
     private(set) var contextLabels: [UUID: String] = [:]
+    /// setId → CEFRLevel — only populated for developer (non-user-created) sets.
+    private(set) var cefrLabels: [UUID: CEFRLevel] = [:]
     private(set) var activePileName: String = ""
     /// "Collection › Set1 · Set2 · +N (X cards)" — shown below the card stack in StudyView.
     private(set) var pileTagsLine: String = ""
@@ -57,6 +59,11 @@ final class StudyViewModel {
             let label    = collName.map { "\($0) › \(set.name)" } ?? set.name
             return (set.id, label)
         })
+
+        // Map setId → CEFRLevel — developer sets only (user-created sets don't show level).
+        cefrLabels = Dictionary(uniqueKeysWithValues:
+            cardSets.filter { !$0.isUserCreated }.map { ($0.id, $0.cefrLevel) }
+        )
 
         if let active = piles.first(where: { $0.isActive }) {
             activePileName = active.name

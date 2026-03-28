@@ -100,22 +100,13 @@ struct CollectionDetailView: View {
                 } label: {
                     HStack {
                         Text(cardSet.name)
-                            .font(.body)
-                            .foregroundStyle(Color.myColors.myAccent)
                         Spacer()
-                        if !collection.isUserCreated {
-                            Text(cardSet.cefrLevel.rawValue)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.myColors.mySecondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.myColors.mySecondary.opacity(0.1))
-                                .clipShape(Capsule())
-                        }
+                        CEFRBadgeView(level: collection.isUserCreated ? nil : cardSet.cefrLevel)
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(Color.myColors.myBlue)
                     }
+                    .font(.body)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                     .contentShape(Rectangle())

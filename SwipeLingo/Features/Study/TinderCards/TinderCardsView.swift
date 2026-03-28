@@ -23,6 +23,7 @@ struct TinderCardsView: View {
     private let swipeThreshold:   CGFloat = 110
     private let upSwipeThreshold: CGFloat = 100
     private let pileTagsLine: String
+    private let cefrLabels: [UUID: CEFRLevel]
 
     private var isReversed:  Bool { studyDirection == "Native→EN" }
     private var isLandscape: Bool { verticalSizeClass == .compact }
@@ -37,12 +38,14 @@ struct TinderCardsView: View {
 
     init(cards: [Card],
          contextLabels: [UUID: String] = [:],
+         cefrLabels: [UUID: CEFRLevel] = [:],
          pileTagsLine: String = "",
          onDone: (() -> Void)? = nil) {
-        _viewModel   = State(initialValue: TinderCardsViewModel(
+        _viewModel        = State(initialValue: TinderCardsViewModel(
                                 cards: cards,
                                 contextLabels: contextLabels,
                                 onDone: onDone))
+        self.cefrLabels   = cefrLabels
         self.pileTagsLine = pileTagsLine
     }
 
@@ -166,40 +169,36 @@ struct TinderCardsView: View {
         return VStack(spacing: 6) {
             HStack {
                 Text("\(active)")
-                    .font(.subheadline)
                     .bold()
                     .foregroundStyle(CardStatus.active.color)
-                + Text(" Active")
-                    .font(.caption2)
-                
-                Spacer()
-                
-                Text("\(current) / \(effTotal)")
-                    .bold()
-                            
-                Spacer()
-                
-                Text("Learnt ")
-                + Text("\(learnt)")
-                    .font(.subheadline)
+                VStack(spacing: 4){
+                    HStack {
+                        Text("Active")
+                        Spacer()
+                        Text("\(current) / \(effTotal)").bold()
+                        Spacer()
+                        Text("Learnt")
+                    }.font(.caption2)
+                    
+                    // Progress bar
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.myColors.myAccent.opacity(0.1))
+                                .frame(height: 3)
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.myColors.myAccent.opacity(0.5))
+                                .frame(width: geo.size.width * progress, height: 3)
+                                .animation(.spring(duration: 0.4), value: progress)
+                        }
+                    }
+                    .frame(height: 3)
+                }
+                Text("\(learnt)")
                     .bold()
                     .foregroundStyle(CardStatus.learnt.color)
             }
-            .font(.caption2)
-
-            // Progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.myColors.mySecondary.opacity(0.15))
-                        .frame(height: 3)
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.myColors.myAccent.opacity(0.5))
-                        .frame(width: geo.size.width * progress, height: 3)
-                        .animation(.spring(duration: 0.4), value: progress)
-                }
-            }
-            .frame(height: 3)
+            .font(.title3)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
@@ -217,12 +216,15 @@ struct TinderCardsView: View {
     private var breadcrumbRow: some View {
         let label = cardBreadcrumb
         if !label.isEmpty {
-            Text(label)
-                .font(.caption2)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
+            HStack(spacing: 6) {
+                Text(label)
+                CEFRBadgeView(level: viewModel.currentCard.flatMap { cefrLabels[$0.setId] })
+            }
+            .font(.caption2)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
         }
     }
 
