@@ -9,11 +9,20 @@ struct CollectionDetailView: View {
     @Environment(\.modelContext) private var context
     let collection: Collection
 
-    @Query(sort: \CardSet.createdAt) private var allSets: [CardSet]
-    @State private var isShowingAddSet = false
+    @Query(sort: \CardSet.createdAt)  private var allSets:  [CardSet]
+    @Query(sort: \Card.createdAt)     private var allCards: [Card]
 
+    @State private var isShowingAddSet = false
+    @State private var setToDelete: CardSet?
+
+    // Сет видим если: нет карточек (только что создан), или есть хотя бы одна не-удалённая карточка
     private var cardSets: [CardSet] {
-        allSets.filter { $0.collectionId == collection.id }
+        allSets
+            .filter { $0.collectionId == collection.id }
+            .filter { set in
+                let cards = allCards.filter { $0.setId == set.id }
+                return cards.isEmpty || cards.contains { $0.status != .deleted }
+            }
     }
 
     var body: some View {
@@ -43,6 +52,42 @@ struct CollectionDetailView: View {
         .overlay {
             if cardSets.isEmpty { emptyState }
         }
+        .confirmationDialog(
+            "Delete \"\(setToDelete?.name ?? "Set")\"?",
+            isPresented: Binding(
+                get: { setToDelete != nil },
+                set: { if !$0 { setToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Set", role: .destructive) {
+                if let set = setToDelete {
+                    deleteSetWithCards(set)
+                    setToDelete = nil
+                }
+            }
+            Button("Cancel", role: .cancel) { setToDelete = nil }
+        } message: {
+            if let set = setToDelete {
+                let count = allCards.filter { $0.setId == set.id }.count
+                Text(count > 0
+                    ? "\(count) card\(count == 1 ? "" : "s") will be moved to Deleted and can be restored later."
+                    : "This empty set will be permanently removed.")
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func deleteSetWithCards(_ cardSet: CardSet) {
+        let cards = allCards.filter { $0.setId == cardSet.id }
+        if cards.isEmpty {
+            context.delete(cardSet)    // пустой сет — удаляем сразу
+        } else {
+            cards.forEach { $0.status = .deleted }
+            // сет остаётся в БД; удалится автоматически когда все карточки будут стёрты
+        }
+        try? context.save()
     }
 
     // MARK: - Sets Section
@@ -78,10 +123,9 @@ struct CollectionDetailView: View {
                 .buttonStyle(.plain)
                 .contextMenu {
                     Button(role: .destructive) {
-                        context.delete(cardSet)
-                        try? context.save()
+                        setToDelete = cardSet
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label("Delete Set", systemImage: "trash")
                     }
                 }
                 if cardSet.id != cardSets.last?.id {

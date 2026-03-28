@@ -17,6 +17,10 @@ struct AddCollectionView: View {
         "cart.fill", "fork.knife", "car.fill", "music.note"
     ]
 
+    private var isNameEmpty: Bool {
+        name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -46,6 +50,7 @@ struct AddCollectionView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .foregroundStyle(Color.myColors.myRed)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
@@ -57,6 +62,7 @@ struct AddCollectionView: View {
                         try? context.save()
                         dismiss()
                     }
+                    .foregroundStyle(isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue)
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }

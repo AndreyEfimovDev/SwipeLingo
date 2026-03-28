@@ -1,14 +1,14 @@
 import AVFoundation
 import SwiftUI
 
-// MARK: - PreferencesView
+// MARK: - SettingsView
 
 struct SettingsView: View {
 
-    @AppStorage("nativeLanguage")     private var nativeLanguage      = "Русский"
-    @AppStorage("englishVariant")     private var englishVariant      = "en-US"
-    @AppStorage("colorScheme")        private var theme: Theme         = .system
-    @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier  = ""
+    @AppStorage("nativeLanguage")     private var nativeLanguage     = "Русский"
+    @AppStorage("englishVariant")     private var englishVariant     = "en-US"
+    @AppStorage("colorScheme")        private var theme: Theme        = .system
+    @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
 
     private var currentVoiceName: String {
         guard !ttsVoiceIdentifier.isEmpty,
@@ -29,7 +29,6 @@ struct SettingsView: View {
                     languageSection
                     voiceSection
                     appearanceSection
-                    managingCardsSection
                 }
                 .padding(.vertical, 16)
             }
@@ -48,7 +47,6 @@ struct SettingsView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                // Native language
                 HStack {
                     Text("Native language")
                         .font(.body)
@@ -65,7 +63,6 @@ struct SettingsView: View {
 
                 Divider().padding(.leading, 16)
 
-                // English variant
                 HStack {
                     Text("Preferred English")
                         .font(.body)
@@ -85,11 +82,6 @@ struct SettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
-
-//            Text("Select your native language for translation and preferred English variant.")
-//                .font(.footnote)
-//                .opacity(0.75)
-//                .padding(.horizontal, 32)
         }
     }
 
@@ -104,6 +96,7 @@ struct SettingsView: View {
             NavigationLink { VoiceSettingsView() } label: {
                 HStack {
                     Label("Pronunciation Voice", systemImage: "waveform")
+                        .labelStyle(.fixedIcon)
                     Spacer()
                     Text(currentVoiceName)
                         .font(.subheadline)
@@ -116,11 +109,6 @@ struct SettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
-
-//            Text("Voice used when reading English words aloud.")
-//                .font(.footnote)
-//                .opacity(0.75)
-//                .padding(.horizontal, 32)
         }
     }
 
@@ -140,51 +128,6 @@ struct SettingsView: View {
             )
             .frame(height: 52)
             .padding(.horizontal, 16)
-            .background(Color.myColors.myBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .myShadow()
-            .padding(.horizontal, 16)
-        }
-    }
-
-    // MARK: - Managing Cards
-
-    private var managingCardsSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("MANAGING CARDS")
-                .font(.footnote)
-                .padding(.horizontal, 32)
-
-            VStack(spacing: 0) {
-                NavigationLink { DeletedCardsView() } label: {
-                    HStack {
-                        Label("Deleted Cards", systemImage: "trash")
-                        Spacer()
-                    }
-                    .contentShape(Rectangle())
-                }
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-
-                Divider().padding(.leading, 52)
-
-                HStack {
-                    Label("Share Cards", systemImage: "square.and.arrow.up")
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-
-                Divider().padding(.leading, 52)
-
-                HStack {
-                    Label("Backup Cards", systemImage: "arrow.clockwise.icloud")
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-            }
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()

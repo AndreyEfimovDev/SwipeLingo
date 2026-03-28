@@ -13,6 +13,11 @@ struct LibraryView: View {
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
 
     @State private var viewModel = LibraryViewModel()
+    @State private var collectionToDelete: Collection?
+
+    private var deletedCardsCount: Int {
+        allCards.filter { $0.status == .deleted }.count
+    }
 
     var body: some View {
         NavigationStack {
@@ -20,6 +25,7 @@ struct LibraryView: View {
                 VStack(spacing: 16) {
                     pilesSection
                     collectionsSection
+                    managingSection
                 }
                 .padding(.vertical, 16)
             }
@@ -36,6 +42,30 @@ struct LibraryView: View {
             }
             .overlay {
                 if collections.isEmpty && piles.isEmpty { emptyState }
+            }
+            .confirmationDialog(
+                "Delete \"\(collectionToDelete?.name ?? "Collection")\"?",
+                isPresented: Binding(
+                    get: { collectionToDelete != nil },
+                    set: { if !$0 { collectionToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete Collection", role: .destructive) {
+                    if let col = collectionToDelete {
+                        deleteCollectionWithCards(col)
+                        collectionToDelete = nil
+                    }
+                }
+                Button("Cancel", role: .cancel) { collectionToDelete = nil }
+            } message: {
+                if let col = collectionToDelete {
+                    let sets = cardSets.filter { $0.collectionId == col.id }
+                    let count = allCards.filter { card in sets.contains { $0.id == card.setId } }.count
+                    Text(count > 0
+                        ? "\(count) card\(count == 1 ? "" : "s") will be moved to Deleted and can be restored later."
+                        : "This empty collection will be permanently removed.")
+                }
             }
         }
     }
@@ -154,10 +184,9 @@ struct LibraryView: View {
                             let isProtected = collection.name == "Inbox" || collection.name == "My Sets"
                             if !isProtected {
                                 Button(role: .destructive) {
-                                    context.delete(collection)
-                                    try? context.save()
+                                    collectionToDelete = collection
                                 } label: {
-                                    Label("Delete", systemImage: "trash")
+                                    Label("Delete Collection", systemImage: "trash")
                                 }
                             }
                         }
@@ -174,13 +203,88 @@ struct LibraryView: View {
         }
     }
 
+    // MARK: - Managing Section
+
+    private var managingSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("MANAGING CARD")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.myColors.myAccent)
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 0) {
+                deletedCards
+
+                Divider().padding(.leading, 46)
+
+                Label("Share Cards", systemImage: "square.and.arrow.up")
+                    .labelStyle(.fixedIcon)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+
+                Divider().padding(.leading, 46)
+
+                Label("Backup Cards", systemImage: "arrow.clockwise.icloud")
+                    .labelStyle(.fixedIcon)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+            }
+            .foregroundStyle(Color.myColors.myAccent)
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    @ViewBuilder
+    private var deletedCards: some View {
+        if deletedCardsCount > 0 {
+            NavigationLink { DeletedCardsView() } label: {
+                HStack {
+                    Label("Deleted Cards", systemImage: "trash")
+                        .labelStyle(.fixedIcon)
+                        .foregroundStyle(Color.myColors.myAccent)
+                    Spacer()
+                    Text("\(deletedCardsCount)")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.mySecondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+
+    }
+
     // Order: Inbox → My Sets → other user-created → developer collections (with CEFR)
+    // Non-protected collections hidden when all their cards are soft-deleted
     private var regularCollections: [Collection] {
         let inbox    = collections.filter { $0.name == "Inbox" }
         let mySets   = collections.filter { $0.name == "My Sets" }
-        let userRest = collections.filter { $0.isUserCreated && $0.name != "Inbox" && $0.name != "My Sets" }
-        let devCols  = collections.filter { !$0.isUserCreated }
+        let userRest = collections.filter {
+            $0.isUserCreated && $0.name != "Inbox" && $0.name != "My Sets" && hasVisibleContent($0)
+        }
+        let devCols  = collections.filter { !$0.isUserCreated && hasVisibleContent($0) }
         return inbox + mySets + userRest + devCols
+    }
+
+    /// Коллекция видима если: нет сетов (только что создана), или хотя бы один сет имеет
+    /// хотя бы одну не-удалённую карточку (или пустой сет — тоже видим).
+    private func hasVisibleContent(_ collection: Collection) -> Bool {
+        let setsInCollection = cardSets.filter { $0.collectionId == collection.id }
+        if setsInCollection.isEmpty { return true }
+        return setsInCollection.contains { set in
+            let cards = allCards.filter { $0.setId == set.id }
+            return cards.isEmpty || cards.contains { $0.status != .deleted }
+        }
     }
 
     // MARK: - Empty State
@@ -199,6 +303,29 @@ struct LibraryView: View {
     }
 
     // MARK: - Actions
+
+    private func deleteCollectionWithCards(_ collection: Collection) {
+        let setsInCollection = cardSets.filter { $0.collectionId == collection.id }
+        var hasSoftDeletedCards = false
+
+        for set in setsInCollection {
+            let cards = allCards.filter { $0.setId == set.id }
+            if cards.isEmpty {
+                context.delete(set)        // пустой сет — удаляем сразу
+            } else {
+                hasSoftDeletedCards = true
+                cards.forEach { $0.status = .deleted }
+                // сет остаётся в БД; удалится автоматически когда все карточки будут стёрты
+            }
+        }
+
+        if !hasSoftDeletedCards {
+            // коллекция была пустой — удаляем сразу
+            context.delete(collection)
+        }
+        // иначе коллекция удалится автоматически вместе с последним сетом
+        try? context.save()
+    }
 
     private func activatePile(_ pile: Pile) {
         for p in piles { p.isActive = false }
@@ -272,6 +399,7 @@ private struct CollectionRow: View {
     var body: some View {
         HStack {
             Label(collection.name, systemImage: collection.icon ?? "folder")
+                .labelStyle(.fixedIcon)
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))

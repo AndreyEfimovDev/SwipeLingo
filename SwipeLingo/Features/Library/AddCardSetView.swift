@@ -11,6 +11,10 @@ struct AddCardSetView: View {
     let collectionId: UUID
     @State private var name = ""
 
+    private var isNameEmpty: Bool {
+        name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -21,6 +25,7 @@ struct AddCardSetView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .foregroundStyle(Color.myColors.myRed)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
@@ -32,7 +37,8 @@ struct AddCardSetView: View {
                         try? context.save()
                         dismiss()
                     }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .foregroundStyle(isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue)
+                    .disabled(isNameEmpty)
                 }
             }
         }
