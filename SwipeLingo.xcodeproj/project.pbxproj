@@ -177,6 +177,23 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		478C76FF2F783D9F005FBDFE /* Pickets */ = {
+			isa = PBXGroup;
+			children = (
+				47EA2F892F75541500A84C9D /* UnderlineSermentedPicker.swift */,
+				47EA2F8A2F75541500A84C9D /* UnderlineSermentedPickerNotOptional.swift */,
+			);
+			path = Pickets;
+			sourceTree = "<group>";
+		};
+		478C77002F783DC6005FBDFE /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				47FCD27E2F7809D100AF86E1 /* CEFRBadgeView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 		47EA2F842F75541500A84C9D /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -189,16 +206,14 @@
 		47EA2F8C2F75541500A84C9D /* CustomFeatures */ = {
 			isa = PBXGroup;
 			children = (
-				47EA2F852F75541500A84C9D /* Bundle.swift */,
-				47EA2F862F75541500A84C9D /* Colors.swift */,
-				7530F0C7FCFA48C4BC413B8DB553C2C8 /* Logger.swift */,
-				47EA2F872F75541500A84C9D /* DateFormater.swift */,
-				47EA2F882F75541500A84C9D /* JSON.swift */,
-				47EA2F892F75541500A84C9D /* UnderlineSermentedPicker.swift */,
-				47EA2F8A2F75541500A84C9D /* UnderlineSermentedPickerNotOptional.swift */,
 				47EA2F8B2F75541500A84C9D /* Views.swift */,
-				47FCD27E2F7809D100AF86E1 /* CEFRBadgeView.swift */,
-				47EA2FF52F75541500A84C9D /* KeyboardManager.swift */,
+				47EA2F862F75541500A84C9D /* Colors.swift */,
+				47EA2F872F75541500A84C9D /* DateFormater.swift */,
+				47EA2F852F75541500A84C9D /* Bundle.swift */,
+				7530F0C7FCFA48C4BC413B8DB553C2C8 /* Logger.swift */,
+				47EA2F882F75541500A84C9D /* JSON.swift */,
+				478C77002F783DC6005FBDFE /* Components */,
+				478C76FF2F783D9F005FBDFE /* Pickets */,
 			);
 			path = CustomFeatures;
 			sourceTree = "<group>";
@@ -301,6 +316,7 @@
 				36A36CAE0B97490185771DE6 /* FirestoreImportService.swift */,
 				47EA2FB22F75541500A84C9D /* PileService.swift */,
 				47EA2FB32F75541500A84C9D /* SRSService.swift */,
+				47EA2FF52F75541500A84C9D /* KeyboardManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -312,8 +328,8 @@
 				47EA2F8C2F75541500A84C9D /* CustomFeatures */,
 				47EA2FA32F75541500A84C9D /* Features */,
 				47EA2FAC2F75541500A84C9D /* Models */,
-				47EA2FAE2F75541500A84C9D /* Resources */,
 				47EA2FB42F75541500A84C9D /* Services */,
+				47EA2FAE2F75541500A84C9D /* Resources */,
 			);
 			path = SwipeLingo;
 			sourceTree = "<group>";
