@@ -5,6 +5,8 @@
 # Документация проекта (приватная)
 CLAUDE.md
 PRD.md
+DECISIONS.md
+LEVELS.md
 
 # Firebase конфигурация (никогда не публиковать)
 GoogleService-Info.plist
@@ -84,3 +86,8 @@ secrets/
 # Claude Code
 # ===========================
 .claude/
+
+# ===========================
+# Plans (local only)
+# ===========================
+Plans.*

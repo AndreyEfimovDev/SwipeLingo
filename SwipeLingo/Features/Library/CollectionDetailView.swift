@@ -9,33 +9,41 @@ struct CollectionDetailView: View {
     @Environment(\.modelContext) private var context
     let collection: Collection
 
-    @Query(sort: \CardSet.createdAt) private var allSets: [CardSet]
-    @State private var isShowingAddSet = false
+    @Query(sort: \CardSet.createdAt)  private var allSets:  [CardSet]
+    @Query(sort: \Card.createdAt)     private var allCards: [Card]
 
+    @State private var isShowingAddSet = false
+    @State private var setToDelete: CardSet?
+
+    // Сет видим если: нет карточек (только что создан), или есть хотя бы одна не-удалённая карточка
     private var cardSets: [CardSet] {
-        allSets.filter { $0.collectionId == collection.id }
+        allSets
+            .filter { $0.collectionId == collection.id }
+            .filter { set in
+                let cards = allCards.filter { $0.setId == set.id }
+                return cards.isEmpty || cards.contains { $0.status != .deleted }
+            }
     }
 
     var body: some View {
-        List {
-            ForEach(cardSets) { cardSet in
-                NavigationLink {
-                    CardSetDetailView(cardSet: cardSet)
-                } label: {
-                    CardSetRow(cardSet: cardSet, allCards: [])
+        ScrollView {
+            VStack(spacing: 16) {
+                if !cardSets.isEmpty {
+                    setsSection
                 }
             }
-            .onDelete { offsets in
-                deleteCardSets(at: offsets)
-            }
+            .padding(.vertical, 16)
         }
+        .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle(collection.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .frame(maxWidth: .infinity)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { isShowingAddSet = true } label: {
                     Image(systemName: "plus")
                 }
+                .foregroundStyle(Color.myColors.myBlue)
             }
         }
         .sheet(isPresented: $isShowingAddSet) {
@@ -44,37 +52,94 @@ struct CollectionDetailView: View {
         .overlay {
             if cardSets.isEmpty { emptyState }
         }
+        .confirmationDialog(
+            "Delete \"\(setToDelete?.name ?? "Set")\"?",
+            isPresented: Binding(
+                get: { setToDelete != nil },
+                set: { if !$0 { setToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Set", role: .destructive) {
+                if let set = setToDelete {
+                    deleteSetWithCards(set)
+                    setToDelete = nil
+                }
+            }
+            Button("Cancel", role: .cancel) { setToDelete = nil }
+        } message: {
+            if let set = setToDelete {
+                let count = allCards.filter { $0.setId == set.id }.count
+                Text(count > 0
+                    ? "\(count) card\(count == 1 ? "" : "s") will be moved to Deleted and can be restored later."
+                    : "This empty set will be permanently removed.")
+            }
+        }
     }
+
+    // MARK: - Actions
+
+    private func deleteSetWithCards(_ cardSet: CardSet) {
+        let cards = allCards.filter { $0.setId == cardSet.id }
+        if cards.isEmpty {
+            context.delete(cardSet)    // пустой сет — удаляем сразу
+        } else {
+            cards.forEach { $0.status = .deleted }
+            // сет остаётся в БД; удалится автоматически когда все карточки будут стёрты
+        }
+        try? context.save()
+    }
+
+    // MARK: - Sets Section
+
+    private var setsSection: some View {
+        VStack(spacing: 0) {
+            ForEach(cardSets) { cardSet in
+                NavigationLink {
+                    CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated)
+                } label: {
+                    HStack {
+                        Text(cardSet.name)
+                        Spacer()
+                        CEFRBadgeView(level: collection.isUserCreated ? nil : cardSet.cefrLevel)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myBlue)
+                    }
+                    .font(.body)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .contextMenu {
+                    Button(role: .destructive) {
+                        setToDelete = cardSet
+                    } label: {
+                        Label("Delete Set", systemImage: "trash")
+                    }
+                }
+                if cardSet.id != cardSets.last?.id {
+                    Divider().padding(.leading, 16)
+                }
+            }
+        }
+        .background(Color.myColors.myBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .myShadow()
+        .padding(.horizontal, 16)
+    }
+
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 42))
-                .foregroundStyle(.secondary)
             Text("No sets yet")
                 .font(.title3.bold())
             Text("Tap + to add a set")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
         }
-    }
-
-    private func deleteCardSets(at offsets: IndexSet) {
-        let list = cardSets
-        for index in offsets {
-            context.delete(list[index])
-        }
-        try? context.save()
-    }
-}
-
-// MARK: - CardSetRow
-
-private struct CardSetRow: View {
-    let cardSet: CardSet
-    let allCards: [Card]   // injected for card count badge (future use)
-
-    var body: some View {
-        Text(cardSet.name)
     }
 }

@@ -12,11 +12,15 @@ struct AddCollectionView: View {
     @State private var selectedIcon = "folder"
 
     private let icons = [
-        "folder", "book.fill", "star.fill", "heart.fill",
-        "airplane", "briefcase.fill", "house.fill", "graduationcap.fill",
-        "cart.fill", "fork.knife", "car.fill", "music.note"
+        "folder", "book", "star", "heart",
+        "airplane", "briefcase.fill", "house", "graduationcap",
+        "cart", "fork.knife", "car", "music.note"
     ]
 
+    private var isNameEmpty: Bool {
+        name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -46,6 +50,7 @@ struct AddCollectionView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .foregroundStyle(Color.myColors.myRed)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
@@ -57,6 +62,7 @@ struct AddCollectionView: View {
                         try? context.save()
                         dismiss()
                     }
+                    .foregroundStyle(isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue)
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }

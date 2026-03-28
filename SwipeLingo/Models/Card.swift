@@ -23,34 +23,43 @@ private func decodeArray(_ raw: String) -> [String] {
 
 @Model
 final class Card {
-    var id: UUID
-    var en: String
-    var item: String
+    var id: UUID = UUID()
+    var en: String = ""
+    var item: String = ""
 
     // Backing stores — String is fully CloudKit-compatible
-    private var sampleENRaw:   String
-    private var sampleItemRaw: String
-    private var tagsRaw:       String
+    private var sampleENRaw:   String = ""
+    private var sampleItemRaw: String = ""
+    private var tagsRaw:       String = ""
+    private var synonymsRaw:   String = ""
 
-    var status: CardStatus
-    var isFavorite: Bool
+    var status: CardStatus = CardStatus.active
+    var isFavorite: Bool = false
 
     // SRS fields (SM-2)
-    var easeFactor:  Double
-    var interval:    Int
-    var repetitions: Int
-    var dueDate:     Date
-    var lastReviewed: Date
+    var easeFactor:  Double = 2.5
+    var interval:    Int    = 1
+    var repetitions: Int    = 0
+    var dueDate:     Date   = Date.now
+    var lastReviewed: Date  = Date.now
 
     // Dictionary cache — plain String, CloudKit compatible (empty = not yet fetched)
-    var dictTranscription: String
-    var dictAudioURL:      String
-    var dictDefinition:    String
+    var dictTranscription: String = ""
+    var dictAudioURL:      String = ""
+    var dictDefinition:    String = ""
+
+    // CEFR level — stored as String for CloudKit/SwiftData compatibility
+    var level: String = CEFRLevel.a0a1.rawValue
+
+    var cefrLevel: CEFRLevel {
+        get { CEFRLevel(rawValue: level) ?? .a0a1 }
+        set { level = newValue.rawValue }
+    }
 
     // Metadata
-    var createdAt:  Date
-    var importedAt: Date?
-    var setId:      UUID
+    var createdAt:  Date  = Date.now
+    var importedAt: Date? = nil
+    var setId:      UUID  = UUID()
 
     // MARK: Computed [String] accessors (same public API as before)
 
@@ -69,6 +78,11 @@ final class Card {
         set { tagsRaw = encodeArray(newValue) }
     }
 
+    var synonyms: [String] {
+        get { decodeArray(synonymsRaw) }
+        set { synonymsRaw = encodeArray(newValue) }
+    }
+
     // MARK: Init
 
     init(
@@ -80,6 +94,7 @@ final class Card {
         status: CardStatus = .active,
         isFavorite: Bool = false,
         tags: [String] = [],
+        synonyms: [String] = [],
         easeFactor: Double = 2.5,
         interval: Int = 1,
         repetitions: Int = 0,
@@ -100,6 +115,7 @@ final class Card {
         self.status        = status
         self.isFavorite    = isFavorite
         self.tagsRaw       = encodeArray(tags)
+        self.synonymsRaw   = encodeArray(synonyms)
         self.easeFactor    = easeFactor
         self.interval      = interval
         self.repetitions   = repetitions

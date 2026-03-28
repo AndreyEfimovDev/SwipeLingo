@@ -6,32 +6,26 @@ import SwiftData
 struct StudyView: View {
 
     @Environment(\.modelContext) private var context
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Query private var piles: [Pile]
     @Query private var allCards: [Card]
     @Query private var cardSets: [CardSet]
+    @Query private var collections: [Collection]
 
     @State private var viewModel = StudyViewModel()
-    @AppStorage("studyDirection") private var studyDirection = "EN→RU"
+    @AppStorage("studyDirection") private var studyDirection = "EN→Native"
     @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
 
-    /// ISO 639-1 two-letter abbreviation for the selected native language.
+    private var isLandscape: Bool { verticalSizeClass == .compact }
+
+    /// ISO 639-1 two-letter abbreviation for the selected native language (uppercase, e.g. "RU").
     private var langAbbr: String {
-        switch nativeLanguage {
-        case "Русский":   return "RU"  // Russian
-        case "中文":       return "ZH"  // Chinese (Mandarin)
-        case "Español":   return "ES"  // Spanish
-        case "Français":  return "FR"  // French
-        case "العربية":   return "AR"  // Arabic
-        case "Português": return "PT"  // Portuguese
-        case "Deutsch":   return "DE"  // German
-        case "日本語":     return "JA"  // Japanese
-        default:          return String(nativeLanguage.prefix(2)).uppercased()
-        }
+        DictionaryLookupViewModel.targetLangId(for: nativeLanguage).uppercased()
     }
 
-    /// Button label reflecting the actual language, e.g. "EN→DE" or "JA→EN".
+    /// Button label reflecting the actual language, e.g. "EN→RU" or "RU→EN".
     private var directionLabel: String {
-        studyDirection == "EN→RU" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
+        studyDirection == "EN→Native" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
     }
 
     var body: some View {
@@ -41,16 +35,26 @@ struct StudyView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
                 .sheet(isPresented: $viewModel.isShowingAddCard) {
-                    AddCardView(preselectedSetId: activeSetId)
+                    AddEditCardView()
                 }
         }
         .onAppear {
             // Seeding happens in SwipeLingoApp.init() before any view renders,
             // so @Query results are already populated here.
-            viewModel.startSessionIfNeeded(piles: piles, allCards: allCards, cardSets: cardSets)
+            viewModel.startSessionIfNeeded(
+                piles: piles,
+                allCards: allCards,
+                cardSets: cardSets,
+                collections: collections
+            )
         }
         .onChange(of: activePileID) {
-            viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets)
+            viewModel.startNewSession(
+                piles: piles,
+                allCards: allCards,
+                cardSets: cardSets,
+                collections: collections
+            )
         }
     }
 
@@ -66,29 +70,39 @@ struct StudyView: View {
             TinderCardsView(
                 cards: viewModel.studyCards,
                 contextLabels: viewModel.contextLabels,
+                cefrLabels: viewModel.cefrLabels,
                 pileTagsLine: viewModel.pileTagsLine,
                 onDone: {
-                    viewModel.startNewSession(piles: piles, allCards: allCards, cardSets: cardSets)
+                    viewModel.startNewSession(
+                        piles: piles,
+                        allCards: allCards,
+                        cardSets: cardSets,
+                        collections: collections
+                    )
                 }
             )
             .id(viewModel.sessionID)
+            .padding(.vertical)
         }
     }
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            Button { viewModel.isShowingAddCard = true } label: {
-                Image(systemName: "plus")
-            }
-        }
-        ToolbarItem(placement: .topBarLeading) {
             Button {
-                studyDirection = studyDirection == "EN→RU" ? "RU→EN" : "EN→RU"
+                studyDirection = studyDirection == "EN→Native" ? "Native→EN" : "EN→Native"
             } label: {
                 Text(directionLabel)
                     .font(.subheadline.weight(.medium))
                     .monospacedDigit()
+                    .foregroundStyle(Color.myColors.myBlue)
+            }
+        }
+        ToolbarItem(placement: .topBarLeading) {
+            Button { viewModel.isShowingAddCard = true } label: {
+                Image(systemName: "plus")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myBlue)
             }
         }
     }
@@ -97,12 +111,10 @@ struct StudyView: View {
         VStack(spacing: 16) {
             Image(systemName: "rectangle.stack")
                 .font(.system(size: 52))
-                .foregroundStyle(.secondary)
             Text("No cards to study")
                 .font(.title3.bold())
             Text("Add cards in Library or create a Pile")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }

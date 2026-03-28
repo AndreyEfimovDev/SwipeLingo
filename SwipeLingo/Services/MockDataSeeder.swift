@@ -3,117 +3,58 @@ import SwiftData
 
 // MARK: - MockDataSeeder
 //
-// Seeds one Collection, one CardSet and 8 Cards on first launch.
-// Remove or gate behind a flag before App Store submission.
+// Ensures system collections (Inbox, My Sets) always exist on every launch.
+// Developer content (Collections → CardSets → Cards) is handled by FirestoreImportService.
 
 struct MockDataSeeder {
 
-    /// Inserts mock data into `context` if no Cards exist yet.
-    /// Safe to call on every launch — the `guard` prevents double-seeding.
-    static func seedIfNeeded(into context: ModelContext) {
-        // Check for existing data
-        let descriptor = FetchDescriptor<Card>()
-        let count = (try? context.fetchCount(descriptor)) ?? 0
-        guard count == 0 else { return }
+    // MARK: - System Collections
 
-        // MARK: Collection
+    /// Creates "My Sets" and "Inbox" if they are missing.
+    /// Safe to call on every launch — only inserts what is absent.
+    static func ensureSystemCollections(into context: ModelContext) {
+        let existing = (try? context.fetch(FetchDescriptor<Collection>())) ?? []
+        let names = Set(existing.map { $0.name })
 
-        let collection = Collection(
-            name: "IELTS Vocabulary",
-            icon: "book.fill",
-            isOwned: true
-        )
-        context.insert(collection)
+        if !names.contains("My Sets") {
+            let mySets = Collection(name: "My Sets", icon: "folder", isOwned: true, isUserCreated: true)
+            context.insert(mySets)
+        }
 
-        // MARK: CardSet
+        var inboxSet: CardSet?
 
-        let cardSet = CardSet(
-            name: "Academic Words",
-            collectionId: collection.id
-        )
-        context.insert(cardSet)
+        if !names.contains("Inbox") {
+            let inbox = Collection(name: "Inbox", icon: "tray", isOwned: true, isUserCreated: true)
+            context.insert(inbox)
+            let set = CardSet(name: "Inbox", collectionId: inbox.id)
+            context.insert(set)
+            inboxSet = set
+        } else if let inbox = existing.first(where: { $0.name == "Inbox" }) {
+            let sets = (try? context.fetch(FetchDescriptor<CardSet>())) ?? []
+            if let existing = sets.first(where: { $0.collectionId == inbox.id }) {
+                inboxSet = existing
+            } else {
+                let set = CardSet(name: "Inbox", collectionId: inbox.id)
+                context.insert(set)
+                inboxSet = set
+            }
+        }
 
-        let sid = cardSet.id
-
-        // MARK: Cards
-
-        let cards: [Card] = [
-            Card(
-                en: "Serendipity",
-                item: "счастливая случайность",
-                sampleEN:   ["It was pure serendipity that we met at the airport."],
-                sampleItem: ["Наша встреча в аэропорту была чистой случайностью."],
-                setId: sid
-            ),
-            Card(
-                en: "Resilience",
-                item: "стойкость, жизнестойкость",
-                sampleEN:   ["Her resilience in the face of adversity inspired everyone."],
-                sampleItem: ["Её стойкость перед лицом невзгод вдохновляла всех."],
-                setId: sid
-            ),
-            Card(
-                en: "Ephemeral",
-                item: "мимолётный, преходящий",
-                sampleEN:   ["Fame can be ephemeral — here today, gone tomorrow."],
-                sampleItem: ["Слава бывает мимолётной — сегодня есть, завтра нет."],
-                setId: sid
-            ),
-            Card(
-                en: "Eloquent",
-                item: "красноречивый",
-                sampleEN:   ["She gave an eloquent speech that moved the audience."],
-                sampleItem: ["Она произнесла красноречивую речь, тронувшую зал."],
-                setId: sid
-            ),
-            Card(
-                en: "Tenacious",
-                item: "настойчивый, упорный",
-                sampleEN:   ["A tenacious athlete never gives up, no matter the score."],
-                sampleItem: ["Упорный спортсмен никогда не сдаётся, каков бы ни был счёт."],
-                setId: sid
-            ),
-            Card(
-                en: "Ambiguous",
-                item: "неоднозначный, двусмысленный",
-                sampleEN:   ["The contract contained several ambiguous clauses."],
-                sampleItem: ["В договоре было несколько неоднозначных пунктов."],
-                setId: sid
-            ),
-            Card(
-                en: "Paramount",
-                item: "первостепенный, важнейший",
-                sampleEN:   ["Safety is of paramount importance on a construction site."],
-                sampleItem: ["Безопасность имеет первостепенное значение на стройплощадке."],
-                setId: sid
-            ),
-            Card(
-                en: "Melancholy",
-                item: "меланхолия, грусть",
-                sampleEN:   ["A deep melancholy settled over him as autumn arrived."],
-                sampleItem: ["С приходом осени им овладела глубокая меланхолия."],
-                setId: sid
-            ),
-        ]
-
-        for card in cards { context.insert(card) }
-
-        // MARK: Inbox (special collection for unsorted cards)
-
-        let inbox = Collection(name: "Inbox", icon: "tray.fill", isOwned: true)
-        context.insert(inbox)
-        let inboxSet = CardSet(name: "Inbox", collectionId: inbox.id)
-        context.insert(inboxSet)
-
-        // MARK: Default active Pile
-
-        let pile = Pile(
-            name: "Morning Session",
-            setIds: [cardSet.id],
-            isActive: true,
-            shuffleMethod: .random
-        )
-        context.insert(pile)
+        // MARK: Inbox stub cards
+        // TODO: Remove — real cards arrive from share extension / clipboard.
+        #warning("STUB: Inbox seed cards are temporary. Remove before App Store release.")
+        if let set = inboxSet {
+            let allCards = (try? context.fetch(FetchDescriptor<Card>())) ?? []
+            let hasInboxCards = allCards.contains { $0.setId == set.id }
+            if !hasInboxCards {
+                let stubs: [Card] = [
+                    Card(en: "Serendipity",   item: "", setId: set.id),
+                    Card(en: "Idiosyncratic", item: "", setId: set.id),
+                    Card(en: "Perseverance",  item: "", setId: set.id),
+                ]
+                for card in stubs { context.insert(card) }
+            }
+        }
 
         try? context.save()
     }

@@ -1,46 +1,191 @@
 import SwiftUI
 
 // MARK: - AppViewModel
-//
-// Injected into the environment so any descendant (e.g. PileBuilderView)
-// can switch the active tab without needing a Binding chain.
 
 @Observable
 final class AppViewModel {
     var selectedTab: AppTab = .study
 
-    enum AppTab: Hashable {
-        case study, library, preferences
+    enum AppTab: Hashable, CaseIterable {
+        case study, library, statistics, preferences
+
+        var label: LocalizedStringKey {
+            switch self {
+            case .study:       return "Study"
+            case .library:     return "Library"
+            case .statistics:  return "Stats"
+            case .preferences: return "Settings"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .study:       return "rectangle.stack"
+            case .library:     return "books.vertical"
+            case .statistics:  return "chart.line.uptrend.xyaxis"
+            case .preferences: return "gear"
+            }
+        }
     }
 }
+
+enum Theme: String, CaseIterable {
+    case light
+    case dark
+    case system
+    
+    var displayName: String {
+        switch self {
+        case .light: return "Light"
+        case .dark: return "Dark"
+        case .system: return "System"
+        }
+    }
+    
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .light: return .light
+        case .dark: return .dark
+        case .system: return nil
+        }
+    }
+}
+
 
 // MARK: - AppView
 
 struct AppView: View {
     @State private var viewModel = AppViewModel()
-    @AppStorage("colorScheme") private var colorSchemeKey = "auto"
+    @AppStorage("colorScheme") private var theme: Theme = .system
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    private var isLandscape: Bool { verticalSizeClass == .compact }
+
+    init() {
+        configureNavigationBarAppearance()
+    }
+
 
     var body: some View {
-        TabView(selection: Bindable(viewModel).selectedTab) {
-            Tab("Study", systemImage: "rectangle.stack.fill", value: AppViewModel.AppTab.study) {
-                StudyView()
-            }
-            Tab("Library", systemImage: "books.vertical.fill", value: AppViewModel.AppTab.library) {
-                LibraryView()
-            }
-            Tab("Settings", systemImage: "gear", value: AppViewModel.AppTab.preferences) {
-                PreferencesView()
+        Group {
+            if isLandscape {
+                landscapeLayout
+            } else {
+                portraitTabView
             }
         }
-        .environment(viewModel)          // ← makes AppViewModel available everywhere
-        .preferredColorScheme(preferredScheme)
+        .environment(viewModel)
+        .preferredColorScheme(theme.colorScheme)
+        .foregroundStyle(Color.myColors.myAccent)
     }
 
-    private var preferredScheme: ColorScheme? {
-        switch colorSchemeKey {
-        case "light": return .light
-        case "dark":  return .dark
-        default:      return nil
+    // MARK: - Configuration Methods
+    
+    private func configureNavigationBarAppearance() {
+        
+        // Remove tab bar separator line (configureWithTransparentBackground
+        // clears the shadow automatically; backgroundColor restores white fill)
+        let tabBarappearance = UITabBarAppearance()
+        tabBarappearance.configureWithTransparentBackground()
+        tabBarappearance.backgroundColor = UIColor(Color.myColors.myBackground)
+        let inactiveColor = UIColor(Color.myColors.myAccent).withAlphaComponent(0.5)
+        tabBarappearance.stackedLayoutAppearance.normal.iconColor    = inactiveColor
+        tabBarappearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: inactiveColor]
+        UITabBar.appearance().standardAppearance   = tabBarappearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarappearance
+
+        let navBarAppearance = UINavigationBarAppearance()
+        navBarAppearance.configureWithOpaqueBackground()
+        navBarAppearance.backgroundColor = UIColor(Color.myColors.myBackground)
+        navBarAppearance.backgroundEffect = nil
+        navBarAppearance.shadowColor = .clear
+        
+        let accentColor = UIColor(Color.myColors.myAccent)
+        navBarAppearance.largeTitleTextAttributes = [
+            .foregroundColor: accentColor,
+            .font: UIFont.systemFont(ofSize: 34, weight: .bold)
+        ]
+        navBarAppearance.titleTextAttributes = [
+            .foregroundColor: accentColor,
+            .font: UIFont.systemFont(ofSize: 17, weight: .semibold)
+        ]
+        
+        UINavigationBar.appearance().standardAppearance = navBarAppearance
+        UINavigationBar.appearance().compactAppearance = navBarAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
+        UINavigationBar.appearance().compactScrollEdgeAppearance = navBarAppearance
+        UINavigationBar.appearance().tintColor = accentColor
+        UITableView.appearance().backgroundColor = UIColor.clear
+    }
+
+    // MARK: - Portrait: system TabView
+
+    private var portraitTabView: some View {
+        TabView(selection: Bindable(viewModel).selectedTab) {
+            Tab(AppViewModel.AppTab.study.label,
+                systemImage: AppViewModel.AppTab.study.icon,
+                value: AppViewModel.AppTab.study)       { StudyView() }
+            Tab(AppViewModel.AppTab.library.label,
+                systemImage: AppViewModel.AppTab.library.icon,
+                value: AppViewModel.AppTab.library)     { LibraryView() }
+            Tab(AppViewModel.AppTab.statistics.label,
+                systemImage: AppViewModel.AppTab.statistics.icon,
+                value: AppViewModel.AppTab.statistics)  { StatisticsView() }
+            Tab(AppViewModel.AppTab.preferences.label,
+                systemImage: AppViewModel.AppTab.preferences.icon,
+                value: AppViewModel.AppTab.preferences) { SettingsView() }
+        }
+        .toolbarBackground(.hidden, for: .tabBar)
+    }
+
+    // MARK: - Landscape: custom HStack layout (no TabView → no bottom bar)
+
+    private var landscapeLayout: some View {
+        HStack(spacing: 0) {
+            verticalTabBar
+            currentTabContent(viewModel.selectedTab)
         }
     }
+
+    @ViewBuilder
+    private func currentTabContent(_ tab: AppViewModel.AppTab) -> some View {
+        switch tab {
+        case .study:       StudyView()
+        case .library:     LibraryView()
+        case .statistics:  StatisticsView()
+        case .preferences: SettingsView()
+        }
+    }
+
+    // MARK: - Vertical Tab Bar
+
+    private var verticalTabBar: some View {
+        VStack(spacing: 0) {
+            ForEach(AppViewModel.AppTab.allCases, id: \.self) { tab in
+                Spacer()
+                tabBarItem(tab: tab)
+            }
+            Spacer()
+        }
+        .frame(width: 56)
+        // Background extends into leading safe area to fill the gap,
+        // while icons stay within the safe area and are always visible.
+        .background(Color.myColors.myBackground.ignoresSafeArea(edges: .leading))
+    }
+
+    @ViewBuilder
+    private func tabBarItem(tab: AppViewModel.AppTab) -> some View {
+        let active = viewModel.selectedTab == tab
+        Button { viewModel.selectedTab = tab } label: {
+            VStack(spacing: 3) {
+                Image(systemName: tab.icon).font(.system(size: 18))
+                Text(tab.label).font(.system(size: 9))
+            }
+            .foregroundStyle(active ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+    }
+
 }

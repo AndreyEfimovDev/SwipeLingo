@@ -13,16 +13,31 @@ final class TinderCardsViewModel {
     // MARK: Data
 
     private(set) var cards: [Card]
+    /// Full original card list — used by restart() to restore all active cards.
+    private let originalCards: [Card]
     /// setId → display label shown below the word, e.g. "Daily Words · Travel"
     let contextLabels: [UUID: String]
     /// Called when the user taps "Done" on the session completion screen.
     let onDone: (() -> Void)?
+
+    // MARK: Weak cards (rated Forgot or Hard this session)
+
+    private(set) var weakCards: [Card] = []
+    var weakCount: Int { weakCards.count }
+
+    // MARK: In-session stats
+
+    /// Cards rated Easy this session (used for "Learnt N" in progress stats row).
+    private(set) var learntInSession: Int = 0
 
     // MARK: UI State
 
     private(set) var currentIndex: Int = 0
     var dragOffset: CGSize = .zero
     var isFlipped: Bool = false
+    /// True while a drag is active OR while the card is still animating back to centre.
+    /// Tap-to-flip is blocked when this flag is set.
+    var isDragging: Bool = false
 
     // MARK: Derived
 
@@ -58,7 +73,7 @@ final class TinderCardsViewModel {
         let now   = Date.now
         let start = now.addingTimeInterval(86400 * 1)
         let end   = now.addingTimeInterval(86400 * 2)
-        return cards.filter { $0.dueDate >= start && $0.dueDate < end }.count
+        return originalCards.filter { $0.dueDate >= start && $0.dueDate < end }.count
     }
 
     /// Cards whose dueDate falls in the 2–5 day window ("in 3 days").
@@ -66,21 +81,32 @@ final class TinderCardsViewModel {
         let now   = Date.now
         let start = now.addingTimeInterval(86400 * 2)
         let end   = now.addingTimeInterval(86400 * 5)
-        return cards.filter { $0.dueDate >= start && $0.dueDate < end }.count
+        return originalCards.filter { $0.dueDate >= start && $0.dueDate < end }.count
     }
 
     // MARK: Init
 
-    init(cards: [Card], contextLabels: [UUID: String] = [:], onDone: (() -> Void)? = nil) {
+    init(
+        cards: [Card],
+        contextLabels: [UUID: String] = [:],
+        onDone: (() -> Void)? = nil
+    ) {
         self.cards = cards
+        self.originalCards = cards
         self.contextLabels = contextLabels
         self.onDone = onDone
     }
 
     // MARK: Actions
 
-    /// Toggles the card face (front ↔ back).
-    func flip() {
+    /// Flips front → back.
+    func flipToBack() {
+        guard !isFlipped else { return }
+        isFlipped = true
+    }
+
+    /// Toggles flip in both directions. Tap anywhere on the card calls this.
+    func flipToggle() {
         isFlipped.toggle()
     }
 
@@ -91,33 +117,51 @@ final class TinderCardsViewModel {
         guard let card = currentCard else { return }
         if direction == .right {
             card.status = .learnt
+            learntInSession += 1
             try? context.save()
         }
         advance()
     }
 
-    /// Applies SM-2, saves, and advances to the next card.
-    func evaluate(rating: SRSRating, context: ModelContext) {
+    /// Sends the current card to .deleted and advances.
+    func commitDelete(context: ModelContext) {
         guard let card = currentCard else { return }
-        SRSService().evaluate(card: card, rating: rating)
+        card.status = .deleted
         try? context.save()
         advance()
     }
 
-    /// Restarts the session from the first card (all original cards).
-    func restart() {
-        currentIndex = 0
-        dragOffset   = .zero
-        isFlipped    = false
+    /// Applies SM-2, records weak cards (Forgot/Hard), saves, and advances.
+    func evaluate(rating: SRSRating, context: ModelContext) {
+        guard let card = currentCard else { return }
+        SRSService().evaluate(card: card, rating: rating)
+        if rating == .again || rating == .hard {
+            weakCards.append(card)
+        }
+        if rating == .easy { learntInSession += 1 }
+        try? context.save()
+        advance()
     }
 
-    /// Restarts with only cards whose dueDate is within the next 24 h (due today).
-    func restartDue() {
-        let dueCards = cards.filter { $0.dueDate < Date.now.addingTimeInterval(86400) }
-        if !dueCards.isEmpty { cards = dueCards }
-        currentIndex = 0
-        dragOffset   = .zero
-        isFlipped    = false
+    /// Study Again — restarts with all .active original cards. .learnt cards are NOT reset.
+    func restart() {
+        cards            = originalCards.filter { $0.status == .active }
+        weakCards        = []
+        learntInSession  = 0
+        currentIndex     = 0
+        dragOffset       = .zero
+        isFlipped        = false
+    }
+
+    /// Weak cards — restarts with only cards rated Forgot/Hard this session.
+    func restartWeak() {
+        let active = weakCards.filter { $0.status == .active }
+        if !active.isEmpty { cards = active }
+        weakCards        = []
+        learntInSession  = 0
+        currentIndex     = 0
+        dragOffset       = .zero
+        isFlipped        = false
     }
 
     // MARK: Private

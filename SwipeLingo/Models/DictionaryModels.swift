@@ -55,9 +55,9 @@ struct DictionaryDefinition {
 extension APIEntry {
     func toDictionaryEntry() -> DictionaryEntry {
         // Log raw phonetics so we can verify what the API returns
-        print("[DictionaryAPI] '\(word)' — \(phonetics.count) phonetic(s):")
+        log("'\(word)' — \(phonetics.count) phonetic(s):")
         for (i, p) in phonetics.enumerated() {
-            print("  [\(i)] text: \(p.text ?? "nil")  audio: \(p.audio ?? "nil")")
+            log("[\(i)] text: \(p.text ?? "nil")  audio: \(p.audio ?? "nil")")
         }
 
         // First non-empty transcription text
@@ -75,7 +75,7 @@ extension APIEntry {
             }
             .first(where: { $0.hasPrefix("https") }) ?? ""
 
-        print("[DictionaryAPI] resolved → transcription: '\(transcription)'  audioURL: '\(audioURL)'")
+        log("resolved → transcription: '\(transcription)'  audioURL: '\(audioURL)'")
 
         return DictionaryEntry(
             word: word,

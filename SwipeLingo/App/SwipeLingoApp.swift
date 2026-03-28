@@ -12,7 +12,8 @@ struct SwipeLingoApp: App {
             CardSet.self,
             Collection.self,
             Pile.self,
-            EnglishPlusCard.self
+            EnglishPlusCard.self,
+            UserProfile.self
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -27,19 +28,20 @@ struct SwipeLingoApp: App {
             // NSCocoaErrorDomain Code=134110 → schema mismatch / loadIssueModelContainer.
             // During development the schema changes often; wipe the store and start fresh.
             // TODO: Replace with SchemaMigrationPlan before App Store release.
-            print("[SwipeLingoApp] ⚠️ ModelContainer failed (\(error))")
-            print("[SwipeLingoApp] 🗑 Deleting store at: \(storeURL.path)")
+            log("ModelContainer failed: \(error)", level: .error)
+            log("🗑 Deleting store at: \(storeURL.path)", level: .warning)
             Self.deleteStoreFiles(at: storeURL)
 
             do {
                 container = try ModelContainer(for: schema, configurations: [config])
-                print("[SwipeLingoApp] ✅ ModelContainer recreated after store reset")
+                log("ModelContainer recreated after store reset", level: .info)
             } catch {
                 fatalError("[SwipeLingoApp] ModelContainer failed even after store reset: \(error)")
             }
         }
 
-        MockDataSeeder.seedIfNeeded(into: container.mainContext)
+        FirestoreImportService().importIfNeeded(into: container.mainContext)
+        MockDataSeeder.ensureSystemCollections(into: container.mainContext)
     }
 
     var body: some Scene {
@@ -68,14 +70,14 @@ struct SwipeLingoApp: App {
         for suffix in ["", "-wal", "-shm"] {
             let candidate = base.appendingPathExtension(ext + suffix)
             guard fm.fileExists(atPath: candidate.path) else {
-                print("[SwipeLingoApp]   not found: \(candidate.lastPathComponent)")
+                log("not found: \(candidate.lastPathComponent)")
                 continue
             }
             do {
                 try fm.removeItem(at: candidate)
-                print("[SwipeLingoApp]   deleted:   \(candidate.lastPathComponent)")
+                log("deleted: \(candidate.lastPathComponent)", level: .info)
             } catch {
-                print("[SwipeLingoApp]   ⚠️ could not delete \(candidate.lastPathComponent): \(error)")
+                log("could not delete \(candidate.lastPathComponent): \(error)", level: .warning)
             }
         }
     }
