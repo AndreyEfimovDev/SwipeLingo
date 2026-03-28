@@ -401,7 +401,7 @@ struct DeletedCardsView: View {
             // Проверяем — остались ли другие сеты в коллекции
             let remainingSets = allCardSets.filter { $0.collectionId == collectionId && $0.id != setId }
             guard remainingSets.isEmpty,
-                  collection.name != "My Sets" else { continue }  // My Sets никогда не удаляем
+                  collection.name != "My Sets" else { continue }  // My Sets never deleted
             context.delete(collection)
         }
     }

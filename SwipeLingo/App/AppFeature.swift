@@ -6,8 +6,9 @@ import SwiftUI
 final class AppViewModel {
     var selectedTab: AppTab = .study
 
-    enum AppTab: Hashable {
+    enum AppTab: Hashable, CaseIterable {
         case study, library, statistics, preferences
+
     }
 }
 

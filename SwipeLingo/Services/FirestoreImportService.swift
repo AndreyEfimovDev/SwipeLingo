@@ -38,7 +38,7 @@ struct FirestoreImportService {
 
         let ielts = Collection(
             name: "IELTS Vocabulary",
-            icon: "book.fill",
+            icon: "book",
             isOwned: true,
             isUserCreated: false
         )

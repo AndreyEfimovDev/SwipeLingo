@@ -17,14 +17,14 @@ struct MockDataSeeder {
         let names = Set(existing.map { $0.name })
 
         if !names.contains("My Sets") {
-            let mySets = Collection(name: "My Sets", icon: "folder.fill", isOwned: true, isUserCreated: true)
+            let mySets = Collection(name: "My Sets", icon: "folder", isOwned: true, isUserCreated: true)
             context.insert(mySets)
         }
 
         var inboxSet: CardSet?
 
         if !names.contains("Inbox") {
-            let inbox = Collection(name: "Inbox", icon: "tray.fill", isOwned: true, isUserCreated: true)
+            let inbox = Collection(name: "Inbox", icon: "tray", isOwned: true, isUserCreated: true)
             context.insert(inbox)
             let set = CardSet(name: "Inbox", collectionId: inbox.id)
             context.insert(set)
