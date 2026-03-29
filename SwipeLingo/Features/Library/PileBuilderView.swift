@@ -174,7 +174,7 @@ struct PileBuilderView: View {
             }
             .disabled(!viewModel.canSave)
             .fontWeight(.semibold)
-            .foregroundStyle(viewModel.canSave ? Color.myColors.myGreen : myAccent.opacity(0.8))
+            .foregroundStyle(viewModel.canSave ? Color.myColors.myGreen : Color.myAccent.opacity(0.8))
         }
         if viewModel.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {
