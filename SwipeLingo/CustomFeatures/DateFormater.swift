@@ -1,10 +1,3 @@
-//
-//  DateFormater.swift
-//  StartToSwiftUI
-//
-//  Created by Andrey Efimov on 25.02.2026.
-//
-
 import Foundation
 
 extension DateFormatter {
