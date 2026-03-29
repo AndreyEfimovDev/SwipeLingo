@@ -433,13 +433,8 @@ struct TinderCardsView: View {
                 .padding(.horizontal, 24)
             // Audio button — EN→Native only (front shows the English word)
             if !isReversed {
-                if !card.dictAudioURL.isEmpty {
-                    audioButton(for: card.dictAudioURL)
-                        .font(.largeTitle)
-                } else {
-                    audioButton(for: card.en, isTTS: true)
-                        .font(.largeTitle)
-                }
+                audioButton(for: card.en, isTTS: true)
+                    .font(.largeTitle)
             }
             Spacer()
             Text("Tap to flip")
@@ -471,11 +466,7 @@ struct TinderCardsView: View {
                     HStack(spacing: 6) {
                         Text(backSmallText)
                             .font(.subheadline)
-                        if !card.dictAudioURL.isEmpty {
-                            audioButton(for: card.dictAudioURL)
-                                .font(.headline)
-                        } else if !isReversed {
-                            // Fallback TTS when no dictionary audio
+                        if !isReversed {
                             audioButton(for: card.en, isTTS: true)
                                 .font(.subheadline)
                         }
@@ -608,13 +599,8 @@ struct TinderCardsView: View {
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal, 24)
                 if !isReversed {
-                    if !card.dictAudioURL.isEmpty {
-                        audioButton(for: card.dictAudioURL)
-                            .font(.largeTitle)
-                    } else {
-                        audioButton(for: card.en, isTTS: true)
-                            .font(.largeTitle)
-                    }
+                    audioButton(for: card.en, isTTS: true)
+                        .font(.largeTitle)
                 }
                 Spacer()
                 Text("Tap to flip")
