@@ -217,7 +217,7 @@ struct AddEditCardView: View {
             Button(action: handleSave) {
                 Image(systemName: "checkmark")
                     .fontWeight(canSave ? .semibold : .regular)
-                    .foregroundStyle(canSave ? Color.myColors.myBlue : Color.myColors.mySecondary)
+                    .foregroundStyle(canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
             }
             .disabled(!canSave || isShowingExitConfirm)
         }
@@ -433,7 +433,7 @@ struct AddEditCardView: View {
                 Text(selectedSetName)
                     .font(.body)
                     .foregroundStyle(selectedSetId == nil
-                        ? Color.myColors.mySecondary
+                        ? Color.myColors.myAccent.opacity(0.8)
                         : Color.myColors.myAccent)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
@@ -609,7 +609,7 @@ struct AddEditCardView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .padding(.horizontal, 16)
 
             content()

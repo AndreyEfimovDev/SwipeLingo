@@ -62,7 +62,7 @@ struct PileBuilderView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("NAME")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .padding(.horizontal, 32)
 
             TextField("e.g. Morning Session", text: $viewModel.name)
@@ -81,7 +81,7 @@ struct PileBuilderView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("SHUFFLE METHOD")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
@@ -98,7 +98,7 @@ struct PileBuilderView: View {
 
             Text(shuffleFooter)
                 .font(.footnote)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .padding(.horizontal, 32)
         }
     }
@@ -107,7 +107,7 @@ struct PileBuilderView: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .frame(width: 28)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             Text(name)
                 .font(.body)
             Spacer()
@@ -130,7 +130,7 @@ struct PileBuilderView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(group.collectionName.uppercased())
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color.myColors.mySecondary)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     .padding(.horizontal, 32)
 
                 VStack(spacing: 0) {
@@ -174,7 +174,7 @@ struct PileBuilderView: View {
             }
             .disabled(!viewModel.canSave)
             .fontWeight(.semibold)
-            .foregroundStyle(viewModel.canSave ? Color.myColors.myGreen : Color.myColors.mySecondary)
+            .foregroundStyle(viewModel.canSave ? Color.myColors.myGreen : myAccent.opacity(0.8))
         }
         if viewModel.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {
@@ -245,7 +245,7 @@ private struct SetToggleRow: View {
                     .font(.body)
                 Text("\(cardCount) active cards")
                     .font(.caption)
-                    .foregroundStyle(Color.myColors.mySecondary)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             }
             Spacer()
         }

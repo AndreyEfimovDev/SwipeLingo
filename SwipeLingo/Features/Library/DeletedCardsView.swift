@@ -302,7 +302,7 @@ struct DeletedCardsView: View {
                 }
                 .font(.subheadline.weight(.medium))
             }
-            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.mySecondary : Color.myColors.myGreen)
+            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myGreen)
             .disabled(selectedCardIds.isEmpty)
 
             Spacer()
@@ -318,7 +318,7 @@ struct DeletedCardsView: View {
                 }
                 .font(.subheadline.weight(.medium))
             }
-            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.mySecondary : Color.myColors.myRed)
+            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myRed)
             .disabled(selectedCardIds.isEmpty)
         }
         .padding(.horizontal, 24)
@@ -333,13 +333,13 @@ struct DeletedCardsView: View {
         VStack(spacing: 12) {
             Image(systemName: "trash.slash")
                 .font(.system(size: 48))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             Text("No deleted cards")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
             Text("Cards you delete will appear here")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
         }
     }
 
@@ -347,13 +347,13 @@ struct DeletedCardsView: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             Text("No cards here")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
             Text("Try a different filter")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
         }
     }
 
@@ -453,11 +453,11 @@ private struct DeletedCardRow: View {
                 .foregroundStyle(Color.myColors.myAccent)
             Text(card.item)
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             if let setName {
                 Text(setName)
                     .font(.caption)
-                    .foregroundStyle(Color.myColors.mySecondary.opacity(0.7))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
             }
         }
         .padding(.vertical, 2)

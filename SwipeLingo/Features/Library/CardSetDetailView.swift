@@ -40,7 +40,9 @@ struct CardSetDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
+        VStack(spacing: 0) {
+            metadataBar
+            ScrollView {
             VStack(spacing: 16) {
 
                 // MARK: Active section
@@ -85,6 +87,8 @@ struct CardSetDetailView: View {
             .padding(.vertical, 16)
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        } // VStack
+        .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle(cardSet.name)
         .navigationBarTitleDisplayMode(.inline)
         .frame(maxWidth: .infinity)
@@ -109,6 +113,21 @@ struct CardSetDetailView: View {
                 emptyState
             }
         }
+    }
+
+    // MARK: - Metadata Bar
+
+    private var metadataBar: some View {
+        HStack {
+            CEFRBadgeView(level: cardSet.isUserCreated ? nil : cardSet.cefrLevel)
+                .font(.caption.weight(.semibold))
+            Spacer()
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color.myColors.myBackground)
     }
 
     // MARK: - Card List

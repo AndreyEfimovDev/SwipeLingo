@@ -261,7 +261,7 @@ struct DictionaryLookupView: View {
             ProgressView()
             Text("Looking up \"\(card.en)\"…")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -277,7 +277,7 @@ struct DictionaryLookupView: View {
                 .font(.title3.bold())
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button("Try Again") {
@@ -312,7 +312,7 @@ struct DictionaryLookupView: View {
                 if !entry.transcription.isEmpty {
                     Text(entry.transcription)
                         .font(.title3)
-                        .foregroundStyle(Color.myColors.mySecondary)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 }
             }
             Spacer()
@@ -348,7 +348,7 @@ struct DictionaryLookupView: View {
             if !meaning.partOfSpeech.isEmpty {
                 Text(meaning.partOfSpeech)
                     .font(.caption.uppercaseSmallCaps())
-                    .foregroundStyle(Color.myColors.mySecondary)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.1), in: Capsule())
@@ -378,7 +378,7 @@ struct DictionaryLookupView: View {
                 if let example = definition.example {
                     Text("\"\(example)\"")
                         .font(.subheadline)
-                        .foregroundStyle(Color.myColors.mySecondary)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                         .italic()
                         .fixedSize(horizontal: false, vertical: true)
                 }
