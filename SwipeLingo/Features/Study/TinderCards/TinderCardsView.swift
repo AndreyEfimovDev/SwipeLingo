@@ -130,7 +130,7 @@ struct TinderCardsView: View {
             GeometryReader { geo in
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 1.5)
-                        .fill(Color.myColors.mySecondary.opacity(0.15))
+                        .fill(Color.myColors.myAccent.opacity(0.15))
                         .frame(width: 3, height: geo.size.height)
                     RoundedRectangle(cornerRadius: 1.5)
                         .fill(Color.myColors.myAccent.opacity(0.5))
