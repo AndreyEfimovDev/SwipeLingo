@@ -298,7 +298,7 @@ struct DeletedCardsView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.uturn.left")
-                    Text(selectedCardIds.isEmpty ? "Restore" : "Restore (\(selectedCardIds.count))")
+                    Text("Restore")
                 }
                 .font(.subheadline.weight(.medium))
             }
@@ -307,16 +307,19 @@ struct DeletedCardsView: View {
 
             Spacer()
 
+            if !selectedCardIds.isEmpty {
+                Text("\(selectedCardIds.count)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            }
+
+            Spacer()
+
             Button {
                 showEraseSelectedConfirm = true
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "trash")
-                    if !selectedCardIds.isEmpty {
-                        Text("(\(selectedCardIds.count))")
-                    }
-                }
-                .font(.subheadline.weight(.medium))
+                Image(systemName: "trash")
+                    .font(.subheadline.weight(.medium))
             }
             .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myRed)
             .disabled(selectedCardIds.isEmpty)
