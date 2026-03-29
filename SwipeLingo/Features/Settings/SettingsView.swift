@@ -61,22 +61,6 @@ struct SettingsView: View {
                 .frame(height: 52)
                 .padding(.horizontal, 16)
 
-                Divider().padding(.leading, 16)
-
-                HStack {
-                    Text("Preferred English")
-                        .font(.body)
-                    Spacer()
-                    Picker("", selection: $englishVariant) {
-                        Text("American").tag("en-US")
-                        Text("British").tag("en-GB")
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                    .font(.subheadline.weight(.bold))
-                }
-                .frame(height: 52)
-                .padding(.horizontal, 16)
             }
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))

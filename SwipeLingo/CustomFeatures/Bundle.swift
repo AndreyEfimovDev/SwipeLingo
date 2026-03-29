@@ -1,10 +1,3 @@
-//
-//  Bundle.swift
-//  StartToSwiftUI
-//
-//  Created by Andrey Efimov on 26.11.2025.
-//
-
 import Foundation
 
 extension Bundle {

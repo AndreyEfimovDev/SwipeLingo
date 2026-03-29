@@ -1,10 +1,3 @@
-//
-//  MyColors.swift
-//  StartToSwiftUI
-//
-//  Created by Andrey Efimov on 27.08.2025.
-//
-
 import Foundation
 import SwiftUI
 

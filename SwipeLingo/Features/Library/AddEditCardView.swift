@@ -633,16 +633,11 @@ struct AddEditCardView: View {
 
             VStack(spacing: 10) {
                 Text("Discard changes?")
-                    .foregroundStyle(Color.myColors.myAccent)
+                    .font(.subheadline)
 
                 Button { dismiss() } label: {
                     Text("Discard")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.myColors.buttonTextAccent)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.myColors.myRed)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .buttonRect(color: Color.myColors.myRed)
                 }
 
                 Button {
@@ -650,14 +645,10 @@ struct AddEditCardView: View {
                     focused = .en
                 } label: {
                     Text("Keep editing")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .buttonRect(color: Color.myColors.myBlue)
                 }
             }
+            .font(.headline)
             .padding(20)
             .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 16))

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		474BFB702F3C825C006E639B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,17 +25,61 @@
 			remoteGlobalIDString = 474BFB612F3C8255006E639B;
 			remoteInfo = SwipeLingo;
 		};
+		478C78002F7902F4005FBDFE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 474BFB5A2F3C8255006E639B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 478C77F72F7902F4005FBDFE;
+			remoteInfo = SwipeLingoShare;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		478C78072F7902F4005FBDFE /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		474BFB622F3C8255006E639B /* SwipeLingo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwipeLingo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB6F2F3C825C006E639B /* SwipeLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwipeLingoShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		478C78032F7902F4005FBDFE /* Exceptions for "SwipeLingoShare" folder in "SwipeLingoShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 478C77F72F7902F4005FBDFE /* SwipeLingoShare */;
+		};
+		478C780E2F7925DA005FBDFE /* Exceptions for "SwipeLingo" folder in "SwipeLingoShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CustomFeatures/Colors.swift,
+				CustomFeatures/Views.swift,
+				Resources/Assets.xcassets,
+			);
+			target = 478C77F72F7902F4005FBDFE /* SwipeLingoShare */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		474BFB642F3C8255006E639B /* SwipeLingo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				478C780E2F7925DA005FBDFE /* Exceptions for "SwipeLingo" folder in "SwipeLingoShare" target */,
+			);
 			path = SwipeLingo;
 			sourceTree = "<group>";
 		};
@@ -43,6 +91,14 @@
 		474BFB7C2F3C825C006E639B /* SwipeLingoUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SwipeLingoUITests;
+			sourceTree = "<group>";
+		};
+		478C77F92F7902F4005FBDFE /* SwipeLingoShare */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				478C78032F7902F4005FBDFE /* Exceptions for "SwipeLingoShare" folder in "SwipeLingoShare" target */,
+			);
+			path = SwipeLingoShare;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +125,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		478C77F52F7902F4005FBDFE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -78,6 +141,7 @@
 				474BFB642F3C8255006E639B /* SwipeLingo */,
 				474BFB722F3C825C006E639B /* SwipeLingoTests */,
 				474BFB7C2F3C825C006E639B /* SwipeLingoUITests */,
+				478C77F92F7902F4005FBDFE /* SwipeLingoShare */,
 				474BFB632F3C8255006E639B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +152,7 @@
 				474BFB622F3C8255006E639B /* SwipeLingo.app */,
 				474BFB6F2F3C825C006E639B /* SwipeLingoTests.xctest */,
 				474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */,
+				478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,10 +167,12 @@
 				474BFB5E2F3C8255006E639B /* Sources */,
 				474BFB5F2F3C8255006E639B /* Frameworks */,
 				474BFB602F3C8255006E639B /* Resources */,
+				478C78072F7902F4005FBDFE /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				478C78012F7902F4005FBDFE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				474BFB642F3C8255006E639B /* SwipeLingo */,
@@ -163,6 +230,28 @@
 			productReference = 474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		478C77F72F7902F4005FBDFE /* SwipeLingoShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 478C78042F7902F4005FBDFE /* Build configuration list for PBXNativeTarget "SwipeLingoShare" */;
+			buildPhases = (
+				478C77F42F7902F4005FBDFE /* Sources */,
+				478C77F52F7902F4005FBDFE /* Frameworks */,
+				478C77F62F7902F4005FBDFE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				478C77F92F7902F4005FBDFE /* SwipeLingoShare */,
+			);
+			name = SwipeLingoShare;
+			packageProductDependencies = (
+			);
+			productName = SwipeLingoShare;
+			productReference = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -170,7 +259,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					474BFB612F3C8255006E639B = {
@@ -183,6 +272,9 @@
 					474BFB782F3C825C006E639B = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 474BFB612F3C8255006E639B;
+					};
+					478C77F72F7902F4005FBDFE = {
+						CreatedOnToolsVersion = 26.3;
 					};
 				};
 			};
@@ -205,6 +297,7 @@
 				474BFB612F3C8255006E639B /* SwipeLingo */,
 				474BFB6E2F3C825C006E639B /* SwipeLingoTests */,
 				474BFB782F3C825C006E639B /* SwipeLingoUITests */,
+				478C77F72F7902F4005FBDFE /* SwipeLingoShare */,
 			);
 		};
 /* End PBXProject section */
@@ -225,6 +318,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		474BFB772F3C825C006E639B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		478C77F62F7902F4005FBDFE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -255,6 +355,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		478C77F42F7902F4005FBDFE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -267,6 +374,11 @@
 			isa = PBXTargetDependency;
 			target = 474BFB612F3C8255006E639B /* SwipeLingo */;
 			targetProxy = 474BFB7A2F3C825C006E639B /* PBXContainerItemProxy */;
+		};
+		478C78012F7902F4005FBDFE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 478C77F72F7902F4005FBDFE /* SwipeLingoShare */;
+			targetProxy = 478C78002F7902F4005FBDFE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -399,6 +511,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SwipeLingo/SwipeLingo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = USBAK5HKC6;
@@ -427,7 +540,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -436,6 +549,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SwipeLingo/SwipeLingo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = USBAK5HKC6;
@@ -464,7 +578,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -489,7 +603,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwipeLingo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SwipeLingo";
 			};
 			name = Debug;
@@ -515,7 +629,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwipeLingo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SwipeLingo";
 			};
 			name = Release;
@@ -540,7 +654,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = SwipeLingo;
 			};
 			name = Debug;
@@ -565,8 +679,76 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = SwipeLingo;
+			};
+			name = Release;
+		};
+		478C78052F7902F4005FBDFE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SwipeLingoShare/SwipeLingoShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = USBAK5HKC6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SwipeLingoShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SwipeLingoShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = PELSH.SwipeLingo.SwipeLingoShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		478C78062F7902F4005FBDFE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SwipeLingoShare/SwipeLingoShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = USBAK5HKC6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SwipeLingoShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SwipeLingoShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = PELSH.SwipeLingo.SwipeLingoShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -605,6 +787,15 @@
 			buildConfigurations = (
 				474BFB8A2F3C825C006E639B /* Debug */,
 				474BFB8B2F3C825C006E639B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		478C78042F7902F4005FBDFE /* Build configuration list for PBXNativeTarget "SwipeLingoShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				478C78052F7902F4005FBDFE /* Debug */,
+				478C78062F7902F4005FBDFE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

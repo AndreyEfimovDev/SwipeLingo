@@ -4,6 +4,11 @@ import SwiftData
 @main
 struct SwipeLingoApp: App {
 
+    @Environment(\.scenePhase) private var scenePhase
+
+    private let appGroupID  = "group.PELSH.SwipeLingo"
+    private let pendingKey  = "pendingInboxWords"
+
     let container: ModelContainer
 
     init() {
@@ -49,6 +54,53 @@ struct SwipeLingoApp: App {
             AppView()
         }
         .modelContainer(container)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                drainInboxQueue()
+            }
+        }
+    }
+
+    // MARK: - Share Extension inbox drain
+
+    /// Reads words queued by the Share Extension from the shared App Group
+    /// UserDefaults and inserts them as Cards into the Inbox CardSet.
+    private func drainInboxQueue() {
+        let defaults = UserDefaults(suiteName: appGroupID)
+        guard
+            let pending = defaults?.stringArray(forKey: pendingKey),
+            !pending.isEmpty
+        else { return }
+
+        // Clear the queue immediately so a second foreground transition can't
+        // re-import the same words if SwiftData save is slow.
+        defaults?.removeObject(forKey: pendingKey)
+
+        let context = ModelContext(container)
+
+        // Resolve the Inbox CardSet — it is guaranteed to exist after
+        // MockDataSeeder runs, but guard defensively.
+        let allSets = (try? context.fetch(FetchDescriptor<CardSet>())) ?? []
+        guard let inboxSet = allSets.first(where: { $0.name == "Inbox" }) else {
+            log("[InboxDrain] Inbox CardSet not found — re-queuing \(pending.count) word(s)", level: .warning)
+            var current = defaults?.stringArray(forKey: pendingKey) ?? []
+            current.insert(contentsOf: pending, at: 0)
+            defaults?.set(current, forKey: pendingKey)
+            return
+        }
+
+        for word in pending {
+            let card = Card(en: word, item: "", setId: inboxSet.id)
+            context.insert(card)
+            log("[InboxDrain] inserted '\(word)' → Inbox")
+        }
+
+        do {
+            try context.save()
+            log("[InboxDrain] saved \(pending.count) card(s) to Inbox", level: .info)
+        } catch {
+            log("[InboxDrain] save failed: \(error)", level: .error)
+        }
     }
 
     // MARK: - Dev helper
