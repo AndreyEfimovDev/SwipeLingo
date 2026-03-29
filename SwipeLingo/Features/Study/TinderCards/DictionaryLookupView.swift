@@ -150,7 +150,9 @@ struct DictionaryLookupView: View {
     @State private var viewModel = DictionaryLookupViewModel()
 
     // Reads native language from the same AppStorage key used across the app.
-    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+    @AppStorage("nativeLanguage")      private var nativeLanguage      = "Русский"
+    @AppStorage("ttsVoiceIdentifier")  private var ttsVoiceIdentifier  = ""
+    @AppStorage("englishVariant")      private var englishVariant      = "en-US"
 
     // Translation session — prepared once (or re-prepared if language changes) via .translationTask.
     // Simulator does not support Translation — config stays nil to suppress the error dialog.
@@ -314,20 +316,26 @@ struct DictionaryLookupView: View {
                 }
             }
             Spacer()
-            if !entry.audioURL.isEmpty {
-                Button {
-                    viewModel.toggleAudio(urlString: entry.audioURL)
-                } label: {
-                    Image(systemName: viewModel.audioService.isPlaying
-                          ? "stop.circle"
-                          : "speaker.wave.2.circle")
-                        .font(.system(size: 40))
-                        .foregroundStyle(Color.accentColor)
-                        .contentTransition(.symbolEffect(.replace))
+            Button {
+                if viewModel.audioService.isPlaying {
+                    viewModel.audioService.stop()
+                } else {
+                    viewModel.audioService.speak(
+                        text: entry.word,
+                        voiceIdentifier: ttsVoiceIdentifier,
+                        language: englishVariant
+                    )
                 }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(viewModel.audioService.isPlaying ? "Stop audio" : "Play pronunciation")
+            } label: {
+                Image(systemName: viewModel.audioService.isPlaying
+                      ? "stop.circle"
+                      : "speaker.wave.2.circle")
+                    .font(.system(size: 40))
+                    .foregroundStyle(Color.accentColor)
+                    .contentTransition(.symbolEffect(.replace))
             }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(viewModel.audioService.isPlaying ? "Stop audio" : "Play pronunciation")
         }
         .padding()
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
