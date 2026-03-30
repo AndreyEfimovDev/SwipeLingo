@@ -12,7 +12,7 @@ extension Color {
 struct MyColors {
     
     let myAccent = Color("myAccent")
-//    let mySecondary = Color("mySecondary")
+    let mySecondary = Color.myAccent.opacity(0.8)
     let myBackground = Color("myBackground")
     
     let myShadow = Color("myShadow")
