@@ -34,7 +34,7 @@ struct AddCardSetView: View {
                             collectionId: collectionId
                         )
                         context.insert(cardSet)
-                        try? context.save()
+                        context.saveWithErrorHandling()
                         dismiss()
                     }
                     .foregroundStyle(isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue)

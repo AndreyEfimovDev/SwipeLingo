@@ -217,7 +217,7 @@ struct AddEditCardView: View {
             Button(action: handleSave) {
                 Image(systemName: "checkmark")
                     .fontWeight(canSave ? .semibold : .regular)
-                    .foregroundStyle(canSave ? Color.myColors.myBlue : Color.myColors.mySecondary)
+                    .foregroundStyle(canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
             }
             .disabled(!canSave || isShowingExitConfirm)
         }
@@ -251,7 +251,7 @@ struct AddEditCardView: View {
                             sampleEN: snEN, sampleItem: snItem, setId: setId)
             context.insert(card)
         }
-        try? context.save()
+        context.saveWithErrorHandling()
         dismiss()
     }
 
@@ -433,7 +433,7 @@ struct AddEditCardView: View {
                 Text(selectedSetName)
                     .font(.body)
                     .foregroundStyle(selectedSetId == nil
-                        ? Color.myColors.mySecondary
+                        ? Color.myColors.myAccent.opacity(0.8)
                         : Color.myColors.myAccent)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
@@ -609,7 +609,7 @@ struct AddEditCardView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .padding(.horizontal, 16)
 
             content()
@@ -633,16 +633,11 @@ struct AddEditCardView: View {
 
             VStack(spacing: 10) {
                 Text("Discard changes?")
-                    .foregroundStyle(Color.myColors.myAccent)
+                    .font(.subheadline)
 
                 Button { dismiss() } label: {
                     Text("Discard")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.myColors.buttonTextAccent)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.myColors.myRed)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .buttonRect(color: Color.myColors.myRed)
                 }
 
                 Button {
@@ -650,14 +645,10 @@ struct AddEditCardView: View {
                     focused = .en
                 } label: {
                     Text("Keep editing")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .buttonRect(color: Color.myColors.myBlue)
                 }
             }
+            .font(.headline)
             .padding(20)
             .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 16))

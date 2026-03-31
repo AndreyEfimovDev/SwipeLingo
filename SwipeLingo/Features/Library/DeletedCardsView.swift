@@ -155,7 +155,7 @@ struct DeletedCardsView: View {
                 if let card = cardToErase {
                     cleanupAfterErase(erasingIds: [card.id])
                     context.delete(card)
-                    try? context.save()
+                    context.saveWithErrorHandling()
                     cardToErase = nil
                 }
             }
@@ -298,27 +298,30 @@ struct DeletedCardsView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.uturn.left")
-                    Text(selectedCardIds.isEmpty ? "Restore" : "Restore (\(selectedCardIds.count))")
+                    Text("Restore")
                 }
                 .font(.subheadline.weight(.medium))
             }
-            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.mySecondary : Color.myColors.myGreen)
+            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myGreen)
             .disabled(selectedCardIds.isEmpty)
+
+            Spacer()
+
+            if !selectedCardIds.isEmpty {
+                Text("\(selectedCardIds.count)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            }
 
             Spacer()
 
             Button {
                 showEraseSelectedConfirm = true
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "trash")
-                    if !selectedCardIds.isEmpty {
-                        Text("(\(selectedCardIds.count))")
-                    }
-                }
-                .font(.subheadline.weight(.medium))
+                Image(systemName: "trash")
+                    .font(.subheadline.weight(.medium))
             }
-            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.mySecondary : Color.myColors.myRed)
+            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myRed)
             .disabled(selectedCardIds.isEmpty)
         }
         .padding(.horizontal, 24)
@@ -333,13 +336,13 @@ struct DeletedCardsView: View {
         VStack(spacing: 12) {
             Image(systemName: "trash.slash")
                 .font(.system(size: 48))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             Text("No deleted cards")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
             Text("Cards you delete will appear here")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
         }
     }
 
@@ -347,13 +350,13 @@ struct DeletedCardsView: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             Text("No cards here")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
             Text("Try a different filter")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
         }
     }
 
@@ -361,7 +364,7 @@ struct DeletedCardsView: View {
 
     private func restoreCard(_ card: Card) {
         card.status = .active
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 
     private func restoreSelected() {
@@ -377,7 +380,7 @@ struct DeletedCardsView: View {
         let ids = Set(toErase.map { $0.id })
         cleanupAfterErase(erasingIds: ids)
         toErase.forEach { context.delete($0) }
-        try? context.save()
+        context.saveWithErrorHandling()
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }
@@ -453,11 +456,11 @@ private struct DeletedCardRow: View {
                 .foregroundStyle(Color.myColors.myAccent)
             Text(card.item)
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             if let setName {
                 Text(setName)
                     .font(.caption)
-                    .foregroundStyle(Color.myColors.mySecondary.opacity(0.7))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
             }
         }
         .padding(.vertical, 2)

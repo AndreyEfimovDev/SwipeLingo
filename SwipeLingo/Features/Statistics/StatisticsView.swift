@@ -218,7 +218,7 @@ private struct StreakCard: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.myColors.mySecondary.opacity(0.5))
+                        .fill(Color.myColors.myAccent.opacity(0.5))
                         .frame(height: 4)
                     RoundedRectangle(cornerRadius: 4)
                         .fill(Color.myColors.myGreen)
@@ -593,7 +593,7 @@ private struct DeckProgressCard: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.myColors.mySecondary.opacity(0.5))
+                        .fill(Color.myColors.myAccent.opacity(0.5))
                         .frame(height: 6)
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color.myColors.myGreen)

@@ -26,6 +26,39 @@ struct APIDefinitionItem: Codable {
     let example: String?
 }
 
+// MARK: - Merriam-Webster Learner's Dictionary raw models
+// https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={key}
+//
+// The response is [Any] — real entries are objects, "did-you-mean" suggestions are strings.
+// We filter to objects only before decoding.
+// The `def/sseq` structure is deeply nested mixed-type arrays — parsed via
+// JSONSerialization in DictionaryService rather than Codable.
+
+struct MWEntry: Decodable {
+    let hwi: MWHeadwordInfo?
+    /// Functional label — part of speech, e.g. "noun", "verb".
+    let fl: String?
+    /// Pre-formatted short definitions — already stripped of most markup.
+    let shortdef: [String]
+
+    enum CodingKeys: String, CodingKey { case hwi, fl, shortdef }
+}
+
+struct MWHeadwordInfo: Decodable {
+    let prs: [MWPronunciation]?
+}
+
+struct MWPronunciation: Decodable {
+    /// MW-notation transcription, e.g. "ˈwərd".
+    let mw: String?
+    let sound: MWSound?
+}
+
+struct MWSound: Decodable {
+    /// Base filename used to construct the audio URL.
+    let audio: String?
+}
+
 // MARK: - App-layer clean structs
 // Used by DictionaryService and the UI — decoupled from API details.
 

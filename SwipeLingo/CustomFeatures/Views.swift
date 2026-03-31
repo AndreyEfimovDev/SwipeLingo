@@ -1,16 +1,24 @@
-//
-//  Views.swift
-//  SwipeLingo
-//
-//  Created by Andrey Efimov on 26.03.2026.
-//
-
 import SwiftUI
 
 extension View {
     func myShadow() -> some View {
         self
             .shadow(color: Color.myColors.myShadow.opacity(0.3), radius: 8, x: 0, y: 0)
+    }
+}
+
+extension View {
+    func buttonRect(color: Color) -> some View {
+        self
+            .foregroundStyle(color)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(color.opacity(0.8), lineWidth: 1)
+                
+            }
     }
 }
 

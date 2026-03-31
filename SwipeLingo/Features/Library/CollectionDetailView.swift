@@ -77,6 +77,10 @@ struct CollectionDetailView: View {
         }
     }
 
+    private func cardCount(for cardSet: CardSet) -> Int {
+        allCards.filter { $0.setId == cardSet.id && $0.status != .deleted }.count
+    }
+
     // MARK: - Actions
 
     private func deleteSetWithCards(_ cardSet: CardSet) {
@@ -87,7 +91,7 @@ struct CollectionDetailView: View {
             cards.forEach { $0.status = .deleted }
             // сет остаётся в БД; удалится автоматически когда все карточки будут стёрты
         }
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 
     // MARK: - Sets Section
@@ -102,6 +106,13 @@ struct CollectionDetailView: View {
                         Text(cardSet.name)
                         Spacer()
                         CEFRBadgeView(level: collection.isUserCreated ? nil : cardSet.cefrLevel)
+                            .font(.caption.weight(.semibold))
+                        let count = cardCount(for: cardSet)
+                        if count > 0 {
+                            Text("\(count)")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                        }
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(Color.myColors.myBlue)

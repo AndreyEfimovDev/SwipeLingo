@@ -1,10 +1,3 @@
-//
-//  MyColors.swift
-//  StartToSwiftUI
-//
-//  Created by Andrey Efimov on 27.08.2025.
-//
-
 import Foundation
 import SwiftUI
 
@@ -19,7 +12,7 @@ extension Color {
 struct MyColors {
     
     let myAccent = Color("myAccent")
-    let mySecondary = Color("mySecondary")
+    let mySecondary = Color.myAccent.opacity(0.8)
     let myBackground = Color("myBackground")
     
     let myShadow = Color("myShadow")

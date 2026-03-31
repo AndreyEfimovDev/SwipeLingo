@@ -22,6 +22,15 @@ struct LibraryView: View {
         allCards.filter { $0.status == .deleted }.count
     }
 
+    private func setCount(for collection: Collection) -> Int {
+        cardSets.filter { $0.collectionId == collection.id }.count
+    }
+
+    private func cardCount(for collection: Collection) -> Int {
+        let setIds = Set(cardSets.filter { $0.collectionId == collection.id }.map(\.id))
+        return allCards.filter { setIds.contains($0.setId) && $0.status != .deleted }.count
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -97,7 +106,7 @@ struct LibraryView: View {
             if piles.isEmpty {
                 Text("No piles yet — tap + to create one")
                     .font(.subheadline)
-                    .foregroundStyle(Color.myColors.mySecondary)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 16)
                     .background(Color.myColors.myBackground)
@@ -119,7 +128,7 @@ struct LibraryView: View {
                         .contextMenu {
                             Button(role: .destructive) {
                                 context.delete(pile)
-                                try? context.save()
+                                context.saveWithErrorHandling()
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
@@ -177,10 +186,14 @@ struct LibraryView: View {
                                 CollectionDetailView(collection: collection)
                             }
                         } label: {
-                            CollectionRow(collection: collection)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .contentShape(Rectangle())
+                            CollectionRow(
+                                collection: collection,
+                                setCount:   setCount(for: collection),
+                                cardCount:  cardCount(for: collection)
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
@@ -253,7 +266,7 @@ struct LibraryView: View {
                     Spacer()
                     Text("\(deletedCardsCount)")
                         .font(.subheadline)
-                        .foregroundStyle(Color.myColors.mySecondary)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.myColors.myBlue)
@@ -296,12 +309,12 @@ struct LibraryView: View {
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             Text("No collections yet")
                 .font(.title3.bold())
             Text("Tap + to create your first collection")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
         }
     }
 
@@ -327,13 +340,13 @@ struct LibraryView: View {
             context.delete(collection)
         }
         // иначе коллекция удалится автоматически вместе с последним сетом
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 
     private func activatePile(_ pile: Pile) {
         for p in piles { p.isActive = false }
         pile.isActive = true
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 
     // MARK: - Helpers
@@ -355,7 +368,7 @@ private struct PileRow: View {
         HStack(spacing: 12) {
             Button(action: onActivate) {
                 Image(systemName: pile.isActive ? "checkmark.circle" : "circle")
-                    .foregroundStyle(pile.isActive ? Color.myColors.myGreen : Color.myColors.mySecondary)
+                    .foregroundStyle(pile.isActive ? Color.myColors.myGreen : Color.myColors.myAccent.opacity(0.8))
                     .font(.title3)
                     .animation(.spring(duration: 0.2), value: pile.isActive)
             }
@@ -398,11 +411,25 @@ private struct PileRow: View {
 
 private struct CollectionRow: View {
     let collection: Collection
+    let setCount:   Int
+    let cardCount:  Int
+
+    /// Badge text: "N · M" (sets · cards); hidden when empty.
+    private var badge: String? {
+        guard cardCount > 0 || setCount > 0 else { return nil }
+        return "\(setCount) · \(cardCount)"
+    }
 
     var body: some View {
         HStack {
             Label(collection.name, systemImage: collection.icon ?? "folder")
                 .labelStyle(.fixedIcon)
+                .lineLimit(1)
+            if let badge {
+                Text(badge)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            }
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))

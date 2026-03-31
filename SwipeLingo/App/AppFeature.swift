@@ -77,6 +77,7 @@ struct AppView: View {
         .environment(viewModel)
         .preferredColorScheme(theme.colorScheme)
         .foregroundStyle(Color.myColors.myAccent)
+        .errorAlert()
     }
 
     // MARK: - Configuration Methods
