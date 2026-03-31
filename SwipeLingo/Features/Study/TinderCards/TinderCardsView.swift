@@ -130,7 +130,7 @@ struct TinderCardsView: View {
             GeometryReader { geo in
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 1.5)
-                        .fill(Color.myColors.mySecondary.opacity(0.15))
+                        .fill(Color.myColors.myAccent.opacity(0.15))
                         .frame(width: 3, height: geo.size.height)
                     RoundedRectangle(cornerRadius: 1.5)
                         .fill(Color.myColors.myAccent.opacity(0.5))
@@ -435,13 +435,8 @@ struct TinderCardsView: View {
                 .padding(.horizontal, 24)
             // Audio button — EN→Native only (front shows the English word)
             if !isReversed {
-                if !card.dictAudioURL.isEmpty {
-                    audioButton(for: card.dictAudioURL)
-                        .font(.largeTitle)
-                } else {
-                    audioButton(for: card.en, isTTS: true)
-                        .font(.largeTitle)
-                }
+                audioButton(for: card.en, isTTS: true)
+                    .font(.largeTitle)
             }
             Spacer()
             Text("Tap to flip")
@@ -473,11 +468,7 @@ struct TinderCardsView: View {
                     HStack(spacing: 6) {
                         Text(backSmallText)
                             .font(.subheadline)
-                        if !card.dictAudioURL.isEmpty {
-                            audioButton(for: card.dictAudioURL)
-                                .font(.headline)
-                        } else if !isReversed {
-                            // Fallback TTS when no dictionary audio
+                        if !isReversed {
                             audioButton(for: card.en, isTTS: true)
                                 .font(.subheadline)
                         }
@@ -610,13 +601,8 @@ struct TinderCardsView: View {
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal, 24)
                 if !isReversed {
-                    if !card.dictAudioURL.isEmpty {
-                        audioButton(for: card.dictAudioURL)
-                            .font(.largeTitle)
-                    } else {
-                        audioButton(for: card.en, isTTS: true)
-                            .font(.largeTitle)
-                    }
+                    audioButton(for: card.en, isTTS: true)
+                        .font(.largeTitle)
                 }
                 Spacer()
                 Text("Tap to flip")

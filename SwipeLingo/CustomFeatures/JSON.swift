@@ -1,10 +1,3 @@
-//
-//  JSON.swift
-//  StartToSwiftUI
-//
-//  Created by Andrey Efimov on 05.11.2025.
-//
-
 import SwiftUI
 
 

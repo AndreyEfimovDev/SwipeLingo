@@ -118,7 +118,7 @@ final class TinderCardsViewModel {
         if direction == .right {
             card.status = .learnt
             learntInSession += 1
-            try? context.save()
+            context.saveWithErrorHandling()
         }
         advance()
     }
@@ -127,7 +127,7 @@ final class TinderCardsViewModel {
     func commitDelete(context: ModelContext) {
         guard let card = currentCard else { return }
         card.status = .deleted
-        try? context.save()
+        context.saveWithErrorHandling()
         advance()
     }
 
@@ -139,7 +139,7 @@ final class TinderCardsViewModel {
             weakCards.append(card)
         }
         if rating == .easy { learntInSession += 1 }
-        try? context.save()
+        context.saveWithErrorHandling()
         advance()
     }
 

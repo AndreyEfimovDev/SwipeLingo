@@ -129,12 +129,7 @@ final class DictionaryLookupViewModel {
     }
 
     private func save(context: ModelContext) {
-        do {
-            try context.save()
-            log("context.save() OK", level: .info)
-        } catch {
-            log("context.save() failed: \(error)", level: .error)
-        }
+        context.saveWithErrorHandling()
     }
 }
 
@@ -150,7 +145,9 @@ struct DictionaryLookupView: View {
     @State private var viewModel = DictionaryLookupViewModel()
 
     // Reads native language from the same AppStorage key used across the app.
-    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+    @AppStorage("nativeLanguage")      private var nativeLanguage      = "Русский"
+    @AppStorage("ttsVoiceIdentifier")  private var ttsVoiceIdentifier  = ""
+    @AppStorage("englishVariant")      private var englishVariant      = "en-US"
 
     // Translation session — prepared once (or re-prepared if language changes) via .translationTask.
     // Simulator does not support Translation — config stays nil to suppress the error dialog.
@@ -259,7 +256,7 @@ struct DictionaryLookupView: View {
             ProgressView()
             Text("Looking up \"\(card.en)\"…")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -275,7 +272,7 @@ struct DictionaryLookupView: View {
                 .font(.title3.bold())
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button("Try Again") {
@@ -310,24 +307,30 @@ struct DictionaryLookupView: View {
                 if !entry.transcription.isEmpty {
                     Text(entry.transcription)
                         .font(.title3)
-                        .foregroundStyle(Color.myColors.mySecondary)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 }
             }
             Spacer()
-            if !entry.audioURL.isEmpty {
-                Button {
-                    viewModel.toggleAudio(urlString: entry.audioURL)
-                } label: {
-                    Image(systemName: viewModel.audioService.isPlaying
-                          ? "stop.circle"
-                          : "speaker.wave.2.circle")
-                        .font(.system(size: 40))
-                        .foregroundStyle(Color.accentColor)
-                        .contentTransition(.symbolEffect(.replace))
+            Button {
+                if viewModel.audioService.isPlaying {
+                    viewModel.audioService.stop()
+                } else {
+                    viewModel.audioService.speak(
+                        text: entry.word,
+                        voiceIdentifier: ttsVoiceIdentifier,
+                        language: englishVariant
+                    )
                 }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(viewModel.audioService.isPlaying ? "Stop audio" : "Play pronunciation")
+            } label: {
+                Image(systemName: viewModel.audioService.isPlaying
+                      ? "stop.circle"
+                      : "speaker.wave.2.circle")
+                    .font(.system(size: 40))
+                    .foregroundStyle(Color.accentColor)
+                    .contentTransition(.symbolEffect(.replace))
             }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(viewModel.audioService.isPlaying ? "Stop audio" : "Play pronunciation")
         }
         .padding()
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
@@ -340,7 +343,7 @@ struct DictionaryLookupView: View {
             if !meaning.partOfSpeech.isEmpty {
                 Text(meaning.partOfSpeech)
                     .font(.caption.uppercaseSmallCaps())
-                    .foregroundStyle(Color.myColors.mySecondary)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.1), in: Capsule())
@@ -370,7 +373,7 @@ struct DictionaryLookupView: View {
                 if let example = definition.example {
                     Text("\"\(example)\"")
                         .font(.subheadline)
-                        .foregroundStyle(Color.myColors.mySecondary)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                         .italic()
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -442,7 +445,7 @@ struct DictionaryLookupView: View {
         card.dictTranscription = entry.transcription
         card.dictAudioURL      = entry.audioURL
         card.dictDefinition    = entry.meanings.first?.definitions.first?.text ?? ""
-        try? context.save()
+        context.saveWithErrorHandling()
         log("cached to card '\(card.en)':")
         log("  transcription : '\(card.dictTranscription)'")
         log("  audioURL      : '\(card.dictAudioURL)'")

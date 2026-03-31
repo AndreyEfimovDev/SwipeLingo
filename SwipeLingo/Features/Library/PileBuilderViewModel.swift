@@ -66,7 +66,7 @@ final class PileBuilderViewModel {
             pile.setIds        = Array(selectedSetIds)
             pile.shuffleMethod = shuffleMethod
             pile.updatedAt     = .now
-            try? context.save()
+            context.saveWithErrorHandling()
             return pile
         } else {
             let pile = Pile(
@@ -76,7 +76,7 @@ final class PileBuilderViewModel {
                 shuffleMethod: shuffleMethod
             )
             context.insert(pile)
-            try? context.save()
+            context.saveWithErrorHandling()
             return pile
         }
     }
@@ -86,6 +86,6 @@ final class PileBuilderViewModel {
         let pile = save(context: context)
         for p in allPiles { p.isActive = false }
         pile.isActive = true
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 }

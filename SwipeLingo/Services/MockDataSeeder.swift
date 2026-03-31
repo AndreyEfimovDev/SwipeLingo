@@ -13,7 +13,7 @@ struct MockDataSeeder {
     /// Creates "My Sets" and "Inbox" if they are missing.
     /// Safe to call on every launch — only inserts what is absent.
     static func ensureSystemCollections(into context: ModelContext) {
-        let existing = (try? context.fetch(FetchDescriptor<Collection>())) ?? []
+        let existing = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
         let names = Set(existing.map { $0.name })
 
         if !names.contains("My Sets") {
@@ -30,7 +30,7 @@ struct MockDataSeeder {
             context.insert(set)
             inboxSet = set
         } else if let inbox = existing.first(where: { $0.name == "Inbox" }) {
-            let sets = (try? context.fetch(FetchDescriptor<CardSet>())) ?? []
+            let sets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
             if let existing = sets.first(where: { $0.collectionId == inbox.id }) {
                 inboxSet = existing
             } else {
@@ -44,7 +44,7 @@ struct MockDataSeeder {
         // TODO: Remove — real cards arrive from share extension / clipboard.
         #warning("STUB: Inbox seed cards are temporary. Remove before App Store release.")
         if let set = inboxSet {
-            let allCards = (try? context.fetch(FetchDescriptor<Card>())) ?? []
+            let allCards = context.fetchWithErrorHandling(FetchDescriptor<Card>())
             let hasInboxCards = allCards.contains { $0.setId == set.id }
             if !hasInboxCards {
                 let stubs: [Card] = [
@@ -56,6 +56,6 @@ struct MockDataSeeder {
             }
         }
 
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 }

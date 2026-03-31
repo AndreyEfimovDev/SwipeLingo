@@ -7,7 +7,7 @@ struct SettingsView: View {
 
     @AppStorage("nativeLanguage")     private var nativeLanguage     = "Русский"
     @AppStorage("englishVariant")     private var englishVariant     = "en-US"
-    @AppStorage("colorScheme")        private var theme: Theme        = .system
+    @AppStorage("colorScheme")        private var theme: Theme       = .system
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
 
     private var currentVoiceName: String {
@@ -61,22 +61,6 @@ struct SettingsView: View {
                 .frame(height: 52)
                 .padding(.horizontal, 16)
 
-                Divider().padding(.leading, 16)
-
-                HStack {
-                    Text("Preferred English")
-                        .font(.body)
-                    Spacer()
-                    Picker("", selection: $englishVariant) {
-                        Text("American").tag("en-US")
-                        Text("British").tag("en-GB")
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                    .font(.subheadline.weight(.bold))
-                }
-                .frame(height: 52)
-                .padding(.horizontal, 16)
             }
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
