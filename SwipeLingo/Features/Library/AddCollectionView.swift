@@ -59,7 +59,7 @@ struct AddCollectionView: View {
                             icon: selectedIcon
                         )
                         context.insert(collection)
-                        try? context.save()
+                        context.saveWithErrorHandling()
                         dismiss()
                     }
                     .foregroundStyle(isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue)

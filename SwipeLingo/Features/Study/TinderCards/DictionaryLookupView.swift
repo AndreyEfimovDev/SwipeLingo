@@ -129,12 +129,7 @@ final class DictionaryLookupViewModel {
     }
 
     private func save(context: ModelContext) {
-        do {
-            try context.save()
-            log("context.save() OK", level: .info)
-        } catch {
-            log("context.save() failed: \(error)", level: .error)
-        }
+        context.saveWithErrorHandling()
     }
 }
 
@@ -450,7 +445,7 @@ struct DictionaryLookupView: View {
         card.dictTranscription = entry.transcription
         card.dictAudioURL      = entry.audioURL
         card.dictDefinition    = entry.meanings.first?.definitions.first?.text ?? ""
-        try? context.save()
+        context.saveWithErrorHandling()
         log("cached to card '\(card.en)':")
         log("  transcription : '\(card.dictTranscription)'")
         log("  audioURL      : '\(card.dictAudioURL)'")

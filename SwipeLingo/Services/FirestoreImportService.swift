@@ -19,11 +19,11 @@ struct FirestoreImportService {
         let descriptor = FetchDescriptor<Collection>(
             predicate: #Predicate { !$0.isUserCreated }
         )
-        let existing = (try? context.fetchCount(descriptor)) ?? 0
+        let existing = context.fetchCountWithErrorHandling(descriptor)
         guard existing == 0 else { return }
 
         importStubContent(into: context)
-        try? context.save()
+        context.saveWithErrorHandling()
         log("Developer content imported (stub)", level: .info)
     }
 

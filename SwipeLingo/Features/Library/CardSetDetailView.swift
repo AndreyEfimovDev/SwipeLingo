@@ -144,14 +144,14 @@ struct CardSetDetailView: View {
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
                             card.status = .deleted
-                            try? context.save()
+                            context.saveWithErrorHandling()
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
                         if showRestore {
                             Button {
                                 card.status = .active
-                                try? context.save()
+                                context.saveWithErrorHandling()
                             } label: {
                                 Label("Restore", systemImage: "arrow.uturn.up")
                             }

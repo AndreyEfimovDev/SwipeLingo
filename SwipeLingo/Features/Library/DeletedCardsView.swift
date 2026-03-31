@@ -155,7 +155,7 @@ struct DeletedCardsView: View {
                 if let card = cardToErase {
                     cleanupAfterErase(erasingIds: [card.id])
                     context.delete(card)
-                    try? context.save()
+                    context.saveWithErrorHandling()
                     cardToErase = nil
                 }
             }
@@ -364,7 +364,7 @@ struct DeletedCardsView: View {
 
     private func restoreCard(_ card: Card) {
         card.status = .active
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 
     private func restoreSelected() {
@@ -380,7 +380,7 @@ struct DeletedCardsView: View {
         let ids = Set(toErase.map { $0.id })
         cleanupAfterErase(erasingIds: ids)
         toErase.forEach { context.delete($0) }
-        try? context.save()
+        context.saveWithErrorHandling()
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }
