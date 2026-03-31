@@ -251,7 +251,7 @@ struct AddEditCardView: View {
                             sampleEN: snEN, sampleItem: snItem, setId: setId)
             context.insert(card)
         }
-        try? context.save()
+        context.saveWithErrorHandling()
         dismiss()
     }
 

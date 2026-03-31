@@ -91,7 +91,7 @@ struct CollectionDetailView: View {
             cards.forEach { $0.status = .deleted }
             // сет остаётся в БД; удалится автоматически когда все карточки будут стёрты
         }
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 
     // MARK: - Sets Section

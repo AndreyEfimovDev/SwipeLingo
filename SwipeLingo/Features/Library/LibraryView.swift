@@ -128,7 +128,7 @@ struct LibraryView: View {
                         .contextMenu {
                             Button(role: .destructive) {
                                 context.delete(pile)
-                                try? context.save()
+                                context.saveWithErrorHandling()
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
@@ -340,13 +340,13 @@ struct LibraryView: View {
             context.delete(collection)
         }
         // иначе коллекция удалится автоматически вместе с последним сетом
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 
     private func activatePile(_ pile: Pile) {
         for p in piles { p.isActive = false }
         pile.isActive = true
-        try? context.save()
+        context.saveWithErrorHandling()
     }
 
     // MARK: - Helpers

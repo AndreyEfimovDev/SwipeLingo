@@ -45,7 +45,7 @@ struct PileBuilderView: View {
                 Button("Delete Pile", role: .destructive) {
                     if let pile = viewModel.editingPile {
                         context.delete(pile)
-                        try? context.save()
+                        context.saveWithErrorHandling()
                     }
                     dismiss()
                 }
