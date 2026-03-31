@@ -13,7 +13,9 @@
       "Bash(gh pr:*)",
       "Bash(git -C /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo status)",
       "Bash(grep -rn \"enum.*Error\\\\|struct.*Error\" /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo/.claude/worktrees/busy-black --include=*.swift)",
-      "Bash(grep -l try? /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo/.claude/worktrees/busy-black/SwipeLingo/**/*.swift)"
+      "Bash(grep -l try? /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo/.claude/worktrees/busy-black/SwipeLingo/**/*.swift)",
+      "Bash(sed -i '' 's/try? context\\\\.save\\(\\)/context.saveWithErrorHandling\\(\\)/g' SwipeLingo/Features/Library/AddCollectionView.swift)",
+      "Bash(grep -n \"try? context\\\\.\" SwipeLingo/Features/Library/*.swift)"
     ]
   }
 }
