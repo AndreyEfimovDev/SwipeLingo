@@ -11,7 +11,9 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(gh pr:*)",
-      "Bash(git -C /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo status)"
+      "Bash(git -C /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo status)",
+      "Bash(grep -rn \"enum.*Error\\\\|struct.*Error\" /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo/.claude/worktrees/busy-black --include=*.swift)",
+      "Bash(grep -l try? /Users/andreyefimov/Library/CloudStorage/Dropbox/_EF108/_SwiftUI/__EF_APPs/02_SwipeLingo/.claude/worktrees/busy-black/SwipeLingo/**/*.swift)"
     ]
   }
 }
