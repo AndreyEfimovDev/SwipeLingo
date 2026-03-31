@@ -384,12 +384,14 @@ struct TinderCardsView: View {
                 .rotation3DEffect(.degrees(viewModel.isFlipped ? 180 : 0),
                                   axis: (x: 0, y: 1, z: 0), perspective: 0.5)
                 .opacity(viewModel.isFlipped ? 0 : 1)
+                .allowsHitTesting(!viewModel.isFlipped)
 
             cardBack(card)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .rotation3DEffect(.degrees(viewModel.isFlipped ? 0 : -180),
                                   axis: (x: 0, y: 1, z: 0), perspective: 0.5)
                 .opacity(viewModel.isFlipped ? 1 : 0)
+                .allowsHitTesting(viewModel.isFlipped)
         }
         .animation(.spring(duration: 0.5, bounce: 0.15), value: viewModel.isFlipped)
     }
@@ -474,8 +476,8 @@ struct TinderCardsView: View {
 
                     // 3. Examples — paged with arrow navigation
                     if !card.sampleEN.isEmpty {
-                        let page = examplePageIndex
                         let count = card.sampleEN.count
+                        let page = min(examplePageIndex, count - 1)
                         let hasMany = count > 1
                         Divider().padding(.horizontal, 20)
 
