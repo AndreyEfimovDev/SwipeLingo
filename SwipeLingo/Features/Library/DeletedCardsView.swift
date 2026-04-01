@@ -19,6 +19,7 @@ struct DeletedCardsView: View {
     @State private var showEraseSelectedConfirm: Bool      = false
     @State private var searchText:               String    = ""
     @State private var isHeaderVisible:          Bool      = true
+    @State private var showOnTopButton:          Bool      = false
     
     /// Scroll-aware behaviour kicks in only when there are enough cards to scroll.
     private let scrollAwareThreshold = 11
@@ -116,60 +117,75 @@ struct DeletedCardsView: View {
     // MARK: - Body
     
     var body: some View {
-        List(selection: $selectedCardIds) {
-            ForEach(filteredCards) { card in
-                let cardSet        = allCardSets.first(where: { $0.id == card.setId })
-                let setName        = cardSet?.name
-                let collectionName = cardSet.flatMap { set in
-                    allCollections.first(where: { $0.id == set.collectionId })?.name
-                }
-                DeletedCardRow(card: card, setName: setName, collectionName: collectionName)
-                    .listRowBackground(Color.myColors.myBackground)
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            cardToErase = card
-                        } label: {
-                            Label("Erase Forever", systemImage: "trash")
+        ScrollViewReader { scrollProxy in
+            ZStack(alignment: .bottom) {
+                List(selection: $selectedCardIds) {
+                    ForEach(filteredCards) { card in
+                        let cardSet        = allCardSets.first(where: { $0.id == card.setId })
+                        let setName        = cardSet?.name
+                        let collectionName = cardSet.flatMap { set in
+                            allCollections.first(where: { $0.id == set.collectionId })?.name
                         }
-                        Button {
-                            restoreCard(card)
-                        } label: {
-                            Label("Restore", systemImage: "arrow.uturn.left")
-                        }
-                        .tint(Color.myColors.myGreen)
+                        DeletedCardRow(card: card, setName: setName, collectionName: collectionName)
+                            .id(card.id)
+                            .listRowBackground(Color.myColors.myBackground)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    cardToErase = card
+                                } label: {
+                                    Label("Erase Forever", systemImage: "trash")
+                                }
+                                Button {
+                                    restoreCard(card)
+                                } label: {
+                                    Label("Restore", systemImage: "arrow.uturn.left")
+                                }
+                                .tint(Color.myColors.myGreen)
+                            }
                     }
-            }
-        }
-        .myShadow()
-        .contentMargins(.top, 16, for: .scrollContent)
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if !deletedCards.isEmpty { headerView }
-        }
-        .scrollContentBackground(.hidden)
-        .environment(\.editMode, $editMode)
-        .onChange(of: selectedCollectionId) { _, _ in selectedCardIds = [] }
-        .onChange(of: selectedSetId)        { _, _ in selectedCardIds = [] }
-        .onScrollGeometryChange(for: ScrollInfo.self) { geo in
-            ScrollInfo(
-                offsetY:       geo.contentOffset.y,
-                contentHeight: geo.contentSize.height,
-                visibleHeight: geo.visibleRect.height
-            )
-        } action: { old, new in
-            guard headerRelevant, searchText.isEmpty else { return }
-            // Ignore bounce at the bottom: overscroll snaps back and looks like
-            // a rapid upward scroll, which would incorrectly show the header.
-            // + 16 / - 16 — the minimum offset delta per callback at which the header is hidden/showed. The larger the value, the sharper the scrolling required.
-            // new.offsetY < 10 — the header is always visible until the list is scrolled further than 10pt from the top.
-            // maxOffset - 10 — ignore the bounce at the bottom edge.
-            let maxOffset = new.contentHeight - new.visibleHeight
-            guard new.offsetY < maxOffset - 6 else { return }
-            if new.offsetY < 10 {
-                isHeaderVisible = true          // у топа — всегда показываем
-            } else if new.offsetY > old.offsetY + 11 {
-                isHeaderVisible = false         // скролл вверх (вглубь) → прячем
-            } else if new.offsetY < old.offsetY - 11 {
-                isHeaderVisible = true          // скролл вниз (назад к топу) → показываем
+                }
+                .myShadow()
+                .contentMargins(.top, 16, for: .scrollContent)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if !deletedCards.isEmpty { headerView }
+                }
+                .scrollContentBackground(.hidden)
+                .environment(\.editMode, $editMode)
+                .onChange(of: selectedCollectionId) { _, _ in selectedCardIds = [] }
+                .onChange(of: selectedSetId)        { _, _ in selectedCardIds = [] }
+                .onScrollGeometryChange(for: ScrollInfo.self) { geo in
+                    ScrollInfo(
+                        offsetY:       geo.contentOffset.y,
+                        contentHeight: geo.contentSize.height,
+                        visibleHeight: geo.visibleRect.height
+                    )
+                } action: { old, new in
+                    let maxOffset = new.contentHeight - new.visibleHeight
+
+                    // OnTopButton always works, regardless of filters and searches.
+                    let shouldShowOnTop = new.offsetY > 300
+                    if showOnTopButton != shouldShowOnTop { showOnTopButton = shouldShowOnTop }
+
+                    // Hide/show header - only if there is no search and there are enough cards
+                    guard headerRelevant, searchText.isEmpty else { return }
+                    // Ignore bounce at the bottom: overscroll snaps back and looks like
+                    // a rapid upward scroll, which would incorrectly show the header.
+                    guard new.offsetY < maxOffset - 6 else { return }
+                    if new.offsetY < 10 {
+                        isHeaderVisible = true          // at the top - always show
+                    } else if new.offsetY > old.offsetY + 11 {
+                        isHeaderVisible = false         // scroll up (deep) → hide
+                    } else if new.offsetY < old.offsetY - 11 {
+                        isHeaderVisible = true          // scroll down (back to top) → show
+                    }
+                }
+                OnTopButton(isVisible: showOnTopButton) {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        scrollProxy.scrollTo(filteredCards.first?.id, anchor: .top)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.3), value: showOnTopButton)
+                .padding(.bottom, 16)
             }
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
@@ -335,8 +351,6 @@ struct DeletedCardsView: View {
             
             if !isLandscape { Spacer(minLength: 0) }
         }
-//        .padding(.top, 8)
-//        .padding(.bottom, isLandscape ? 0 : 8)
     }
     
     @ViewBuilder
@@ -461,13 +475,13 @@ struct DeletedCardsView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }
     
-    /// Удаляет сеты и коллекции, у которых не остаётся карточек после стирания.
-    /// Вызывать ДО context.delete, чтобы @Query ещё содержал стираемые карточки.
+    /// Deletes sets and collections that have no cards remaining after erasing.
+    /// Call BEFORE context.delete so that @Query still contains the cards being erased.
     private func cleanupAfterErase(erasingIds: Set<UUID>) {
         let affectedSetIds = Set(allCards.filter { erasingIds.contains($0.id) }.map { $0.setId })
         
         for setId in affectedSetIds {
-            // Карточки в сете, которые останутся после стирания
+            // Cards in the set that will remain after erasing
             let remaining = allCards.filter { $0.setId == setId && !erasingIds.contains($0.id) }
             guard remaining.isEmpty,
                   let set = allCardSets.first(where: { $0.id == setId }),
@@ -477,7 +491,7 @@ struct DeletedCardsView: View {
             let collectionId = set.collectionId
             context.delete(set)
             
-            // Проверяем — остались ли другие сеты в коллекции
+            // check if there are any other sets left in the collection.
             let remainingSets = allCardSets.filter { $0.collectionId == collectionId && $0.id != setId }
             guard remainingSets.isEmpty,
                   collection.name != "My Sets" else { continue }  // My Sets never deleted
@@ -537,9 +551,9 @@ private struct DeletedCardRow: View {
     private var locationLabel: String? {
         switch (collectionName, setName) {
         case (let col?, let set?): return "\(col) › \(set)"
-        case (nil,       let set?): return set
-        case (let col?,  nil):     return col
-        case (nil,       nil):     return nil
+        case (nil, let set?): return set
+        case (let col?, nil): return col
+        case (nil, nil): return nil
         }
     }
     
