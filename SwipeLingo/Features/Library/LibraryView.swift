@@ -13,9 +13,7 @@ struct LibraryView: View {
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
 
     @State private var isShowingAddCollection = false
-    @State private var isShowingPileBuilder   = false
-    /// Non-nil when editing an existing pile; nil when creating a new one.
-    @State private var editingPile: Pile?
+    @State private var pileSheet: PileSheet?
     @State private var collectionToDelete: Collection?
 
     private var deletedCardsCount: Int {
@@ -47,10 +45,11 @@ struct LibraryView: View {
             .sheet(isPresented: $isShowingAddCollection) {
                 AddCollectionView()
             }
-            .sheet(isPresented: $isShowingPileBuilder, onDismiss: {
-                editingPile = nil
-            }) {
-                PileBuilderView(editingPile: editingPile)
+            .sheet(item: $pileSheet) { mode in
+                switch mode {
+                case .new:          PileBuilderView(editingPile: nil)
+                case .edit(let p):  PileBuilderView(editingPile: p)
+                }
             }
             .overlay {
                 if collections.isEmpty && piles.isEmpty { emptyState }
@@ -91,8 +90,7 @@ struct LibraryView: View {
                     .font(.footnote.weight(.semibold))
                 Spacer()
                 Button {
-                    editingPile = nil
-                    isShowingPileBuilder = true
+                    pileSheet = .new
                 } label: {
                     Image(systemName: "plus")
                         .font(.caption.weight(.semibold))
@@ -121,8 +119,7 @@ struct LibraryView: View {
                             cardCount: activeCardCount(for: pile),
                             onActivate: { activatePile(pile) },
                             onEdit: {
-                                editingPile = pile
-                                isShowingPileBuilder = true
+                                pileSheet = .edit(pile)
                             }
                         )
                         .contextMenu {
@@ -260,13 +257,18 @@ struct LibraryView: View {
         if deletedCardsCount > 0 {
             NavigationLink { DeletedCardsView() } label: {
                 HStack {
-                    Label("Deleted Cards", systemImage: "trash")
-                        .labelStyle(.fixedIcon)
-                        .foregroundStyle(Color.myColors.myAccent)
+                    Label {
+                        HStack(spacing: 0) {
+                            Text("Deleted Cards")
+                            Text(" (\(deletedCardsCount))")
+                                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                        }
+                    } icon: {
+                        Image(systemName: "trash")
+                    }
+                    .labelStyle(.fixedIcon)
+                    .foregroundStyle(Color.myColors.myAccent)
                     Spacer()
-                    Text("\(deletedCardsCount)")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.myColors.myBlue)
@@ -356,6 +358,20 @@ struct LibraryView: View {
     }
 }
 
+// MARK: - PileSheet
+
+private enum PileSheet: Identifiable {
+    case new
+    case edit(Pile)
+
+    var id: String {
+        switch self {
+        case .new:           return "new"
+        case .edit(let p):   return p.id.uuidString
+        }
+    }
+}
+
 // MARK: - PileRow
 
 private struct PileRow: View {
@@ -414,10 +430,11 @@ private struct CollectionRow: View {
     let setCount:   Int
     let cardCount:  Int
 
-    /// Badge text: "N · M" (sets · cards); hidden when empty.
+    /// Badge text: "(S/C)" for regular collections, "(C)" for Inbox; hidden when empty.
     private var badge: String? {
         guard cardCount > 0 || setCount > 0 else { return nil }
-        return "\(setCount) · \(cardCount)"
+        if collection.name == "Inbox" { return "(\(cardCount))" }
+        return "(\(setCount)/\(cardCount))"
     }
 
     var body: some View {

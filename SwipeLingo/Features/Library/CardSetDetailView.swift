@@ -23,6 +23,7 @@ struct CardSetDetailView: View {
     @State private var isLearntExpanded  = false
     @State private var isShowingAddCard  = false
     @State private var editingCard: Card? = nil
+    @State private var searchText        = ""
 
     // Fallback covers first render; updated by PreferenceKey after layout
     @State private var rowHeight: CGFloat = 68
@@ -33,10 +34,12 @@ struct CardSetDetailView: View {
 
     private var activeCards: [Card] {
         allCards.filter { $0.setId == cardSet.id && $0.status == .active }
+            .filtered(by: searchText)
     }
 
     private var learntCards: [Card] {
         allCards.filter { $0.setId == cardSet.id && $0.status == .learnt }
+            .filtered(by: searchText)
     }
 
     var body: some View {
@@ -109,8 +112,11 @@ struct CardSetDetailView: View {
             AddEditCardView(card: card)
         }
         .overlay {
-            if activeCards.isEmpty && learntCards.isEmpty {
+            let hasCards = allCards.contains { $0.setId == cardSet.id && $0.status != .deleted }
+            if !hasCards {
                 emptyState
+            } else if activeCards.isEmpty && learntCards.isEmpty && !searchText.isEmpty {
+                SearchEmptyState(query: searchText)
             }
         }
     }
@@ -118,15 +124,21 @@ struct CardSetDetailView: View {
     // MARK: - Metadata Bar
 
     private var metadataBar: some View {
-        HStack {
-            CEFRBadgeView(level: cardSet.isUserCreated ? nil : cardSet.cefrLevel)
-                .font(.caption.weight(.semibold))
-            Spacer()
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+        VStack(spacing: 0) {
+            if !cardSet.isUserCreated {
+                HStack {
+                    CEFRBadgeView(level: cardSet.cefrLevel)
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+                .padding(.bottom, 4)
+            }
+            SearchBar(text: $searchText, prompt: "Search words")
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
         .background(Color.myColors.myBackground)
     }
 

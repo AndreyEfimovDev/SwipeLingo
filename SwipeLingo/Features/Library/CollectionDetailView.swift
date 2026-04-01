@@ -14,6 +14,8 @@ struct CollectionDetailView: View {
 
     @State private var isShowingAddSet = false
     @State private var setToDelete: CardSet?
+    @State private var selectedCEFRLevel: CEFRLevel? = nil
+    @State private var searchText = ""
 
     // Сет видим если: нет карточек (только что создан), или есть хотя бы одна не-удалённая карточка
     private var cardSets: [CardSet] {
@@ -25,14 +27,40 @@ struct CollectionDetailView: View {
             }
     }
 
+    private var filteredCardSets: [CardSet] {
+        var result = cardSets
+        if let level = selectedCEFRLevel {
+            result = result.filter { $0.cefrLevel == level }
+        }
+        if !searchText.isEmpty {
+            result = result.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+        return result
+    }
+
+    /// CEFR levels present across sets in this collection (non-user-created only).
+    private var availableCEFRLevels: [CEFRLevel] {
+        guard !collection.isUserCreated else { return [] }
+        let levels = Set(cardSets.map { $0.cefrLevel })
+        return CEFRLevel.allCases.filter { levels.contains($0) }
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                if !cardSets.isEmpty {
-                    setsSection
-                }
+        VStack(spacing: 0) {
+            if availableCEFRLevels.count > 1 {
+                cefrFilterRow
+                    .background(Color.myColors.myBackground)
             }
-            .padding(.vertical, 16)
+            searchBar
+                .background(Color.myColors.myBackground)
+            ScrollView {
+                VStack(spacing: 16) {
+                    if !filteredCardSets.isEmpty {
+                        setsSection
+                    }
+                }
+                .padding(.vertical, 16)
+            }
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle(collection.name)
@@ -50,7 +78,11 @@ struct CollectionDetailView: View {
             AddCardSetView(collectionId: collection.id)
         }
         .overlay {
-            if cardSets.isEmpty { emptyState }
+            if cardSets.isEmpty {
+                emptyState
+            } else if filteredCardSets.isEmpty && !searchText.isEmpty {
+                SearchEmptyState(query: searchText)
+            }
         }
         .confirmationDialog(
             "Delete \"\(setToDelete?.name ?? "Set")\"?",
@@ -94,25 +126,57 @@ struct CollectionDetailView: View {
         context.saveWithErrorHandling()
     }
 
+    // MARK: - Filter Bar
+
+    private var cefrFilterRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                Button { selectedCEFRLevel = nil } label: {
+                    FilterPill(label: "All", isActive: selectedCEFRLevel == nil)
+                }
+                .buttonStyle(.plain)
+
+                ForEach(availableCEFRLevels, id: \.self) { level in
+                    Button {
+                        selectedCEFRLevel = selectedCEFRLevel == level ? nil : level
+                    } label: {
+                        FilterPill(label: level.rawValue, isActive: selectedCEFRLevel == level)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
+        }
+    }
+
+    private var searchBar: some View {
+        SearchBar(text: $searchText, prompt: "Search sets")
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+    }
+
     // MARK: - Sets Section
 
     private var setsSection: some View {
         VStack(spacing: 0) {
-            ForEach(cardSets) { cardSet in
+            ForEach(filteredCardSets) { cardSet in
                 NavigationLink {
                     CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated)
                 } label: {
                     HStack {
-                        Text(cardSet.name)
+                        let count = cardCount(for: cardSet)
+                        HStack(spacing: 0) {
+                            Text(cardSet.name)
+                            if count > 0 {
+                                Text(" (\(count))")
+                                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                            }
+                        }
                         Spacer()
                         CEFRBadgeView(level: collection.isUserCreated ? nil : cardSet.cefrLevel)
                             .font(.caption.weight(.semibold))
-                        let count = cardCount(for: cardSet)
-                        if count > 0 {
-                            Text("\(count)")
-                                .font(.subheadline)
-                                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                        }
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(Color.myColors.myBlue)
@@ -130,7 +194,7 @@ struct CollectionDetailView: View {
                         Label("Delete Set", systemImage: "trash")
                     }
                 }
-                if cardSet.id != cardSets.last?.id {
+                if cardSet.id != filteredCardSets.last?.id {
                     Divider().padding(.leading, 16)
                 }
             }
