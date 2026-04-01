@@ -4,25 +4,31 @@ import SwiftData
 // MARK: - DeletedCardsView
 
 struct DeletedCardsView: View {
-
-    @Environment(\.modelContext) private var context
+    
+    @Environment(\.modelContext)        private var context
+    @Environment(\.verticalSizeClass)   private var verticalSizeClass
     @Query(sort: \Card.createdAt)       private var allCards:       [Card]
     @Query(sort: \CardSet.createdAt)    private var allCardSets:    [CardSet]
     @Query(sort: \Collection.createdAt) private var allCollections: [Collection]
-
+    
     @State private var selectedCollectionId:     UUID?     = nil
     @State private var selectedSetId:            UUID?     = nil
     @State private var editMode:                 EditMode  = .inactive
     @State private var selectedCardIds:          Set<UUID> = []
     @State private var cardToErase:              Card?     = nil
     @State private var showEraseSelectedConfirm: Bool      = false
-
+    @State private var searchText:               String    = ""
+    @State private var isHeaderVisible:          Bool      = true
+    
+    /// Scroll-aware behaviour kicks in only when there are enough cards to scroll.
+    private let scrollAwareThreshold = 11
+    
     // MARK: - Computed
-
+    
     private var deletedCards: [Card] {
         allCards.filter { $0.status == .deleted }
     }
-
+    
     private var filteredCards: [Card] {
         var cards = deletedCards
         if let colId = selectedCollectionId {
@@ -32,16 +38,16 @@ struct DeletedCardsView: View {
         if let setId = selectedSetId {
             cards = cards.filter { $0.setId == setId }
         }
-        return cards
+        return cards.filtered(by: searchText)
     }
-
+    
     /// Collections that have at least one deleted card
     private var availableCollections: [Collection] {
         let deletedSetIds = Set(deletedCards.map { $0.setId })
         let collectionIds = Set(allCardSets.filter { deletedSetIds.contains($0.id) }.map { $0.collectionId })
         return allCollections.filter { collectionIds.contains($0.id) }
     }
-
+    
     /// Sets that have at least one deleted card; restricted by selected collection if active
     private var availableSets: [CardSet] {
         let deletedSetIds = Set(deletedCards.map { $0.setId })
@@ -51,13 +57,13 @@ struct DeletedCardsView: View {
         }
         return sets
     }
-
+    
     private var isFiltered: Bool { selectedCollectionId != nil || selectedSetId != nil }
-
+    
     private var isAllSelected: Bool {
         !filteredCards.isEmpty && selectedCardIds.count == filteredCards.count
     }
-
+    
     private func toggleSelectAll() {
         if isAllSelected {
             selectedCardIds = []
@@ -65,41 +71,104 @@ struct DeletedCardsView: View {
             selectedCardIds = Set(filteredCards.map { $0.id })
         }
     }
-
+    
+    private var isLandscape: Bool { verticalSizeClass == .compact }
+    
+    /// Header is only relevant when there are enough cards to warrant filtering/searching.
+    private var headerRelevant: Bool {
+        deletedCards.count >= scrollAwareThreshold
+    }
+    
+    /// Force-show when search is active or in edit mode; otherwise follow scroll state.
+    private var showHeader: Bool {
+        guard headerRelevant else { return false }
+        return isHeaderVisible || !searchText.isEmpty || editMode == .active
+    }
+    
+    private var headerLayout: AnyLayout {
+        isLandscape
+        ? AnyLayout(HStackLayout(alignment: .center, spacing: 12))
+        : AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+    }
+    
+    // MARK: - Header View
+    
+    private var headerView: some View {
+        headerLayout {
+            filterPillsRow
+                .padding(.leading, 16)
+                .padding(.trailing, isLandscape ? 0 : 16)
+                .padding(.top, isLandscape ? 0 : 8)
+            SearchBar(text: $searchText, prompt: "Search words")
+                .padding(.leading, isLandscape ? 0 : 16)
+                .padding(.trailing, 16)
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
+        }
+        .background(Color.myColors.myBackground)
+        .frame(maxHeight: showHeader ? nil : 0, alignment: isLandscape ? .center : .top)
+        .clipped()
+        .animation(.easeInOut(duration: 0.22), value: showHeader)  // frame collapse
+        .opacity(showHeader ? 1 : 0)
+        .animation(.easeInOut(duration: 0.38), value: showHeader)  // opacity — softer and longer
+    }
+    
     // MARK: - Body
-
+    
     var body: some View {
-        VStack(spacing: 0) {
-            if !deletedCards.isEmpty {
-                filterPillsRow
-                    .background(Color.myColors.myBackground)
-            }
-
-            List(selection: $selectedCardIds) {
-                ForEach(filteredCards) { card in
-                    let setName = allCardSets.first(where: { $0.id == card.setId })?.name
-                    DeletedCardRow(card: card, setName: setName)
-                        .listRowBackground(Color.myColors.myBackground)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                cardToErase = card
-                            } label: {
-                                Label("Erase Forever", systemImage: "trash")
-                            }
-                            Button {
-                                restoreCard(card)
-                            } label: {
-                                Label("Restore", systemImage: "arrow.uturn.left")
-                            }
-                            .tint(Color.myColors.myGreen)
+        List(selection: $selectedCardIds) {
+            ForEach(filteredCards) { card in
+                let cardSet        = allCardSets.first(where: { $0.id == card.setId })
+                let setName        = cardSet?.name
+                let collectionName = cardSet.flatMap { set in
+                    allCollections.first(where: { $0.id == set.collectionId })?.name
+                }
+                DeletedCardRow(card: card, setName: setName, collectionName: collectionName)
+                    .listRowBackground(Color.myColors.myBackground)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            cardToErase = card
+                        } label: {
+                            Label("Erase Forever", systemImage: "trash")
                         }
+                        Button {
+                            restoreCard(card)
+                        } label: {
+                            Label("Restore", systemImage: "arrow.uturn.left")
+                        }
+                        .tint(Color.myColors.myGreen)
+                    }
+            }
+        }
+        .myShadow()
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !deletedCards.isEmpty { headerView }
+        }
+        .scrollContentBackground(.hidden)
+        .environment(\.editMode, $editMode)
+        .onChange(of: selectedCollectionId) { _, _ in selectedCardIds = [] }
+        .onChange(of: selectedSetId)        { _, _ in selectedCardIds = [] }
+        .onScrollGeometryChange(for: ScrollInfo.self) { geo in
+            ScrollInfo(
+                offsetY:       geo.contentOffset.y,
+                contentHeight: geo.contentSize.height,
+                visibleHeight: geo.visibleRect.height
+            )
+        } action: { old, new in
+            guard headerRelevant, searchText.isEmpty else { return }
+            // Ignore bounce at the bottom: overscroll snaps back and looks like
+            // a rapid upward scroll, which would incorrectly show the header.
+            let maxOffset = new.contentHeight - new.visibleHeight
+            guard new.offsetY < maxOffset - 10 else { return }
+            withAnimation(.easeInOut(duration: 0.22)) {
+                if new.offsetY < 10 {
+                    isHeaderVisible = true          // у топа — всегда показываем
+                } else if new.offsetY > old.offsetY + 8 {
+                    isHeaderVisible = false         // скролл вверх (вглубь) → прячем
+                } else if new.offsetY < old.offsetY - 8 {
+                    isHeaderVisible = true          // скролл вниз (назад к топу) → показываем
                 }
             }
-            .myShadow()
-            .scrollContentBackground(.hidden)
-            .environment(\.editMode, $editMode)
-            .onChange(of: selectedCollectionId) { _, _ in selectedCardIds = [] }
-            .onChange(of: selectedSetId)        { _, _ in selectedCardIds = [] }
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle("Deleted Cards")
@@ -176,99 +245,97 @@ struct DeletedCardsView: View {
             Text("These cards will be permanently deleted and cannot be recovered.")
         }
     }
-
+    
     // MARK: - Filter Pills
-
+    
     private var filterPillsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-
-                // All
-                Button {
-                    selectedCollectionId = nil
-                    selectedSetId = nil
-                } label: {
-                    FilterPill(label: "All", isActive: !isFiltered)
-                }
-                .buttonStyle(.plain)
-
-                // Collection
-                Menu {
-                    ForEach(availableCollections) { col in
-                        Button {
-                            if selectedCollectionId == col.id {
-                                selectedCollectionId = nil
-                            } else {
-                                selectedCollectionId = col.id
-                                // Clear set if it no longer belongs to this collection
-                                if let setId = selectedSetId,
-                                   let set = allCardSets.first(where: { $0.id == setId }),
-                                   set.collectionId != col.id {
-                                    selectedSetId = nil
-                                }
-                            }
-                        } label: {
-                            HStack {
-                                Text(col.name)
-                                if selectedCollectionId == col.id {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-                    if selectedCollectionId != nil {
-                        Divider()
-                        Button("Clear Filter") { selectedCollectionId = nil }
-                    }
-                } label: {
-                    FilterPill(
-                        label: selectedCollectionId
-                            .flatMap { id in allCollections.first(where: { $0.id == id })?.name }
-                            ?? "Collection",
-                        isActive: selectedCollectionId != nil,
-                        showChevron: true
-                    )
-                }
-                .opacity(availableCollections.isEmpty ? 0.45 : 1)
-                .disabled(availableCollections.isEmpty)
-
-                // Set
-                Menu {
-                    // Group by collection when multiple collections exist and no collection filter active
-                    if selectedCollectionId == nil && availableCollections.count > 1 {
-                        ForEach(availableCollections) { col in
-                            let setsForCol = availableSets.filter { $0.collectionId == col.id }
-                            if !setsForCol.isEmpty {
-                                Section(col.name) {
-                                    ForEach(setsForCol) { set in setMenuButton(set) }
-                                }
-                            }
-                        }
-                    } else {
-                        ForEach(availableSets) { set in setMenuButton(set) }
-                    }
-                    if selectedSetId != nil {
-                        Divider()
-                        Button("Clear Filter") { selectedSetId = nil }
-                    }
-                } label: {
-                    FilterPill(
-                        label: selectedSetId
-                            .flatMap { id in allCardSets.first(where: { $0.id == id })?.name }
-                            ?? "Set",
-                        isActive: selectedSetId != nil,
-                        showChevron: true
-                    )
-                }
-                .opacity(availableSets.isEmpty ? 0.45 : 1)
-                .disabled(availableSets.isEmpty)
+        HStack(spacing: 8) {
+            // All
+            Button {
+                selectedCollectionId = nil
+                selectedSetId = nil
+            } label: {
+                FilterPill(label: "All", isActive: !isFiltered)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 10)
-            .padding(.bottom, 2)
+            .buttonStyle(.plain)
+            .fixedSize()
+            
+            // Collection
+            Menu {
+                ForEach(availableCollections) { col in
+                    Button {
+                        if selectedCollectionId == col.id {
+                            selectedCollectionId = nil
+                        } else {
+                            selectedCollectionId = col.id
+                            if let setId = selectedSetId,
+                               let set = allCardSets.first(where: { $0.id == setId }),
+                               set.collectionId != col.id {
+                                selectedSetId = nil
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text(col.name)
+                            if selectedCollectionId == col.id {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+                if selectedCollectionId != nil {
+                    Divider()
+                    Button("Clear Filter") { selectedCollectionId = nil }
+                }
+            } label: {
+                FilterPill(
+                    label: selectedCollectionId
+                        .flatMap { id in allCollections.first(where: { $0.id == id })?.name }
+                    ?? "Collection",
+                    isActive: selectedCollectionId != nil,
+                    showChevron: true
+                )
+            }
+            .fixedSize()
+            .opacity(availableCollections.isEmpty ? 0.45 : 1)
+            .disabled(availableCollections.isEmpty)
+            
+            // Set
+            Menu {
+                if selectedCollectionId == nil && availableCollections.count > 1 {
+                    ForEach(availableCollections) { col in
+                        let setsForCol = availableSets.filter { $0.collectionId == col.id }
+                        if !setsForCol.isEmpty {
+                            Section(col.name) {
+                                ForEach(setsForCol) { set in setMenuButton(set) }
+                            }
+                        }
+                    }
+                } else {
+                    ForEach(availableSets) { set in setMenuButton(set) }
+                }
+                if selectedSetId != nil {
+                    Divider()
+                    Button("Clear Filter") { selectedSetId = nil }
+                }
+            } label: {
+                FilterPill(
+                    label: selectedSetId
+                        .flatMap { id in allCardSets.first(where: { $0.id == id })?.name }
+                    ?? "Set",
+                    isActive: selectedSetId != nil,
+                    showChevron: true
+                )
+            }
+            .fixedSize()
+            .opacity(availableSets.isEmpty ? 0.45 : 1)
+            .disabled(availableSets.isEmpty)
+            
+            if !isLandscape { Spacer(minLength: 0) }
         }
+        .padding(.vertical, 8)
     }
-
+    
     @ViewBuilder
     private func setMenuButton(_ set: CardSet) -> some View {
         Button {
@@ -288,9 +355,9 @@ struct DeletedCardsView: View {
             }
         }
     }
-
+    
     // MARK: - Bulk Action Bar
-
+    
     private var bulkActionBar: some View {
         HStack {
             Button {
@@ -304,17 +371,17 @@ struct DeletedCardsView: View {
             }
             .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myGreen)
             .disabled(selectedCardIds.isEmpty)
-
+            
             Spacer()
-
+            
             if !selectedCardIds.isEmpty {
                 Text("\(selectedCardIds.count)")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             }
-
+            
             Spacer()
-
+            
             Button {
                 showEraseSelectedConfirm = true
             } label: {
@@ -329,9 +396,9 @@ struct DeletedCardsView: View {
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) { Divider() }
     }
-
+    
     // MARK: - Empty States
-
+    
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "trash.slash")
@@ -345,28 +412,34 @@ struct DeletedCardsView: View {
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
         }
     }
-
+    
     private var filteredEmptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "tray")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            Text("No cards here")
-                .font(.title3.bold())
-                .foregroundStyle(Color.myColors.myAccent)
-            Text("Try a different filter")
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+        Group {
+            if !searchText.isEmpty {
+                SearchEmptyState(query: searchText)
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 48))
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    Text("No cards here")
+                        .font(.title3.bold())
+                        .foregroundStyle(Color.myColors.myAccent)
+                    Text("Try a different filter")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                }
+            }
         }
     }
-
+    
     // MARK: - Actions
-
+    
     private func restoreCard(_ card: Card) {
         card.status = .active
         context.saveWithErrorHandling()
     }
-
+    
     private func restoreSelected() {
         filteredCards
             .filter { selectedCardIds.contains($0.id) }
@@ -374,7 +447,7 @@ struct DeletedCardsView: View {
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }
-
+    
     private func eraseSelected() {
         let toErase = filteredCards.filter { selectedCardIds.contains($0.id) }
         let ids = Set(toErase.map { $0.id })
@@ -384,12 +457,12 @@ struct DeletedCardsView: View {
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }
-
+    
     /// Удаляет сеты и коллекции, у которых не остаётся карточек после стирания.
     /// Вызывать ДО context.delete, чтобы @Query ещё содержал стираемые карточки.
     private func cleanupAfterErase(erasingIds: Set<UUID>) {
         let affectedSetIds = Set(allCards.filter { erasingIds.contains($0.id) }.map { $0.setId })
-
+        
         for setId in affectedSetIds {
             // Карточки в сете, которые останутся после стирания
             let remaining = allCards.filter { $0.setId == setId && !erasingIds.contains($0.id) }
@@ -397,10 +470,10 @@ struct DeletedCardsView: View {
                   let set = allCardSets.first(where: { $0.id == setId }),
                   let collection = allCollections.first(where: { $0.id == set.collectionId }),
                   collection.name != "Inbox" else { continue }  // Inbox set никогда не удаляем
-
+            
             let collectionId = set.collectionId
             context.delete(set)
-
+            
             // Проверяем — остались ли другие сеты в коллекции
             let remainingSets = allCardSets.filter { $0.collectionId == collectionId && $0.id != setId }
             guard remainingSets.isEmpty,
@@ -410,13 +483,21 @@ struct DeletedCardsView: View {
     }
 }
 
+// MARK: - ScrollInfo
+
+private struct ScrollInfo: Equatable {
+    let offsetY:       CGFloat
+    let contentHeight: CGFloat
+    let visibleHeight: CGFloat
+}
+
 // MARK: - FilterPill
 
-private struct FilterPill: View {
+struct FilterPill: View {
     let label:        String
     let isActive:     Bool
     var showChevron:  Bool = false
-
+    
     var body: some View {
         HStack(spacing: 4) {
             Text(label)
@@ -429,7 +510,7 @@ private struct FilterPill: View {
                     .font(.caption2.weight(.semibold))
             }
         }
-        .foregroundStyle(isActive ? .white : Color.myColors.myBlue)
+        .foregroundStyle(isActive ? Color.myColors.buttonTextAccent : Color.myColors.myBlue)
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
         .background {
@@ -446,9 +527,19 @@ private struct FilterPill: View {
 // MARK: - DeletedCardRow
 
 private struct DeletedCardRow: View {
-    let card:    Card
-    let setName: String?
-
+    let card:           Card
+    let setName:        String?
+    let collectionName: String?
+    
+    private var locationLabel: String? {
+        switch (collectionName, setName) {
+        case (let col?, let set?): return "\(col) › \(set)"
+        case (nil,       let set?): return set
+        case (let col?,  nil):     return col
+        case (nil,       nil):     return nil
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(card.en)
@@ -457,8 +548,8 @@ private struct DeletedCardRow: View {
             Text(card.item)
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            if let setName {
-                Text(setName)
+            if let locationLabel {
+                Text(locationLabel)
                     .font(.caption)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
             }
