@@ -711,7 +711,7 @@ struct TinderCardsView: View {
                 .background(color.opacity(0.15))
                 .foregroundStyle(color)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.35), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.15), lineWidth: 1))
         }
     }
 
