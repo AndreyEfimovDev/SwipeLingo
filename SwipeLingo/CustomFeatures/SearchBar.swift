@@ -72,11 +72,11 @@ struct SearchBar: View {
         }
         .font(.subheadline)
         .padding(.vertical, 6)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 6)
         .background(Color.myColors.myAccent.opacity(isFocused ? 0 : 0.07), in: Capsule())
         .overlay{
             Capsule()
-                .strokeBorder(isFocused ? Color.myColors.myBlue : .clear, lineWidth: 1)
+                .strokeBorder(isFocused ? Color.myColors.myBlue : .clear, lineWidth: 1.5)
         }
         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isFocused)
 
