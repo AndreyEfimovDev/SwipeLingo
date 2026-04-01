@@ -16,6 +16,7 @@ struct SwipeLingoApp: App {
         if let ctx = container?.mainContext {
             FirestoreImportService().importIfNeeded(into: ctx)
             MockDataSeeder.ensureSystemCollections(into: ctx)
+            MockDataSeeder.ensureMockDevCollection(into: ctx)
         }
     }
 
