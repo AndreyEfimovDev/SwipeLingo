@@ -98,14 +98,14 @@ struct DeletedCardsView: View {
             filterPillsRow
                 .padding(.leading, 16)
                 .padding(.trailing, isLandscape ? 0 : 16)
-                .padding(.top, isLandscape ? 0 : 8)
             SearchBar(text: $searchText, prompt: "Search words")
                 .padding(.leading, isLandscape ? 0 : 16)
                 .padding(.trailing, 16)
-                .padding(.vertical, 6)
+                .padding(.top, isLandscape ? 0 : 8)
                 .frame(maxWidth: .infinity)
         }
-        .background(Color.myColors.myBackground)
+        .padding(.vertical, 8)
+        .background { Color.myColors.myBackground }
         .frame(maxHeight: showHeader ? nil : 0, alignment: isLandscape ? .center : .top)
         .clipped()
         .animation(.easeInOut(duration: 0.22), value: showHeader)  // frame collapse
@@ -141,6 +141,7 @@ struct DeletedCardsView: View {
             }
         }
         .myShadow()
+        .contentMargins(.top, 16, for: .scrollContent)
         .safeAreaInset(edge: .top, spacing: 0) {
             if !deletedCards.isEmpty { headerView }
         }
@@ -158,16 +159,17 @@ struct DeletedCardsView: View {
             guard headerRelevant, searchText.isEmpty else { return }
             // Ignore bounce at the bottom: overscroll snaps back and looks like
             // a rapid upward scroll, which would incorrectly show the header.
+            // + 16 / - 16 — the minimum offset delta per callback at which the header is hidden/showed. The larger the value, the sharper the scrolling required.
+            // new.offsetY < 10 — the header is always visible until the list is scrolled further than 10pt from the top.
+            // maxOffset - 10 — ignore the bounce at the bottom edge.
             let maxOffset = new.contentHeight - new.visibleHeight
-            guard new.offsetY < maxOffset - 10 else { return }
-            withAnimation(.easeInOut(duration: 0.22)) {
-                if new.offsetY < 10 {
-                    isHeaderVisible = true          // у топа — всегда показываем
-                } else if new.offsetY > old.offsetY + 8 {
-                    isHeaderVisible = false         // скролл вверх (вглубь) → прячем
-                } else if new.offsetY < old.offsetY - 8 {
-                    isHeaderVisible = true          // скролл вниз (назад к топу) → показываем
-                }
+            guard new.offsetY < maxOffset - 6 else { return }
+            if new.offsetY < 10 {
+                isHeaderVisible = true          // у топа — всегда показываем
+            } else if new.offsetY > old.offsetY + 11 {
+                isHeaderVisible = false         // скролл вверх (вглубь) → прячем
+            } else if new.offsetY < old.offsetY - 11 {
+                isHeaderVisible = true          // скролл вниз (назад к топу) → показываем
             }
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
@@ -333,7 +335,8 @@ struct DeletedCardsView: View {
             
             if !isLandscape { Spacer(minLength: 0) }
         }
-        .padding(.vertical, 8)
+//        .padding(.top, 8)
+//        .padding(.bottom, isLandscape ? 0 : 8)
     }
     
     @ViewBuilder

@@ -18,7 +18,7 @@ extension Array where Element == Card {
 
 struct SearchEmptyState: View {
     let query: String
-
+    
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
@@ -41,44 +41,50 @@ struct SearchEmptyState: View {
 //   SearchBar(text: $searchText, prompt: "Search cards")
 
 struct SearchBar: View {
-
+    
     @Binding var text: String
     var prompt: String = "Search"
-
+    
     @FocusState private var isFocused: Bool
-
+    
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(Color.myColors.myAccent.opacity(text.isEmpty ? 0.35 : 0.8))
-
-            TextField(prompt, text: $text)
-                .focused($isFocused)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .submitLabel(.search)
+        ZStack (alignment: .trailing) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Color.myColors.myAccent.opacity(text.isEmpty ? 0.35 : 0.8))
+                
+                TextField(prompt, text: $text)
+                    .focused($isFocused)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .submitLabel(.search)
+                    .padding(.trailing, 24)
+            }
+            .font(.subheadline)
+            .padding(6)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay{
+                Capsule()
+                    .strokeBorder(isFocused ? Color.myColors.myBlue : .clear, lineWidth: 1.5)
+            }
 
             if isFocused {
                 Button {
                     text = ""
                     isFocused = false
                 } label: {
-                    Image(systemName: "xmark.circle")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Color.myColors.myRed.opacity(0.5))
+                    Image(systemName: "xmark")
+                        .font(.system(size: isFocused ? 20 : 1))
+                        .foregroundStyle(Color.myColors.myRed.opacity(0.6))
                 }
                 .buttonStyle(.borderless)
+                .padding(.trailing, 8)
+                .opacity(isFocused ? 1 : 0)
             }
+            
         }
-        .font(.subheadline)
-        .padding(.vertical, 6)
-        .padding(.horizontal, 6)
-        .background(Color.myColors.myAccent.opacity(isFocused ? 0 : 0.07), in: Capsule())
-        .overlay{
-            Capsule()
-                .strokeBorder(isFocused ? Color.myColors.myBlue : .clear, lineWidth: 1.5)
-        }
-        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isFocused)
-
+        .animation(.bouncy(duration: 0.5), value: isFocused)
+        
+        
     }
 }
