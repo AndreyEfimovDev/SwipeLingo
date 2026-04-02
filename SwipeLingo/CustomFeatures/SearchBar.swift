@@ -62,9 +62,9 @@ struct SearchBar: View {
             }
             .font(.subheadline)
             .padding(6)
-            .background(.ultraThinMaterial, in: Capsule())
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
             .overlay{
-                Capsule()
+                RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(isFocused ? Color.myColors.myBlue : .clear, lineWidth: 1.5)
             }
 

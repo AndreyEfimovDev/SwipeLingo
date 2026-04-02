@@ -15,6 +15,9 @@ struct LibraryView: View {
     @State private var isShowingAddCollection = false
     @State private var pileSheet: PileSheet?
     @State private var collectionToDelete: Collection?
+    @State private var showAllCurated = false
+
+    private let curatedPreviewCount = 3
 
     private var deletedCardsCount: Int {
         allCards.filter { $0.status == .deleted }.count
@@ -34,7 +37,8 @@ struct LibraryView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     pilesSection
-                    collectionsSection
+                    myCollectionsSection
+                    if !curatedCollections.isEmpty { curatedCollectionsSection }
                     managingSection
                 }
                 .padding(.vertical, 16)
@@ -52,7 +56,7 @@ struct LibraryView: View {
                 }
             }
             .overlay {
-                if collections.isEmpty && piles.isEmpty { emptyState }
+                if myCollections.isEmpty && piles.isEmpty { emptyState }
             }
             .confirmationDialog(
                 "Delete \"\(collectionToDelete?.name ?? "Collection")\"?",
@@ -84,14 +88,70 @@ struct LibraryView: View {
     // MARK: - Piles Section
 
     private var pilesSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        ZStack(alignment: .top) {
             HStack {
                 Text("PILES")
                     .font(.footnote.weight(.semibold))
                 Spacer()
-                Button {
-                    pileSheet = .new
-                } label: {
+                Button { pileSheet = .new } label: {
+                    Image(systemName: "plus")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
+                }
+                .buttonStyle(.borderless)
+            }
+            .foregroundStyle(Color.myColors.myAccent)
+            .padding(.horizontal, 32)
+            .background(.clear)
+
+            Group {
+                if piles.isEmpty {
+                    Text("No piles yet — tap + to create one")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 16)
+                        .background(Color.myColors.myBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .myShadow()
+                        .padding(16)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(piles.sorted { $0.isActive && !$1.isActive }) { pile in
+                                PileCard(
+                                    pile: pile,
+                                    cardCount: activeCardCount(for: pile),
+                                    onActivate: { activatePile(pile) },
+                                    onEdit: { pileSheet = .edit(pile) }
+                                )
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        context.delete(pile)
+                                        context.saveWithErrorHandling()
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
+                        }
+                        .padding(16)
+                    }
+                }
+            }
+            .offset(y: 10)
+        }
+    }
+
+    // MARK: - My Collections Section
+
+    private var myCollectionsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("MY COLLECTIONS")
+                    .font(.footnote.weight(.semibold))
+                Spacer()
+                Button { isShowingAddCollection = true } label: {
                     Image(systemName: "plus")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.myColors.myBlue)
@@ -101,68 +161,7 @@ struct LibraryView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .padding(.horizontal, 32)
 
-            if piles.isEmpty {
-                Text("No piles yet — tap + to create one")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 16)
-                    .background(Color.myColors.myBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .myShadow()
-                    .padding(.horizontal, 16)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(piles) { pile in
-                        PileRow(
-                            pile: pile,
-                            cardCount: activeCardCount(for: pile),
-                            onActivate: { activatePile(pile) },
-                            onEdit: {
-                                pileSheet = .edit(pile)
-                            }
-                        )
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                context.delete(pile)
-                                context.saveWithErrorHandling()
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                        if pile.id != piles.last?.id {
-                            Divider().padding(.leading, 52)
-                        }
-                    }
-                }
-                .background(Color.myColors.myBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .myShadow()
-                .padding(.horizontal, 16)
-            }
-        }
-    }
-
-    // MARK: - Collections Section
-
-    private var collectionsSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("COLLECTIONS")
-                    .font(.footnote.weight(.semibold))
-                Spacer()
-                Button {
-                    isShowingAddCollection = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myBlue)
-                }
-                .buttonStyle(.borderless)
-            }
-            .padding(.horizontal, 32)
-
-            if regularCollections.isEmpty {
+            if myCollections.isEmpty {
                 Text("No collections yet — tap + to create one")
                     .font(.subheadline)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -172,47 +171,100 @@ struct LibraryView: View {
                     .myShadow()
                     .padding(.horizontal, 16)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(regularCollections) { collection in
-                        NavigationLink {
-                            // Inbox skips CollectionDetailView and goes straight to its CardSet
-                            if collection.name == "Inbox",
-                               let inboxSet = cardSets.first(where: { $0.collectionId == collection.id }) {
-                                CardSetDetailView(cardSet: inboxSet)
-                            } else {
-                                CollectionDetailView(collection: collection)
-                            }
-                        } label: {
-                            CollectionRow(
-                                collection: collection,
-                                setCount:   setCount(for: collection),
-                                cardCount:  cardCount(for: collection)
-                            )
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            let isProtected = collection.name == "Inbox" || collection.name == "My Sets"
-                            if !isProtected {
-                                Button(role: .destructive) {
-                                    collectionToDelete = collection
-                                } label: {
-                                    Label("Delete Collection", systemImage: "trash")
-                                }
-                            }
-                        }
-                        if collection.id != regularCollections.last?.id {
-                            Divider().padding(.leading, 52)
-                        }
-                    }
-                }
-                .background(Color.myColors.myBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .myShadow()
-                .padding(.horizontal, 16)
+                collectionList(myCollections)
             }
+        }
+    }
+
+    // MARK: - Curated Collections Section
+
+    private var curatedCollectionsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("CURATED COLLECTIONS")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.myColors.myAccent)
+                .padding(.horizontal, 32)
+
+            let visible = showAllCurated ? curatedCollections : Array(curatedCollections.prefix(curatedPreviewCount))
+            VStack(spacing: 0) {
+                ForEach(visible) { collection in
+                    collectionRow(collection, in: visible)
+                }
+                if curatedCollections.count > curatedPreviewCount {
+                    Divider().padding(.leading, 52)
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) { showAllCurated.toggle() }
+                    } label: {
+                        HStack {
+                            Text(showAllCurated ? "Show less" : "Show all (\(curatedCollections.count))")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.myColors.myBlue)
+                            Spacer()
+                            Image(systemName: showAllCurated ? "chevron.up" : "chevron.down")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.myColors.myBlue)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Collection List Helpers
+
+    @ViewBuilder
+    private func collectionList(_ items: [Collection]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(items) { collection in
+                collectionRow(collection, in: items)
+            }
+        }
+        .background(Color.myColors.myBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .myShadow()
+        .padding(.horizontal, 16)
+    }
+
+    @ViewBuilder
+    private func collectionRow(_ collection: Collection, in list: [Collection]) -> some View {
+        NavigationLink {
+            if collection.name == "Inbox",
+               let inboxSet = cardSets.first(where: { $0.collectionId == collection.id }) {
+                CardSetDetailView(cardSet: inboxSet)
+            } else {
+                CollectionDetailView(collection: collection)
+            }
+        } label: {
+            CollectionRow(
+                collection: collection,
+                setCount:   setCount(for: collection),
+                cardCount:  cardCount(for: collection)
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            let isProtected = collection.name == "Inbox" || collection.name == "My Sets"
+            if !isProtected {
+                Button(role: .destructive) {
+                    collectionToDelete = collection
+                } label: {
+                    Label("Delete Collection", systemImage: "trash")
+                }
+            }
+        }
+        if collection.id != list.last?.id {
+            Divider().padding(.leading, 52)
         }
     }
 
@@ -282,16 +334,19 @@ struct LibraryView: View {
 
     }
 
-    // Order: Inbox → My Sets → other user-created → developer collections (with CEFR)
-    // Non-protected collections hidden when all their cards are soft-deleted
-    private var regularCollections: [Collection] {
+    // Inbox + My Sets + other user-created collections
+    private var myCollections: [Collection] {
         let inbox    = collections.filter { $0.name == "Inbox" }
         let mySets   = collections.filter { $0.name == "My Sets" }
         let userRest = collections.filter {
             $0.isUserCreated && $0.name != "Inbox" && $0.name != "My Sets" && hasVisibleContent($0)
         }
-        let devCols  = collections.filter { !$0.isUserCreated && hasVisibleContent($0) }
-        return inbox + mySets + userRest + devCols
+        return inbox + mySets + userRest
+    }
+
+    // Developer / imported / curated collections (non-user-created) — always visible
+    private var curatedCollections: [Collection] {
+        collections.filter { !$0.isUserCreated }
     }
 
     /// Коллекция видима если: нет сетов (только что создана), или хотя бы один сет имеет
@@ -372,16 +427,16 @@ private enum PileSheet: Identifiable {
     }
 }
 
-// MARK: - PileRow
+// MARK: - PileCard
 
-private struct PileRow: View {
+private struct PileCard: View {
     let pile:       Pile
     let cardCount:  Int
     let onActivate: () -> Void
     let onEdit:     () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             Button(action: onActivate) {
                 Image(systemName: pile.isActive ? "checkmark.circle" : "circle")
                     .foregroundStyle(pile.isActive ? Color.myColors.myGreen : Color.myColors.myAccent.opacity(0.8))
@@ -390,18 +445,20 @@ private struct PileRow: View {
             }
             .buttonStyle(.borderless)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(pile.name)
-                    .font(.body)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
                 HStack(spacing: 4) {
                     Image(systemName: shuffleIcon(pile.shuffleMethod))
                         .font(.caption2)
                     Text("\(cardCount) active cards")
                         .font(.caption)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 0)
 
             Button(action: onEdit) {
                 Image(systemName: "pencil")
@@ -410,8 +467,12 @@ private struct PileRow: View {
             }
             .buttonStyle(.borderless)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(width: 200)
+        .background(Color.myColors.myBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .myShadow()
     }
 
     private func shuffleIcon(_ method: ShuffleMethod) -> String {

@@ -67,12 +67,41 @@ struct AppView: View {
 
 
     var body: some View {
-        Group {
-            if isLandscape {
-                landscapeLayout
-            } else {
-                portraitTabView
+        ZStack(alignment: .leading) {
+            HStack(spacing: 0) {
+                // Reserve space for the sidebar in landscape so content doesn't slide under it.
+                if isLandscape { Color.clear.frame(width: 56) }
+
+                TabView(selection: Bindable(viewModel).selectedTab) {
+                    Tab(AppViewModel.AppTab.study.label,
+                        systemImage: AppViewModel.AppTab.study.icon,
+                        value: AppViewModel.AppTab.study) {
+                        StudyView()
+                            .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
+                    }
+                    Tab(AppViewModel.AppTab.library.label,
+                        systemImage: AppViewModel.AppTab.library.icon,
+                        value: AppViewModel.AppTab.library) {
+                        LibraryView()
+                            .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
+                    }
+                    Tab(AppViewModel.AppTab.statistics.label,
+                        systemImage: AppViewModel.AppTab.statistics.icon,
+                        value: AppViewModel.AppTab.statistics) {
+                        StatisticsView()
+                            .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
+                    }
+                    Tab(AppViewModel.AppTab.preferences.label,
+                        systemImage: AppViewModel.AppTab.preferences.icon,
+                        value: AppViewModel.AppTab.preferences) {
+                        SettingsView()
+                            .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
+                    }
+                }
+                .toolbarBackground(.hidden, for: .tabBar)
             }
+
+            if isLandscape { verticalTabBar }
         }
         .environment(viewModel)
         .preferredColorScheme(theme.colorScheme)
@@ -117,45 +146,6 @@ struct AppView: View {
         UINavigationBar.appearance().compactScrollEdgeAppearance = navBarAppearance
         UINavigationBar.appearance().tintColor = accentColor
         UITableView.appearance().backgroundColor = UIColor.clear
-    }
-
-    // MARK: - Portrait: system TabView
-
-    private var portraitTabView: some View {
-        TabView(selection: Bindable(viewModel).selectedTab) {
-            Tab(AppViewModel.AppTab.study.label,
-                systemImage: AppViewModel.AppTab.study.icon,
-                value: AppViewModel.AppTab.study)       { StudyView() }
-            Tab(AppViewModel.AppTab.library.label,
-                systemImage: AppViewModel.AppTab.library.icon,
-                value: AppViewModel.AppTab.library)     { LibraryView() }
-            Tab(AppViewModel.AppTab.statistics.label,
-                systemImage: AppViewModel.AppTab.statistics.icon,
-                value: AppViewModel.AppTab.statistics)  { StatisticsView() }
-            Tab(AppViewModel.AppTab.preferences.label,
-                systemImage: AppViewModel.AppTab.preferences.icon,
-                value: AppViewModel.AppTab.preferences) { SettingsView() }
-        }
-        .toolbarBackground(.hidden, for: .tabBar)
-    }
-
-    // MARK: - Landscape: custom HStack layout (no TabView → no bottom bar)
-
-    private var landscapeLayout: some View {
-        HStack(spacing: 0) {
-            verticalTabBar
-            currentTabContent(viewModel.selectedTab)
-        }
-    }
-
-    @ViewBuilder
-    private func currentTabContent(_ tab: AppViewModel.AppTab) -> some View {
-        switch tab {
-        case .study:       StudyView()
-        case .library:     LibraryView()
-        case .statistics:  StatisticsView()
-        case .preferences: SettingsView()
-        }
     }
 
     // MARK: - Vertical Tab Bar
