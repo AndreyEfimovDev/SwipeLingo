@@ -33,4 +33,18 @@ struct LaunchColors {
     
 }
 
+extension Color {
+    func verticalGradient() -> LinearGradient {
+        LinearGradient(
+            gradient: Gradient(stops: [
+                .init(color: self.opacity(0.1), location: 0.0),
+                .init(color: self.opacity(0.3), location: 0.3),
+                .init(color: self.opacity(0.7), location: 0.7),
+                .init(color: self.opacity(1.0), location: 1.0)
+            ]),
+            startPoint: .bottom,
+            endPoint: .top
+        )
+    }
+}
 

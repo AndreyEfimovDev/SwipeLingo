@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Shown when the SwiftData ModelContainer fails to initialize even after a store reset.
 /// Displayed instead of the main app content — no SwiftData dependency.
-struct FatalErrorView: View {
+struct DatabseErrorView: View {
     var body: some View {
         VStack(spacing: 24) {
             Image(systemName: "exclamationmark.triangle.fill")
