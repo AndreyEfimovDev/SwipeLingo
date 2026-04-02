@@ -48,7 +48,7 @@ struct StudyView: View {
                 collections: collections
             )
         }
-        .onChange(of: activePileID) {
+        .onChange(of: activePileSnapshot) {
             viewModel.startNewSession(
                 piles: piles,
                 allCards: allCards,
@@ -119,6 +119,13 @@ struct StudyView: View {
     }
 
     // MARK: - Helpers
+
+    /// Changes when the active pile switches, its sets change, or shuffle method changes.
+    private var activePileSnapshot: String {
+        guard let pile = piles.first(where: { $0.isActive }) else { return "" }
+        let sets = pile.setIds.map(\.uuidString).sorted().joined()
+        return pile.id.uuidString + sets + pile.shuffleMethod.rawValue
+    }
 
     private var activePileID: UUID? {
         piles.first(where: { $0.isActive })?.id

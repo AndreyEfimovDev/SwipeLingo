@@ -11,9 +11,12 @@ struct CollectionDetailView: View {
 
     @Query(sort: \CardSet.createdAt)  private var allSets:  [CardSet]
     @Query(sort: \Card.createdAt)     private var allCards: [Card]
+    @Query(sort: \Pile.createdAt)     private var allPiles: [Pile]
 
     @State private var isShowingAddSet = false
-    @State private var setToDelete: CardSet?
+    @State private var setToDelete:    CardSet?
+    @State private var setForNewPile:  CardSet?
+    @State private var newPileName  = ""
     @State private var selectedCEFRLevel: CEFRLevel? = nil
     @State private var searchText = ""
 
@@ -77,6 +80,27 @@ struct CollectionDetailView: View {
         .sheet(isPresented: $isShowingAddSet) {
             AddCardSetView(collectionId: collection.id)
         }
+        .alert("New Pile", isPresented: Binding(
+            get: { setForNewPile != nil },
+            set: { if !$0 { setForNewPile = nil; newPileName = "" } }
+        )) {
+            TextField("Pile name", text: $newPileName)
+            Button("Create") {
+                if let set = setForNewPile {
+                    createNewPile(named: newPileName, with: set)
+                }
+                setForNewPile = nil
+                newPileName   = ""
+            }
+            Button("Cancel", role: .cancel) {
+                setForNewPile = nil
+                newPileName   = ""
+            }
+        } message: {
+            if let set = setForNewPile {
+                Text("\"\(set.name)\" will be added to the new pile.")
+            }
+        }
         .overlay {
             if cardSets.isEmpty {
                 emptyState
@@ -114,6 +138,23 @@ struct CollectionDetailView: View {
     }
 
     // MARK: - Actions
+
+    private func createNewPile(named name: String, with set: CardSet) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        let pile = Pile(name: trimmed, setIds: [set.id])
+        context.insert(pile)
+        context.saveWithErrorHandling()
+    }
+
+    private func toggleSet(_ set: CardSet, in pile: Pile) {
+        if pile.setIds.contains(set.id) {
+            pile.setIds.removeAll { $0 == set.id }
+        } else {
+            pile.setIds.append(set.id)
+        }
+        context.saveWithErrorHandling()
+    }
 
     private func deleteSetWithCards(_ cardSet: CardSet) {
         let cards = allCards.filter { $0.setId == cardSet.id }
@@ -188,6 +229,28 @@ struct CollectionDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .contextMenu {
+                    Menu {
+                        ForEach(allPiles) { pile in
+                            let inPile = pile.setIds.contains(cardSet.id)
+                            Button {
+                                toggleSet(cardSet, in: pile)
+                            } label: {
+                                Label(
+                                    pile.name,
+                                    systemImage: inPile ? "checkmark.circle" : "circle"
+                                )
+                            }
+                        }
+                        Divider()
+                        Button {
+                            setForNewPile = cardSet
+                        } label: {
+                            Label("New Pile…", systemImage: "plus")
+                        }
+                    } label: {
+                        Label("Add to Pile", systemImage: "square.stack.3d.up")
+                    }
+
                     Button(role: .destructive) {
                         setToDelete = cardSet
                     } label: {
