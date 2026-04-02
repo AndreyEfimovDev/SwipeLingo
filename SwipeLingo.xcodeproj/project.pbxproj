@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE02F7BB11800128E83 /* ErrorManager.swift */; };
-		474F1FE62F7BE2BA00128E83 /* FatalErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE52F7BE2BA00128E83 /* FatalErrorView.swift */; };
+		474F1FE62F7BE2BA00128E83 /* DatabseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */; };
 		474F1FE82F7D304B00128E83 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE72F7D304B00128E83 /* SearchBar.swift */; };
 		474F1FEA2F7DAA9F00128E83 /* OnTopButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE92F7DAA9F00128E83 /* OnTopButton.swift */; };
 		474F1FEC2F7DAAD900128E83 /* CircleStrokeButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FEB2F7DAAD900128E83 /* CircleStrokeButtonView.swift */; };
@@ -108,7 +108,7 @@
 		474BFB6F2F3C825C006E639B /* SwipeLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		474F1FE02F7BB11800128E83 /* ErrorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorManager.swift; sourceTree = "<group>"; };
-		474F1FE52F7BE2BA00128E83 /* FatalErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatalErrorView.swift; sourceTree = "<group>"; };
+		474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabseErrorView.swift; sourceTree = "<group>"; };
 		474F1FE72F7D304B00128E83 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 		474F1FE92F7DAA9F00128E83 /* OnTopButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnTopButton.swift; sourceTree = "<group>"; };
 		474F1FEB2F7DAAD900128E83 /* CircleStrokeButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleStrokeButtonView.swift; sourceTree = "<group>"; };
@@ -251,9 +251,9 @@
 		478C78132F794487005FBDFE /* App */ = {
 			isa = PBXGroup;
 			children = (
-				474F1FE52F7BE2BA00128E83 /* FatalErrorView.swift */,
 				478C78112F794487005FBDFE /* AppFeature.swift */,
 				478C78122F794487005FBDFE /* SwipeLingoApp.swift */,
+				474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -349,10 +349,10 @@
 		478C78362F794487005FBDFE /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				478C78352F794487005FBDFE /* Study */,
 				478C78292F794487005FBDFE /* Library */,
 				478C782C2F794487005FBDFE /* Settings */,
 				478C782E2F794487005FBDFE /* Statistics */,
-				478C78352F794487005FBDFE /* Study */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -621,7 +621,7 @@
 				478C78672F794487005FBDFE /* TinderCardsView.swift in Sources */,
 				478C78682F794487005FBDFE /* TinderCardsViewModel.swift in Sources */,
 				478C78692F794487005FBDFE /* StudyView.swift in Sources */,
-				474F1FE62F7BE2BA00128E83 /* FatalErrorView.swift in Sources */,
+				474F1FE62F7BE2BA00128E83 /* DatabseErrorView.swift in Sources */,
 				478C786A2F794487005FBDFE /* StudyViewModel.swift in Sources */,
 				478C786B2F794487005FBDFE /* Card.swift in Sources */,
 				478C786C2F794487005FBDFE /* CardSet.swift in Sources */,

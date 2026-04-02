@@ -91,29 +91,7 @@ struct DeletedCardsView: View {
         ? AnyLayout(HStackLayout(alignment: .center, spacing: 12))
         : AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
     }
-    
-    // MARK: - Header View
-    
-    private var headerView: some View {
-        headerLayout {
-            filterPillsRow
-                .padding(.leading, 16)
-                .padding(.trailing, isLandscape ? 0 : 16)
-            SearchBar(text: $searchText, prompt: "Search words")
-                .padding(.leading, isLandscape ? 0 : 16)
-                .padding(.trailing, 16)
-                .padding(.top, isLandscape ? 0 : 8)
-                .frame(maxWidth: .infinity)
-        }
-        .padding(.vertical, 8)
-        .background { Color.myColors.myBackground }
-        .frame(maxHeight: showHeader ? nil : 0, alignment: isLandscape ? .center : .top)
-        .clipped()
-        .animation(.easeInOut(duration: 0.22), value: showHeader)  // frame collapse
-        .opacity(showHeader ? 1 : 0)
-        .animation(.easeInOut(duration: 0.38), value: showHeader)  // opacity — softer and longer
-    }
-    
+        
     // MARK: - Body
     
     var body: some View {
@@ -145,38 +123,29 @@ struct DeletedCardsView: View {
                     }
                 }
                 .myShadow()
-                .contentMargins(.top, 16, for: .scrollContent)
                 .safeAreaInset(edge: .top, spacing: 0) {
                     if !deletedCards.isEmpty { headerView }
                 }
+                .contentMargins(.top, 8, for: .scrollContent)
                 .scrollContentBackground(.hidden)
                 .environment(\.editMode, $editMode)
                 .onChange(of: selectedCollectionId) { _, _ in selectedCardIds = [] }
                 .onChange(of: selectedSetId)        { _, _ in selectedCardIds = [] }
-                .onScrollGeometryChange(for: ScrollInfo.self) { geo in
-                    ScrollInfo(
-                        offsetY:       geo.contentOffset.y,
-                        contentHeight: geo.contentSize.height,
-                        visibleHeight: geo.visibleRect.height
-                    )
+                .onScrollGeometryChange(for: CGFloat.self) { geo in
+                    geo.contentOffset.y.rounded()
                 } action: { old, new in
-                    let maxOffset = new.contentHeight - new.visibleHeight
-
                     // OnTopButton always works, regardless of filters and searches.
-                    let shouldShowOnTop = new.offsetY > 300
+                    let shouldShowOnTop = new > 300
                     if showOnTopButton != shouldShowOnTop { showOnTopButton = shouldShowOnTop }
 
                     // Hide/show header - only if there is no search and there are enough cards
                     guard headerRelevant, searchText.isEmpty else { return }
-                    // Ignore bounce at the bottom: overscroll snaps back and looks like
-                    // a rapid upward scroll, which would incorrectly show the header.
-                    guard new.offsetY < maxOffset - 6 else { return }
-                    if new.offsetY < 10 {
+                    if new < 10 {
                         isHeaderVisible = true          // at the top - always show
-                    } else if new.offsetY > old.offsetY + 11 {
-                        isHeaderVisible = false         // scroll up (deep) → hide
-                    } else if new.offsetY < old.offsetY - 11 {
-                        isHeaderVisible = true          // scroll down (back to top) → show
+                    } else if new > old + 11 {
+                        isHeaderVisible = false         // scrolled down → hide
+                    } else if new < old - 11 {
+                        isHeaderVisible = true          // scrolled up → show
                     }
                 }
                 OnTopButton(isVisible: showOnTopButton) {
@@ -263,6 +232,38 @@ struct DeletedCardsView: View {
             Text("These cards will be permanently deleted and cannot be recovered.")
         }
     }
+    
+    // MARK: - Header View
+    
+    private var headerView: some View {
+        headerLayout {
+            filterPillsRow
+                .padding(.leading, 16)
+                .padding(.trailing, isLandscape ? 0 : 16)
+            SearchBar(text: $searchText, prompt: "Search words")
+                .padding(.leading, isLandscape ? 0 : 16)
+                .padding(.trailing, 16)
+                .padding(.top, isLandscape ? 0 : 8)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, 8)
+        .padding(.bottom, 8)
+        .background {
+            LinearGradient(
+                gradient: Gradient(stops: [
+                    .init(color: Color.myColors.myBackground.opacity(0.01), location: 0.0),
+                    .init(color: Color.myColors.myBackground.opacity(0.85), location: 0.3),
+                    .init(color: Color.myColors.myBackground.opacity(0.95), location: 0.9),
+                    .init(color: Color.myColors.myBackground.opacity(1.0), location: 1.0)
+                ]),
+                startPoint: .bottom,
+                endPoint: .top
+            )
+        }
+        .opacity(showHeader ? 1 : 0)
+        .animation(.easeInOut(duration: 0.35), value: showHeader)
+    }
+
     
     // MARK: - Filter Pills
     
@@ -498,14 +499,6 @@ struct DeletedCardsView: View {
             context.delete(collection)
         }
     }
-}
-
-// MARK: - ScrollInfo
-
-private struct ScrollInfo: Equatable {
-    let offsetY:       CGFloat
-    let contentHeight: CGFloat
-    let visibleHeight: CGFloat
 }
 
 // MARK: - FilterPill

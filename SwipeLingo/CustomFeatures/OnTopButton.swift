@@ -22,7 +22,7 @@ struct OnTopButton: View {
                 heightIn: 55,
                 completion: action
             )
-            .transition(.opacity.combined(with: .scale(scale: 0.8)))
+            .transition(.opacity.combined(with: .scale(scale: 0.5)))
         }
     }
 }
