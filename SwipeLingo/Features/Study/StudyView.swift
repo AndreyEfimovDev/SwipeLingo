@@ -64,6 +64,8 @@ struct StudyView: View {
     private var content: some View {
         if allCards.filter({ $0.status == .active }).isEmpty {
             emptyStateView
+        } else if viewModel.isCaughtUp {
+            caughtUpView
         } else if viewModel.studyCards.isEmpty {
             ProgressView()
         } else {
@@ -84,6 +86,64 @@ struct StudyView: View {
             .id(viewModel.sessionID)
             .padding(.vertical)
         }
+    }
+
+    // MARK: - Caught-up Screen
+
+    private var caughtUpView: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.myColors.myBackground)
+
+            VStack(spacing: 0) {
+                Spacer()
+
+                VStack(spacing: 16) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(Color.myColors.myGreen)
+
+                    Text("You're all caught up!")
+                        .font(.title2.bold())
+
+                    if !viewModel.nextReviewLabel.isEmpty {
+                        Text("Next review: \(viewModel.nextReviewLabel)")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                    }
+                }
+                .multilineTextAlignment(.center)
+
+                Spacer()
+
+                Button {
+                    viewModel.studyAll(
+                        piles: piles,
+                        allCards: allCards,
+                        cardSets: cardSets,
+                        collections: collections
+                    )
+                } label: {
+                    Text("Study anyway  ·  All: \(viewModel.allActiveCount)")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.myColors.myBlue.opacity(0.12))
+                        .foregroundStyle(Color.myColors.myBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.myColors.myBlue.opacity(0.2), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 28)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .myShadow()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
     }
 
     @ToolbarContentBuilder

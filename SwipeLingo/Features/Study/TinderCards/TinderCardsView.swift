@@ -728,6 +728,7 @@ struct TinderCardsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
         .myShadow()
         .transition(.scale(scale: 0.95).combined(with: .opacity))
     }
