@@ -349,10 +349,10 @@
 		478C78362F794487005FBDFE /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				478C78352F794487005FBDFE /* Study */,
 				478C78292F794487005FBDFE /* Library */,
 				478C782C2F794487005FBDFE /* Settings */,
 				478C782E2F794487005FBDFE /* Statistics */,
-				478C78352F794487005FBDFE /* Study */,
 			);
 			path = Features;
 			sourceTree = "<group>";
