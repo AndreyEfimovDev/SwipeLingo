@@ -59,7 +59,7 @@ struct SwipeLingoApp: App {
                 AppView()
                     .modelContainer(container)
             } else {
-                FatalErrorView()
+                DatabseErrorView()
             }
         }
         .onChange(of: scenePhase) { _, phase in
