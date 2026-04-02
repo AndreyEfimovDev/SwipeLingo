@@ -339,9 +339,9 @@
 		478C78352F794487005FBDFE /* Study */ = {
 			isa = PBXGroup;
 			children = (
-				478C78322F794487005FBDFE /* TinderCards */,
 				478C78332F794487005FBDFE /* StudyView.swift */,
 				478C78342F794487005FBDFE /* StudyViewModel.swift */,
+				478C78322F794487005FBDFE /* TinderCards */,
 			);
 			path = Study;
 			sourceTree = "<group>";
