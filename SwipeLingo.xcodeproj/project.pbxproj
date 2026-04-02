@@ -163,16 +163,6 @@
 		478C784D2F794487005FBDFE /* SwipeLingo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwipeLingo.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		478C78032F7902F4005FBDFE /* Exceptions for "SwipeLingoShare" folder in "SwipeLingoShare" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 478C77F72F7902F4005FBDFE /* SwipeLingoShare */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		474BFB722F3C825C006E639B /* SwipeLingoTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -186,9 +176,6 @@
 		};
 		478C77F92F7902F4005FBDFE /* SwipeLingoShare */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				478C78032F7902F4005FBDFE /* Exceptions for "SwipeLingoShare" folder in "SwipeLingoShare" target */,
-			);
 			path = SwipeLingoShare;
 			sourceTree = "<group>";
 		};
