@@ -36,7 +36,7 @@ enum TimeRange: String, CaseIterable {
 }
 
 // MARK: - Mock Data
-
+#warning("STUB: Remove before App Store release.")
 struct StatisticsMockData {
 
     static let activities: [DailyActivity] = {

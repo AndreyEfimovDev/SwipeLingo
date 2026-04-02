@@ -88,7 +88,7 @@ struct LibraryView: View {
     // MARK: - Piles Section
 
     private var pilesSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        ZStack(alignment: .top) {
             HStack {
                 Text("PILES")
                     .font(.footnote.weight(.semibold))
@@ -102,41 +102,44 @@ struct LibraryView: View {
             }
             .foregroundStyle(Color.myColors.myAccent)
             .padding(.horizontal, 32)
+            .background(.clear)
 
-            if piles.isEmpty {
-                Text("No piles yet — tap + to create one")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 16)
-                    .background(Color.myColors.myBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .myShadow()
-                    .padding(.horizontal, 16)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(piles) { pile in
-                            PileCard(
-                                pile: pile,
-                                cardCount: activeCardCount(for: pile),
-                                onActivate: { activatePile(pile) },
-                                onEdit: { pileSheet = .edit(pile) }
-                            )
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    context.delete(pile)
-                                    context.saveWithErrorHandling()
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+            Group {
+                if piles.isEmpty {
+                    Text("No piles yet — tap + to create one")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 16)
+                        .background(Color.myColors.myBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .myShadow()
+                        .padding(16)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(piles.sorted { $0.isActive && !$1.isActive }) { pile in
+                                PileCard(
+                                    pile: pile,
+                                    cardCount: activeCardCount(for: pile),
+                                    onActivate: { activatePile(pile) },
+                                    onEdit: { pileSheet = .edit(pile) }
+                                )
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        context.delete(pile)
+                                        context.saveWithErrorHandling()
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
                             }
                         }
+                        .padding(16)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 2)
                 }
             }
+            .offset(y: 10)
         }
     }
 

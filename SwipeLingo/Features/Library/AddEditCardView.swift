@@ -594,7 +594,7 @@ struct AddEditCardView: View {
 
     private func clearButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: "xmark.circle")
+            Image(systemName: "xmark")
                 .foregroundStyle(Color.myColors.myRed.opacity(0.8))
         }
         .buttonStyle(.borderless)
