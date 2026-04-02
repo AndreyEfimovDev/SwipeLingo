@@ -66,8 +66,8 @@ struct MockDataSeeder {
     #warning("STUB: Mock dev collection is for UI testing only. Remove before App Store release.")
     static func ensureMockDevCollection(into context: ModelContext) {
         let existing = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
-        guard !existing.contains(where: { $0.name == "Academic Words" }) else { return }
 
+        if !existing.contains(where: { $0.name == "Academic Words" }) {
         let collection = Collection(name: "Academic Words", icon: "book", isOwned: true, isUserCreated: false)
         context.insert(collection)
 
@@ -126,6 +126,53 @@ struct MockDataSeeder {
             }
         }
 
+        context.saveWithErrorHandling()
+        } // end if Academic Words
+
+        // Extra mock collections to test "Show all" in Curated section
+        seedMockCuratedCollection(
+            name: "Business English",
+            icon: "briefcase",
+            sets: [
+                ("Negotiations", .b2, [("Agenda", "повестка дня"), ("Leverage", "влияние, рычаг"), ("Stakeholder", "заинтересованная сторона")]),
+                ("Presentations", .b1, [("Outline", "план, схема"), ("Takeaway", "главный вывод"), ("Benchmark", "эталон, ориентир")]),
+            ],
+            into: context
+        )
+
+        seedMockCuratedCollection(
+            name: "Phrasal Verbs",
+            icon: "text.bubble",
+            sets: [
+                ("Movement", .b1, [("Set off", "отправляться"), ("Break down", "сломаться; расстроиться"), ("Run into", "столкнуться с")]),
+                ("Change", .b2, [("Phase out", "постепенно отменять"), ("Turn around", "переломить ситуацию"), ("Give up", "сдаться")]),
+            ],
+            into: context
+        )
+    }
+
+    private static func seedMockCuratedCollection(
+        name: String,
+        icon: String,
+        sets: [(name: String, level: CEFRLevel, cards: [(String, String)])],
+        into context: ModelContext
+    ) {
+        let existing = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
+        guard !existing.contains(where: { $0.name == name }) else { return }
+
+        let collection = Collection(name: name, icon: icon, isOwned: true, isUserCreated: false)
+        context.insert(collection)
+
+        for setData in sets {
+            let cardSet = CardSet(name: setData.name, collectionId: collection.id)
+            cardSet.level = setData.level.rawValue
+            context.insert(cardSet)
+            for (en, item) in setData.cards {
+                let card = Card(en: en, item: item, setId: cardSet.id)
+                card.level = setData.level.rawValue
+                context.insert(card)
+            }
+        }
         context.saveWithErrorHandling()
     }
 }
