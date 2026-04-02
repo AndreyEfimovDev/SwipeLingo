@@ -9,9 +9,14 @@ struct PileService {
 
     /// Returns active cards that belong to the Pile's sets, sorted by shuffleMethod.
     func cards(for pile: Pile, from allCards: [Card]) -> [Card] {
+        apply(pile.shuffleMethod, to: activeCards(for: pile, from: allCards))
+    }
+
+    /// Returns active cards for the pile without applying sort order.
+    /// Use this when you need to filter the list further (e.g. by dueDate) before sorting.
+    func activeCards(for pile: Pile, from allCards: [Card]) -> [Card] {
         let setIds = Set(pile.setIds)
-        let active = allCards.filter { setIds.contains($0.setId) && $0.status == .active }
-        return apply(pile.shuffleMethod, to: active)
+        return allCards.filter { setIds.contains($0.setId) && $0.status == .active }
     }
 
     func apply(_ method: ShuffleMethod, to cards: [Card]) -> [Card] {
