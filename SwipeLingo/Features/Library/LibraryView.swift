@@ -16,6 +16,7 @@ struct LibraryView: View {
     @State private var pileSheet: PileSheet?
     @State private var collectionToDelete: Collection?
     @State private var showAllCurated = false
+    @State private var showAllPiles   = false
 
     private let curatedPreviewCount = 3
 
@@ -88,7 +89,7 @@ struct LibraryView: View {
     // MARK: - Piles Section
 
     private var pilesSection: some View {
-        ZStack(alignment: .top) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("PILES")
                     .font(.footnote.weight(.semibold))
@@ -102,44 +103,129 @@ struct LibraryView: View {
             }
             .foregroundStyle(Color.myColors.myAccent)
             .padding(.horizontal, 32)
-            .background(.clear)
 
-            Group {
-                if piles.isEmpty {
-                    Text("No piles yet — tap + to create one")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 16)
-                        .background(Color.myColors.myBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .myShadow()
-                        .padding(16)
-                } else {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(piles.sorted { $0.isActive && !$1.isActive }) { pile in
-                                PileCard(
-                                    pile: pile,
-                                    cardCount: activeCardCount(for: pile),
-                                    onActivate: { activatePile(pile) },
-                                    onEdit: { pileSheet = .edit(pile) }
-                                )
-                                .contextMenu {
-                                    Button(role: .destructive) {
-                                        context.delete(pile)
-                                        context.saveWithErrorHandling()
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
+            if piles.isEmpty {
+                Text("No piles yet — tap + to create one")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 16)
+                    .background(Color.myColors.myBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .myShadow()
+                    .padding(.horizontal, 16)
+            } else {
+                let activePile   = piles.first(where: { $0.isActive })
+                let sortedPiles  = piles.sorted { $0.isActive && !$1.isActive }
+                let showToggle   = piles.count > 1
+
+                VStack(spacing: 0) {
+                    if showAllPiles {
+                        ForEach(Array(sortedPiles.enumerated()), id: \.element.id) { idx, pile in
+                            pileRow(pile)
+                            if idx < sortedPiles.count - 1 {
+                                Divider().padding(.leading, 44)
                             }
                         }
-                        .padding(16)
+                    } else {
+                        if let pile = activePile {
+                            pileRow(pile)
+                        } else {
+                            HStack(spacing: 10) {
+                                Image(systemName: "circle")
+                                    .font(.title3)
+                                    .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
+                                Text("No active pile")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.myColors.myAccent.opacity(0.55))
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                        }
+                    }
+
+                    if showToggle {
+                        Divider().padding(.leading, 44)
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) { showAllPiles.toggle() }
+                        } label: {
+                            HStack {
+                                Text(showAllPiles ? "Show less" : "All piles (\(piles.count))")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.myColors.myBlue)
+                                Spacer()
+                                Image(systemName: showAllPiles ? "chevron.up" : "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Color.myColors.myBlue)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
+                .background(Color.myColors.myBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .myShadow()
+                .padding(.horizontal, 16)
             }
-            .offset(y: 10)
+        }
+    }
+
+    @ViewBuilder
+    private func pileRow(_ pile: Pile) -> some View {
+        HStack(spacing: 10) {
+            Button { activatePile(pile) } label: {
+                Image(systemName: pile.isActive ? "checkmark.circle" : "circle")
+                    .foregroundStyle(pile.isActive ? Color.myColors.myGreen : Color.myColors.myAccent.opacity(0.8))
+                    .font(.title3)
+                    .animation(.spring(duration: 0.2), value: pile.isActive)
+            }
+            .buttonStyle(.borderless)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(pile.name)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Image(systemName: pileShuffleIcon(pile.shuffleMethod))
+                        .font(.caption2)
+                    Text("\(activeCardCount(for: pile)) active cards")
+                        .font(.caption)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Button { pileSheet = .edit(pile) } label: {
+                Image(systemName: "pencil")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myBlue)
+            }
+            .buttonStyle(.borderless)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button(role: .destructive) {
+                context.delete(pile)
+                context.saveWithErrorHandling()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    private func pileShuffleIcon(_ method: ShuffleMethod) -> String {
+        switch method {
+        case .random:      return "shuffle"
+        case .sequential:  return "arrow.down"
+        case .prioritized: return "flame"
         }
     }
 
@@ -423,63 +509,6 @@ private enum PileSheet: Identifiable {
         switch self {
         case .new:           return "new"
         case .edit(let p):   return p.id.uuidString
-        }
-    }
-}
-
-// MARK: - PileCard
-
-private struct PileCard: View {
-    let pile:       Pile
-    let cardCount:  Int
-    let onActivate: () -> Void
-    let onEdit:     () -> Void
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Button(action: onActivate) {
-                Image(systemName: pile.isActive ? "checkmark.circle" : "circle")
-                    .foregroundStyle(pile.isActive ? Color.myColors.myGreen : Color.myColors.myAccent.opacity(0.8))
-                    .font(.title3)
-                    .animation(.spring(duration: 0.2), value: pile.isActive)
-            }
-            .buttonStyle(.borderless)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(pile.name)
-                    .font(.subheadline.weight(.medium))
-                    .lineLimit(1)
-                HStack(spacing: 4) {
-                    Image(systemName: shuffleIcon(pile.shuffleMethod))
-                        .font(.caption2)
-                    Text("\(cardCount) active cards")
-                        .font(.caption)
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            Button(action: onEdit) {
-                Image(systemName: "pencil")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.myColors.myBlue)
-            }
-            .buttonStyle(.borderless)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(width: 200)
-        .background(Color.myColors.myBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .myShadow()
-    }
-
-    private func shuffleIcon(_ method: ShuffleMethod) -> String {
-        switch method {
-        case .random:      return "shuffle"
-        case .sequential:  return "arrow.down"
-        case .prioritized: return "flame"
         }
     }
 }
