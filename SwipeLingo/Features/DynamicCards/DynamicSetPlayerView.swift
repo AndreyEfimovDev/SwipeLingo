@@ -6,19 +6,21 @@ import SwiftUI
 // DisplayMode (.sequential / .parallel) — из модели сета, задаётся автором контента.
 // AnimationMode (.manual / .automatic) — пользовательская настройка:
 //   • manual:    тап в любом месте → следующий элемент
-//   • automatic: авто-показ с задержкой, кнопка play/pause в тулбаре
+//   • automatic: авто-показ с задержкой; тап → пауза / возобновление
 //
-// Порядок показа:
-//   sequential: left[0] → right[0] → left[1] → right[1] → ...
-//   parallel:   left[0]+right[0] → left[1]+right[1] → ...
+// Жизненный цикл:
+//   1. Стартовый экран (hasStarted = false):
+//      заголовок + подзаголовок + хедеры колонок + кнопка Start + переключатель режима
+//   2. Воспроизведение (hasStarted = true):
+//      элементы появляются по шагам; переключатель режима над таблицей
+//   3. Завершение (isComplete = true):
+//      SRS-оценка всего сета + кнопка Replay
 //
 // Озвучка (TTS):
 //   После появления каждого шага — пауза 0.5с — озвучка.
 //   sequential: озвучивается один текст (left или right).
-//   parallel:   озвучивается left → пауза 0.4с (после окончания left TTS) → озвучивается right.
+//   parallel:   left → пауза 0.4с (после окончания left TTS) → right.
 //   Кнопка включения/отключения в тулбаре.
-//
-// После показа всех элементов → SRS-оценка всего сета (TODO: SRS-поля в DynamicSet).
 
 struct DynamicSetPlayerView: View {
 
@@ -28,11 +30,15 @@ struct DynamicSetPlayerView: View {
     @AppStorage("dynamicCardsAudioEnabled") private var audioEnabled: Bool = true
     @AppStorage("ttsVoiceIdentifier")       private var ttsVoiceIdentifier: String = ""
 
-    @State private var animationMode: AnimationMode = .manual
-    @State private var revealedSteps: Int = 0
+    @State private var animationMode:  AnimationMode = .manual
+    @State private var hasStarted:     Bool = false
+    @State private var isPaused:       Bool = false
+    @State private var showCompletion: Bool = false   // true только после окончания аудио последней строки
+    @State private var revealedSteps:  Int = 0
     @State private var thresholds: [(leftStep: Int?, rightStep: Int?)] = []
     @State private var totalSteps: Int = 0
-    @State private var autoPlayTask: Task<Void, Never>?
+    @State private var autoPlayTask:   Task<Void, Never>?
+    @State private var completionTask: Task<Void, Never>?
 
     // Audio
     @State private var audioService = AudioPlayerService()
@@ -40,9 +46,10 @@ struct DynamicSetPlayerView: View {
     /// Текст для озвучки правой стороны — ставится при parallel, озвучивается после окончания левого TTS
     @State private var pendingRightSpeech: String? = nil
 
-    private let autoPlayDelay: Double = 2.5
-    private let readPause: Double = 0.5     // пауза после появления строки перед озвучкой
-    private let speechGap: Double = 0.4    // пауза между left и right TTS в parallel режиме
+    private let autoPlayDelay: Double = 2.5  // fallback-задержка когда аудио выключено
+    private let readPause: Double = 0.8     // пауза после появления строки перед озвучкой
+    private let speechGap: Double = 0.6    // пауза между left и right TTS в parallel режиме
+    private let postAudioDelay: Double = 1.4 // пауза после окончания TTS перед следующей строкой
 
     // MARK: - Computed
 
@@ -58,41 +65,50 @@ struct DynamicSetPlayerView: View {
                     // Subtitle
                     if let subtitle = set.subtitle {
                         Text(subtitle)
-                            .font(.subheadline)
+                            .font(.body)
                             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 12)
                     }
 
-                    // Column headers
-                    if set.leftTitle != nil || set.rightTitle != nil {
-                        columnHeaders
-                            .padding(.bottom, 6)
-                    }
+                    if !hasStarted {
+                        startScreen
+                    } else {
+                        // Column headers — только во время воспроизведения
+                        if set.leftTitle != nil || set.rightTitle != nil {
+                            columnHeaders
+                                .padding(.bottom, 6)
+                        }
 
-                    // Pairs table
-                    VStack(spacing: 0) {
-                        ForEach(Array(set.items.enumerated()), id: \.offset) { index, pair in
-                            if isPairVisible(at: index) {
-                                pairRow(pair: pair, index: index)
+                        // Pairs table
+                        VStack(spacing: 0) {
+                            ForEach(Array(set.items.enumerated()), id: \.offset) { index, pair in
+                                if isPairVisible(at: index) {
+                                    pairRow(pair: pair, index: index)
+                                }
                             }
                         }
-                    }
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .myShadow()
-                    .padding(.horizontal, 16)
+                        .background(Color(.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .myShadow()
+                        .padding(.horizontal, 16)
 
-                    // SRS buttons — после показа всех элементов
-                    if isComplete {
-                        srsSection
-                            .padding(.top, 24)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
+                        // SRS buttons + replay + mode toggle — после окончания аудио последней строки
+                        if showCompletion {
+                            srsSection
+                                .padding(.top, 24)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
 
-                    // Manual mode hint
-                    if !isComplete && animationMode == .manual && revealedSteps > 0 {
-                        tapHint.padding(.top, 20)
+                        // Hints — только во время воспроизведения
+                        if !isComplete {
+                            if animationMode == .manual {
+                                tapHint.padding(.top, 20)
+                            } else if isPaused {
+                                resumeHint.padding(.top, 20)
+                            }
+                        }
                     }
 
                     Color.clear.frame(height: 32).id("bottom")
@@ -100,9 +116,9 @@ struct DynamicSetPlayerView: View {
                 .padding(.top, 16)
             }
             .background(Color(.systemBackground).ignoresSafeArea())
+            .contentShape(Rectangle())
             .onTapGesture {
-                guard animationMode == .manual, !isComplete else { return }
-                withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
+                handleTap()
             }
             .onChange(of: revealedSteps) {
                 withAnimation(.easeOut(duration: 0.3)) {
@@ -121,6 +137,16 @@ struct DynamicSetPlayerView: View {
                     audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier)
                 }
             }
+            // Manual mode: последняя строка показана → ждём окончания аудио → показываем SRS
+            .onChange(of: isComplete) { _, complete in
+                guard complete, animationMode == .manual else { return }
+                completionTask?.cancel()
+                completionTask = Task {
+                    await waitForAudioThenPause()
+                    guard !Task.isCancelled else { return }
+                    withAnimation { showCompletion = true }
+                }
+            }
         }
         .navigationTitle(set.title ?? "English+")
         .navigationBarTitleDisplayMode(.inline)
@@ -130,15 +156,67 @@ struct DynamicSetPlayerView: View {
             thresholds = computed
             totalSteps = computed.reduce(0) { max($0, max($1.leftStep ?? 0, $1.rightStep ?? 0)) }
             animationMode = defaultAnimationMode
-            withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
-            if animationMode == .automatic { startAutoPlay(skipFirst: true) }
         }
         .onDisappear {
             autoPlayTask?.cancel()
+            completionTask?.cancel()
             audioTask?.cancel()
             pendingRightSpeech = nil
             audioService.stop()
         }
+    }
+
+    // MARK: - Start Screen
+
+    private var startScreen: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 48)
+
+            Button { startPlayback() } label: {
+                VStack(spacing: 8) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 72))
+                    Text("Start")
+                        .font(.title3.weight(.semibold))
+                }
+            }
+            .foregroundStyle(Color.myColors.myBlue)
+            .buttonStyle(.plain)
+
+            Spacer().frame(height: 40)
+
+            modeToggle
+
+            Spacer().frame(height: 32)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Mode Toggle
+
+    private var modeToggle: some View {
+        HStack(spacing: 8) {
+            modePill(.automatic, label: "Auto")
+            modePill(.manual,    label: "Manual")
+        }
+        .padding(.horizontal, 48)
+    }
+
+    private func modePill(_ mode: AnimationMode, label: String) -> some View {
+        let isActive = animationMode == mode
+        return Button { switchMode(to: mode) } label: {
+            Text(label)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(isActive ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5))
+                .frame(maxWidth: 200)
+                .padding(.vertical, 12)
+                .background(Color.clear, in: .capsule)
+                .overlay(Capsule().strokeBorder(
+                    isActive ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5),
+                    lineWidth: isActive ? 2 : 0.5))
+        }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.15), value: animationMode)
     }
 
     // MARK: - Column Headers
@@ -148,7 +226,7 @@ struct DynamicSetPlayerView: View {
             Group {
                 if let title = set.leftTitle {
                     Text(title).frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundStyle(Color.myColors.myBlue)
+                        .foregroundStyle(Color.myColors.myGreen)
                 } else { Spacer() }
             }
 
@@ -160,7 +238,7 @@ struct DynamicSetPlayerView: View {
                 if let title = set.rightTitle {
                     Text(title).frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 12)
-                        .foregroundStyle(Color.myColors.myPurple)
+                        .foregroundStyle(Color.myColors.myRed)
                 } else { Spacer() }
             }
         }
@@ -227,6 +305,24 @@ struct DynamicSetPlayerView: View {
             }
             // TODO: SRS-логика для DynamicSet (оценка всего сета целиком)
             // Требует SRS-полей в DynamicSet: dueDate, interval, easeFactor, repetitions
+
+            // Replay button
+            Button { restartSet() } label: {
+                VStack(spacing: 8) {
+                    Image(systemName: "arrow.counterclockwise.circle.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(Color.myColors.myBlue)
+                    Text("Replay")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 8)
+
+            // Mode toggle — под Replay
+            modeToggle
+                .padding(.top, 4)
         }
         .padding(.horizontal, 16)
     }
@@ -245,19 +341,28 @@ struct DynamicSetPlayerView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Tap Hint
+    // MARK: - Hints
 
     private var tapHint: some View {
         HStack {
             Spacer()
-            Text("Tap anywhere to continue")
-                .font(.caption)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+            Text("Tap anywhere for next")
             Image(systemName: "hand.tap")
-                .font(.caption)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
             Spacer()
         }
+        .font(.headline)
+        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+    }
+
+    private var resumeHint: some View {
+        HStack {
+            Spacer()
+            Image(systemName: "pause.circle")
+            Text("Paused — tap to resume")
+            Spacer()
+        }
+        .font(.headline)
+        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
     }
 
     // MARK: - Toolbar
@@ -265,7 +370,6 @@ struct DynamicSetPlayerView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
-            // Кнопка включения/отключения озвучки
             Button {
                 audioEnabled.toggle()
                 if !audioEnabled {
@@ -278,13 +382,57 @@ struct DynamicSetPlayerView: View {
                     .foregroundStyle(audioEnabled ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5))
                     .contentTransition(.symbolEffect(.replace))
             }
-
-            // Кнопка play/pause (animationMode)
-            Button { toggleAnimationMode() } label: {
-                Image(systemName: animationMode == .automatic ? "pause.circle" : "play.circle")
-                    .foregroundStyle(Color.myColors.myBlue)
-            }
         }
+    }
+
+    // MARK: - Interaction
+
+    private func handleTap() {
+        guard hasStarted, !isComplete else { return }
+        switch animationMode {
+        case .automatic:
+            isPaused ? resumeAutoPlay() : pauseAutoPlay()
+        case .manual:
+            withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
+        }
+    }
+
+    private func startPlayback() {
+        hasStarted = true
+        withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
+        if animationMode == .automatic {
+            startAutoPlay(skipFirst: true)
+        }
+    }
+
+    private func switchMode(to mode: AnimationMode) {
+        guard mode != animationMode else { return }
+        // Если переключаемся из auto — отменяем автопроигрывание
+        if animationMode == .automatic {
+            autoPlayTask?.cancel()
+        }
+        isPaused = false
+        animationMode = mode
+        defaultAnimationMode = mode   // запоминаем выбор
+        // Если переключились в auto во время воспроизведения — запускаем
+        if mode == .automatic, hasStarted, !isComplete {
+            startAutoPlay(skipFirst: true)
+        }
+    }
+
+    private func pauseAutoPlay() {
+        isPaused = true
+        autoPlayTask?.cancel()
+        audioTask?.cancel()
+        pendingRightSpeech = nil
+        audioService.stop()
+        log("⏸ Auto play paused at step \(revealedSteps)")
+    }
+
+    private func resumeAutoPlay() {
+        isPaused = false
+        startAutoPlay(skipFirst: true)
+        log("▶ Auto play resumed from step \(revealedSteps)")
     }
 
     // MARK: - Advance
@@ -297,42 +445,79 @@ struct DynamicSetPlayerView: View {
 
     // MARK: - Auto Play
 
-    private func toggleAnimationMode() {
-        if animationMode == .manual {
-            // Если сет завершён — перезапустить с начала
-            if isComplete { restartSet() }
-            animationMode = .automatic
-            startAutoPlay(skipFirst: false)
-        } else {
-            animationMode = .manual
-            autoPlayTask?.cancel()
-        }
-    }
-
-    private func restartSet() {
-        autoPlayTask?.cancel()
-        audioTask?.cancel()
-        pendingRightSpeech = nil
-        audioService.stop()
-        withAnimation(.spring(duration: 0.3)) { revealedSteps = 0 }
-    }
-
     private func startAutoPlay(skipFirst: Bool) {
         autoPlayTask?.cancel()
         autoPlayTask = Task {
+            // skipFirst: первый элемент уже показан (вызван advance() в startPlayback/restartSet),
+            // поэтому сначала ждём окончания его аудио, потом идём дальше.
             if skipFirst {
-                try? await Task.sleep(for: .seconds(autoPlayDelay))
+                await waitForAudioThenPause()
             }
             while !Task.isCancelled && !isComplete {
                 guard !Task.isCancelled else { return }
                 withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
-                try? await Task.sleep(for: .seconds(autoPlayDelay))
+                // waitForAudioThenPause вызывается и после последней строки:
+                // цикл выходит только после возврата из этого вызова,
+                // т.е. SRS появится строго после окончания аудио последней строки.
+                await waitForAudioThenPause()
             }
-            // Воспроизведение завершилось (не отменено) — возвращаем кнопку в play
+            // Auto-режим: цикл завершился штатно (не по отмене) → показываем SRS
             if !Task.isCancelled {
-                animationMode = .manual
+                withAnimation { showCompletion = true }
             }
         }
+    }
+
+    /// Ждёт окончания TTS (левый + правый в parallel), затем делает паузу перед следующей строкой.
+    /// Если аудио выключено — фиксированная задержка autoPlayDelay.
+    private func waitForAudioThenPause() async {
+        guard !Task.isCancelled else { return }
+
+        guard audioEnabled else {
+            try? await Task.sleep(for: .seconds(autoPlayDelay))
+            return
+        }
+
+        // Даём время readPause + запас, чтобы speakCurrentStep() успел запустить TTS
+        try? await Task.sleep(for: .seconds(readPause + 0.3))
+        guard !Task.isCancelled else { return }
+
+        // Ждём, пока TTS начнёт воспроизводить (на случай если инициализация заняла время)
+        var attempts = 0
+        while !audioService.isPlaying && attempts < 15 {
+            try? await Task.sleep(for: .milliseconds(100))
+            attempts += 1
+            guard !Task.isCancelled else { return }
+        }
+
+        // Ждём окончания всего аудио: левая сторона + правая (pendingRightSpeech)
+        while audioService.isPlaying || pendingRightSpeech != nil {
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+        }
+
+        // Пауза после окончания речи — пользователь успевает прочитать и осмыслить
+        try? await Task.sleep(for: .seconds(postAudioDelay))
+    }
+
+    private func restartSet() {
+        autoPlayTask?.cancel()
+        completionTask?.cancel()
+        audioTask?.cancel()
+        pendingRightSpeech = nil
+        audioService.stop()
+        isPaused = false
+        showCompletion = false
+        // hasStarted остаётся true — стартовый экран показывается только один раз
+        withAnimation(.spring(duration: 0.3)) { revealedSteps = 0 }
+        // Запускаем воспроизведение сразу без стартового экрана
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
+            if animationMode == .automatic {
+                startAutoPlay(skipFirst: true)
+            }
+        }
+        log("↩ Set restarted")
     }
 
     // MARK: - Audio / TTS
@@ -372,11 +557,13 @@ struct DynamicSetPlayerView: View {
             guard !Task.isCancelled, audioEnabled else { return }
 
             if let text = leftText, !text.isEmpty {
-                // Если есть правый текст (parallel) — ставим в очередь, он сыграет после left
+                // speak() внутри вызывает stop() → isPlaying = false → onChange срабатывает.
+                // pendingRightSpeech ставим ПОСЛЕ speak(), иначе onChange подхватит его
+                // раньше времени (до начала воспроизведения левого слова).
+                audioService.speak(text: text, voiceIdentifier: voiceId)
                 if let right = rightText, !right.isEmpty {
                     pendingRightSpeech = right
                 }
-                audioService.speak(text: text, voiceIdentifier: voiceId)
             } else if let text = rightText, !text.isEmpty {
                 // sequential: только правый элемент в этом шаге
                 audioService.speak(text: text, voiceIdentifier: voiceId)
