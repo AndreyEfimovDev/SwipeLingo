@@ -1,9 +1,9 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - StudyView
+// MARK: - FlashCardsView
 
-struct StudyView: View {
+struct FlashCardsView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -12,7 +12,7 @@ struct StudyView: View {
     @Query private var cardSets: [CardSet]
     @Query private var collections: [Collection]
 
-    @State private var viewModel = StudyViewModel()
+    @State private var viewModel = FlashCardsViewModel()
     @AppStorage("studyDirection")  private var studyDirection  = "EN→Native"
     @AppStorage("nativeLanguage")  private var nativeLanguage  = "Русский"
     @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
