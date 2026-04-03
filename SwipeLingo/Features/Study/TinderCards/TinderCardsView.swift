@@ -24,6 +24,8 @@ struct TinderCardsView: View {
     private let upSwipeThreshold: CGFloat = 100
     private let pileTagsLine: String
     private let cefrLabels: [UUID: CEFRLevel]
+    /// True when study session shows only due cards — changes "Active" label to "Due".
+    private let isDueMode: Bool
 
     private var isReversed:  Bool { studyDirection == "Native→EN" }
     private var isLandscape: Bool { verticalSizeClass == .compact }
@@ -40,6 +42,7 @@ struct TinderCardsView: View {
          contextLabels: [UUID: String] = [:],
          cefrLabels: [UUID: CEFRLevel] = [:],
          pileTagsLine: String = "",
+         isDueMode: Bool = false,
          onDone: (() -> Void)? = nil) {
         _viewModel        = State(initialValue: TinderCardsViewModel(
                                 cards: cards,
@@ -47,6 +50,7 @@ struct TinderCardsView: View {
                                 onDone: onDone))
         self.cefrLabels   = cefrLabels
         self.pileTagsLine = pileTagsLine
+        self.isDueMode    = isDueMode
     }
 
     // MARK: - Body
@@ -121,7 +125,7 @@ struct TinderCardsView: View {
                     .font(.caption2)
                     .fontWeight(.semibold)
                 Spacer()
-                statLabel("Active", value: active, status: .active)
+                statLabel(isDueMode ? "Due" : "Active", value: active, status: .active)
                 Spacer()
             }
             .frame(maxWidth: .infinity)
@@ -173,7 +177,7 @@ struct TinderCardsView: View {
                     .foregroundStyle(CardStatus.active.color)
                 VStack(spacing: 4){
                     HStack {
-                        Text("Active")
+                        Text(isDueMode ? "Due" : "Active")
                         Spacer()
                         Text("\(current) / \(effTotal)").bold()
                         Spacer()
