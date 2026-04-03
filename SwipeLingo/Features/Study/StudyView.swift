@@ -13,17 +13,16 @@ struct StudyView: View {
     @Query private var collections: [Collection]
 
     @State private var viewModel = StudyViewModel()
-    @AppStorage("studyDirection") private var studyDirection = "EN→Native"
-    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+    @AppStorage("studyDirection")  private var studyDirection  = "EN→Native"
+    @AppStorage("nativeLanguage")  private var nativeLanguage  = "Русский"
+    @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
-    /// ISO 639-1 two-letter abbreviation for the selected native language (uppercase, e.g. "RU").
     private var langAbbr: String {
         DictionaryLookupViewModel.targetLangId(for: nativeLanguage).uppercased()
     }
 
-    /// Button label reflecting the actual language, e.g. "EN→RU" or "RU→EN".
     private var directionLabel: String {
         studyDirection == "EN→Native" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
     }
@@ -40,21 +39,17 @@ struct StudyView: View {
                 }
         }
         .onAppear {
-            // Seeding happens in SwipeLingoApp.init() before any view renders,
-            // so @Query results are already populated here.
             viewModel.startSessionIfNeeded(
-                piles: piles,
-                allCards: allCards,
-                cardSets: cardSets,
-                collections: collections
+                piles: piles, allCards: allCards,
+                cardSets: cardSets, collections: collections,
+                dueHour: studyStartHour
             )
         }
         .onChange(of: activePileSnapshot) {
             viewModel.startNewSession(
-                piles: piles,
-                allCards: allCards,
-                cardSets: cardSets,
-                collections: collections
+                piles: piles, allCards: allCards,
+                cardSets: cardSets, collections: collections,
+                dueHour: studyStartHour
             )
         }
     }
@@ -78,12 +73,26 @@ struct StudyView: View {
                 cefrLabels: viewModel.cefrLabels,
                 pileTagsLine: viewModel.pileTagsLine,
                 isDueMode: viewModel.studyMode == .due,
+                pileLearntCount: viewModel.pileLearntCount,
+                onToggleMode: {
+                    if viewModel.studyMode == .due {
+                        viewModel.studyAll(
+                            piles: piles, allCards: allCards,
+                            cardSets: cardSets, collections: collections
+                        )
+                    } else {
+                        viewModel.startNewSession(
+                            piles: piles, allCards: allCards,
+                            cardSets: cardSets, collections: collections,
+                            dueHour: studyStartHour
+                        )
+                    }
+                },
                 onDone: {
-                    viewModel.startNewSession(
-                        piles: piles,
-                        allCards: allCards,
-                        cardSets: cardSets,
-                        collections: collections
+                    viewModel.onSessionComplete(
+                        piles: piles, allCards: allCards,
+                        cardSets: cardSets, collections: collections,
+                        dueHour: studyStartHour
                     )
                 }
             )
@@ -123,10 +132,8 @@ struct StudyView: View {
 
                 Button {
                     viewModel.studyAll(
-                        piles: piles,
-                        allCards: allCards,
-                        cardSets: cardSets,
-                        collections: collections
+                        piles: piles, allCards: allCards,
+                        cardSets: cardSets, collections: collections
                     )
                 } label: {
                     Text("Study anyway  ·  All: \(viewModel.allActiveCount)")
@@ -185,19 +192,9 @@ struct StudyView: View {
 
     // MARK: - Helpers
 
-    /// Changes when the active pile switches, its sets change, or shuffle method changes.
     private var activePileSnapshot: String {
         guard let pile = piles.first(where: { $0.isActive }) else { return "" }
         let sets = pile.setIds.map(\.uuidString).sorted().joined()
         return pile.id.uuidString + sets + pile.shuffleMethod.rawValue
-    }
-
-    private var activePileID: UUID? {
-        piles.first(where: { $0.isActive })?.id
-    }
-
-    private var activeSetId: UUID? {
-        guard let pile = piles.first(where: { $0.isActive }) else { return nil }
-        return pile.setIds.first
     }
 }
