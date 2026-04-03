@@ -4,26 +4,44 @@ import SwiftUI
 
 @Observable
 final class AppViewModel {
-    var selectedTab: AppTab = .study
 
-    enum AppTab: Hashable, CaseIterable {
-        case study, library, statistics, preferences
+    private static let selectedTabKey = "selectedTab"
+
+    var selectedTab: AppTab {
+        didSet {
+            UserDefaults.standard.set(selectedTab.rawValue, forKey: Self.selectedTabKey)
+        }
+    }
+
+    init() {
+        let saved = UserDefaults.standard.string(forKey: Self.selectedTabKey) ?? ""
+        selectedTab = AppTab(rawValue: saved) ?? .flashCards
+    }
+
+    enum AppTab: String, Hashable, CaseIterable {
+        case flashCards
+        case englishPlus
+        case library
+        case statistics
+        case preferences
 
         var label: LocalizedStringKey {
             switch self {
-            case .study:       return "FlashCards"
-            case .library:     return "Library"
-            case .statistics:  return "Stats"
-            case .preferences: return "Settings"
+            case .flashCards:   return "Cards"
+            case .englishPlus:  return "English+"
+            case .library:      return "Library"
+            case .statistics:   return "Stats"
+            case .preferences:  return "Settings"
             }
         }
 
         var icon: String {
             switch self {
-            case .study:       return "rectangle.stack"
-            case .library:     return "books.vertical"
-            case .statistics:  return "chart.line.uptrend.xyaxis"
-            case .preferences: return "gear"
+            case .flashCards:   return "rectangle.stack"
+            case .englishPlus:  return "sparkles"
+            case .library:      return "books.vertical"
+            case .statistics:   return "chart.line.uptrend.xyaxis"
+            case .preferences:  return "gear"
             }
         }
     }
@@ -73,10 +91,16 @@ struct AppView: View {
                 if isLandscape { Color.clear.frame(width: 56) }
 
                 TabView(selection: Bindable(viewModel).selectedTab) {
-                    Tab(AppViewModel.AppTab.study.label,
-                        systemImage: AppViewModel.AppTab.study.icon,
-                        value: AppViewModel.AppTab.study) {
+                    Tab(AppViewModel.AppTab.flashCards.label,
+                        systemImage: AppViewModel.AppTab.flashCards.icon,
+                        value: AppViewModel.AppTab.flashCards) {
                         FlashCardsView()
+                            .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
+                    }
+                    Tab(AppViewModel.AppTab.englishPlus.label,
+                        systemImage: AppViewModel.AppTab.englishPlus.icon,
+                        value: AppViewModel.AppTab.englishPlus) {
+                        DynamicCardsView()
                             .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
                     }
                     Tab(AppViewModel.AppTab.library.label,
