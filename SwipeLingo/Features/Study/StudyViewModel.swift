@@ -154,7 +154,12 @@ final class StudyViewModel {
         let today   = cal.startOfDay(for: .now)
         let dueDay  = cal.startOfDay(for: earliest.dueDate)
         let diff    = cal.dateComponents([.day], from: today, to: dueDay).day ?? 1
-        let dayText = diff == 1 ? "tomorrow" : "in \(diff) days"
+        let dayText: String
+        switch diff {
+        case 0:  dayText = "today"
+        case 1:  dayText = "tomorrow"
+        default: dayText = "in \(diff) days"
+        }
         let count   = upcoming.filter { cal.startOfDay(for: $0.dueDate) == dueDay }.count
         return "\(dayText) · \(count) \(count == 1 ? "card" : "cards")"
     }
