@@ -31,6 +31,7 @@ struct StudyView: View {
     var body: some View {
         NavigationStack {
             content
+                .animation(.spring(duration: 0.35, bounce: 0.1), value: viewModel.sessionID)
                 .navigationTitle(viewModel.activePileName.isEmpty ? "Study" : viewModel.activePileName)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
@@ -66,6 +67,8 @@ struct StudyView: View {
             emptyStateView
         } else if viewModel.isCaughtUp {
             caughtUpView
+                .id(viewModel.sessionID)
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
         } else if viewModel.studyCards.isEmpty {
             ProgressView()
         } else {
@@ -74,6 +77,7 @@ struct StudyView: View {
                 contextLabels: viewModel.contextLabels,
                 cefrLabels: viewModel.cefrLabels,
                 pileTagsLine: viewModel.pileTagsLine,
+                isDueMode: viewModel.studyMode == .due,
                 onDone: {
                     viewModel.startNewSession(
                         piles: piles,
@@ -84,6 +88,7 @@ struct StudyView: View {
                 }
             )
             .id(viewModel.sessionID)
+            .transition(.scale(scale: 0.95).combined(with: .opacity))
             .padding(.vertical)
         }
     }
