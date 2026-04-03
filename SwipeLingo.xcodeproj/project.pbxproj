@@ -425,8 +425,8 @@
 		47DE7EF42F80013700F6BCF3 /* DynamicCards */ = {
 			isa = PBXGroup;
 			children = (
-				47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */,
 				47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */,
+				47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */,
 				47DE7EF32F80013700F6BCF3 /* DynamicSetPlayerView.swift */,
 			);
 			path = DynamicCards;

@@ -142,6 +142,13 @@ final class AudioPlayerService: NSObject {
         stop()
         guard !text.isEmpty else { return }
 
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            log("AVAudioSession setup failed for TTS: \(error)", level: .warning)
+        }
+
         let utterance = AVSpeechUtterance(string: text)
         if !voiceIdentifier.isEmpty,
            let voice = AVSpeechSynthesisVoice(identifier: voiceIdentifier) {

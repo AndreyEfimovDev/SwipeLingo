@@ -20,6 +20,7 @@ struct DynamicCardsView: View {
                 }
             }
             .navigationTitle("English+")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
