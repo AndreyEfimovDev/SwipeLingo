@@ -10,10 +10,10 @@ enum StudyMode {
     case all
 }
 
-// MARK: - StudyViewModel
+// MARK: - FlashCardsViewModel
 
 @Observable
-final class StudyViewModel {
+final class FlashCardsViewModel {
 
     // MARK: Published state
 

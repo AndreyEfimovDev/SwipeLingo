@@ -45,7 +45,7 @@ struct SettingsView: View {
     private var languageSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("LANGUAGE")
-                .font(.footnote.weight(.semibold))
+                .font(.footnote)
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
@@ -76,7 +76,7 @@ struct SettingsView: View {
     private var studySection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("STUDY")
-                .font(.footnote.weight(.semibold))
+                .font(.footnote)
                 .padding(.horizontal, 32)
 
             HStack {
