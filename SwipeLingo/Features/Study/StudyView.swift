@@ -13,17 +13,16 @@ struct StudyView: View {
     @Query private var collections: [Collection]
 
     @State private var viewModel = StudyViewModel()
-    @AppStorage("studyDirection") private var studyDirection = "EN→Native"
-    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+    @AppStorage("studyDirection")  private var studyDirection  = "EN→Native"
+    @AppStorage("nativeLanguage")  private var nativeLanguage  = "Русский"
+    @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
-    /// ISO 639-1 two-letter abbreviation for the selected native language (uppercase, e.g. "RU").
     private var langAbbr: String {
         DictionaryLookupViewModel.targetLangId(for: nativeLanguage).uppercased()
     }
 
-    /// Button label reflecting the actual language, e.g. "EN→RU" or "RU→EN".
     private var directionLabel: String {
         studyDirection == "EN→Native" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
     }
@@ -31,6 +30,7 @@ struct StudyView: View {
     var body: some View {
         NavigationStack {
             content
+                .animation(.spring(duration: 0.35, bounce: 0.1), value: viewModel.sessionID)
                 .navigationTitle(viewModel.activePileName.isEmpty ? "Study" : viewModel.activePileName)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
@@ -39,21 +39,17 @@ struct StudyView: View {
                 }
         }
         .onAppear {
-            // Seeding happens in SwipeLingoApp.init() before any view renders,
-            // so @Query results are already populated here.
             viewModel.startSessionIfNeeded(
-                piles: piles,
-                allCards: allCards,
-                cardSets: cardSets,
-                collections: collections
+                piles: piles, allCards: allCards,
+                cardSets: cardSets, collections: collections,
+                dueHour: studyStartHour
             )
         }
-        .onChange(of: activePileID) {
+        .onChange(of: activePileSnapshot) {
             viewModel.startNewSession(
-                piles: piles,
-                allCards: allCards,
-                cardSets: cardSets,
-                collections: collections
+                piles: piles, allCards: allCards,
+                cardSets: cardSets, collections: collections,
+                dueHour: studyStartHour
             )
         }
     }
@@ -64,6 +60,10 @@ struct StudyView: View {
     private var content: some View {
         if allCards.filter({ $0.status == .active }).isEmpty {
             emptyStateView
+        } else if viewModel.isCaughtUp {
+            caughtUpView
+                .id(viewModel.sessionID)
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
         } else if viewModel.studyCards.isEmpty {
             ProgressView()
         } else {
@@ -72,18 +72,90 @@ struct StudyView: View {
                 contextLabels: viewModel.contextLabels,
                 cefrLabels: viewModel.cefrLabels,
                 pileTagsLine: viewModel.pileTagsLine,
+                isDueMode: viewModel.studyMode == .due,
+                pileLearntCount: viewModel.pileLearntCount,
+                onToggleMode: {
+                    if viewModel.studyMode == .due {
+                        viewModel.studyAll(
+                            piles: piles, allCards: allCards,
+                            cardSets: cardSets, collections: collections
+                        )
+                    } else {
+                        viewModel.startNewSession(
+                            piles: piles, allCards: allCards,
+                            cardSets: cardSets, collections: collections,
+                            dueHour: studyStartHour
+                        )
+                    }
+                },
                 onDone: {
-                    viewModel.startNewSession(
-                        piles: piles,
-                        allCards: allCards,
-                        cardSets: cardSets,
-                        collections: collections
+                    viewModel.onSessionComplete(
+                        piles: piles, allCards: allCards,
+                        cardSets: cardSets, collections: collections,
+                        dueHour: studyStartHour
                     )
                 }
             )
             .id(viewModel.sessionID)
+            .transition(.scale(scale: 0.95).combined(with: .opacity))
             .padding(.vertical)
         }
+    }
+
+    // MARK: - Caught-up Screen
+
+    private var caughtUpView: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.myColors.myBackground)
+
+            VStack(spacing: 0) {
+                Spacer()
+
+                VStack(spacing: 16) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(Color.myColors.myGreen)
+
+                    Text("You're all caught up!")
+                        .font(.title2.bold())
+
+                    if !viewModel.nextReviewLabel.isEmpty {
+                        Text("Next review: \(viewModel.nextReviewLabel)")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                    }
+                }
+                .multilineTextAlignment(.center)
+
+                Spacer()
+
+                Button {
+                    viewModel.studyAll(
+                        piles: piles, allCards: allCards,
+                        cardSets: cardSets, collections: collections
+                    )
+                } label: {
+                    Text("Study anyway  ·  All: \(viewModel.allActiveCount)")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.myColors.myBlue.opacity(0.12))
+                        .foregroundStyle(Color.myColors.myBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.myColors.myBlue.opacity(0.2), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 28)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .myShadow()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
     }
 
     @ToolbarContentBuilder
@@ -120,12 +192,9 @@ struct StudyView: View {
 
     // MARK: - Helpers
 
-    private var activePileID: UUID? {
-        piles.first(where: { $0.isActive })?.id
-    }
-
-    private var activeSetId: UUID? {
-        guard let pile = piles.first(where: { $0.isActive }) else { return nil }
-        return pile.setIds.first
+    private var activePileSnapshot: String {
+        guard let pile = piles.first(where: { $0.isActive }) else { return "" }
+        let sets = pile.setIds.map(\.uuidString).sorted().joined()
+        return pile.id.uuidString + sets + pile.shuffleMethod.rawValue
     }
 }

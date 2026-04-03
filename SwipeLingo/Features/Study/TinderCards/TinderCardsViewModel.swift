@@ -68,20 +68,20 @@ final class TinderCardsViewModel {
 
     // MARK: Session completion stats
 
-    /// Cards whose dueDate falls in the next 24–48 h window ("tomorrow").
+    /// Cards whose dueDate falls on calendar tomorrow.
     var dueTomorrowCount: Int {
-        let now   = Date.now
-        let start = now.addingTimeInterval(86400 * 1)
-        let end   = now.addingTimeInterval(86400 * 2)
-        return originalCards.filter { $0.dueDate >= start && $0.dueDate < end }.count
+        let cal      = Calendar.current
+        let tomorrow = cal.startOfDay(for: .now + 86400)
+        let dayAfter = cal.startOfDay(for: .now + 86400 * 2)
+        return originalCards.filter { $0.dueDate >= tomorrow && $0.dueDate < dayAfter }.count
     }
 
-    /// Cards whose dueDate falls in the 2–5 day window ("in 3 days").
+    /// Cards whose dueDate falls 2–4 calendar days from now.
     var dueIn3DaysCount: Int {
-        let now   = Date.now
-        let start = now.addingTimeInterval(86400 * 2)
-        let end   = now.addingTimeInterval(86400 * 5)
-        return originalCards.filter { $0.dueDate >= start && $0.dueDate < end }.count
+        let cal      = Calendar.current
+        let dayAfter = cal.startOfDay(for: .now + 86400 * 2)
+        let in5Days  = cal.startOfDay(for: .now + 86400 * 5)
+        return originalCards.filter { $0.dueDate >= dayAfter && $0.dueDate < in5Days }.count
     }
 
     // MARK: Init

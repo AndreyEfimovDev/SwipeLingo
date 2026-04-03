@@ -24,6 +24,12 @@ struct TinderCardsView: View {
     private let upSwipeThreshold: CGFloat = 100
     private let pileTagsLine: String
     private let cefrLabels: [UUID: CEFRLevel]
+    /// True when study session shows only due cards — changes "Active" label to "Due".
+    private let isDueMode: Bool
+    /// Cards already in .learnt status in the pile at session start (added to learntInSession).
+    private let pileLearntCount: Int
+    /// Called when the user taps the mode toggle in the progress row.
+    private let onToggleMode: (() -> Void)?
 
     private var isReversed:  Bool { studyDirection == "Native→EN" }
     private var isLandscape: Bool { verticalSizeClass == .compact }
@@ -40,13 +46,19 @@ struct TinderCardsView: View {
          contextLabels: [UUID: String] = [:],
          cefrLabels: [UUID: CEFRLevel] = [:],
          pileTagsLine: String = "",
+         isDueMode: Bool = false,
+         pileLearntCount: Int = 0,
+         onToggleMode: (() -> Void)? = nil,
          onDone: (() -> Void)? = nil) {
-        _viewModel        = State(initialValue: TinderCardsViewModel(
-                                cards: cards,
-                                contextLabels: contextLabels,
-                                onDone: onDone))
-        self.cefrLabels   = cefrLabels
-        self.pileTagsLine = pileTagsLine
+        _viewModel             = State(initialValue: TinderCardsViewModel(
+                                    cards: cards,
+                                    contextLabels: contextLabels,
+                                    onDone: onDone))
+        self.cefrLabels        = cefrLabels
+        self.pileTagsLine      = pileTagsLine
+        self.isDueMode         = isDueMode
+        self.pileLearntCount   = pileLearntCount
+        self.onToggleMode      = onToggleMode
     }
 
     // MARK: - Body
@@ -105,7 +117,7 @@ struct TinderCardsView: View {
     private var landscapeStatsColumn: some View {
         let allCards    = viewModel.cards
         let effTotal    = allCards.filter { $0.status != .deleted }.count
-        let learnt      = viewModel.learntInSession
+        let learnt      = pileLearntCount + viewModel.learntInSession
         let active      = allCards.filter { $0.status == .active }.count
         let deletedSoFar = allCards.prefix(viewModel.currentIndex).filter { $0.status == .deleted }.count
         let current     = min(viewModel.currentIndex - deletedSoFar + 1, max(effTotal, 1))
@@ -117,11 +129,10 @@ struct TinderCardsView: View {
                 Spacer()
                 statLabel("Learnt", value: learnt, status: .learnt)
                 Spacer()
-                Text("\(current) / \(effTotal)")
+                modeCenterButton(current: current, effTotal: effTotal)
                     .font(.caption2)
-                    .fontWeight(.semibold)
                 Spacer()
-                statLabel("Active", value: active, status: .active)
+                statLabel(isDueMode ? "Due" : "Active", value: active, status: .active)
                 Spacer()
             }
             .frame(maxWidth: .infinity)
@@ -144,6 +155,30 @@ struct TinderCardsView: View {
         .frame(maxWidth: 64)
     }
 
+    /// Centre of the progress row: "1 / 14" when no toggle, or "Due · 1/14 ⇅" when tappable.
+    @ViewBuilder
+    private func modeCenterButton(current: Int, effTotal: Int) -> some View {
+        if let toggle = onToggleMode {
+            Button(action: toggle) {
+                HStack(spacing: 3) {
+                    Text(isDueMode ? "Due" : "All")
+                        .foregroundStyle(isDueMode ? Color.myColors.myOrange : Color.myColors.myGreen)
+                    Text("·")
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                    Text("\(current) / \(effTotal)")
+                        .fontWeight(.semibold)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+                }
+            }
+            .buttonStyle(.plain)
+        } else {
+            Text("\(current) / \(effTotal)")
+                .fontWeight(.semibold)
+        }
+    }
+
     private func statLabel(_ title: String, value: Int, status: CardStatus) -> some View {
         VStack(spacing: 2) {
             Text(title)
@@ -160,7 +195,7 @@ struct TinderCardsView: View {
     private var progressStatsRow: some View {
         let allCards = viewModel.cards
         let effTotal = allCards.filter { $0.status != .deleted }.count
-        let learnt   = viewModel.learntInSession
+        let learnt   = pileLearntCount + viewModel.learntInSession
         let active   = allCards.filter { $0.status == .active }.count
         let deletedSoFar = allCards.prefix(viewModel.currentIndex).filter { $0.status == .deleted }.count
         let current  = min(viewModel.currentIndex - deletedSoFar + 1, max(effTotal, 1))
@@ -173,9 +208,9 @@ struct TinderCardsView: View {
                     .foregroundStyle(CardStatus.active.color)
                 VStack(spacing: 4){
                     HStack {
-                        Text("Active")
+                        Text(isDueMode ? "Due" : "Active")
                         Spacer()
-                        Text("\(current) / \(effTotal)").bold()
+                        modeCenterButton(current: current, effTotal: effTotal)
                         Spacer()
                         Text("Learnt")
                     }.font(.caption2)
@@ -439,7 +474,7 @@ struct TinderCardsView: View {
                     .font(.largeTitle)
             }
             Spacer()
-            Text("Tap to flip")
+            Text("Tap to check")
                 .font(.caption2)
                 .padding(.bottom, 20)
                 .opacity(0.75)
@@ -561,8 +596,8 @@ struct TinderCardsView: View {
             }
             .frame(maxHeight: .infinity)
             
-            // Tap to flip hint — front side
-            Text("Tap to flip")
+            // Tap to back hint — back side
+            Text("Tap to back")
                 .font(.caption2)
                 .opacity(0.75)
 
@@ -605,7 +640,7 @@ struct TinderCardsView: View {
                         .font(.largeTitle)
                 }
                 Spacer()
-                Text("Tap to flip")
+                Text("Tap to check")
                     .font(.caption2)
                     .padding(.bottom, 20)
                     .opacity(0.75)
@@ -728,6 +763,7 @@ struct TinderCardsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
         .myShadow()
         .transition(.scale(scale: 0.95).combined(with: .opacity))
     }

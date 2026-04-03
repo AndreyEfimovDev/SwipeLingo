@@ -9,6 +9,7 @@ struct SettingsView: View {
     @AppStorage("englishVariant")     private var englishVariant     = "en-US"
     @AppStorage("colorScheme")        private var theme: Theme       = .system
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
+    @AppStorage("studyStartHour")     private var studyStartHour: Int = 6
 
     private var currentVoiceName: String {
         guard !ttsVoiceIdentifier.isEmpty,
@@ -27,6 +28,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     languageSection
+                    studySection
                     voiceSection
                     appearanceSection
                 }
@@ -67,6 +69,41 @@ struct SettingsView: View {
             .myShadow()
             .padding(.horizontal, 16)
         }
+    }
+
+    // MARK: - Study
+
+    private var studySection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("STUDY")
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, 32)
+
+            HStack {
+                Label("Due cards from", systemImage: "clock")
+                    .labelStyle(.fixedIcon)
+                Spacer()
+                Picker("", selection: $studyStartHour) {
+                    ForEach(0..<24, id: \.self) { hour in
+                        Text(hourLabel(hour)).tag(hour)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+            }
+            .frame(height: 52)
+            .padding(.horizontal, 16)
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private func hourLabel(_ hour: Int) -> String {
+        let h      = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
+        let period = hour < 12 ? "AM" : "PM"
+        return "\(h):00 \(period)"
     }
 
     // MARK: - Voice

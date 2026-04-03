@@ -652,6 +652,7 @@ struct AddEditCardView: View {
             .padding(20)
             .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 16))
+            .frame(maxWidth: 360)
             .padding(.horizontal, 40)
         }
     }

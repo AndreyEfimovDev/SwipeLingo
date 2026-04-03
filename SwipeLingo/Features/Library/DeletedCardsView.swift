@@ -81,8 +81,9 @@ struct DeletedCardsView: View {
     }
     
     /// Force-show when search is active or in edit mode; otherwise follow scroll state.
+    /// When there are few cards (< threshold) the header is always visible.
     private var showHeader: Bool {
-        guard headerRelevant else { return false }
+        guard headerRelevant else { return true }
         return isHeaderVisible || !searchText.isEmpty || editMode == .active
     }
     

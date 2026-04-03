@@ -50,10 +50,13 @@ struct SRSService {
             card.repetitions += 1
         }
 
+        // Schedule from start of today so the card becomes available
+        // at midnight on the due day — not N×24h after the exact review time.
+        let startOfToday = Calendar.current.startOfDay(for: now)
         card.dueDate = Calendar.current.date(
             byAdding: .day,
             value: card.interval,
-            to: now
+            to: startOfToday
         ) ?? now
     }
 }
