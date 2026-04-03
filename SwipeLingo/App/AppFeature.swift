@@ -11,7 +11,7 @@ final class AppViewModel {
 
         var label: LocalizedStringKey {
             switch self {
-            case .study:       return "Study"
+            case .study:       return "FlashCards"
             case .library:     return "Library"
             case .statistics:  return "Stats"
             case .preferences: return "Settings"
@@ -76,7 +76,7 @@ struct AppView: View {
                     Tab(AppViewModel.AppTab.study.label,
                         systemImage: AppViewModel.AppTab.study.icon,
                         value: AppViewModel.AppTab.study) {
-                        StudyView()
+                        FlashCardsView()
                             .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
                     }
                     Tab(AppViewModel.AppTab.library.label,
