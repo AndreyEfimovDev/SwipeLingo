@@ -2,23 +2,154 @@ import SwiftUI
 import SwiftData
 
 // MARK: - DynamicCardsView
-// Каталог English+ сетов (Dynamic Cards).
-// Отдельный экран, не связан с TinderCards.
-// TODO: реализовать UI каталога сетов с фильтрацией по AccessTier.
+// Каталог English+ сетов. Простой List с карточками.
+// При выборе → DynamicSetPlayerView.
 
 struct DynamicCardsView: View {
-    @State private var viewModel = DynamicCardsViewModel()
-    @Environment(\.modelContext) private var modelContext
+
+    @Query(sort: \DynamicSet.createdAt, order: .reverse)
+    private var sets: [DynamicSet]
 
     var body: some View {
         NavigationStack {
-            Text("English+")
-                .font(.largeTitle)
+            Group {
+                if sets.isEmpty {
+                    emptyState
+                } else {
+                    setList
+                }
+            }
+            .navigationTitle("English+")
+        }
+    }
+
+    // MARK: - List
+
+    private var setList: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                VStack(spacing: 0) {
+                    ForEach(sets) { set in
+                        NavigationLink(destination: DynamicSetPlayerView(set: set)) {
+                            DynamicSetRowView(set: set)
+                        }
+                        .buttonStyle(.plain)
+
+                        if set.id != sets.last?.id {
+                            Divider().padding(.leading, 16)
+                        }
+                    }
+                }
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .myShadow()
+                .padding(.horizontal, 16)
+            }
+            .padding(.vertical, 16)
+        }
+        .background(Color(.systemBackground).ignoresSafeArea())
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 52))
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+            Text("No sets available")
+                .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
-                .navigationTitle("English+")
+            Text("English+ sets will appear here once downloaded")
+                .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
         }
-        .onAppear {
-            viewModel.loadSets(context: modelContext)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground).ignoresSafeArea())
+    }
+}
+
+// MARK: - DynamicSetRowView
+
+private struct DynamicSetRowView: View {
+    let set: DynamicSet
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                // Title
+                Text(set.title ?? "Untitled")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent)
+
+                // Subtitle
+                if let subtitle = set.subtitle {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                }
+
+                // Column headers + item count
+                HStack(spacing: 6) {
+                    if let left = set.leftTitle, let right = set.rightTitle {
+                        Text("\(left) → \(right)")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(Color.myColors.myBlue)
+                    }
+
+                    let count = set.items.count
+                    if count > 0 {
+                        Text("·")
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                        Text("\(count) \(count == 1 ? "pair" : "pairs")")
+                            .font(.caption)
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    }
+                }
+            }
+
+            Spacer()
+
+            // Access tier badge
+            AccessTierBadge(tier: set.accessTier)
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - AccessTierBadge
+
+private struct AccessTierBadge: View {
+    let tier: AccessTier
+
+    var body: some View {
+        switch tier {
+        case .free:
+            EmptyView()
+        case .pro:
+            badge("PRO", color: Color.myColors.myBlue)
+        case .proPlus:
+            badge("PRO+", color: Color.myColors.myPurple)
+        }
+    }
+
+    private func badge(_ label: String, color: Color) -> some View {
+        Text(label)
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .overlay(RoundedRectangle(cornerRadius: 5).stroke(color.opacity(0.25), lineWidth: 1))
     }
 }

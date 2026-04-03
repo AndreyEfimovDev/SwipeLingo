@@ -151,6 +151,74 @@ struct MockDataSeeder {
         )
     }
 
+    // MARK: - Mock DynamicSets
+
+    /// Seeds mock English+ sets for UI testing.
+    /// Safe to call on every launch — skips if any DynamicSet already exists.
+    #warning("STUB: Mock DynamicSets are for UI testing only. Remove before App Store release.")
+    static func ensureMockDynamicSets(into context: ModelContext) {
+        let existing = context.fetchWithErrorHandling(FetchDescriptor<DynamicSet>())
+        guard existing.isEmpty else { return }
+
+        // Set 1: B2 → C1, sequential mode (left появляется первым, потом right)
+        let set1 = DynamicSet(
+            title: "B2 → C1 Vocabulary",
+            subtitle: "Upgrade your word choice",
+            leftTitle: "B2",
+            rightTitle: "C1",
+            displayMode: .sequential,
+            accessTier: .free,
+            items: [
+                DynamicPair(left: DynamicItem(text: "important"),    right: DynamicItem(text: "pivotal")),
+                DynamicPair(left: DynamicItem(text: "use"),          right: DynamicItem(text: "utilize")),
+                DynamicPair(left: DynamicItem(text: "show"),         right: DynamicItem(text: "demonstrate")),
+                DynamicPair(left: DynamicItem(text: "think about"),  right: DynamicItem(text: "contemplate")),
+                DynamicPair(left: DynamicItem(text: "change"),       right: DynamicItem(text: "transform")),
+                DynamicPair(left: DynamicItem(text: "get better"),   right: DynamicItem(text: "improve")),
+            ]
+        )
+        context.insert(set1)
+
+        // Set 2: Basic → Advanced, parallel mode (оба появляются одновременно)
+        let set2 = DynamicSet(
+            title: "Everyday → Advanced",
+            subtitle: "Replace weak intensifiers",
+            leftTitle: "Basic",
+            rightTitle: "Advanced",
+            displayMode: .parallel,
+            accessTier: .free,
+            items: [
+                DynamicPair(left: DynamicItem(text: "very tired"),     right: DynamicItem(text: "exhausted")),
+                DynamicPair(left: DynamicItem(text: "very happy"),     right: DynamicItem(text: "elated")),
+                DynamicPair(left: DynamicItem(text: "very angry"),     right: DynamicItem(text: "furious")),
+                DynamicPair(left: DynamicItem(text: "very sad"),       right: DynamicItem(text: "despondent")),
+                DynamicPair(left: DynamicItem(text: "very surprised"), right: DynamicItem(text: "astonished")),
+                DynamicPair(left: DynamicItem(text: "very scared"),    right: DynamicItem(text: "terrified")),
+            ]
+        )
+        context.insert(set2)
+
+        // Set 3: Informal → Formal, parallel mode, Pro tier (тест badge)
+        let set3 = DynamicSet(
+            title: "Informal → Formal",
+            subtitle: "Business writing register",
+            leftTitle: "Informal",
+            rightTitle: "Formal",
+            displayMode: .parallel,
+            accessTier: .pro,
+            items: [
+                DynamicPair(left: DynamicItem(text: "get in touch"), right: DynamicItem(text: "contact")),
+                DynamicPair(left: DynamicItem(text: "find out"),     right: DynamicItem(text: "ascertain")),
+                DynamicPair(left: DynamicItem(text: "go up"),        right: DynamicItem(text: "increase")),
+                DynamicPair(left: DynamicItem(text: "look into"),    right: DynamicItem(text: "investigate")),
+                DynamicPair(left: DynamicItem(text: "set up"),       right: DynamicItem(text: "establish")),
+            ]
+        )
+        context.insert(set3)
+
+        context.saveWithErrorHandling()
+    }
+
     private static func seedMockCuratedCollection(
         name: String,
         icon: String,
