@@ -116,7 +116,7 @@ struct LibraryView: View {
                     .padding(.horizontal, 16)
             } else {
                 let activePile   = piles.first(where: { $0.isActive })
-                let sortedPiles  = piles.sorted { $0.isActive && !$1.isActive }
+                let sortedPiles  = piles.sorted { $0.name.lowercased() < $1.name.lowercased() }
                 let showToggle   = piles.count > 1
 
                 VStack(spacing: 0) {
