@@ -61,20 +61,8 @@ struct DynamicSetPlayerView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-
-                    // Subtitle
-                    if let subtitle = set.subtitle {
-                        Text(subtitle)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.myColors.myAccent)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.myColors.myAccent.opacity(0.07))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 12)
-                    }
+                    
+                    subtitleLine
 
                     if !hasStarted {
                         startScreen
@@ -173,7 +161,7 @@ struct DynamicSetPlayerView: View {
     // MARK: - Start Screen
 
     private var startScreen: some View {
-        VStack(spacing: 40) {
+        VStack(spacing: 0) {
             Spacer()
 
             Button { startPlayback() } label: {
@@ -187,38 +175,49 @@ struct DynamicSetPlayerView: View {
             .foregroundStyle(Color.myColors.myBlue)
             .buttonStyle(.plain)
 
-            modeToggle
-
             Spacer()
         }
         .frame(maxWidth: .infinity)
-        // minHeight: даём Spacer-ам пространство для центрирования содержимого по вертикали.
-        // Вычитаем приблизительную высоту nav bar + subtitle + tab bar + отступы.
         .frame(minHeight: UIScreen.main.bounds.height * 0.6)
     }
 
-    // MARK: - Mode Toggle
+    private var subtitleLine: some View {
+        // Subtitle + mode switcher в одну строку
+        HStack(alignment: .center, spacing: 8) {
+            if let subtitle = set.subtitle {
+                Text(subtitle)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myAccent)
+            }
+            Spacer()
+            modeToggle
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.myColors.myAccent.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+    }
+    // MARK: - Mode Toggle (одна кнопка — показывает текущий режим, тап переключает)
 
     private var modeToggle: some View {
-        HStack(spacing: 8) {
-            modePill(.automatic, label: "Auto")
-            modePill(.manual,    label: "Manual")
-        }
-        .padding(.horizontal, 48)
-    }
-
-    private func modePill(_ mode: AnimationMode, label: String) -> some View {
-        let isActive = animationMode == mode
-        return Button { switchMode(to: mode) } label: {
-            Text(label)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(isActive ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5))
-                .frame(maxWidth: 200)
-                .padding(.vertical, 12)
-                .background(Color.clear, in: .capsule)
-                .overlay(Capsule().strokeBorder(
-                    isActive ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5),
-                    lineWidth: isActive ? 2 : 0.5))
+        let isAuto = animationMode == .automatic
+        return Button {
+            switchMode(to: isAuto ? .manual : .automatic)
+        } label: {
+            HStack(spacing: 3) {
+                Text(isAuto ? "Auto" : "Manual")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myBlue)
+                    // Фиксируем ширину по более длинному слову "Manual",
+                    // выравниваем по .leading — левый край кнопки не скачет
+                    .frame(minWidth: 45, alignment: .leading)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+            }
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: animationMode)
@@ -324,10 +323,6 @@ struct DynamicSetPlayerView: View {
             }
             .buttonStyle(.plain)
             .padding(.top, 8)
-
-            // Mode toggle — под Replay
-            modeToggle
-                .padding(.top, 4)
         }
         .padding(.horizontal, 16)
     }
