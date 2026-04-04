@@ -59,6 +59,7 @@ struct SettingsView: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
                     .font(.subheadline.weight(.bold))
+                    .tint(Color.myColors.myBlue)
                 }
                 .frame(height: 52)
                 .padding(.horizontal, 16)
@@ -90,6 +91,7 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
+                .tint(Color.myColors.myBlue)
             }
             .frame(height: 52)
             .padding(.horizontal, 16)
