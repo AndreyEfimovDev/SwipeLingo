@@ -65,9 +65,13 @@ struct DynamicSetPlayerView: View {
                     // Subtitle
                     if let subtitle = set.subtitle {
                         Text(subtitle)
-                            .font(.body)
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.myColors.myAccent)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(Color.myColors.myAccent.opacity(0.07))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                             .padding(.horizontal, 16)
                             .padding(.bottom, 12)
                     }
@@ -169,8 +173,8 @@ struct DynamicSetPlayerView: View {
     // MARK: - Start Screen
 
     private var startScreen: some View {
-        VStack(spacing: 0) {
-            Spacer().frame(height: 48)
+        VStack(spacing: 40) {
+            Spacer()
 
             Button { startPlayback() } label: {
                 VStack(spacing: 8) {
@@ -183,13 +187,14 @@ struct DynamicSetPlayerView: View {
             .foregroundStyle(Color.myColors.myBlue)
             .buttonStyle(.plain)
 
-            Spacer().frame(height: 40)
-
             modeToggle
 
-            Spacer().frame(height: 32)
+            Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        // minHeight: даём Spacer-ам пространство для центрирования содержимого по вертикали.
+        // Вычитаем приблизительную высоту nav bar + subtitle + tab bar + отступы.
+        .frame(minHeight: UIScreen.main.bounds.height * 0.6)
     }
 
     // MARK: - Mode Toggle
