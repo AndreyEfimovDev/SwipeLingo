@@ -66,6 +66,7 @@ struct CollectionDetailView: View {
             }
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        .customBackButton("Library")
         .navigationTitle(collection.name)
         .navigationBarTitleDisplayMode(.inline)
         .frame(maxWidth: .infinity)
@@ -204,7 +205,7 @@ struct CollectionDetailView: View {
         VStack(spacing: 0) {
             ForEach(filteredCardSets) { cardSet in
                 NavigationLink {
-                    CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated)
+                    CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated, backTitle: collection.name)
                 } label: {
                     HStack {
                         let count = cardCount(for: cardSet)

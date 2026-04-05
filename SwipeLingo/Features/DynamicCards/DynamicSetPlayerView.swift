@@ -113,7 +113,7 @@ struct DynamicSetPlayerView: View {
                         }
                     }
 
-                    Color.clear.frame(height: 32).id("bottom")
+                    Color.clear.frame(height: 80).id("bottom")
                 }
                 .padding(.top, 16)
             }
@@ -151,6 +151,15 @@ struct DynamicSetPlayerView: View {
                     audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier)
                 }
             }
+            // SRS-блок появился → ждём окончания transition, затем прокручиваем вниз
+            .onChange(of: showCompletion) { _, show in
+                guard show else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                    withAnimation(.easeOut(duration: 0.4)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
+                }
+            }
             // Manual mode: последняя строка показана → ждём окончания аудио → показываем SRS
             .onChange(of: isComplete) { _, complete in
                 guard complete, animationMode == .manual else { return }
@@ -162,6 +171,7 @@ struct DynamicSetPlayerView: View {
                 }
             }
         }
+        .customBackButton("English+")
         .navigationTitle(set.title ?? "English+")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
@@ -340,12 +350,11 @@ struct DynamicSetPlayerView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "arrow.counterclockwise.circle.fill")
                         .font(.system(size: 64))
-                        .foregroundStyle(Color.myColors.myBlue)
                     Text("Replay")
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myBlue)
                 }
             }
+            .foregroundStyle(Color.myColors.myBlue)
             .buttonStyle(.plain)
             .padding(.top, 8)
         }

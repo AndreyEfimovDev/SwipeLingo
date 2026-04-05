@@ -198,7 +198,7 @@ struct MockDataSeeder {
         )
         context.insert(set2)
 
-        // Set 3: Informal → Formal, parallel mode, Pro tier (тест badge)
+        // Set 3: Informal → Formal, parallel mode, Pro tier (тест badge + длинный список для тест скролла)
         let set3 = DynamicSet(
             title: "Informal → Formal",
             subtitle: "Business writing register",
@@ -207,11 +207,21 @@ struct MockDataSeeder {
             displayMode: .parallel,
             accessTier: .pro,
             items: [
-                DynamicPair(left: DynamicItem(text: "get in touch"), right: DynamicItem(text: "contact")),
-                DynamicPair(left: DynamicItem(text: "find out"),     right: DynamicItem(text: "ascertain")),
-                DynamicPair(left: DynamicItem(text: "go up"),        right: DynamicItem(text: "increase")),
-                DynamicPair(left: DynamicItem(text: "look into"),    right: DynamicItem(text: "investigate")),
-                DynamicPair(left: DynamicItem(text: "set up"),       right: DynamicItem(text: "establish")),
+                DynamicPair(left: DynamicItem(text: "get in touch"),  right: DynamicItem(text: "contact")),
+                DynamicPair(left: DynamicItem(text: "find out"),      right: DynamicItem(text: "ascertain")),
+                DynamicPair(left: DynamicItem(text: "go up"),         right: DynamicItem(text: "increase")),
+                DynamicPair(left: DynamicItem(text: "look into"),     right: DynamicItem(text: "investigate")),
+                DynamicPair(left: DynamicItem(text: "set up"),        right: DynamicItem(text: "establish")),
+                DynamicPair(left: DynamicItem(text: "think about"),   right: DynamicItem(text: "consider")),
+                DynamicPair(left: DynamicItem(text: "make sure"),     right: DynamicItem(text: "ensure")),
+                DynamicPair(left: DynamicItem(text: "talk about"),    right: DynamicItem(text: "discuss")),
+                DynamicPair(left: DynamicItem(text: "get rid of"),    right: DynamicItem(text: "eliminate")),
+                DynamicPair(left: DynamicItem(text: "bring up"),      right: DynamicItem(text: "raise")),
+                DynamicPair(left: DynamicItem(text: "point out"),     right: DynamicItem(text: "indicate")),
+                DynamicPair(left: DynamicItem(text: "go along with"), right: DynamicItem(text: "comply with")),
+                DynamicPair(left: DynamicItem(text: "check out"),     right: DynamicItem(text: "examine")),
+                DynamicPair(left: DynamicItem(text: "come up with"),  right: DynamicItem(text: "propose")),
+                DynamicPair(left: DynamicItem(text: "wrap up"),       right: DynamicItem(text: "conclude")),
             ]
         )
         context.insert(set3)
