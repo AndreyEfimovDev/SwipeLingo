@@ -186,7 +186,7 @@ struct MockDataSeeder {
             leftTitle: "Basic",
             rightTitle: "Advanced",
             displayMode: .parallel,
-            accessTier: .free,
+            accessTier: .go,
             items: [
                 DynamicPair(left: DynamicItem(text: "very tired"),     right: DynamicItem(text: "exhausted")),
                 DynamicPair(left: DynamicItem(text: "very happy"),     right: DynamicItem(text: "elated")),

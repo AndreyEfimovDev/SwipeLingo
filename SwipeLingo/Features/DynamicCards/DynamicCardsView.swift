@@ -128,29 +128,41 @@ private struct DynamicSetRowView: View {
 }
 
 // MARK: - AccessTierBadge
+// Reusable badge for subscription plan indicators.
+// Plans: Free (no badge) / Go (purple→blue gradient) / Pro (yellow→orange gradient)
+// NOTE: defined here; if needed elsewhere — add AccessTierBadge.swift to Xcode target.
 
-private struct AccessTierBadge: View {
+struct AccessTierBadge: View {
     let tier: AccessTier
 
     var body: some View {
         switch tier {
         case .free:
             EmptyView()
+        case .go:
+            badge("GO",  colors: [Color.myColors.myPurple, Color.myColors.myBlue])
         case .pro:
-            badge("PRO", color: Color.myColors.myBlue)
-        case .proPlus:
-            badge("PRO+", color: Color.myColors.myPurple)
+            badge("PRO", colors: [Color.myColors.myYellow, Color.myColors.myOrange])
         }
     }
 
-    private func badge(_ label: String, color: Color) -> some View {
-        Text(label)
+    private func badge(_ label: String, colors: [Color]) -> some View {
+        let gradient = LinearGradient(
+            colors: colors,
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        return Text(label)
             .font(.caption2.weight(.bold))
-            .foregroundStyle(color)
+            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(color.opacity(0.12))
+            .padding(.vertical, 4)
+            .frame(width: 38, alignment: .center)
+            .background(gradient.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 5))
-            .overlay(RoundedRectangle(cornerRadius: 5).stroke(color.opacity(0.25), lineWidth: 1))
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .strokeBorder(gradient, lineWidth: 1)
+            )
     }
 }
