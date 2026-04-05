@@ -743,12 +743,12 @@ struct TinderCardsView: View {
         Button { viewModel.evaluate(rating: rating, context: context) } label: {
             Text(title)
                 .font(.subheadline.weight(.semibold))
+                .foregroundStyle(color)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 .background(color.opacity(0.15))
-                .foregroundStyle(color)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.15), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.85), lineWidth: 1))
         }
     }
 
