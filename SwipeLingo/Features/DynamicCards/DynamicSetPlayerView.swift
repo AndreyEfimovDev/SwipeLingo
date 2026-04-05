@@ -227,6 +227,7 @@ struct DynamicSetPlayerView: View {
 
     private var modeToggle: some View {
         let isAuto = animationMode == .automatic
+        let isPlaybackActive = hasStarted && !showCompletion
         return Button {
             switchMode(to: isAuto ? .manual : .automatic)
         } label: {
@@ -234,16 +235,17 @@ struct DynamicSetPlayerView: View {
                 Text(isAuto ? "Auto" : "Manual")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.myColors.myBlue)
-                    // Фиксируем ширину по более длинному слову "Manual",
-                    // выравниваем по .leading — левый край кнопки не скачет
                     .frame(minWidth: 45, alignment: .leading)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 8, weight: .semibold))
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
             }
+            .opacity(isPlaybackActive ? 0.35 : 1.0)
         }
         .buttonStyle(.plain)
+        .disabled(isPlaybackActive)
         .animation(.easeInOut(duration: 0.15), value: animationMode)
+        .animation(.easeInOut(duration: 0.2), value: isPlaybackActive)
     }
 
     // MARK: - Column Headers
