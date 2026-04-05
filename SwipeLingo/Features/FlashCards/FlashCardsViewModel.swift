@@ -48,21 +48,21 @@ final class FlashCardsViewModel {
     /// Loads a session if one isn't already running.
     func startSessionIfNeeded(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
-        collections: [Collection], dueHour: Int
+        collections: [Collection], dueHour: Int, srsEnabled: Bool = true
     ) {
         guard studyCards.isEmpty && !isCaughtUp else { return }
         load(piles: piles, allCards: allCards, cardSets: cardSets,
-             collections: collections, dueHour: dueHour)
+             collections: collections, dueHour: dueHour, dueOnly: srsEnabled)
     }
 
     /// Discards the current session and starts a fresh session (respects dueHour).
     func startNewSession(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
-        collections: [Collection], dueHour: Int
+        collections: [Collection], dueHour: Int, srsEnabled: Bool = true
     ) {
         isCaughtUp = false
         load(piles: piles, allCards: allCards, cardSets: cardSets,
-             collections: collections, dueHour: dueHour)
+             collections: collections, dueHour: dueHour, dueOnly: srsEnabled)
     }
 
     /// "Study anyway" — loads ALL active cards ignoring dueDate and hour threshold.

@@ -29,6 +29,7 @@ struct DynamicSetPlayerView: View {
     @AppStorage("dynamicAnimationMode")     private var defaultAnimationMode: AnimationMode = .manual
     @AppStorage("dynamicCardsAudioEnabled") private var audioEnabled: Bool = true
     @AppStorage("ttsVoiceIdentifier")       private var ttsVoiceIdentifier: String = ""
+    @AppStorage("srsEnabled")               private var srsEnabled: Bool = true
 
     @State private var animationMode:    AnimationMode = .manual
     @State private var hasStarted:       Bool = false
@@ -92,10 +93,11 @@ struct DynamicSetPlayerView: View {
                         .myShadow()
                         .padding(.horizontal, 16)
 
-                        // SRS buttons + replay + mode toggle — после окончания аудио последней строки
+                        // SRS buttons + replay — после окончания аудио последней строки
                         if showCompletion {
-                            srsSection
-                                .padding(.top, 24)
+                            if srsEnabled { srsRatingButtons.padding(.top, 24) }
+                            replayButton
+                                .padding(.top, srsEnabled ? 8 : 24)
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
 
@@ -331,7 +333,8 @@ struct DynamicSetPlayerView: View {
 
     // MARK: - SRS Section
 
-    private var srsSection: some View {
+    /// Кнопки оценки — показываются только когда SRS включён
+    private var srsRatingButtons: some View {
         VStack(spacing: 12) {
             Text("How well did you know this?")
                 .font(.subheadline)
@@ -344,20 +347,23 @@ struct DynamicSetPlayerView: View {
             }
             // TODO: SRS-логика для DynamicSet (оценка всего сета целиком)
             // Требует SRS-полей в DynamicSet: dueDate, interval, easeFactor, repetitions
-
-            // Replay button
-            Button { restartSet() } label: {
-                VStack(spacing: 8) {
-                    Image(systemName: "arrow.counterclockwise.circle.fill")
-                        .font(.system(size: 64))
-                    Text("Replay")
-                        .font(.title3.weight(.semibold))
-                }
-            }
-            .foregroundStyle(Color.myColors.myBlue)
-            .buttonStyle(.plain)
-            .padding(.top, 8)
         }
+        .padding(.horizontal, 16)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    /// Кнопка Replay — всегда видна после завершения воспроизведения
+    private var replayButton: some View {
+        Button { restartSet() } label: {
+            VStack(spacing: 8) {
+                Image(systemName: "arrow.counterclockwise.circle.fill")
+                    .font(.system(size: 64))
+                Text("Replay")
+                    .font(.title3.weight(.semibold))
+            }
+        }
+        .foregroundStyle(Color.myColors.myBlue)
+        .buttonStyle(.plain)
         .padding(.horizontal, 16)
     }
 

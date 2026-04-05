@@ -16,6 +16,7 @@ struct FlashCardsView: View {
     @AppStorage("studyDirection")  private var studyDirection  = "EN→Native"
     @AppStorage("nativeLanguage")  private var nativeLanguage  = "Русский"
     @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
+    @AppStorage("srsEnabled")      private var srsEnabled: Bool    = true
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
@@ -42,14 +43,21 @@ struct FlashCardsView: View {
             viewModel.startSessionIfNeeded(
                 piles: piles, allCards: allCards,
                 cardSets: cardSets, collections: collections,
-                dueHour: studyStartHour
+                dueHour: studyStartHour, srsEnabled: srsEnabled
             )
         }
         .onChange(of: activePileSnapshot) {
             viewModel.startNewSession(
                 piles: piles, allCards: allCards,
                 cardSets: cardSets, collections: collections,
-                dueHour: studyStartHour
+                dueHour: studyStartHour, srsEnabled: srsEnabled
+            )
+        }
+        .onChange(of: srsEnabled) {
+            viewModel.startNewSession(
+                piles: piles, allCards: allCards,
+                cardSets: cardSets, collections: collections,
+                dueHour: studyStartHour, srsEnabled: srsEnabled
             )
         }
     }
@@ -74,7 +82,7 @@ struct FlashCardsView: View {
                 pileTagsLine: viewModel.pileTagsLine,
                 isDueMode: viewModel.studyMode == .due,
                 pileLearntCount: viewModel.pileLearntCount,
-                onToggleMode: {
+                onToggleMode: srsEnabled ? {
                     if viewModel.studyMode == .due {
                         viewModel.studyAll(
                             piles: piles, allCards: allCards,
@@ -84,10 +92,10 @@ struct FlashCardsView: View {
                         viewModel.startNewSession(
                             piles: piles, allCards: allCards,
                             cardSets: cardSets, collections: collections,
-                            dueHour: studyStartHour
+                            dueHour: studyStartHour, srsEnabled: srsEnabled
                         )
                     }
-                },
+                } : nil,
                 onDone: {
                     viewModel.onSessionComplete(
                         piles: piles, allCards: allCards,
