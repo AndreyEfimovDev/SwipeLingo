@@ -12,6 +12,7 @@ struct TinderCardsView: View {
     @AppStorage("studyDirection")       private var studyDirection      = "EN→Native"
     @AppStorage("ttsVoiceIdentifier")   private var ttsVoiceIdentifier  = ""
     @AppStorage("englishVariant")       private var englishVariant      = "en-US"
+    @AppStorage("srsEnabled")           private var srsEnabled: Bool    = true
 
     @State private var viewModel: TinderCardsViewModel
     @State private var lookupCard: Card?
@@ -382,12 +383,14 @@ struct TinderCardsView: View {
         VStack(spacing: 0) {
             breadcrumbRow
             flipContent(card: card).frame(maxHeight: .infinity)
-            // SRS pinned to bottom — always in layout, fades in after flip
-            srsButtonsRow
-                .padding(12)
-                .opacity(viewModel.isFlipped ? 1 : 0)
-                .allowsHitTesting(viewModel.isFlipped)
-                .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+            // SRS pinned to bottom — hidden when SRS is disabled in Settings
+            if srsEnabled {
+                srsButtonsRow
+                    .padding(12)
+                    .opacity(viewModel.isFlipped ? 1 : 0)
+                    .allowsHitTesting(viewModel.isFlipped)
+                    .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+            }
         }
     }
 
@@ -400,8 +403,7 @@ struct TinderCardsView: View {
             .frame(maxWidth: .infinity)
 
             // SRS column — only present on back side, no reserved space on front
-            if viewModel.isFlipped {
-//                Divider()
+            if srsEnabled && viewModel.isFlipped {
                 srsButtonsColumn
                     .frame(width: 90)
                     .transition(.move(edge: .trailing).combined(with: .opacity))

@@ -10,6 +10,7 @@ struct SettingsView: View {
     @AppStorage("colorScheme")        private var theme: Theme       = .system
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
     @AppStorage("studyStartHour")     private var studyStartHour: Int = 6
+    @AppStorage("srsEnabled")         private var srsEnabled: Bool   = true
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
@@ -82,22 +83,41 @@ struct SettingsView: View {
                 .font(titleFont)
                 .padding(.horizontal, 32)
 
-            HStack {
-                Label("Due cards from", systemImage: "clock")
-                    .labelStyle(.fixedIcon)
-                Spacer()
-                Picker("", selection: $studyStartHour) {
-                    ForEach(0..<24, id: \.self) { hour in
-                        Text(hourLabel(hour)).tag(hour)
-                    }
+            VStack(spacing: 0) {
+                // SRS toggle
+                HStack {
+                    Label("Spaced Repetition (SRS)", systemImage: "brain")
+                        .labelStyle(.fixedIcon)
+                    Spacer()
+                    Toggle("", isOn: $srsEnabled)
+                        .labelsHidden()
+                        .tint(Color.myColors.myBlue)
                 }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .tint(Color.myColors.myBlue)
+                .font(textFont)
+                .frame(height: 52)
+                .padding(.horizontal, 16)
+
+                // Due cards from — only when SRS is on
+                if srsEnabled {
+                    Divider().padding(.leading, 16)
+                    HStack {
+                        Label("Due cards from", systemImage: "clock")
+                            .labelStyle(.fixedIcon)
+                        Spacer()
+                        Picker("", selection: $studyStartHour) {
+                            ForEach(0..<24, id: \.self) { hour in
+                                Text(hourLabel(hour)).tag(hour)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .tint(Color.myColors.myBlue)
+                    }
+                    .font(textFont)
+                    .frame(height: 52)
+                    .padding(.horizontal, 16)
+                }
             }
-            .font(textFont)
-            .frame(height: 52)
-            .padding(.horizontal, 16)
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
