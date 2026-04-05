@@ -18,6 +18,10 @@ final class FlashCardsViewModel {
     // MARK: Published state
 
     private(set) var studyCards: [Card] = []
+    /// Card IDs that show locked back (paywall preview exceeded).
+    /// Future: paywallPreviewCount fetched from Firebase Remote Config.
+    private(set) var lockedCardIds: Set<UUID> = []
+    private let paywallPreviewCount = 8
     private(set) var contextLabels: [UUID: String] = [:]
     private(set) var cefrLabels: [UUID: CEFRLevel] = [:]
     private(set) var activePileName: String = ""
@@ -48,31 +52,36 @@ final class FlashCardsViewModel {
     /// Loads a session if one isn't already running.
     func startSessionIfNeeded(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
-        collections: [Collection], dueHour: Int, srsEnabled: Bool = true
+        collections: [Collection], dueHour: Int, srsEnabled: Bool = true,
+        userPlan: AccessTier = .free
     ) {
         guard studyCards.isEmpty && !isCaughtUp else { return }
         load(piles: piles, allCards: allCards, cardSets: cardSets,
-             collections: collections, dueHour: dueHour, dueOnly: srsEnabled)
+             collections: collections, dueHour: dueHour, dueOnly: srsEnabled,
+             userPlan: userPlan)
     }
 
     /// Discards the current session and starts a fresh session (respects dueHour).
     func startNewSession(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
-        collections: [Collection], dueHour: Int, srsEnabled: Bool = true
+        collections: [Collection], dueHour: Int, srsEnabled: Bool = true,
+        userPlan: AccessTier = .free
     ) {
         isCaughtUp = false
         load(piles: piles, allCards: allCards, cardSets: cardSets,
-             collections: collections, dueHour: dueHour, dueOnly: srsEnabled)
+             collections: collections, dueHour: dueHour, dueOnly: srsEnabled,
+             userPlan: userPlan)
     }
 
     /// "Study anyway" — loads ALL active cards ignoring dueDate and hour threshold.
     func studyAll(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
-        collections: [Collection]
+        collections: [Collection], userPlan: AccessTier = .free
     ) {
         isCaughtUp = false
         load(piles: piles, allCards: allCards, cardSets: cardSets,
-             collections: collections, dueHour: 0, dueOnly: false)
+             collections: collections, dueHour: 0, dueOnly: false,
+             userPlan: userPlan)
     }
 
     /// Called by TinderCardsView when all session cards are swiped/rated.
@@ -110,7 +119,8 @@ final class FlashCardsViewModel {
         cardSets: [CardSet],
         collections: [Collection],
         dueHour: Int,
-        dueOnly: Bool = true
+        dueOnly: Bool = true,
+        userPlan: AccessTier = .free
     ) {
         // Context labels: setId → "Collection › SetName"
         contextLabels = Dictionary(uniqueKeysWithValues: cardSets.map { set in
@@ -160,6 +170,7 @@ final class FlashCardsViewModel {
                     studyCards = pileService.apply(shuffleMethod, to: dueCards)
                     studyMode  = .due
                     sessionID  = UUID()
+                    computeLockedCards(cardSets: cardSets, userPlan: userPlan)
                     return
                 }
             }
@@ -170,6 +181,18 @@ final class FlashCardsViewModel {
         studyCards = pileService.apply(shuffleMethod, to: activeCards)
         studyMode  = .all
         sessionID  = UUID()
+        computeLockedCards(cardSets: cardSets, userPlan: userPlan)
+    }
+
+    private func computeLockedCards(cardSets: [CardSet], userPlan: AccessTier) {
+        var locked = Set<UUID>()
+        let cardsBySet = Dictionary(grouping: studyCards, by: \.setId)
+        for (setId, cards) in cardsBySet {
+            guard let cardSet = cardSets.first(where: { $0.id == setId }),
+                  !userPlan.canAccess(cardSet.accessTier) else { continue }
+            locked.formUnion(cards.dropFirst(paywallPreviewCount).map(\.id))
+        }
+        lockedCardIds = locked
     }
 
     // MARK: - Labels

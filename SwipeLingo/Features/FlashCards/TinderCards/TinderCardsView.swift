@@ -22,6 +22,7 @@ struct TinderCardsView: View {
 
     private let swipeThreshold:   CGFloat = 110
     private let upSwipeThreshold: CGFloat = 100
+    private let lockedCardIds: Set<UUID>
     private let pileTagsLine: String
     private let cefrLabels: [UUID: CEFRLevel]
     /// True when study session shows only due cards — changes "Active" label to "Due".
@@ -42,6 +43,7 @@ struct TinderCardsView: View {
     }
 
     init(cards: [Card],
+         lockedCardIds: Set<UUID> = [],
          contextLabels: [UUID: String] = [:],
          cefrLabels: [UUID: CEFRLevel] = [:],
          pileTagsLine: String = "",
@@ -53,6 +55,7 @@ struct TinderCardsView: View {
                                     cards: cards,
                                     contextLabels: contextLabels,
                                     onDone: onDone))
+        self.lockedCardIds     = lockedCardIds
         self.cefrLabels        = cefrLabels
         self.pileTagsLine      = pileTagsLine
         self.isDueMode         = isDueMode
@@ -479,7 +482,16 @@ struct TinderCardsView: View {
 
     // MARK: - Card Back
 
+    @ViewBuilder
     private func cardBack(_ card: Card) -> some View {
+        if lockedCardIds.contains(card.id) {
+            LockedCardBackView()
+        } else {
+            unlockedCardBack(card)
+        }
+    }
+
+    private func unlockedCardBack(_ card: Card) -> some View {
         VStack(spacing: 0) {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(spacing: 14) {
@@ -602,7 +614,7 @@ struct TinderCardsView: View {
             .padding(.vertical, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
+    }  // unlockedCardBack
 
     // MARK: - Background Cards
 
@@ -811,6 +823,51 @@ struct TinderCardsView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+    }
+}
+
+// MARK: - LockedCardBackView
+
+private struct LockedCardBackView: View {
+    @State private var showPlans = false
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "lock.fill")
+                .font(.system(size: 52))
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.2))
+
+            VStack(spacing: 8) {
+                Text("Content locked")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent)
+
+                Text("Upgrade your plan to see the full translation and examples")
+                    .font(.subheadline)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                    .padding(.horizontal, 32)
+            }
+
+            Button { showPlans = true } label: {
+                Text("See Plans")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.myColors.myBlue)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .sheet(isPresented: $showPlans) {
+            PlansView()
         }
     }
 }
