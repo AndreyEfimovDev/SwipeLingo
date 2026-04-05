@@ -357,8 +357,8 @@
 		478C78362F794487005FBDFE /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				47DE7EF42F80013700F6BCF3 /* DynamicCards */,
 				478C78352F794487005FBDFE /* FlashCards */,
+				47DE7EF42F80013700F6BCF3 /* DynamicCards */,
 				478C78292F794487005FBDFE /* Library */,
 				478C782C2F794487005FBDFE /* Settings */,
 				478C782E2F794487005FBDFE /* Statistics */,
