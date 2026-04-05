@@ -87,7 +87,7 @@ struct ProfileView: View {
                         profile?.cefrLevel = level
                     } label: {
                         HStack(spacing: 10) {
-                            Text(level.rawValue)
+                            Text(level.displayCode)
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(level.color)
                                 .frame(width: 36, alignment: .leading)

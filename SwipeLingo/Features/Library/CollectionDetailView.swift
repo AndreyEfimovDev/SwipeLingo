@@ -183,7 +183,7 @@ struct CollectionDetailView: View {
                     Button {
                         selectedCEFRLevel = selectedCEFRLevel == level ? nil : level
                     } label: {
-                        FilterPill(label: level.rawValue, isActive: selectedCEFRLevel == level)
+                        FilterPill(label: level.displayCode, isActive: selectedCEFRLevel == level)
                     }
                     .buttonStyle(.plain)
                 }
