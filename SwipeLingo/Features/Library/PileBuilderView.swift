@@ -18,6 +18,7 @@ struct PileBuilderView: View {
 
     @State private var viewModel: PileBuilderViewModel
     @State private var isShowingDeleteConfirm = false
+    @AppStorage("srsEnabled") private var srsEnabled: Bool = true
     @State private var searchText   = ""
     @State private var selectedLevel: String? = nil
 
@@ -93,8 +94,15 @@ struct PileBuilderView: View {
                 shuffleRow(.random,      icon: "shuffle",    name: "Random")
                 Divider().padding(.leading, 52)
                 shuffleRow(.sequential,  icon: "arrow.down", name: "Sequential")
-                Divider().padding(.leading, 52)
-                shuffleRow(.prioritized, icon: "flame",      name: "Hardest first")
+                if srsEnabled {
+                    Divider().padding(.leading, 52)
+                    shuffleRow(.prioritized, icon: "flame",  name: "Hardest first")
+                }
+            }
+            .onChange(of: srsEnabled) { _, enabled in
+                if !enabled && viewModel.shuffleMethod == .prioritized {
+                    viewModel.shuffleMethod = .random
+                }
             }
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
