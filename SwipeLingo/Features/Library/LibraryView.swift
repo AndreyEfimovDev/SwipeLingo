@@ -324,7 +324,7 @@ struct LibraryView: View {
         NavigationLink {
             if collection.name == "Inbox",
                let inboxSet = cardSets.first(where: { $0.collectionId == collection.id }) {
-                CardSetDetailView(cardSet: inboxSet)
+                CardSetDetailView(cardSet: inboxSet, backTitle: "Library")
             } else {
                 CollectionDetailView(collection: collection)
             }

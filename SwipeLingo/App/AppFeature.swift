@@ -168,7 +168,7 @@ struct AppView: View {
         UINavigationBar.appearance().compactAppearance = navBarAppearance
         UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
         UINavigationBar.appearance().compactScrollEdgeAppearance = navBarAppearance
-        UINavigationBar.appearance().tintColor = accentColor
+        UINavigationBar.appearance().tintColor = UIColor(named: "myBlue") ?? UIColor.systemBlue // системный back
         UITableView.appearance().backgroundColor = UIColor.clear
     }
 

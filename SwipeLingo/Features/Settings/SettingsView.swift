@@ -11,6 +11,9 @@ struct SettingsView: View {
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
     @AppStorage("studyStartHour")     private var studyStartHour: Int = 6
 
+    private var titleFont: Font = .caption
+    private var textFont: Font = .body
+    
     private var currentVoiceName: String {
         guard !ttsVoiceIdentifier.isEmpty,
               let voice = AVSpeechSynthesisVoice(identifier: ttsVoiceIdentifier)
@@ -45,22 +48,21 @@ struct SettingsView: View {
     private var languageSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("LANGUAGE")
-                .font(.footnote)
+                .font(titleFont)
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
                 HStack {
                     Text("Native language")
-                        .font(.body)
                     Spacer()
                     Picker("", selection: $nativeLanguage) {
                         ForEach(languages, id: \.self) { Text($0).tag($0) }
                     }
                     .pickerStyle(.menu)
                     .labelsHidden()
-                    .font(.subheadline.weight(.bold))
                     .tint(Color.myColors.myBlue)
                 }
+                .font(textFont)
                 .frame(height: 52)
                 .padding(.horizontal, 16)
 
@@ -77,7 +79,7 @@ struct SettingsView: View {
     private var studySection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("STUDY")
-                .font(.footnote)
+                .font(titleFont)
                 .padding(.horizontal, 32)
 
             HStack {
@@ -93,6 +95,7 @@ struct SettingsView: View {
                 .labelsHidden()
                 .tint(Color.myColors.myBlue)
             }
+            .font(textFont)
             .frame(height: 52)
             .padding(.horizontal, 16)
             .background(Color.myColors.myBackground)
@@ -113,7 +116,7 @@ struct SettingsView: View {
     private var voiceSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("VOICE")
-                .font(.footnote)
+                .font(titleFont)
                 .padding(.horizontal, 32)
 
             NavigationLink { VoiceSettingsView() } label: {
@@ -124,6 +127,7 @@ struct SettingsView: View {
                     Text(currentVoiceName)
                         .font(.subheadline)
                 }
+                .font(textFont)
                 .frame(height: 52)
                 .padding(.horizontal, 16)
                 .contentShape(Rectangle())
@@ -140,14 +144,14 @@ struct SettingsView: View {
     private var appearanceSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("APPEARANCE")
-                .font(.footnote)
+                .font(titleFont)
                 .padding(.horizontal, 32)
 
             UnderlineSegmentedPickerNotOptional(
                 selection: $theme,
                 allItems: Theme.allCases,
                 titleForCase: { $0.displayName },
-                selectedFont: .subheadline
+                selectedFont: textFont
             )
             .frame(height: 52)
             .padding(.horizontal, 16)
