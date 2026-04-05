@@ -224,6 +224,12 @@ struct DynamicSetPlayerView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.myColors.myAccent)
             }
+            let count = set.items.count
+            if count > 0 {
+                Text("(\(count))")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+            }
             Spacer()
             modeToggle
         }

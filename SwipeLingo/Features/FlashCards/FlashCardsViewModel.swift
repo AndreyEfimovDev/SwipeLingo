@@ -207,8 +207,6 @@ final class FlashCardsViewModel {
             }
             return set.name
         }
-        var parts = names.count <= maxShown ? names : Array(names.prefix(maxShown)) + ["+\(names.count - maxShown)"]
-        _ = parts  // suppress unused warning
         let tagStr = (names.count <= maxShown ? names : Array(names.prefix(maxShown)) + ["+\(names.count - maxShown)"])
             .joined(separator: " · ")
         return "\(tagStr) (\(totalCards) \(totalCards == 1 ? "card" : "cards"))"
