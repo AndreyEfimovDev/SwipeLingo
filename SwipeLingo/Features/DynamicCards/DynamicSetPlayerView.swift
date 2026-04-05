@@ -30,21 +30,27 @@ struct DynamicSetPlayerView: View {
     @AppStorage("dynamicCardsAudioEnabled") private var audioEnabled: Bool = true
     @AppStorage("ttsVoiceIdentifier")       private var ttsVoiceIdentifier: String = ""
 
-    @State private var animationMode:  AnimationMode = .manual
-    @State private var hasStarted:     Bool = false
-    @State private var isPaused:       Bool = false
-    @State private var showCompletion: Bool = false   // true только после окончания аудио последней строки
+    @State private var animationMode:    AnimationMode = .manual
+    @State private var hasStarted:       Bool = false
+    @State private var isPaused:         Bool = false   // пауза в auto режиме
+    @State private var isManualPaused:   Bool = false   // пауза TTS в manual режиме (тап во время воспроизведения)
+    @State private var showCompletion:   Bool = false   // true только после окончания аудио последней строки
+    @State private var showTapHint:      Bool = false   // true после окончания TTS текущего шага в manual
     @State private var revealedSteps:  Int = 0
     @State private var thresholds: [(leftStep: Int?, rightStep: Int?)] = []
     @State private var totalSteps: Int = 0
     @State private var autoPlayTask:   Task<Void, Never>?
     @State private var completionTask: Task<Void, Never>?
+    @State private var tapHintTask:    Task<Void, Never>?
 
     // Audio
     @State private var audioService = AudioPlayerService()
     @State private var audioTask: Task<Void, Never>?
     /// Текст для озвучки правой стороны — ставится при parallel, озвучивается после окончания левого TTS
     @State private var pendingRightSpeech: String? = nil
+    /// true в промежутке между окончанием левого TTS и стартом правого (speechGap),
+    /// чтобы waitForAudio/waitForAudioThenPause не думали что аудио уже закончилось
+    @State private var isRightSpeechPending: Bool = false
 
     private let autoPlayDelay: Double = 2.5  // fallback-задержка когда аудио выключено
     private let readPause: Double = 0.8     // пауза после появления строки перед озвучкой
@@ -95,9 +101,13 @@ struct DynamicSetPlayerView: View {
 
                         // Hints — только во время воспроизведения
                         if !isComplete {
-                            if animationMode == .manual {
+                            if showTapHint {
                                 tapHint.padding(.top, 20)
-                            } else if isPaused {
+                                    .transition(.opacity)
+                            } else if isManualPaused {
+                                tapToContinueHint.padding(.top, 20)
+                                    .transition(.opacity)
+                            } else if animationMode == .automatic && isPaused {
                                 resumeHint.padding(.top, 20)
                             }
                         }
@@ -117,15 +127,27 @@ struct DynamicSetPlayerView: View {
                     proxy.scrollTo("bottom", anchor: .bottom)
                 }
                 speakCurrentStep()
+                // Manual mode: запускаем ожидание TTS → показываем подсказку
+                if animationMode == .manual && !isComplete {
+                    scheduleManualHint()
+                }
             }
             // Parallel mode: когда левый TTS закончил → озвучиваем правый
             .onChange(of: audioService.isPlaying) { _, isNow in
                 guard !isNow, let text = pendingRightSpeech else { return }
                 pendingRightSpeech = nil
-                guard audioEnabled else { return }
+                isRightSpeechPending = true   // gap начался — не даём waitForAudio выйти раньше времени
+                guard audioEnabled else {
+                    isRightSpeechPending = false
+                    return
+                }
                 audioTask = Task {
                     try? await Task.sleep(for: .seconds(speechGap))
-                    guard !Task.isCancelled, audioEnabled else { return }
+                    guard !Task.isCancelled, audioEnabled else {
+                        isRightSpeechPending = false
+                        return
+                    }
+                    isRightSpeechPending = false   // сбрасываем перед стартом речи
                     audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier)
                 }
             }
@@ -152,6 +174,7 @@ struct DynamicSetPlayerView: View {
         .onDisappear {
             autoPlayTask?.cancel()
             completionTask?.cancel()
+            tapHintTask?.cancel()
             audioTask?.cancel()
             pendingRightSpeech = nil
             audioService.stop()
@@ -354,6 +377,17 @@ struct DynamicSetPlayerView: View {
         .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
     }
 
+    private var tapToContinueHint: some View {
+        HStack {
+            Spacer()
+            Image(systemName: "hand.tap")
+            Text("Tap to continue")
+            Spacer()
+        }
+        .font(.headline)
+        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+    }
+
     private var resumeHint: some View {
         HStack {
             Spacer()
@@ -375,6 +409,7 @@ struct DynamicSetPlayerView: View {
                 if !audioEnabled {
                     audioTask?.cancel()
                     pendingRightSpeech = nil
+                    isRightSpeechPending = false
                     audioService.stop()
                 }
             } label: {
@@ -393,7 +428,25 @@ struct DynamicSetPlayerView: View {
         case .automatic:
             isPaused ? resumeAutoPlay() : pauseAutoPlay()
         case .manual:
-            withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
+            if showTapHint {
+                // TTS завершён — переходим к следующей строке
+                tapHintTask?.cancel()
+                withAnimation { showTapHint = false }
+                withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
+            } else if isManualPaused {
+                // Возобновляем: переигрываем текущий шаг с начала
+                withAnimation { isManualPaused = false }
+                speakCurrentStep()
+                scheduleManualHint()
+            } else {
+                // TTS играет — ставим на паузу
+                tapHintTask?.cancel()
+                audioTask?.cancel()
+                pendingRightSpeech = nil
+                isRightSpeechPending = false
+                audioService.stop()
+                withAnimation { isManualPaused = true }
+            }
         }
     }
 
@@ -425,6 +478,7 @@ struct DynamicSetPlayerView: View {
         autoPlayTask?.cancel()
         audioTask?.cancel()
         pendingRightSpeech = nil
+        isRightSpeechPending = false
         audioService.stop()
         log("⏸ Auto play paused at step \(revealedSteps)")
     }
@@ -490,8 +544,8 @@ struct DynamicSetPlayerView: View {
             guard !Task.isCancelled else { return }
         }
 
-        // Ждём окончания всего аудио: левая сторона + правая (pendingRightSpeech)
-        while audioService.isPlaying || pendingRightSpeech != nil {
+        // Ждём окончания всего аудио: левая сторона + правая (pendingRightSpeech / isRightSpeechPending)
+        while audioService.isPlaying || pendingRightSpeech != nil || isRightSpeechPending {
             try? await Task.sleep(for: .milliseconds(100))
             guard !Task.isCancelled else { return }
         }
@@ -500,14 +554,53 @@ struct DynamicSetPlayerView: View {
         try? await Task.sleep(for: .seconds(postAudioDelay))
     }
 
+    /// Ждёт окончания TTS без финальной паузы — для показа tapHint в manual mode.
+    private func waitForAudio() async {
+        guard !Task.isCancelled else { return }
+        guard audioEnabled else { return }
+
+        try? await Task.sleep(for: .seconds(readPause + 0.3))
+        guard !Task.isCancelled else { return }
+
+        var attempts = 0
+        while !audioService.isPlaying && attempts < 15 {
+            try? await Task.sleep(for: .milliseconds(100))
+            attempts += 1
+            guard !Task.isCancelled else { return }
+        }
+
+        while audioService.isPlaying || pendingRightSpeech != nil || isRightSpeechPending {
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+        }
+
+        // Короткая пауза перед появлением подсказки
+        try? await Task.sleep(for: .seconds(0.3))
+    }
+
+    /// Запускает таск, который показывает tapHint после окончания TTS (только manual mode).
+    private func scheduleManualHint() {
+        tapHintTask?.cancel()
+        showTapHint = false
+        tapHintTask = Task {
+            await waitForAudio()
+            guard !Task.isCancelled, !isComplete else { return }
+            withAnimation { showTapHint = true }
+        }
+    }
+
     private func restartSet() {
         autoPlayTask?.cancel()
         completionTask?.cancel()
+        tapHintTask?.cancel()
         audioTask?.cancel()
         pendingRightSpeech = nil
+        isRightSpeechPending = false
         audioService.stop()
         isPaused = false
+        isManualPaused = false
         showCompletion = false
+        showTapHint = false
         // hasStarted остаётся true — стартовый экран показывается только один раз
         withAnimation(.spring(duration: 0.3)) { revealedSteps = 0 }
         // Запускаем воспроизведение сразу без стартового экрана
@@ -528,6 +621,7 @@ struct DynamicSetPlayerView: View {
     private func speakCurrentStep() {
         audioTask?.cancel()
         pendingRightSpeech = nil
+        isRightSpeechPending = false
         guard audioEnabled else { return }
 
         var leftText:  String? = nil
