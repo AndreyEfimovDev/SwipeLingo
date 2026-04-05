@@ -67,6 +67,8 @@
 		47DE7EF52F80013700F6BCF3 /* DynamicCardsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */; };
 		47DE7EF62F80013700F6BCF3 /* DynamicSetPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EF32F80013700F6BCF3 /* DynamicSetPlayerView.swift */; };
 		47DE7EF72F80013700F6BCF3 /* DynamicCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */; };
+		47DE7F352F82D5EC00F6BCF3 /* PlansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */; };
+		47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -169,6 +171,8 @@
 		47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicCardsView.swift; sourceTree = "<group>"; };
 		47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicCardsViewModel.swift; sourceTree = "<group>"; };
 		47DE7EF32F80013700F6BCF3 /* DynamicSetPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicSetPlayerView.swift; sourceTree = "<group>"; };
+		47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlansView.swift; sourceTree = "<group>"; };
+		47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -320,8 +324,10 @@
 		478C782C2F794487005FBDFE /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */,
 				478C782A2F794487005FBDFE /* SettingsView.swift */,
 				478C782B2F794487005FBDFE /* VoiceSettingsView.swift */,
+				47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -628,6 +634,7 @@
 				478C785A2F794487005FBDFE /* AddCardSetView.swift in Sources */,
 				478C785B2F794487005FBDFE /* AddCollectionView.swift in Sources */,
 				478C785C2F794487005FBDFE /* AddEditCardView.swift in Sources */,
+				47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */,
 				478C785D2F794487005FBDFE /* CardSetDetailView.swift in Sources */,
 				478C785E2F794487005FBDFE /* CollectionDetailView.swift in Sources */,
 				478C785F2F794487005FBDFE /* DeletedCardsView.swift in Sources */,
@@ -663,6 +670,7 @@
 				474F1FE82F7D304B00128E83 /* SearchBar.swift in Sources */,
 				478C78772F794487005FBDFE /* DictionaryService.swift in Sources */,
 				478C78782F794487005FBDFE /* FirestoreImportService.swift in Sources */,
+				47DE7F352F82D5EC00F6BCF3 /* PlansView.swift in Sources */,
 				478C78792F794487005FBDFE /* KeyboardManager.swift in Sources */,
 				478C787A2F794487005FBDFE /* MockDataSeeder.swift in Sources */,
 				478C787B2F794487005FBDFE /* PileService.swift in Sources */,

@@ -134,6 +134,7 @@ private struct DynamicSetRowView: View {
 
 struct AccessTierBadge: View {
     let tier: AccessTier
+    var isSmall: Bool = false
 
     var body: some View {
         switch tier {
@@ -147,21 +148,17 @@ struct AccessTierBadge: View {
     }
 
     private func badge(_ label: String, colors: [Color]) -> some View {
-        let gradient = LinearGradient(
-            colors: colors,
-            startPoint: .leading,
-            endPoint: .trailing
-        )
+        let gradient = LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing)
         return Text(label)
-            .font(.caption2.weight(.bold))
+            .font(isSmall ? .system(size: 7, weight: .bold) : .caption2.weight(.bold))
             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            .frame(width: 38, alignment: .center)
+            .padding(.horizontal, isSmall ? 4 : 6)
+            .padding(.vertical,   isSmall ? 2 : 4)
+            .frame(width: isSmall ? 26 : 38, alignment: .center)
             .background(gradient.opacity(0.15))
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .clipShape(RoundedRectangle(cornerRadius: isSmall ? 3 : 5))
             .overlay(
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: isSmall ? 3 : 5)
                     .strokeBorder(gradient, lineWidth: 1)
             )
     }

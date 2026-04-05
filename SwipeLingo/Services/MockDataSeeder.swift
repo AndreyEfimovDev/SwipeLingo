@@ -71,9 +71,9 @@ struct MockDataSeeder {
         let collection = Collection(name: "Academic Words", icon: "book", isOwned: true, isUserCreated: false)
         context.insert(collection)
 
-        let sets: [(name: String, level: CEFRLevel, cards: [(en: String, item: String)])] = [
+        let sets: [(name: String, level: CEFRLevel, accessTier: AccessTier, cards: [(en: String, item: String)])] = [
             (
-                name: "Foundations", level: .a2,
+                name: "Foundations", level: .a2, accessTier: .free,
                 cards: [
                     ("Concept",     "понятие, концепция"),
                     ("Factor",      "фактор, причина"),
@@ -83,7 +83,7 @@ struct MockDataSeeder {
                 ]
             ),
             (
-                name: "Core Academic", level: .b1,
+                name: "Core Academic", level: .b1, accessTier: .go,
                 cards: [
                     ("Analyse",     "анализировать"),
                     ("Approach",    "подход"),
@@ -93,7 +93,7 @@ struct MockDataSeeder {
                 ]
             ),
             (
-                name: "Upper Academic", level: .b2,
+                name: "Upper Academic", level: .b2, accessTier: .go,
                 cards: [
                     ("Albeit",      "хотя, несмотря на то что"),
                     ("Comprehensive","всесторонний, полный"),
@@ -103,7 +103,7 @@ struct MockDataSeeder {
                 ]
             ),
             (
-                name: "Advanced", level: .c1,
+                name: "Advanced", level: .c1, accessTier: .pro,
                 cards: [
                     ("Nuance",      "нюанс, оттенок"),
                     ("Perpetuate",  "увековечивать, сохранять"),
@@ -115,7 +115,8 @@ struct MockDataSeeder {
         ]
 
         for setData in sets {
-            let cardSet = CardSet(name: setData.name, collectionId: collection.id)
+            let cardSet = CardSet(name: setData.name, collectionId: collection.id,
+                                  accessTier: setData.accessTier)
             cardSet.level = setData.level.rawValue
             context.insert(cardSet)
 
@@ -134,8 +135,8 @@ struct MockDataSeeder {
             name: "Business English",
             icon: "briefcase",
             sets: [
-                ("Negotiations", .b2, [("Agenda", "повестка дня"), ("Leverage", "влияние, рычаг"), ("Stakeholder", "заинтересованная сторона")]),
-                ("Presentations", .b1, [("Outline", "план, схема"), ("Takeaway", "главный вывод"), ("Benchmark", "эталон, ориентир")]),
+                ("Presentations", .b1, .go,  [("Outline", "план, схема"), ("Takeaway", "главный вывод"), ("Benchmark", "эталон, ориентир")]),
+                ("Negotiations",  .b2, .pro, [("Agenda", "повестка дня"), ("Leverage", "влияние, рычаг"), ("Stakeholder", "заинтересованная сторона")]),
             ],
             into: context
         )
@@ -144,8 +145,8 @@ struct MockDataSeeder {
             name: "Phrasal Verbs",
             icon: "text.bubble",
             sets: [
-                ("Movement", .b1, [("Set off", "отправляться"), ("Break down", "сломаться; расстроиться"), ("Run into", "столкнуться с")]),
-                ("Change", .b2, [("Phase out", "постепенно отменять"), ("Turn around", "переломить ситуацию"), ("Give up", "сдаться")]),
+                ("Movement", .b1, .go,  [("Set off", "отправляться"), ("Break down", "сломаться; расстроиться"), ("Run into", "столкнуться с")]),
+                ("Change",   .b2, .pro, [("Phase out", "постепенно отменять"), ("Turn around", "переломить ситуацию"), ("Give up", "сдаться")]),
             ],
             into: context
         )
@@ -232,7 +233,7 @@ struct MockDataSeeder {
     private static func seedMockCuratedCollection(
         name: String,
         icon: String,
-        sets: [(name: String, level: CEFRLevel, cards: [(String, String)])],
+        sets: [(name: String, level: CEFRLevel, accessTier: AccessTier, cards: [(String, String)])],
         into context: ModelContext
     ) {
         let existing = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
@@ -242,7 +243,8 @@ struct MockDataSeeder {
         context.insert(collection)
 
         for setData in sets {
-            let cardSet = CardSet(name: setData.name, collectionId: collection.id)
+            let cardSet = CardSet(name: setData.name, collectionId: collection.id,
+                                  accessTier: setData.accessTier)
             cardSet.level = setData.level.rawValue
             context.insert(cardSet)
             for (en, item) in setData.cards {

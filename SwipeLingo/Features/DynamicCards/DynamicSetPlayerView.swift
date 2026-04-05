@@ -30,6 +30,7 @@ struct DynamicSetPlayerView: View {
     @AppStorage("dynamicCardsAudioEnabled") private var audioEnabled: Bool = true
     @AppStorage("ttsVoiceIdentifier")       private var ttsVoiceIdentifier: String = ""
     @AppStorage("srsEnabled")               private var srsEnabled: Bool = true
+    @AppStorage("userPlan")                 private var userPlan: AccessTier = .free
 
     @State private var animationMode:    AnimationMode = .manual
     @State private var hasStarted:       Bool = false
@@ -45,6 +46,9 @@ struct DynamicSetPlayerView: View {
     @State private var tapHintTask:    Task<Void, Never>?
 
     // Audio
+    @State private var showPlans = false
+
+    // Audio
     @State private var audioService = AudioPlayerService()
     @State private var audioTask: Task<Void, Never>?
     /// Текст для озвучки правой стороны — ставится при parallel, озвучивается после окончания левого TTS
@@ -52,6 +56,10 @@ struct DynamicSetPlayerView: View {
     /// true в промежутке между окончанием левого TTS и стартом правого (speechGap),
     /// чтобы waitForAudio/waitForAudioThenPause не думали что аудио уже закончилось
     @State private var isRightSpeechPending: Bool = false
+
+    private let previewPairCount = 5          // пар с полным доступом для preview
+
+    private var isPaywalled: Bool { !userPlan.canAccess(set.accessTier) }
 
     private let autoPlayDelay: Double = 2.5  // fallback-задержка когда аудио выключено
     private let readPause: Double = 0.8     // пауза после появления строки перед озвучкой
@@ -107,7 +115,7 @@ struct DynamicSetPlayerView: View {
                                 tapHint.padding(.top, 20)
                                     .transition(.opacity)
                             } else if isManualPaused {
-                                tapToContinueHint.padding(.top, 20)
+                                resumeHint.padding(.top, 20)
                                     .transition(.opacity)
                             } else if animationMode == .automatic && isPaused {
                                 resumeHint.padding(.top, 20)
@@ -184,13 +192,9 @@ struct DynamicSetPlayerView: View {
             animationMode = defaultAnimationMode
         }
         .onDisappear {
-            autoPlayTask?.cancel()
-            completionTask?.cancel()
-            tapHintTask?.cancel()
-            audioTask?.cancel()
-            pendingRightSpeech = nil
-            audioService.stop()
+            cancelAllTasks()
         }
+        .sheet(isPresented: $showPlans) { PlansView() }
     }
 
     // MARK: - Start Screen
@@ -219,16 +223,22 @@ struct DynamicSetPlayerView: View {
     private var subtitleLine: some View {
         // Subtitle + mode switcher в одну строку
         HStack(alignment: .center, spacing: 8) {
-            if let subtitle = set.subtitle {
-                Text(subtitle)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.myColors.myAccent)
-            }
-            let count = set.items.count
-            if count > 0 {
-                Text("(\(count))")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+            HStack(alignment: .top, spacing: 2) {
+                HStack(spacing: 0) {
+                    if let subtitle = set.subtitle {
+                        Text(subtitle)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.myColors.myAccent)
+                    }
+                    let count = set.items.count
+                    if count > 0 {
+                        Text(" (\(count))")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+                    }
+                }
+                AccessTierBadge(tier: set.accessTier, isSmall: true)
+                    .offset(y: -3)
             }
             Spacer()
             modeToggle
@@ -300,6 +310,7 @@ struct DynamicSetPlayerView: View {
         let thresh = thresholds[index]
         let leftVisible  = thresh.leftStep.map  { revealedSteps >= $0 } ?? false
         let rightVisible = thresh.rightStep.map { revealedSteps >= $0 } ?? false
+        let rightLocked  = isPaywalled && index >= previewPairCount
 
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 0) {
@@ -311,8 +322,13 @@ struct DynamicSetPlayerView: View {
                     .frame(width: 1)
                     .padding(.vertical, 8)
 
-                cellText(pair.right?.text, visible: rightVisible)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if rightLocked {
+                    lockedCell(visible: rightVisible)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    cellText(pair.right?.text, visible: rightVisible)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             .animation(.spring(duration: 0.4, bounce: 0.05), value: revealedSteps)
 
@@ -320,6 +336,28 @@ struct DynamicSetPlayerView: View {
                 Divider().padding(.leading, 12)
             }
         }
+    }
+
+    @ViewBuilder
+    private func lockedCell(visible: Bool) -> some View {
+        Button {
+            pauseForUpgrade()
+            showPlans = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
+                Text("Upgrade to unlock")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myBlue.opacity(0.8))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+        .opacity(visible ? 1 : 0)
+        .offset(y: visible ? 0 : 6)
     }
 
     @ViewBuilder
@@ -401,22 +439,11 @@ struct DynamicSetPlayerView: View {
         .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
     }
 
-    private var tapToContinueHint: some View {
-        HStack {
-            Spacer()
-            Image(systemName: "hand.tap")
-            Text("Tap to continue")
-            Spacer()
-        }
-        .font(.headline)
-        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-    }
-
     private var resumeHint: some View {
         HStack {
             Spacer()
-            Image(systemName: "pause.circle")
-            Text("Paused — tap to resume")
+            Image(systemName: "hand.tap")
+            Text("Tap to resume")
             Spacer()
         }
         .font(.headline)
@@ -614,6 +641,38 @@ struct DynamicSetPlayerView: View {
         }
     }
 
+    /// Ставит воспроизведение на паузу перед переходом на экран Plans.
+    /// После возврата пользователь видит resumeHint и может продолжить.
+    private func pauseForUpgrade() {
+        guard hasStarted, !isComplete else { return }
+        switch animationMode {
+        case .automatic:
+            guard !isPaused else { return }
+            pauseAutoPlay()
+        case .manual:
+            guard !isManualPaused, !showTapHint else { return }
+            tapHintTask?.cancel()
+            audioTask?.cancel()
+            pendingRightSpeech = nil
+            isRightSpeechPending = false
+            audioService.stop()
+            withAnimation { showTapHint = false; isManualPaused = true }
+        }
+    }
+
+    private func cancelAllTasks() {
+        autoPlayTask?.cancel()
+        completionTask?.cancel()
+        tapHintTask?.cancel()
+        audioTask?.cancel()
+        pendingRightSpeech = nil
+        isRightSpeechPending = false
+        audioService.stop()
+        isPaused = false
+        isManualPaused = false
+        showTapHint = false
+    }
+
     private func restartSet() {
         autoPlayTask?.cancel()
         completionTask?.cancel()
@@ -655,15 +714,16 @@ struct DynamicSetPlayerView: View {
         for (index, thresh) in thresholds.enumerated() {
             guard index < set.items.count else { continue }
             let pair = set.items[index]
+            let rightLocked = isPaywalled && index >= previewPairCount
 
             switch set.displayMode {
             case .sequential:
                 if thresh.leftStep  == revealedSteps { leftText  = pair.left?.text  }
-                if thresh.rightStep == revealedSteps { rightText = pair.right?.text }
+                if thresh.rightStep == revealedSteps && !rightLocked { rightText = pair.right?.text }
             case .parallel:
                 if thresh.leftStep == revealedSteps || thresh.rightStep == revealedSteps {
                     leftText  = pair.left?.text
-                    rightText = pair.right?.text
+                    if !rightLocked { rightText = pair.right?.text }
                 }
             }
         }

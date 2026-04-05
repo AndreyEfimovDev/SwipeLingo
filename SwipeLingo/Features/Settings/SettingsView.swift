@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
     @AppStorage("studyStartHour")     private var studyStartHour: Int = 6
     @AppStorage("srsEnabled")         private var srsEnabled: Bool   = true
+    @AppStorage("userPlan")           private var userPlan: AccessTier = .free
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
@@ -28,6 +29,7 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    accountSection
                     languageSection
                     studySection
                     voiceSection
@@ -38,6 +40,36 @@ struct SettingsView: View {
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    // MARK: - Account
+
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("ACCOUNT")
+                .font(titleFont)
+                .padding(.horizontal, 32)
+
+            NavigationLink { ProfileView() } label: {
+                HStack {
+                    Label("Profile", systemImage: "person.circle")
+                        .labelStyle(.fixedIcon)
+                    Spacer()
+                    AccessTierBadge(tier: userPlan)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                }
+                .font(textFont)
+                .frame(height: 52)
+                .padding(.horizontal, 16)
+                .contentShape(Rectangle())
+            }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
         }
     }
 

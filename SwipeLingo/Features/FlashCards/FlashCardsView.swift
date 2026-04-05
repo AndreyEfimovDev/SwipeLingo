@@ -15,6 +15,7 @@ struct FlashCardsView: View {
     @State private var viewModel = FlashCardsViewModel()
     @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
     @AppStorage("srsEnabled")      private var srsEnabled: Bool    = true
+    @AppStorage("userPlan") private var userPlan: AccessTier = .free
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
@@ -33,21 +34,32 @@ struct FlashCardsView: View {
             viewModel.startSessionIfNeeded(
                 piles: piles, allCards: allCards,
                 cardSets: cardSets, collections: collections,
-                dueHour: studyStartHour, srsEnabled: srsEnabled
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
             )
         }
         .onChange(of: activePileSnapshot) {
             viewModel.startNewSession(
                 piles: piles, allCards: allCards,
                 cardSets: cardSets, collections: collections,
-                dueHour: studyStartHour, srsEnabled: srsEnabled
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
             )
         }
         .onChange(of: srsEnabled) {
             viewModel.startNewSession(
                 piles: piles, allCards: allCards,
                 cardSets: cardSets, collections: collections,
-                dueHour: studyStartHour, srsEnabled: srsEnabled
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
+            )
+        }
+        .onChange(of: userPlan) {
+            viewModel.startNewSession(
+                piles: piles, allCards: allCards,
+                cardSets: cardSets, collections: collections,
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
             )
         }
     }
@@ -67,6 +79,7 @@ struct FlashCardsView: View {
         } else {
             TinderCardsView(
                 cards: viewModel.studyCards,
+                lockedCardIds: viewModel.lockedCardIds,
                 contextLabels: viewModel.contextLabels,
                 cefrLabels: viewModel.cefrLabels,
                 pileTagsLine: viewModel.pileTagsLine,
@@ -131,7 +144,8 @@ struct FlashCardsView: View {
                 Button {
                     viewModel.studyAll(
                         piles: piles, allCards: allCards,
-                        cardSets: cardSets, collections: collections
+                        cardSets: cardSets, collections: collections,
+                        userPlan: userPlan
                     )
                 } label: {
                     Text("Study anyway  ·  All: \(viewModel.allActiveCount)")
