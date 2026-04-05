@@ -363,6 +363,7 @@ struct DynamicSetPlayerView: View {
             }
         }
         .foregroundStyle(Color.myColors.myBlue)
+        .frame(maxWidth: .infinity, alignment: .center)
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
     }

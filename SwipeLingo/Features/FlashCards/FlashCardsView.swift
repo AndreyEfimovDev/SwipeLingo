@@ -14,19 +14,10 @@ struct FlashCardsView: View {
 
     @State private var viewModel = FlashCardsViewModel()
     @AppStorage("studyDirection")  private var studyDirection  = "EN→Native"
-    @AppStorage("nativeLanguage")  private var nativeLanguage  = "Русский"
     @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
     @AppStorage("srsEnabled")      private var srsEnabled: Bool    = true
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
-
-    private var langAbbr: String {
-        DictionaryLookupViewModel.targetLangId(for: nativeLanguage).uppercased()
-    }
-
-    private var directionLabel: String {
-        studyDirection == "EN→Native" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
-    }
 
     var body: some View {
         NavigationStack {
@@ -168,15 +159,6 @@ struct FlashCardsView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                studyDirection = studyDirection == "EN→Native" ? "Native→EN" : "EN→Native"
-            } label: {
-                Text(directionLabel)
-                    .font(.subheadline.weight(.medium))
-                    .monospacedDigit()
-            }
-        }
         ToolbarItem(placement: .topBarLeading) {
             Button { viewModel.isShowingAddCard = true } label: {
                 Image(systemName: "plus")
