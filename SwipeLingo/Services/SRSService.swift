@@ -35,9 +35,9 @@ struct SRSService {
             card.interval    = 1
 
         case .hard:
-            // Recalled with difficulty — penalise EF, do not advance interval
+            // Recalled with difficulty — penalise EF, halve the interval
             card.easeFactor = max(Self.efMin, card.easeFactor - 0.15)
-            // repetitions and interval intentionally unchanged
+            card.interval   = max(1, card.interval / 2)
 
         case .easy:
             // Recalled comfortably — reward EF, advance interval via SM-2

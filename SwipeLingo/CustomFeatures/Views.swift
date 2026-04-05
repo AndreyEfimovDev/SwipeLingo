@@ -1,5 +1,48 @@
 import SwiftUI
 
+// MARK: - Custom Back Button
+// Заменяет системную кнопку back на кастомную: chevron.left + title, цвет myBlue.
+// Применяется на всех pushed view (NavigationLink destinations).
+// Параметр title — название предыдущего экрана (как в стандартной iOS-кнопке).
+//
+// Использование:
+//   .customBackButton("English+")   // в DynamicSetPlayerView
+//   .customBackButton("Settings")   // в VoiceSettingsView
+
+private struct CustomBackButtonModifier: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+    let title: String
+
+    func body(content: Content) -> some View {
+        content
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 17, weight: .semibold))
+                            if !title.isEmpty {
+                                Text(title)
+                                    .font(.body)
+                            }
+                        }
+                        .foregroundStyle(Color.myColors.myBlue)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+    }
+}
+
+extension View {
+    func customBackButton(_ title: String = "") -> some View {
+        modifier(CustomBackButtonModifier(title: title))
+    }
+}
+
+// MARK: - Shadow
+
 extension View {
     func myShadow() -> some View {
         self

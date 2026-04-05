@@ -216,7 +216,7 @@ struct AddEditCardView: View {
         ToolbarItem(placement: .topBarLeading) {
             Button(action: handleSave) {
                 Image(systemName: "checkmark")
-                    .fontWeight(canSave ? .semibold : .regular)
+                    .font(.subheadline.weight(canSave ? .semibold : .regular))
                     .foregroundStyle(canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
             }
             .disabled(!canSave || isShowingExitConfirm)
@@ -224,8 +224,8 @@ struct AddEditCardView: View {
         ToolbarItem(placement: .topBarTrailing) {
             Button(action: handleCancel) {
                 Image(systemName: "xmark")
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.myColors.myRed)
-                    .fontWeight(.semibold)
             }
             .disabled(isShowingExitConfirm)
         }
