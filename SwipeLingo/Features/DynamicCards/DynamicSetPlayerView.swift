@@ -29,22 +29,37 @@ struct DynamicSetPlayerView: View {
     @AppStorage("dynamicAnimationMode")     private var defaultAnimationMode: AnimationMode = .manual
     @AppStorage("dynamicCardsAudioEnabled") private var audioEnabled: Bool = true
     @AppStorage("ttsVoiceIdentifier")       private var ttsVoiceIdentifier: String = ""
+    @AppStorage("srsEnabled")               private var srsEnabled: Bool = true
+    @AppStorage("userPlan")                 private var userPlan: AccessTier = .free
 
-    @State private var animationMode:  AnimationMode = .manual
-    @State private var hasStarted:     Bool = false
-    @State private var isPaused:       Bool = false
-    @State private var showCompletion: Bool = false   // true только после окончания аудио последней строки
+    @State private var animationMode:    AnimationMode = .manual
+    @State private var hasStarted:       Bool = false
+    @State private var isPaused:         Bool = false   // пауза в auto режиме
+    @State private var isManualPaused:   Bool = false   // пауза TTS в manual режиме (тап во время воспроизведения)
+    @State private var showCompletion:   Bool = false   // true только после окончания аудио последней строки
+    @State private var showTapHint:      Bool = false   // true после окончания TTS текущего шага в manual
     @State private var revealedSteps:  Int = 0
     @State private var thresholds: [(leftStep: Int?, rightStep: Int?)] = []
     @State private var totalSteps: Int = 0
     @State private var autoPlayTask:   Task<Void, Never>?
     @State private var completionTask: Task<Void, Never>?
+    @State private var tapHintTask:    Task<Void, Never>?
+
+    // Audio
+    @State private var showPlans = false
 
     // Audio
     @State private var audioService = AudioPlayerService()
     @State private var audioTask: Task<Void, Never>?
     /// Текст для озвучки правой стороны — ставится при parallel, озвучивается после окончания левого TTS
     @State private var pendingRightSpeech: String? = nil
+    /// true в промежутке между окончанием левого TTS и стартом правого (speechGap),
+    /// чтобы waitForAudio/waitForAudioThenPause не думали что аудио уже закончилось
+    @State private var isRightSpeechPending: Bool = false
+
+    private let previewPairCount = 5          // пар с полным доступом для preview
+
+    private var isPaywalled: Bool { !userPlan.canAccess(set.accessTier) }
 
     private let autoPlayDelay: Double = 2.5  // fallback-задержка когда аудио выключено
     private let readPause: Double = 0.8     // пауза после появления строки перед озвучкой
@@ -61,16 +76,8 @@ struct DynamicSetPlayerView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-
-                    // Subtitle
-                    if let subtitle = set.subtitle {
-                        Text(subtitle)
-                            .font(.body)
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 12)
-                    }
+                    
+                    subtitleLine
 
                     if !hasStarted {
                         startScreen
@@ -94,24 +101,29 @@ struct DynamicSetPlayerView: View {
                         .myShadow()
                         .padding(.horizontal, 16)
 
-                        // SRS buttons + replay + mode toggle — после окончания аудио последней строки
+                        // SRS buttons + replay — после окончания аудио последней строки
                         if showCompletion {
-                            srsSection
-                                .padding(.top, 24)
+                            if srsEnabled { srsRatingButtons.padding(.top, 24) }
+                            replayButton
+                                .padding(.top, srsEnabled ? 8 : 24)
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
 
                         // Hints — только во время воспроизведения
                         if !isComplete {
-                            if animationMode == .manual {
+                            if showTapHint {
                                 tapHint.padding(.top, 20)
-                            } else if isPaused {
+                                    .transition(.opacity)
+                            } else if isManualPaused {
+                                resumeHint.padding(.top, 20)
+                                    .transition(.opacity)
+                            } else if animationMode == .automatic && isPaused {
                                 resumeHint.padding(.top, 20)
                             }
                         }
                     }
 
-                    Color.clear.frame(height: 32).id("bottom")
+                    Color.clear.frame(height: 80).id("bottom")
                 }
                 .padding(.top, 16)
             }
@@ -125,16 +137,37 @@ struct DynamicSetPlayerView: View {
                     proxy.scrollTo("bottom", anchor: .bottom)
                 }
                 speakCurrentStep()
+                // Manual mode: запускаем ожидание TTS → показываем подсказку
+                if animationMode == .manual && !isComplete {
+                    scheduleManualHint()
+                }
             }
             // Parallel mode: когда левый TTS закончил → озвучиваем правый
             .onChange(of: audioService.isPlaying) { _, isNow in
                 guard !isNow, let text = pendingRightSpeech else { return }
                 pendingRightSpeech = nil
-                guard audioEnabled else { return }
+                isRightSpeechPending = true   // gap начался — не даём waitForAudio выйти раньше времени
+                guard audioEnabled else {
+                    isRightSpeechPending = false
+                    return
+                }
                 audioTask = Task {
                     try? await Task.sleep(for: .seconds(speechGap))
-                    guard !Task.isCancelled, audioEnabled else { return }
+                    guard !Task.isCancelled, audioEnabled else {
+                        isRightSpeechPending = false
+                        return
+                    }
+                    isRightSpeechPending = false   // сбрасываем перед стартом речи
                     audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier)
+                }
+            }
+            // SRS-блок появился → ждём окончания transition, затем прокручиваем вниз
+            .onChange(of: showCompletion) { _, show in
+                guard show else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                    withAnimation(.easeOut(duration: 0.4)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
                 }
             }
             // Manual mode: последняя строка показана → ждём окончания аудио → показываем SRS
@@ -148,6 +181,7 @@ struct DynamicSetPlayerView: View {
                 }
             }
         }
+        .customBackButton("English+")
         .navigationTitle(set.title ?? "English+")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
@@ -158,19 +192,16 @@ struct DynamicSetPlayerView: View {
             animationMode = defaultAnimationMode
         }
         .onDisappear {
-            autoPlayTask?.cancel()
-            completionTask?.cancel()
-            audioTask?.cancel()
-            pendingRightSpeech = nil
-            audioService.stop()
+            cancelAllTasks()
         }
+        .sheet(isPresented: $showPlans) { PlansView() }
     }
 
     // MARK: - Start Screen
 
     private var startScreen: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: 48)
+            Spacer()
 
             Button { startPlayback() } label: {
                 VStack(spacing: 8) {
@@ -183,40 +214,66 @@ struct DynamicSetPlayerView: View {
             .foregroundStyle(Color.myColors.myBlue)
             .buttonStyle(.plain)
 
-            Spacer().frame(height: 40)
-
-            modeToggle
-
-            Spacer().frame(height: 32)
+            Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: UIScreen.main.bounds.height * 0.6)
     }
 
-    // MARK: - Mode Toggle
+    private var subtitleLine: some View {
+        // Subtitle + mode switcher в одну строку
+        HStack(alignment: .center, spacing: 8) {
+            HStack(alignment: .top, spacing: 2) {
+                HStack(spacing: 0) {
+                    if let subtitle = set.subtitle {
+                        Text(subtitle)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.myColors.myAccent)
+                    }
+                    let count = set.items.count
+                    if count > 0 {
+                        Text(" (\(count))")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+                    }
+                }
+                AccessTierBadge(tier: set.accessTier, isSmall: true)
+                    .offset(y: -3)
+            }
+            Spacer()
+            modeToggle
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.myColors.myAccent.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+    }
+    // MARK: - Mode Toggle (одна кнопка — показывает текущий режим, тап переключает)
 
     private var modeToggle: some View {
-        HStack(spacing: 8) {
-            modePill(.automatic, label: "Auto")
-            modePill(.manual,    label: "Manual")
-        }
-        .padding(.horizontal, 48)
-    }
-
-    private func modePill(_ mode: AnimationMode, label: String) -> some View {
-        let isActive = animationMode == mode
-        return Button { switchMode(to: mode) } label: {
-            Text(label)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(isActive ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5))
-                .frame(maxWidth: 200)
-                .padding(.vertical, 12)
-                .background(Color.clear, in: .capsule)
-                .overlay(Capsule().strokeBorder(
-                    isActive ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5),
-                    lineWidth: isActive ? 2 : 0.5))
+        let isAuto = animationMode == .automatic
+        let isPlaybackActive = hasStarted && !showCompletion
+        return Button {
+            switchMode(to: isAuto ? .manual : .automatic)
+        } label: {
+            HStack(spacing: 3) {
+                Text(isAuto ? "Auto" : "Manual")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myBlue)
+                    .frame(minWidth: 45, alignment: .leading)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+            }
+            .opacity(isPlaybackActive ? 0.35 : 1.0)
         }
         .buttonStyle(.plain)
+        .disabled(isPlaybackActive)
         .animation(.easeInOut(duration: 0.15), value: animationMode)
+        .animation(.easeInOut(duration: 0.2), value: isPlaybackActive)
     }
 
     // MARK: - Column Headers
@@ -253,6 +310,7 @@ struct DynamicSetPlayerView: View {
         let thresh = thresholds[index]
         let leftVisible  = thresh.leftStep.map  { revealedSteps >= $0 } ?? false
         let rightVisible = thresh.rightStep.map { revealedSteps >= $0 } ?? false
+        let rightLocked  = isPaywalled && index >= previewPairCount
 
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 0) {
@@ -264,8 +322,13 @@ struct DynamicSetPlayerView: View {
                     .frame(width: 1)
                     .padding(.vertical, 8)
 
-                cellText(pair.right?.text, visible: rightVisible)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if rightLocked {
+                    lockedCell(visible: rightVisible)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    cellText(pair.right?.text, visible: rightVisible)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             .animation(.spring(duration: 0.4, bounce: 0.05), value: revealedSteps)
 
@@ -273,6 +336,28 @@ struct DynamicSetPlayerView: View {
                 Divider().padding(.leading, 12)
             }
         }
+    }
+
+    @ViewBuilder
+    private func lockedCell(visible: Bool) -> some View {
+        Button {
+            pauseForUpgrade()
+            showPlans = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
+                Text("Upgrade to unlock")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myBlue.opacity(0.8))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+        .opacity(visible ? 1 : 0)
+        .offset(y: visible ? 0 : 6)
     }
 
     @ViewBuilder
@@ -292,7 +377,8 @@ struct DynamicSetPlayerView: View {
 
     // MARK: - SRS Section
 
-    private var srsSection: some View {
+    /// Кнопки оценки — показываются только когда SRS включён
+    private var srsRatingButtons: some View {
         VStack(spacing: 12) {
             Text("How well did you know this?")
                 .font(.subheadline)
@@ -305,25 +391,24 @@ struct DynamicSetPlayerView: View {
             }
             // TODO: SRS-логика для DynamicSet (оценка всего сета целиком)
             // Требует SRS-полей в DynamicSet: dueDate, interval, easeFactor, repetitions
-
-            // Replay button
-            Button { restartSet() } label: {
-                VStack(spacing: 8) {
-                    Image(systemName: "arrow.counterclockwise.circle.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(Color.myColors.myBlue)
-                    Text("Replay")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myBlue)
-                }
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 8)
-
-            // Mode toggle — под Replay
-            modeToggle
-                .padding(.top, 4)
         }
+        .padding(.horizontal, 16)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    /// Кнопка Replay — всегда видна после завершения воспроизведения
+    private var replayButton: some View {
+        Button { restartSet() } label: {
+            VStack(spacing: 8) {
+                Image(systemName: "arrow.counterclockwise.circle.fill")
+                    .font(.system(size: 64))
+                Text("Replay")
+                    .font(.title3.weight(.semibold))
+            }
+        }
+        .foregroundStyle(Color.myColors.myBlue)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .buttonStyle(.plain)
         .padding(.horizontal, 16)
     }
 
@@ -357,8 +442,8 @@ struct DynamicSetPlayerView: View {
     private var resumeHint: some View {
         HStack {
             Spacer()
-            Image(systemName: "pause.circle")
-            Text("Paused — tap to resume")
+            Image(systemName: "hand.tap")
+            Text("Tap to resume")
             Spacer()
         }
         .font(.headline)
@@ -375,10 +460,12 @@ struct DynamicSetPlayerView: View {
                 if !audioEnabled {
                     audioTask?.cancel()
                     pendingRightSpeech = nil
+                    isRightSpeechPending = false
                     audioService.stop()
                 }
             } label: {
                 Image(systemName: audioEnabled ? "speaker.wave.2" : "speaker.slash")
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(audioEnabled ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5))
                     .contentTransition(.symbolEffect(.replace))
             }
@@ -393,7 +480,25 @@ struct DynamicSetPlayerView: View {
         case .automatic:
             isPaused ? resumeAutoPlay() : pauseAutoPlay()
         case .manual:
-            withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
+            if showTapHint {
+                // TTS завершён — переходим к следующей строке
+                tapHintTask?.cancel()
+                withAnimation { showTapHint = false }
+                withAnimation(.spring(duration: 0.4, bounce: 0.05)) { advance() }
+            } else if isManualPaused {
+                // Возобновляем: переигрываем текущий шаг с начала
+                withAnimation { isManualPaused = false }
+                speakCurrentStep()
+                scheduleManualHint()
+            } else {
+                // TTS играет — ставим на паузу
+                tapHintTask?.cancel()
+                audioTask?.cancel()
+                pendingRightSpeech = nil
+                isRightSpeechPending = false
+                audioService.stop()
+                withAnimation { isManualPaused = true }
+            }
         }
     }
 
@@ -425,6 +530,7 @@ struct DynamicSetPlayerView: View {
         autoPlayTask?.cancel()
         audioTask?.cancel()
         pendingRightSpeech = nil
+        isRightSpeechPending = false
         audioService.stop()
         log("⏸ Auto play paused at step \(revealedSteps)")
     }
@@ -490,8 +596,8 @@ struct DynamicSetPlayerView: View {
             guard !Task.isCancelled else { return }
         }
 
-        // Ждём окончания всего аудио: левая сторона + правая (pendingRightSpeech)
-        while audioService.isPlaying || pendingRightSpeech != nil {
+        // Ждём окончания всего аудио: левая сторона + правая (pendingRightSpeech / isRightSpeechPending)
+        while audioService.isPlaying || pendingRightSpeech != nil || isRightSpeechPending {
             try? await Task.sleep(for: .milliseconds(100))
             guard !Task.isCancelled else { return }
         }
@@ -500,14 +606,85 @@ struct DynamicSetPlayerView: View {
         try? await Task.sleep(for: .seconds(postAudioDelay))
     }
 
+    /// Ждёт окончания TTS без финальной паузы — для показа tapHint в manual mode.
+    private func waitForAudio() async {
+        guard !Task.isCancelled else { return }
+        guard audioEnabled else { return }
+
+        try? await Task.sleep(for: .seconds(readPause + 0.3))
+        guard !Task.isCancelled else { return }
+
+        var attempts = 0
+        while !audioService.isPlaying && attempts < 15 {
+            try? await Task.sleep(for: .milliseconds(100))
+            attempts += 1
+            guard !Task.isCancelled else { return }
+        }
+
+        while audioService.isPlaying || pendingRightSpeech != nil || isRightSpeechPending {
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+        }
+
+        // Короткая пауза перед появлением подсказки
+        try? await Task.sleep(for: .seconds(0.3))
+    }
+
+    /// Запускает таск, который показывает tapHint после окончания TTS (только manual mode).
+    private func scheduleManualHint() {
+        tapHintTask?.cancel()
+        showTapHint = false
+        tapHintTask = Task {
+            await waitForAudio()
+            guard !Task.isCancelled, !isComplete else { return }
+            withAnimation { showTapHint = true }
+        }
+    }
+
+    /// Ставит воспроизведение на паузу перед переходом на экран Plans.
+    /// После возврата пользователь видит resumeHint и может продолжить.
+    private func pauseForUpgrade() {
+        guard hasStarted, !isComplete else { return }
+        switch animationMode {
+        case .automatic:
+            guard !isPaused else { return }
+            pauseAutoPlay()
+        case .manual:
+            guard !isManualPaused, !showTapHint else { return }
+            tapHintTask?.cancel()
+            audioTask?.cancel()
+            pendingRightSpeech = nil
+            isRightSpeechPending = false
+            audioService.stop()
+            withAnimation { showTapHint = false; isManualPaused = true }
+        }
+    }
+
+    private func cancelAllTasks() {
+        autoPlayTask?.cancel()
+        completionTask?.cancel()
+        tapHintTask?.cancel()
+        audioTask?.cancel()
+        pendingRightSpeech = nil
+        isRightSpeechPending = false
+        audioService.stop()
+        isPaused = false
+        isManualPaused = false
+        showTapHint = false
+    }
+
     private func restartSet() {
         autoPlayTask?.cancel()
         completionTask?.cancel()
+        tapHintTask?.cancel()
         audioTask?.cancel()
         pendingRightSpeech = nil
+        isRightSpeechPending = false
         audioService.stop()
         isPaused = false
+        isManualPaused = false
         showCompletion = false
+        showTapHint = false
         // hasStarted остаётся true — стартовый экран показывается только один раз
         withAnimation(.spring(duration: 0.3)) { revealedSteps = 0 }
         // Запускаем воспроизведение сразу без стартового экрана
@@ -528,6 +705,7 @@ struct DynamicSetPlayerView: View {
     private func speakCurrentStep() {
         audioTask?.cancel()
         pendingRightSpeech = nil
+        isRightSpeechPending = false
         guard audioEnabled else { return }
 
         var leftText:  String? = nil
@@ -536,15 +714,16 @@ struct DynamicSetPlayerView: View {
         for (index, thresh) in thresholds.enumerated() {
             guard index < set.items.count else { continue }
             let pair = set.items[index]
+            let rightLocked = isPaywalled && index >= previewPairCount
 
             switch set.displayMode {
             case .sequential:
                 if thresh.leftStep  == revealedSteps { leftText  = pair.left?.text  }
-                if thresh.rightStep == revealedSteps { rightText = pair.right?.text }
+                if thresh.rightStep == revealedSteps && !rightLocked { rightText = pair.right?.text }
             case .parallel:
                 if thresh.leftStep == revealedSteps || thresh.rightStep == revealedSteps {
                     leftText  = pair.left?.text
-                    rightText = pair.right?.text
+                    if !rightLocked { rightText = pair.right?.text }
                 }
             }
         }

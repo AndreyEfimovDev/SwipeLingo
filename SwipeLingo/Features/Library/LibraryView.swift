@@ -116,7 +116,7 @@ struct LibraryView: View {
                     .padding(.horizontal, 16)
             } else {
                 let activePile   = piles.first(where: { $0.isActive })
-                let sortedPiles  = piles.sorted { $0.isActive && !$1.isActive }
+                let sortedPiles  = piles.sorted { $0.name.lowercased() < $1.name.lowercased() }
                 let showToggle   = piles.count > 1
 
                 VStack(spacing: 0) {
@@ -324,7 +324,7 @@ struct LibraryView: View {
         NavigationLink {
             if collection.name == "Inbox",
                let inboxSet = cardSets.first(where: { $0.collectionId == collection.id }) {
-                CardSetDetailView(cardSet: inboxSet)
+                CardSetDetailView(cardSet: inboxSet, backTitle: "Library")
             } else {
                 CollectionDetailView(collection: collection)
             }

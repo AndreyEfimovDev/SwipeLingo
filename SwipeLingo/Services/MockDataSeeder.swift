@@ -71,9 +71,9 @@ struct MockDataSeeder {
         let collection = Collection(name: "Academic Words", icon: "book", isOwned: true, isUserCreated: false)
         context.insert(collection)
 
-        let sets: [(name: String, level: CEFRLevel, cards: [(en: String, item: String)])] = [
+        let sets: [(name: String, level: CEFRLevel, accessTier: AccessTier, cards: [(en: String, item: String)])] = [
             (
-                name: "Foundations", level: .a2,
+                name: "Foundations", level: .a2, accessTier: .free,
                 cards: [
                     ("Concept",     "понятие, концепция"),
                     ("Factor",      "фактор, причина"),
@@ -83,7 +83,7 @@ struct MockDataSeeder {
                 ]
             ),
             (
-                name: "Core Academic", level: .b1,
+                name: "Core Academic", level: .b1, accessTier: .go,
                 cards: [
                     ("Analyse",     "анализировать"),
                     ("Approach",    "подход"),
@@ -93,7 +93,7 @@ struct MockDataSeeder {
                 ]
             ),
             (
-                name: "Upper Academic", level: .b2,
+                name: "Upper Academic", level: .b2, accessTier: .go,
                 cards: [
                     ("Albeit",      "хотя, несмотря на то что"),
                     ("Comprehensive","всесторонний, полный"),
@@ -103,7 +103,7 @@ struct MockDataSeeder {
                 ]
             ),
             (
-                name: "Advanced", level: .c1,
+                name: "Advanced", level: .c1, accessTier: .pro,
                 cards: [
                     ("Nuance",      "нюанс, оттенок"),
                     ("Perpetuate",  "увековечивать, сохранять"),
@@ -115,7 +115,8 @@ struct MockDataSeeder {
         ]
 
         for setData in sets {
-            let cardSet = CardSet(name: setData.name, collectionId: collection.id)
+            let cardSet = CardSet(name: setData.name, collectionId: collection.id,
+                                  accessTier: setData.accessTier)
             cardSet.level = setData.level.rawValue
             context.insert(cardSet)
 
@@ -134,8 +135,8 @@ struct MockDataSeeder {
             name: "Business English",
             icon: "briefcase",
             sets: [
-                ("Negotiations", .b2, [("Agenda", "повестка дня"), ("Leverage", "влияние, рычаг"), ("Stakeholder", "заинтересованная сторона")]),
-                ("Presentations", .b1, [("Outline", "план, схема"), ("Takeaway", "главный вывод"), ("Benchmark", "эталон, ориентир")]),
+                ("Presentations", .b1, .go,  [("Outline", "план, схема"), ("Takeaway", "главный вывод"), ("Benchmark", "эталон, ориентир")]),
+                ("Negotiations",  .b2, .pro, [("Agenda", "повестка дня"), ("Leverage", "влияние, рычаг"), ("Stakeholder", "заинтересованная сторона")]),
             ],
             into: context
         )
@@ -144,8 +145,8 @@ struct MockDataSeeder {
             name: "Phrasal Verbs",
             icon: "text.bubble",
             sets: [
-                ("Movement", .b1, [("Set off", "отправляться"), ("Break down", "сломаться; расстроиться"), ("Run into", "столкнуться с")]),
-                ("Change", .b2, [("Phase out", "постепенно отменять"), ("Turn around", "переломить ситуацию"), ("Give up", "сдаться")]),
+                ("Movement", .b1, .go,  [("Set off", "отправляться"), ("Break down", "сломаться; расстроиться"), ("Run into", "столкнуться с")]),
+                ("Change",   .b2, .pro, [("Phase out", "постепенно отменять"), ("Turn around", "переломить ситуацию"), ("Give up", "сдаться")]),
             ],
             into: context
         )
@@ -186,7 +187,7 @@ struct MockDataSeeder {
             leftTitle: "Basic",
             rightTitle: "Advanced",
             displayMode: .parallel,
-            accessTier: .free,
+            accessTier: .go,
             items: [
                 DynamicPair(left: DynamicItem(text: "very tired"),     right: DynamicItem(text: "exhausted")),
                 DynamicPair(left: DynamicItem(text: "very happy"),     right: DynamicItem(text: "elated")),
@@ -198,7 +199,7 @@ struct MockDataSeeder {
         )
         context.insert(set2)
 
-        // Set 3: Informal → Formal, parallel mode, Pro tier (тест badge)
+        // Set 3: Informal → Formal, parallel mode, Pro tier (тест badge + длинный список для тест скролла)
         let set3 = DynamicSet(
             title: "Informal → Formal",
             subtitle: "Business writing register",
@@ -207,11 +208,21 @@ struct MockDataSeeder {
             displayMode: .parallel,
             accessTier: .pro,
             items: [
-                DynamicPair(left: DynamicItem(text: "get in touch"), right: DynamicItem(text: "contact")),
-                DynamicPair(left: DynamicItem(text: "find out"),     right: DynamicItem(text: "ascertain")),
-                DynamicPair(left: DynamicItem(text: "go up"),        right: DynamicItem(text: "increase")),
-                DynamicPair(left: DynamicItem(text: "look into"),    right: DynamicItem(text: "investigate")),
-                DynamicPair(left: DynamicItem(text: "set up"),       right: DynamicItem(text: "establish")),
+                DynamicPair(left: DynamicItem(text: "get in touch"),  right: DynamicItem(text: "contact")),
+                DynamicPair(left: DynamicItem(text: "find out"),      right: DynamicItem(text: "ascertain")),
+                DynamicPair(left: DynamicItem(text: "go up"),         right: DynamicItem(text: "increase")),
+                DynamicPair(left: DynamicItem(text: "look into"),     right: DynamicItem(text: "investigate")),
+                DynamicPair(left: DynamicItem(text: "set up"),        right: DynamicItem(text: "establish")),
+                DynamicPair(left: DynamicItem(text: "think about"),   right: DynamicItem(text: "consider")),
+                DynamicPair(left: DynamicItem(text: "make sure"),     right: DynamicItem(text: "ensure")),
+                DynamicPair(left: DynamicItem(text: "talk about"),    right: DynamicItem(text: "discuss")),
+                DynamicPair(left: DynamicItem(text: "get rid of"),    right: DynamicItem(text: "eliminate")),
+                DynamicPair(left: DynamicItem(text: "bring up"),      right: DynamicItem(text: "raise")),
+                DynamicPair(left: DynamicItem(text: "point out"),     right: DynamicItem(text: "indicate")),
+                DynamicPair(left: DynamicItem(text: "go along with"), right: DynamicItem(text: "comply with")),
+                DynamicPair(left: DynamicItem(text: "check out"),     right: DynamicItem(text: "examine")),
+                DynamicPair(left: DynamicItem(text: "come up with"),  right: DynamicItem(text: "propose")),
+                DynamicPair(left: DynamicItem(text: "wrap up"),       right: DynamicItem(text: "conclude")),
             ]
         )
         context.insert(set3)
@@ -222,7 +233,7 @@ struct MockDataSeeder {
     private static func seedMockCuratedCollection(
         name: String,
         icon: String,
-        sets: [(name: String, level: CEFRLevel, cards: [(String, String)])],
+        sets: [(name: String, level: CEFRLevel, accessTier: AccessTier, cards: [(String, String)])],
         into context: ModelContext
     ) {
         let existing = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
@@ -232,7 +243,8 @@ struct MockDataSeeder {
         context.insert(collection)
 
         for setData in sets {
-            let cardSet = CardSet(name: setData.name, collectionId: collection.id)
+            let cardSet = CardSet(name: setData.name, collectionId: collection.id,
+                                  accessTier: setData.accessTier)
             cardSet.level = setData.level.rawValue
             context.insert(cardSet)
             for (en, item) in setData.cards {

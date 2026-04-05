@@ -17,6 +17,7 @@ struct CardSetDetailView: View {
     @Environment(\.modelContext) private var context
     let cardSet: CardSet
     var allowsEditing: Bool = false
+    var backTitle: String = "Library"
 
     @Query(sort: \Card.createdAt) private var allCards: [Card]
     @State private var isActiveExpanded  = true
@@ -92,6 +93,7 @@ struct CardSetDetailView: View {
         .background(Color.myColors.myBackground.ignoresSafeArea())
         } // VStack
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        .customBackButton(backTitle)
         .navigationTitle(cardSet.name)
         .navigationBarTitleDisplayMode(.inline)
         .frame(maxWidth: .infinity)
@@ -100,6 +102,7 @@ struct CardSetDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { isShowingAddCard = true } label: {
                         Image(systemName: "plus")
+                            .font(.subheadline.weight(.medium))
                     }
                     .foregroundStyle(Color.myColors.myBlue)
                 }
