@@ -102,6 +102,7 @@ struct CardSetDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { isShowingAddCard = true } label: {
                         Image(systemName: "plus")
+                            .font(.subheadline.weight(.medium))
                     }
                     .foregroundStyle(Color.myColors.myBlue)
                 }
