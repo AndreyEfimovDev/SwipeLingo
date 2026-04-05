@@ -11,7 +11,6 @@ struct SettingsView: View {
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
     @AppStorage("studyStartHour")     private var studyStartHour: Int = 6
     @AppStorage("srsEnabled")         private var srsEnabled: Bool   = true
-    @AppStorage("studyDirection")     private var studyDirection     = "EN→Native"
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
@@ -116,33 +115,12 @@ struct SettingsView: View {
                     .padding(.horizontal, 16)
                 }
 
-                // Study direction
-                Divider().padding(.leading, 16)
-                HStack {
-                    Label("Study direction", systemImage: "arrow.left.arrow.right")
-                        .labelStyle(.fixedIcon)
-                    Spacer()
-                    Picker("", selection: $studyDirection) {
-                        Text("EN → \(nativeLangAbbr)").tag("EN→Native")
-                        Text("\(nativeLangAbbr) → EN").tag("Native→EN")
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                    .tint(Color.myColors.myBlue)
-                }
-                .font(textFont)
-                .frame(height: 52)
-                .padding(.horizontal, 16)
             }
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
         }
-    }
-
-    private var nativeLangAbbr: String {
-        DictionaryLookupViewModel.targetLangId(for: nativeLanguage).uppercased()
     }
 
     private func hourLabel(_ hour: Int) -> String {

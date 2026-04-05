@@ -13,7 +13,6 @@ struct FlashCardsView: View {
     @Query private var collections: [Collection]
 
     @State private var viewModel = FlashCardsViewModel()
-    @AppStorage("studyDirection")  private var studyDirection  = "EN→Native"
     @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
     @AppStorage("srsEnabled")      private var srsEnabled: Bool    = true
 

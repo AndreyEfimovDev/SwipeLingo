@@ -9,7 +9,6 @@ struct TinderCardsView: View {
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
     @Environment(AppViewModel.self)    private var appViewModel
     
-    @AppStorage("studyDirection")       private var studyDirection      = "EN→Native"
     @AppStorage("ttsVoiceIdentifier")   private var ttsVoiceIdentifier  = ""
     @AppStorage("englishVariant")       private var englishVariant      = "en-US"
     @AppStorage("srsEnabled")           private var srsEnabled: Bool    = true
@@ -32,7 +31,6 @@ struct TinderCardsView: View {
     /// Called when the user taps the mode toggle in the progress row.
     private let onToggleMode: (() -> Void)?
 
-    private var isReversed:  Bool { studyDirection == "Native→EN" }
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
     /// 0…1 upward-drag progress for trash animation. Zero when card is flipped.
@@ -462,19 +460,15 @@ struct TinderCardsView: View {
     // MARK: - Card Front
 
     private func cardFront(_ card: Card) -> some View {
-        let frontText = isReversed ? card.item : card.en
-        return VStack(spacing: 12) {
+        VStack(spacing: 12) {
             Spacer()
-            Text(frontText)
+            Text(card.en)
                 .font(.system(size: 42, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 24)
-            // Audio button — EN→Native only (front shows the English word)
-            if !isReversed {
-                audioButton(for: card.en, isTTS: true)
-                    .font(.largeTitle)
-            }
+            audioButton(for: card.en, isTTS: true)
+                .font(.largeTitle)
             Spacer()
             Text("Tap to check")
                 .font(.caption2)
@@ -486,15 +480,12 @@ struct TinderCardsView: View {
     // MARK: - Card Back
 
     private func cardBack(_ card: Card) -> some View {
-        let backLargeText = isReversed ? card.en   : card.item
-        let backSmallText = isReversed ? card.item : card.en
-
-        return VStack(spacing: 0) {
+        VStack(spacing: 0) {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(spacing: 14) {
 
                     // 1. Translation — large
-                    Text(backLargeText)
+                    Text(card.item)
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.center)
@@ -503,12 +494,10 @@ struct TinderCardsView: View {
 
                     // 2. EN word + 🔊 audio
                     HStack(spacing: 6) {
-                        Text(backSmallText)
+                        Text(card.en)
                             .font(.subheadline)
-                        if !isReversed {
-                            audioButton(for: card.en, isTTS: true)
-                                .font(.subheadline)
-                        }
+                        audioButton(for: card.en, isTTS: true)
+                            .font(.subheadline)
                     }
 
                     // 3. Examples — paged with arrow navigation
@@ -603,16 +592,14 @@ struct TinderCardsView: View {
                 .font(.caption2)
                 .opacity(0.75)
 
-            // Dictionary lookup — pinned to bottom, EN→Native only
-            if !isReversed {
-                Button { lookupCard = card } label: {
-                    Label("Look up in dictionary", systemImage: "book.pages")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myBlue)
-                }
-                .buttonStyle(.borderless)
-                .padding(.vertical, 10)
+            // Dictionary lookup
+            Button { lookupCard = card } label: {
+                Label("Look up in dictionary", systemImage: "book.pages")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myBlue)
             }
+            .buttonStyle(.borderless)
+            .padding(.vertical, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -626,21 +613,18 @@ struct TinderCardsView: View {
     }
 
     private func nextCardPreview(_ card: Card) -> some View {
-        let frontText = isReversed ? card.item : card.en
-        return ZStack {
+        ZStack {
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color.myColors.myBackground)
             VStack(spacing: 12) {
                 Spacer()
-                Text(frontText)
+                Text(card.en)
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal, 24)
-                if !isReversed {
-                    audioButton(for: card.en, isTTS: true)
-                        .font(.largeTitle)
-                }
+                audioButton(for: card.en, isTTS: true)
+                    .font(.largeTitle)
                 Spacer()
                 Text("Tap to check")
                     .font(.caption2)
