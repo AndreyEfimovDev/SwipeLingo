@@ -23,10 +23,7 @@ struct SettingsView: View {
         return voice.name
     }
 
-    private let languages = [
-        "Русский", "中文", "Español", "Français",
-        "العربية", "Português", "Deutsch", "日本語"
-    ]
+    private let languages = DictionaryLookupViewModel.supportedLanguages.map(\.name)
 
     var body: some View {
         NavigationStack {
