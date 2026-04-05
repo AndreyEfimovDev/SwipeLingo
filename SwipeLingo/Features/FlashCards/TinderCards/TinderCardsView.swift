@@ -9,9 +9,9 @@ struct TinderCardsView: View {
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
     @Environment(AppViewModel.self)    private var appViewModel
     
-    @AppStorage("studyDirection")       private var studyDirection      = "EN→Native"
     @AppStorage("ttsVoiceIdentifier")   private var ttsVoiceIdentifier  = ""
     @AppStorage("englishVariant")       private var englishVariant      = "en-US"
+    @AppStorage("srsEnabled")           private var srsEnabled: Bool    = true
 
     @State private var viewModel: TinderCardsViewModel
     @State private var lookupCard: Card?
@@ -22,6 +22,7 @@ struct TinderCardsView: View {
 
     private let swipeThreshold:   CGFloat = 110
     private let upSwipeThreshold: CGFloat = 100
+    private let lockedCardIds: Set<UUID>
     private let pileTagsLine: String
     private let cefrLabels: [UUID: CEFRLevel]
     /// True when study session shows only due cards — changes "Active" label to "Due".
@@ -31,7 +32,6 @@ struct TinderCardsView: View {
     /// Called when the user taps the mode toggle in the progress row.
     private let onToggleMode: (() -> Void)?
 
-    private var isReversed:  Bool { studyDirection == "Native→EN" }
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
     /// 0…1 upward-drag progress for trash animation. Zero when card is flipped.
@@ -43,6 +43,7 @@ struct TinderCardsView: View {
     }
 
     init(cards: [Card],
+         lockedCardIds: Set<UUID> = [],
          contextLabels: [UUID: String] = [:],
          cefrLabels: [UUID: CEFRLevel] = [:],
          pileTagsLine: String = "",
@@ -54,6 +55,7 @@ struct TinderCardsView: View {
                                     cards: cards,
                                     contextLabels: contextLabels,
                                     onDone: onDone))
+        self.lockedCardIds     = lockedCardIds
         self.cefrLabels        = cefrLabels
         self.pileTagsLine      = pileTagsLine
         self.isDueMode         = isDueMode
@@ -382,12 +384,14 @@ struct TinderCardsView: View {
         VStack(spacing: 0) {
             breadcrumbRow
             flipContent(card: card).frame(maxHeight: .infinity)
-            // SRS pinned to bottom — always in layout, fades in after flip
-            srsButtonsRow
-                .padding(12)
-                .opacity(viewModel.isFlipped ? 1 : 0)
-                .allowsHitTesting(viewModel.isFlipped)
-                .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+            // SRS pinned to bottom — hidden when SRS is disabled in Settings
+            if srsEnabled {
+                srsButtonsRow
+                    .padding(12)
+                    .opacity(viewModel.isFlipped ? 1 : 0)
+                    .allowsHitTesting(viewModel.isFlipped)
+                    .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+            }
         }
     }
 
@@ -400,8 +404,7 @@ struct TinderCardsView: View {
             .frame(maxWidth: .infinity)
 
             // SRS column — only present on back side, no reserved space on front
-            if viewModel.isFlipped {
-//                Divider()
+            if srsEnabled && viewModel.isFlipped {
                 srsButtonsColumn
                     .frame(width: 90)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -460,19 +463,15 @@ struct TinderCardsView: View {
     // MARK: - Card Front
 
     private func cardFront(_ card: Card) -> some View {
-        let frontText = isReversed ? card.item : card.en
-        return VStack(spacing: 12) {
+        VStack(spacing: 12) {
             Spacer()
-            Text(frontText)
+            Text(card.en)
                 .font(.system(size: 42, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 24)
-            // Audio button — EN→Native only (front shows the English word)
-            if !isReversed {
-                audioButton(for: card.en, isTTS: true)
-                    .font(.largeTitle)
-            }
+            audioButton(for: card.en, isTTS: true)
+                .font(.largeTitle)
             Spacer()
             Text("Tap to check")
                 .font(.caption2)
@@ -483,16 +482,22 @@ struct TinderCardsView: View {
 
     // MARK: - Card Back
 
+    @ViewBuilder
     private func cardBack(_ card: Card) -> some View {
-        let backLargeText = isReversed ? card.en   : card.item
-        let backSmallText = isReversed ? card.item : card.en
+        if lockedCardIds.contains(card.id) {
+            LockedCardBackView()
+        } else {
+            unlockedCardBack(card)
+        }
+    }
 
-        return VStack(spacing: 0) {
+    private func unlockedCardBack(_ card: Card) -> some View {
+        VStack(spacing: 0) {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(spacing: 14) {
 
                     // 1. Translation — large
-                    Text(backLargeText)
+                    Text(card.item)
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.center)
@@ -501,12 +506,10 @@ struct TinderCardsView: View {
 
                     // 2. EN word + 🔊 audio
                     HStack(spacing: 6) {
-                        Text(backSmallText)
+                        Text(card.en)
                             .font(.subheadline)
-                        if !isReversed {
-                            audioButton(for: card.en, isTTS: true)
-                                .font(.subheadline)
-                        }
+                        audioButton(for: card.en, isTTS: true)
+                            .font(.subheadline)
                     }
 
                     // 3. Examples — paged with arrow navigation
@@ -601,19 +604,17 @@ struct TinderCardsView: View {
                 .font(.caption2)
                 .opacity(0.75)
 
-            // Dictionary lookup — pinned to bottom, EN→Native only
-            if !isReversed {
-                Button { lookupCard = card } label: {
-                    Label("Look up in dictionary", systemImage: "book.pages")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myBlue)
-                }
-                .buttonStyle(.borderless)
-                .padding(.vertical, 10)
+            // Dictionary lookup
+            Button { lookupCard = card } label: {
+                Label("Look up in dictionary", systemImage: "book.pages")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myBlue)
             }
+            .buttonStyle(.borderless)
+            .padding(.vertical, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
+    }  // unlockedCardBack
 
     // MARK: - Background Cards
 
@@ -624,21 +625,18 @@ struct TinderCardsView: View {
     }
 
     private func nextCardPreview(_ card: Card) -> some View {
-        let frontText = isReversed ? card.item : card.en
-        return ZStack {
+        ZStack {
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color.myColors.myBackground)
             VStack(spacing: 12) {
                 Spacer()
-                Text(frontText)
+                Text(card.en)
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal, 24)
-                if !isReversed {
-                    audioButton(for: card.en, isTTS: true)
-                        .font(.largeTitle)
-                }
+                audioButton(for: card.en, isTTS: true)
+                    .font(.largeTitle)
                 Spacer()
                 Text("Tap to check")
                     .font(.caption2)
@@ -741,12 +739,12 @@ struct TinderCardsView: View {
         Button { viewModel.evaluate(rating: rating, context: context) } label: {
             Text(title)
                 .font(.subheadline.weight(.semibold))
+                .foregroundStyle(color)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 .background(color.opacity(0.15))
-                .foregroundStyle(color)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.15), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.85), lineWidth: 1))
         }
     }
 
@@ -825,6 +823,51 @@ struct TinderCardsView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+    }
+}
+
+// MARK: - LockedCardBackView
+
+private struct LockedCardBackView: View {
+    @State private var showPlans = false
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "lock.fill")
+                .font(.system(size: 52))
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.2))
+
+            VStack(spacing: 8) {
+                Text("Content locked")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent)
+
+                Text("Upgrade your plan to see the full translation and examples")
+                    .font(.subheadline)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                    .padding(.horizontal, 32)
+            }
+
+            Button { showPlans = true } label: {
+                Text("See Plans")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.myColors.myBlue)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .sheet(isPresented: $showPlans) {
+            PlansView()
         }
     }
 }

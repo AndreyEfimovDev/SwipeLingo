@@ -34,19 +34,23 @@ final class DictionaryLookupViewModel {
 
     // MARK: - Language helpers
 
+    /// Single source of truth for supported native languages.
+    /// Used by SettingsView (picker) and targetLangId (BCP-47 mapping).
+    static let supportedLanguages: [(name: String, langId: String)] = [
+        ("Русский",   "ru"),
+        ("中文",       "zh"),
+        ("Español",   "es"),
+        ("Français",  "fr"),
+        ("العربية",   "ar"),
+        ("Português", "pt"),
+        ("Deutsch",   "de"),
+        ("日本語",     "ja"),
+    ]
+
     /// Maps display name ("Русский", "Español" …) → BCP-47 identifier used by Translation framework.
     static func targetLangId(for nativeLanguage: String) -> String {
-        switch nativeLanguage {
-        case "Русский":   return "ru"
-        case "中文":       return "zh"
-        case "Español":   return "es"
-        case "Français":  return "fr"
-        case "العربية":   return "ar"
-        case "Português": return "pt"
-        case "Deutsch":   return "de"
-        case "日本語":     return "ja"
-        default:          return String(nativeLanguage.prefix(2)).lowercased()
-        }
+        supportedLanguages.first(where: { $0.name == nativeLanguage })?.langId
+            ?? String(nativeLanguage.prefix(2)).lowercased()
     }
 
     // MARK: Actions

@@ -13,19 +13,11 @@ struct FlashCardsView: View {
     @Query private var collections: [Collection]
 
     @State private var viewModel = FlashCardsViewModel()
-    @AppStorage("studyDirection")  private var studyDirection  = "EN→Native"
-    @AppStorage("nativeLanguage")  private var nativeLanguage  = "Русский"
     @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
+    @AppStorage("srsEnabled")      private var srsEnabled: Bool    = true
+    @AppStorage("userPlan") private var userPlan: AccessTier = .free
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
-
-    private var langAbbr: String {
-        DictionaryLookupViewModel.targetLangId(for: nativeLanguage).uppercased()
-    }
-
-    private var directionLabel: String {
-        studyDirection == "EN→Native" ? "EN→\(langAbbr)" : "\(langAbbr)→EN"
-    }
 
     var body: some View {
         NavigationStack {
@@ -42,14 +34,32 @@ struct FlashCardsView: View {
             viewModel.startSessionIfNeeded(
                 piles: piles, allCards: allCards,
                 cardSets: cardSets, collections: collections,
-                dueHour: studyStartHour
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
             )
         }
         .onChange(of: activePileSnapshot) {
             viewModel.startNewSession(
                 piles: piles, allCards: allCards,
                 cardSets: cardSets, collections: collections,
-                dueHour: studyStartHour
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
+            )
+        }
+        .onChange(of: srsEnabled) {
+            viewModel.startNewSession(
+                piles: piles, allCards: allCards,
+                cardSets: cardSets, collections: collections,
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
+            )
+        }
+        .onChange(of: userPlan) {
+            viewModel.startNewSession(
+                piles: piles, allCards: allCards,
+                cardSets: cardSets, collections: collections,
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
             )
         }
     }
@@ -69,12 +79,13 @@ struct FlashCardsView: View {
         } else {
             TinderCardsView(
                 cards: viewModel.studyCards,
+                lockedCardIds: viewModel.lockedCardIds,
                 contextLabels: viewModel.contextLabels,
                 cefrLabels: viewModel.cefrLabels,
                 pileTagsLine: viewModel.pileTagsLine,
                 isDueMode: viewModel.studyMode == .due,
                 pileLearntCount: viewModel.pileLearntCount,
-                onToggleMode: {
+                onToggleMode: srsEnabled ? {
                     if viewModel.studyMode == .due {
                         viewModel.studyAll(
                             piles: piles, allCards: allCards,
@@ -84,10 +95,10 @@ struct FlashCardsView: View {
                         viewModel.startNewSession(
                             piles: piles, allCards: allCards,
                             cardSets: cardSets, collections: collections,
-                            dueHour: studyStartHour
+                            dueHour: studyStartHour, srsEnabled: srsEnabled
                         )
                     }
-                },
+                } : nil,
                 onDone: {
                     viewModel.onSessionComplete(
                         piles: piles, allCards: allCards,
@@ -133,7 +144,8 @@ struct FlashCardsView: View {
                 Button {
                     viewModel.studyAll(
                         piles: piles, allCards: allCards,
-                        cardSets: cardSets, collections: collections
+                        cardSets: cardSets, collections: collections,
+                        userPlan: userPlan
                     )
                 } label: {
                     Text("Study anyway  ·  All: \(viewModel.allActiveCount)")
@@ -160,15 +172,6 @@ struct FlashCardsView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                studyDirection = studyDirection == "EN→Native" ? "Native→EN" : "EN→Native"
-            } label: {
-                Text(directionLabel)
-                    .font(.subheadline.weight(.medium))
-                    .monospacedDigit()
-            }
-        }
         ToolbarItem(placement: .topBarLeading) {
             Button { viewModel.isShowingAddCard = true } label: {
                 Image(systemName: "plus")

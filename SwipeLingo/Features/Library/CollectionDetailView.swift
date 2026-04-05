@@ -66,6 +66,7 @@ struct CollectionDetailView: View {
             }
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        .customBackButton("Library")
         .navigationTitle(collection.name)
         .navigationBarTitleDisplayMode(.inline)
         .frame(maxWidth: .infinity)
@@ -73,6 +74,7 @@ struct CollectionDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { isShowingAddSet = true } label: {
                     Image(systemName: "plus")
+                        .font(.subheadline.weight(.medium))
                 }
                 .foregroundStyle(Color.myColors.myBlue)
             }
@@ -204,16 +206,20 @@ struct CollectionDetailView: View {
         VStack(spacing: 0) {
             ForEach(filteredCardSets) { cardSet in
                 NavigationLink {
-                    CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated)
+                    CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated, backTitle: collection.name)
                 } label: {
                     HStack {
                         let count = cardCount(for: cardSet)
-                        HStack(spacing: 0) {
-                            Text(cardSet.name)
-                            if count > 0 {
-                                Text(" (\(count))")
-                                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                        HStack(alignment: .top, spacing: 2) {
+                            HStack(spacing: 0) {
+                                Text(cardSet.name)
+                                if count > 0 {
+                                    Text(" (\(count))")
+                                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                                }
                             }
+                            AccessTierBadge(tier: cardSet.accessTier)
+                                .offset(y: -4)
                         }
                         Spacer()
                         CEFRBadgeView(level: collection.isUserCreated ? nil : cardSet.cefrLevel)

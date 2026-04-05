@@ -72,6 +72,7 @@ struct VoiceSettingsView: View {
             .padding(.vertical, 16)
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        .customBackButton("Settings")
         .navigationTitle("Voice")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear { previewService.stop() }
