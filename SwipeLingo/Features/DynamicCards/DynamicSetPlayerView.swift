@@ -432,6 +432,7 @@ struct DynamicSetPlayerView: View {
                 }
             } label: {
                 Image(systemName: audioEnabled ? "speaker.wave.2" : "speaker.slash")
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(audioEnabled ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.5))
                     .contentTransition(.symbolEffect(.replace))
             }

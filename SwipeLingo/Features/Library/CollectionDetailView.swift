@@ -74,6 +74,7 @@ struct CollectionDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { isShowingAddSet = true } label: {
                     Image(systemName: "plus")
+                        .font(.subheadline.weight(.medium))
                 }
                 .foregroundStyle(Color.myColors.myBlue)
             }
