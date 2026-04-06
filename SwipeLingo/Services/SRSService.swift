@@ -59,4 +59,39 @@ struct SRSService {
             to: startOfToday
         ) ?? now
     }
+
+    /// Applies SM-2 to `set`, mutating its SRS fields in place.
+    /// The caller is responsible for saving the ModelContext afterwards.
+    func evaluate(set: DynamicSet, rating: SRSRating) {
+        let now = Date.now
+        set.lastReviewed = now
+
+        switch rating {
+
+        case .again:
+            set.easeFactor  = max(Self.efMin, set.easeFactor - 0.20)
+            set.repetitions = 0
+            set.interval    = 1
+
+        case .hard:
+            set.easeFactor = max(Self.efMin, set.easeFactor - 0.15)
+            set.interval   = max(1, set.interval / 2)
+
+        case .easy:
+            set.easeFactor = max(Self.efMin, set.easeFactor + 0.10)
+            switch set.repetitions {
+            case 0:  set.interval = 1
+            case 1:  set.interval = 6
+            default: set.interval = max(1, Int((Double(set.interval) * set.easeFactor).rounded()))
+            }
+            set.repetitions += 1
+        }
+
+        let startOfToday = Calendar.current.startOfDay(for: now)
+        set.dueDate = Calendar.current.date(
+            byAdding: .day,
+            value: set.interval,
+            to: startOfToday
+        ) ?? now
+    }
 }

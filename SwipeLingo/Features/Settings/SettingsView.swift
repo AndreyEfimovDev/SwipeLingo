@@ -132,7 +132,7 @@ struct SettingsView: View {
                 if srsEnabled {
                     Divider().padding(.leading, 16)
                     HStack {
-                        Label("Due cards from", systemImage: "clock")
+                        Label("Due from", systemImage: "clock")
                             .labelStyle(.fixedIcon)
                         Spacer()
                         Picker("", selection: $studyStartHour) {
