@@ -130,15 +130,16 @@ struct TinderCardsView: View {
             VStack(spacing: 0) {
                 Spacer()
                 statLabel("Learnt", value: learnt, status: .learnt)
+                    .frame(maxWidth: .infinity)
                 Spacer()
-                modeCenterButton(current: current, effTotal: effTotal)
+                modeVCenterButton(current: current, effTotal: effTotal)
                     .font(.caption2)
+                    .frame(maxWidth: .infinity)
                 Spacer()
                 statLabel(isDueMode ? "Due" : "Active", value: active, status: .active)
+                    .frame(maxWidth: .infinity)
                 Spacer()
             }
-            .frame(maxWidth: .infinity)
-
             // Vertical progress bar — right edge, replaces Divider with meaning
             GeometryReader { geo in
                 ZStack(alignment: .bottom) {
@@ -154,25 +155,51 @@ struct TinderCardsView: View {
             }
             .frame(width: 8)
         }
-        .frame(maxWidth: 64)
+        .frame(maxWidth: 60)
     }
 
-    /// Centre of the progress row: "1 / 14" when no toggle, or "Due · 1/14 ⇅" when tappable.
+    /// Centre of the progress row: "1 / 14" when no toggle, or vertical stack Due/All + count with ⇅ when tappable.
     @ViewBuilder
-    private func modeCenterButton(current: Int, effTotal: Int) -> some View {
+    private func modeVCenterButton(current: Int, effTotal: Int) -> some View {
+        if let toggle = onToggleMode {
+            Button(action: toggle) {
+                VStack(spacing: 1) {
+                    Image(systemName: "chevron.up")
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+                    VStack(spacing: 0) {
+                        Text(isDueMode ? "Due" : "All")
+                            .foregroundStyle(isDueMode ? Color.myColors.myOrange : Color.myColors.myGreen)
+                        Text("\(current) / \(effTotal)")
+                            .foregroundStyle(Color.myColors.myAccent)
+                    }
+                    .padding(.vertical, 6)
+                    Image(systemName: "chevron.down")
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+                }
+                .font(.caption)
+                .fontWeight(.semibold)
+            }
+            .buttonStyle(.plain)
+        } else {
+            Text("\(current) / \(effTotal)")
+                .fontWeight(.semibold)
+        }
+    }
+    
+    @ViewBuilder
+    private func modeHCenterButton(current: Int, effTotal: Int) -> some View {
         if let toggle = onToggleMode {
             Button(action: toggle) {
                 HStack(spacing: 3) {
                     Text(isDueMode ? "Due" : "All")
                         .foregroundStyle(isDueMode ? Color.myColors.myOrange : Color.myColors.myGreen)
-                    Text("·")
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
                     Text("\(current) / \(effTotal)")
-                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.myColors.myAccent)
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 8, weight: .semibold))
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
                 }
+                .font(.caption)
+                .fontWeight(.semibold)
             }
             .buttonStyle(.plain)
         } else {
@@ -181,10 +208,11 @@ struct TinderCardsView: View {
         }
     }
 
+
     private func statLabel(_ title: String, value: Int, status: CardStatus) -> some View {
         VStack(spacing: 2) {
             Text(title)
-                .font(.system(size: 9))
+                .font(.system(size: 11))
             Text("\(value)")
                 .font(.callout)
                 .fontWeight(.semibold)
@@ -212,7 +240,7 @@ struct TinderCardsView: View {
                     HStack {
                         Text(isDueMode ? "Due" : "Active")
                         Spacer()
-                        modeCenterButton(current: current, effTotal: effTotal)
+                        modeHCenterButton(current: current, effTotal: effTotal)
                         Spacer()
                         Text("Learnt")
                     }.font(.caption2)

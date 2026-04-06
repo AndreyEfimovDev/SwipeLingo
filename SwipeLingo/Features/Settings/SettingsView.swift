@@ -5,6 +5,8 @@ import SwiftUI
 
 struct SettingsView: View {
 
+    @Environment(\.dismiss) private var dismiss
+
     @AppStorage("nativeLanguage")     private var nativeLanguage     = "Русский"
     @AppStorage("englishVariant")     private var englishVariant     = "en-US"
     @AppStorage("colorScheme")        private var theme: Theme       = .system
@@ -40,6 +42,15 @@ struct SettingsView: View {
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myBlue)
+                    }
+                }
+            }
         }
     }
 

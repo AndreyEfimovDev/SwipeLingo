@@ -7,6 +7,7 @@ struct FlashCardsView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(AppViewModel.self) private var appViewModel
     @Query private var piles: [Pile]
     @Query private var allCards: [Card]
     @Query private var cardSets: [CardSet]
@@ -176,6 +177,40 @@ struct FlashCardsView: View {
             Button { viewModel.isShowingAddCard = true } label: {
                 Image(systemName: "plus")
                     .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myBlue)
+            }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Button { appViewModel.studyMode = .pairs } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "sparkles").frame(width: 20)
+                        Text("Switch to Pairs")
+                    }
+                }
+                Divider()
+                Button { appViewModel.activeSheet = .cardsLibrary } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "books.vertical").frame(width: 20)
+                        Text("Library")
+                    }
+                }
+                Button { appViewModel.activeSheet = .statistics } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
+                        Text("Statistics")
+                    }
+                }
+                Button { appViewModel.activeSheet = .settings } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "gear").frame(width: 20)
+                        Text("Settings")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myBlue)
             }
         }
     }

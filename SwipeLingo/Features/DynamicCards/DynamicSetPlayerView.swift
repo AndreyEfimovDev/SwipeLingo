@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // MARK: - DynamicSetPlayerView
 // Воспроизведение одного DynamicSet.

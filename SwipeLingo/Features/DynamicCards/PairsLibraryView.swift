@@ -15,6 +15,7 @@ import SwiftData
 struct PairsLibraryView: View {
 
     @Environment(\.modelContext) private var context
+    @Environment(\.dismiss)      private var dismiss
 
     @Query(sort: \DynamicSet.createdAt, order: .reverse)  private var allSets: [DynamicSet]
     @Query(sort: \PairsPile.createdAt, order: .reverse)   private var allPiles: [PairsPile]
@@ -33,6 +34,15 @@ struct PairsLibraryView: View {
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle("Pairs Library")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
+                }
+            }
+        }
         .sheet(item: $pileSheet) { mode in
             switch mode {
             case .new:          PairsPileBuilderView(editingPile: nil)
