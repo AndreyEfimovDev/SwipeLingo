@@ -2,21 +2,35 @@ import SwiftUI
 import SwiftData
 
 // MARK: - DynamicCardsView
-// Каталог Pairs сетов. Простой List с карточками.
-// При выборе → DynamicSetPlayerView.
+// Главный экран раздела Pairs.
+// Центральная кнопка Play запускает PairsSessionView.
+// Полоска под nav bar всегда показывает активный pile (или подсказку если его нет).
 
 struct DynamicCardsView: View {
 
-    @Query(sort: \DynamicSet.createdAt, order: .reverse)
-    private var sets: [DynamicSet]
+    @Environment(AppViewModel.self) private var appViewModel
+
+    @Query(sort: \DynamicSet.createdAt, order: .reverse) private var allSets: [DynamicSet]
+    @Query private var allPiles: [PairsPile]
+
+    private let service = PairsPileService()
+
+    private var activePile: PairsPile? { allPiles.first { $0.isActive } }
+
+    private var displayedSets: [DynamicSet] {
+        if let pile = activePile {
+            return service.sets(for: pile, from: allSets)
+        }
+        return allSets
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                if sets.isEmpty {
+                if displayedSets.isEmpty {
                     emptyState
                 } else {
-                    setList
+                    playScreen
                 }
             }
             .navigationTitle("Pairs")
@@ -24,142 +38,90 @@ struct DynamicCardsView: View {
         }
     }
 
-    // MARK: - List
+    // MARK: - Play Screen
 
-    private var setList: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                VStack(spacing: 0) {
-                    ForEach(sets) { set in
-                        NavigationLink(destination: DynamicSetPlayerView(set: set)) {
-                            DynamicSetRowView(set: set)
-                        }
-                        .buttonStyle(.plain)
+    private var playScreen: some View {
+        VStack(spacing: 0) {
+            pileStrip
 
-                        if set.id != sets.last?.id {
-                            Divider().padding(.leading, 16)
-                        }
-                    }
+            Spacer()
+
+            NavigationLink(destination: PairsSessionView(sets: displayedSets, pileName: activePile?.name ?? "Pairs")) {
+                VStack(spacing: 10) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 80))
+                    Text("Play")
+                        .font(.title2.weight(.semibold))
+                    Text("\(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets")")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.55))
                 }
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .myShadow()
-                .padding(.horizontal, 16)
             }
-            .padding(.vertical, 16)
+            .foregroundStyle(Color.myColors.myBlue)
+            .buttonStyle(.plain)
+
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground).ignoresSafeArea())
+    }
+
+    // MARK: - Pile Strip
+    // Всегда видна: имя активного pile или подсказка, + кнопка смены pile.
+
+    private var pileStrip: some View {
+        HStack {
+            if let pile = activePile {
+                Text(pile.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myAccent)
+            } else {
+                Text("No pile set — all sets will play")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+            }
+
+            Spacer()
+
+            Button {
+                appViewModel.selectedTab = .pairsLibrary
+            } label: {
+                Text("Set Pile")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myBlue)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(Color.myColors.myAccent.opacity(0.05))
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "sparkles")
+            Image(systemName: "square.stack")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
-            Text("No sets available")
+            Text(activePile != nil ? "No sets in this pile" : "No sets available")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
-            Text("Pairs sets will appear here once downloaded")
+            Text(activePile != nil
+                 ? "Add sets to \"\(activePile!.name)\" to get started"
+                 : "Pairs sets will appear here once downloaded")
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
+
+            VStack(spacing: 0) { pileStrip }
+                .background(Color.myColors.myAccent.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 32)
+                .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground).ignoresSafeArea())
-    }
-}
-
-// MARK: - DynamicSetRowView
-
-private struct DynamicSetRowView: View {
-    let set: DynamicSet
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                // Title
-                Text(set.title ?? "Untitled")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.myColors.myAccent)
-
-                // Subtitle
-                if let subtitle = set.subtitle {
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                }
-
-                // Column headers + item count
-                HStack(spacing: 6) {
-                    if let left = set.leftTitle, let right = set.rightTitle {
-                        Text("\(left) → \(right)")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(Color.myColors.myBlue)
-                    }
-
-                    let count = set.items.count
-                    if count > 0 {
-                        Text("·")
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
-                        Text("\(count) \(count == 1 ? "pair" : "pairs")")
-                            .font(.caption)
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                    }
-                }
-            }
-
-            Spacer()
-
-            // Access tier badge
-            AccessTierBadge(tier: set.accessTier)
-
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-    }
-}
-
-// MARK: - AccessTierBadge
-// Reusable badge for subscription plan indicators.
-// Plans: Free (no badge) / Go (purple→blue gradient) / Pro (yellow→orange gradient)
-// NOTE: defined here; if needed elsewhere — add AccessTierBadge.swift to Xcode target.
-
-struct AccessTierBadge: View {
-    let tier: AccessTier
-    var isSmall: Bool = false
-
-    var body: some View {
-        switch tier {
-        case .free:
-            EmptyView()
-        case .go:
-            badge("GO",  colors: [Color.myColors.myPurple, Color.myColors.myBlue])
-        case .pro:
-            badge("PRO", colors: [Color.myColors.myYellow, Color.myColors.myOrange])
-        }
-    }
-
-    private func badge(_ label: String, colors: [Color]) -> some View {
-        let gradient = LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing)
-        return Text(label)
-            .font(isSmall ? .system(size: 7, weight: .bold) : .caption2.weight(.bold))
-            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            .padding(.horizontal, isSmall ? 4 : 6)
-            .padding(.vertical,   isSmall ? 2 : 4)
-            .frame(width: isSmall ? 26 : 38, alignment: .center)
-            .background(gradient.opacity(0.15))
-            .clipShape(RoundedRectangle(cornerRadius: isSmall ? 3 : 5))
-            .overlay(
-                RoundedRectangle(cornerRadius: isSmall ? 3 : 5)
-                    .strokeBorder(gradient, lineWidth: 1)
-            )
     }
 }

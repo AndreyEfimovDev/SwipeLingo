@@ -21,6 +21,7 @@ final class AppViewModel {
     enum AppTab: String, Hashable, CaseIterable {
         case flashCards
         case pairs
+        case pairsLibrary
         case library
         case statistics
         case preferences
@@ -28,7 +29,8 @@ final class AppViewModel {
         var label: LocalizedStringKey {
             switch self {
             case .flashCards:   return "Cards"
-            case .pairs:  return "Pairs"
+            case .pairs:        return "Pairs"
+            case .pairsLibrary: return "Sets"
             case .library:      return "Library"
             case .statistics:   return "Stats"
             case .preferences:  return "Settings"
@@ -38,7 +40,8 @@ final class AppViewModel {
         var icon: String {
             switch self {
             case .flashCards:   return "rectangle.stack"
-            case .pairs:  return "sparkles"
+            case .pairs:        return "sparkles"
+            case .pairsLibrary: return "square.stack"
             case .library:      return "books.vertical"
             case .statistics:   return "chart.line.uptrend.xyaxis"
             case .preferences:  return "gear"
@@ -101,6 +104,12 @@ struct AppView: View {
                         systemImage: AppViewModel.AppTab.pairs.icon,
                         value: AppViewModel.AppTab.pairs) {
                         DynamicCardsView()
+                            .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
+                    }
+                    Tab(AppViewModel.AppTab.pairsLibrary.label,
+                        systemImage: AppViewModel.AppTab.pairsLibrary.icon,
+                        value: AppViewModel.AppTab.pairsLibrary) {
+                        NavigationStack { PairsLibraryView() }
                             .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
                     }
                     Tab(AppViewModel.AppTab.library.label,

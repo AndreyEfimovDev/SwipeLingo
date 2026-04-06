@@ -28,6 +28,7 @@ struct SwipeLingoApp: App {
             Collection.self,
             Pile.self,
             DynamicSet.self,
+            PairsPile.self,
             UserProfile.self
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
