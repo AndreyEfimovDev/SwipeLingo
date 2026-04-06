@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 // MARK: - DynamicSet
-// Контент формата English+ — сравнение уровней (B2↔C1, Basic↔Advanced).
+// Контент формата Pairs — сравнение уровней (B2↔C1, Basic↔Advanced).
 // Создаётся командой, хранится в Firebase Firestore.
 // Локально сохраняется в SwiftData, синхронизируется через CloudKit.
 //

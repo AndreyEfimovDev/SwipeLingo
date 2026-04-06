@@ -20,7 +20,7 @@ final class AppViewModel {
 
     enum AppTab: String, Hashable, CaseIterable {
         case flashCards
-        case englishPlus
+        case pairs
         case library
         case statistics
         case preferences
@@ -28,7 +28,7 @@ final class AppViewModel {
         var label: LocalizedStringKey {
             switch self {
             case .flashCards:   return "Cards"
-            case .englishPlus:  return "English+"
+            case .pairs:  return "Pairs"
             case .library:      return "Library"
             case .statistics:   return "Stats"
             case .preferences:  return "Settings"
@@ -38,7 +38,7 @@ final class AppViewModel {
         var icon: String {
             switch self {
             case .flashCards:   return "rectangle.stack"
-            case .englishPlus:  return "sparkles"
+            case .pairs:  return "sparkles"
             case .library:      return "books.vertical"
             case .statistics:   return "chart.line.uptrend.xyaxis"
             case .preferences:  return "gear"
@@ -73,6 +73,7 @@ enum Theme: String, CaseIterable {
 // MARK: - AppView
 
 struct AppView: View {
+    
     @State private var viewModel = AppViewModel()
     @AppStorage("colorScheme") private var theme: Theme = .system
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -82,7 +83,6 @@ struct AppView: View {
     init() {
         configureNavigationBarAppearance()
     }
-
 
     var body: some View {
         ZStack(alignment: .leading) {
@@ -97,9 +97,9 @@ struct AppView: View {
                         FlashCardsView()
                             .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
                     }
-                    Tab(AppViewModel.AppTab.englishPlus.label,
-                        systemImage: AppViewModel.AppTab.englishPlus.icon,
-                        value: AppViewModel.AppTab.englishPlus) {
+                    Tab(AppViewModel.AppTab.pairs.label,
+                        systemImage: AppViewModel.AppTab.pairs.icon,
+                        value: AppViewModel.AppTab.pairs) {
                         DynamicCardsView()
                             .toolbar(isLandscape ? .hidden : .automatic, for: .tabBar)
                     }

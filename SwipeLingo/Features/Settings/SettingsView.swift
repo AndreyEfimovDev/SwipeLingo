@@ -53,10 +53,12 @@ struct SettingsView: View {
 
             NavigationLink { ProfileView() } label: {
                 HStack {
-                    Label("Profile", systemImage: "person.circle")
+                    Label("Your profile", systemImage: "person.circle")
                         .labelStyle(.fixedIcon)
-                    Spacer()
                     AccessTierBadge(tier: userPlan)
+                    
+                    Spacer()
+                    
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.4))

@@ -181,8 +181,8 @@ struct DynamicSetPlayerView: View {
                 }
             }
         }
-        .customBackButton("English+")
-        .navigationTitle(set.title ?? "English+")
+        .customBackButton("Pairs")
+        .navigationTitle(set.title ?? "Pairs")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
         .onAppear {

@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 // MARK: - DynamicCardsViewModel
-// Логика экрана каталога English+ сетов.
+// Логика экрана каталога Pairs сетов.
 // TODO: загрузка метаданных сетов из Firestore, фильтрация по AccessTier.
 
 @Observable
