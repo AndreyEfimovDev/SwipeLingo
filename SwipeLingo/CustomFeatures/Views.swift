@@ -6,7 +6,7 @@ import SwiftUI
 // Параметр title — название предыдущего экрана (как в стандартной iOS-кнопке).
 //
 // Использование:
-//   .customBackButton("English+")   // в DynamicSetPlayerView
+//   .customBackButton("Pairs")   // в DynamicSetPlayerView
 //   .customBackButton("Settings")   // в VoiceSettingsView
 
 private struct CustomBackButtonModifier: ViewModifier {
@@ -62,6 +62,15 @@ extension View {
                     .stroke(color.opacity(0.8), lineWidth: 1)
                 
             }
+    }
+}
+
+// MARK: - Conditional Modifier
+
+extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition { transform(self) } else { self }
     }
 }
 

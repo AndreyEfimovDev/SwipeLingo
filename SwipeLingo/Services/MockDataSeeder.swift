@@ -154,7 +154,7 @@ struct MockDataSeeder {
 
     // MARK: - Mock DynamicSets
 
-    /// Seeds mock English+ sets for UI testing.
+    /// Seeds mock Pairs sets for UI testing.
     /// Safe to call on every launch — skips if any DynamicSet already exists.
     #warning("STUB: Mock DynamicSets are for UI testing only. Remove before App Store release.")
     static func ensureMockDynamicSets(into context: ModelContext) {

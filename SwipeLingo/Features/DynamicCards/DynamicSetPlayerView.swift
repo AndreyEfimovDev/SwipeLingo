@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // MARK: - DynamicSetPlayerView
 // Воспроизведение одного DynamicSet.
@@ -24,7 +25,19 @@ import SwiftUI
 
 struct DynamicSetPlayerView: View {
 
+    @Environment(\.modelContext) private var context
+
     let set: DynamicSet
+    /// Если задан — вызывается когда воспроизведение сета завершено.
+    /// В этом режиме SRS-кнопки и Replay не показываются (управление передаётся наружу).
+    var onComplete: (() -> Void)? = nil
+    /// Если true — воспроизведение стартует автоматически без экрана Start.
+    /// Используется в PairsSessionView чтобы убрать лишний шаг между сетами.
+    var autoStart: Bool = false
+    /// Если задан — используется как начальный режим вместо @AppStorage.
+    /// Позволяет PairsSessionView задать pile-level режим; пользователь может
+    /// поменять его локально для replay, но Next Set всегда получает pile-level.
+    var initialAnimationMode: AnimationMode? = nil
 
     @AppStorage("dynamicAnimationMode")     private var defaultAnimationMode: AnimationMode = .manual
     @AppStorage("dynamicCardsAudioEnabled") private var audioEnabled: Bool = true
@@ -45,8 +58,8 @@ struct DynamicSetPlayerView: View {
     @State private var completionTask: Task<Void, Never>?
     @State private var tapHintTask:    Task<Void, Never>?
 
-    // Audio
     @State private var showPlans = false
+    @State private var hasRated  = false   // SRS оценка уже выставлена в standalone-режиме
 
     // Audio
     @State private var audioService = AudioPlayerService()
@@ -101,8 +114,8 @@ struct DynamicSetPlayerView: View {
                         .myShadow()
                         .padding(.horizontal, 16)
 
-                        // SRS buttons + replay — после окончания аудио последней строки
-                        if showCompletion {
+                        // SRS buttons + replay — только в standalone режиме (без onComplete)
+                        if showCompletion && onComplete == nil {
                             if srsEnabled { srsRatingButtons.padding(.top, 24) }
                             replayButton
                                 .padding(.top, srsEnabled ? 8 : 24)
@@ -161,9 +174,13 @@ struct DynamicSetPlayerView: View {
                     audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier)
                 }
             }
-            // SRS-блок появился → ждём окончания transition, затем прокручиваем вниз
+            // Завершение сета: в session-режиме вызываем onComplete, иначе прокручиваем к SRS
             .onChange(of: showCompletion) { _, show in
                 guard show else { return }
+                if let onComplete {
+                    onComplete()
+                    return
+                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                     withAnimation(.easeOut(duration: 0.4)) {
                         proxy.scrollTo("bottom", anchor: .bottom)
@@ -181,15 +198,19 @@ struct DynamicSetPlayerView: View {
                 }
             }
         }
-        .customBackButton("English+")
-        .navigationTitle(set.title ?? "English+")
-        .navigationBarTitleDisplayMode(.inline)
+        // В session-режиме (onComplete != nil) заголовок и back button задаёт PairsSessionView
+        .if(onComplete == nil) { $0
+            .customBackButton("Pairs")
+            .navigationTitle(set.title ?? "Pairs")
+            .navigationBarTitleDisplayMode(.inline)
+        }
         .toolbar { toolbarContent }
         .onAppear {
             let computed = computeThresholds()
             thresholds = computed
             totalSteps = computed.reduce(0) { max($0, max($1.leftStep ?? 0, $1.rightStep ?? 0)) }
-            animationMode = defaultAnimationMode
+            animationMode = initialAnimationMode ?? defaultAnimationMode
+            if autoStart { startPlayback() }
         }
         .onDisappear {
             cancelAllTasks()
@@ -377,23 +398,35 @@ struct DynamicSetPlayerView: View {
 
     // MARK: - SRS Section
 
-    /// Кнопки оценки — показываются только когда SRS включён
+    /// Кнопки оценки — показываются только когда SRS включён и оценка ещё не выставлена
     private var srsRatingButtons: some View {
         VStack(spacing: 12) {
-            Text("How well did you know this?")
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            if hasRated {
+                Label("Saved", systemImage: "checkmark.circle.fill")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myGreen)
+                    .transition(.opacity)
+            } else {
+                Text("How well did you know this?")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
 
-            HStack(spacing: 10) {
-                srsButton("Forgot", color: Color.myColors.myRed)    { }
-                srsButton("Hard",   color: Color.myColors.myOrange)  { }
-                srsButton("Easy",   color: Color.myColors.myGreen)   { }
+                HStack(spacing: 10) {
+                    srsButton("Forgot", color: Color.myColors.myRed)   { rate(.again) }
+                    srsButton("Hard",   color: Color.myColors.myOrange) { rate(.hard)  }
+                    srsButton("Easy",   color: Color.myColors.myGreen)  { rate(.easy)  }
+                }
             }
-            // TODO: SRS-логика для DynamicSet (оценка всего сета целиком)
-            // Требует SRS-полей в DynamicSet: dueDate, interval, easeFactor, repetitions
         }
         .padding(.horizontal, 16)
+        .animation(.easeInOut(duration: 0.2), value: hasRated)
         .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    private func rate(_ rating: SRSRating) {
+        SRSService().evaluate(set: set, rating: rating)
+        context.saveWithErrorHandling()
+        withAnimation { hasRated = true }
     }
 
     /// Кнопка Replay — всегда видна после завершения воспроизведения
@@ -685,6 +718,7 @@ struct DynamicSetPlayerView: View {
         isManualPaused = false
         showCompletion = false
         showTapHint = false
+        hasRated = false
         // hasStarted остаётся true — стартовый экран показывается только один раз
         withAnimation(.spring(duration: 0.3)) { revealedSteps = 0 }
         // Запускаем воспроизведение сразу без стартового экрана

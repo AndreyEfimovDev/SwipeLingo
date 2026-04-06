@@ -11,7 +11,7 @@ struct CEFRBadgeView: View {
     let level: CEFRLevel?
     var body: some View {
         if let level {
-            Text(level.rawValue)
+            Text(level.displayCode)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(.clear, in: .capsule)
