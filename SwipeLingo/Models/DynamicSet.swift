@@ -21,6 +21,13 @@ final class DynamicSet {
     var itemsJSON: String           // JSON-encoded [DynamicPair] — хранится как String (CloudKit-safe)
     var createdAt: Date
 
+    // MARK: SRS fields (SM-2) — оценка всего сета целиком
+    var dueDate:      Date   = Date.now
+    var interval:     Int    = 1
+    var easeFactor:   Double = 2.5
+    var repetitions:  Int    = 0
+    var lastReviewed: Date   = Date.now
+
     // MARK: Computed wrappers
 
     var displayMode: DisplayMode {

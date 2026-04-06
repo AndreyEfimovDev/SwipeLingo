@@ -4,7 +4,7 @@ import SwiftData
 // MARK: - DynamicCardsView
 // Главный экран раздела Pairs.
 // Центральная кнопка Play запускает PairsSessionView.
-// Полоска под nav bar всегда показывает активный pile (или подсказку если его нет).
+// Если SRS включён — переключатель All/Due фильтрует сеты по dueDate.
 
 struct DynamicCardsView: View {
 
@@ -13,21 +13,35 @@ struct DynamicCardsView: View {
     @Query(sort: \DynamicSet.createdAt, order: .reverse) private var allSets: [DynamicSet]
     @Query private var allPiles: [PairsPile]
 
+    @AppStorage("srsEnabled")           private var srsEnabled: Bool = true
+    @AppStorage("dynamicAnimationMode") private var animationMode: AnimationMode = .manual
+
+    @State private var isDueMode = false
+
     private let service = PairsPileService()
 
     private var activePile: PairsPile? { allPiles.first { $0.isActive } }
 
-    private var displayedSets: [DynamicSet] {
+    private var candidateSets: [DynamicSet] {
         if let pile = activePile {
             return service.sets(for: pile, from: allSets)
         }
         return allSets
     }
 
+    private var dueSets: [DynamicSet] {
+        let now = Date.now
+        return candidateSets.filter { $0.dueDate <= now }
+    }
+
+    private var displayedSets: [DynamicSet] {
+        isDueMode && srsEnabled ? dueSets : candidateSets
+    }
+
     var body: some View {
         NavigationStack {
             Group {
-                if displayedSets.isEmpty {
+                if candidateSets.isEmpty {
                     emptyState
                 } else {
                     playScreen
@@ -35,7 +49,15 @@ struct DynamicCardsView: View {
             }
             .navigationTitle("Pairs")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { selectDefaultMode() }
         }
+    }
+
+    // MARK: - Default Mode Selection
+
+    private func selectDefaultMode() {
+        guard srsEnabled else { isDueMode = false; return }
+        isDueMode = !dueSets.isEmpty
     }
 
     // MARK: - Play Screen
@@ -46,19 +68,34 @@ struct DynamicCardsView: View {
 
             Spacer()
 
-            NavigationLink(destination: PairsSessionView(sets: displayedSets, pileName: activePile?.name ?? "Pairs")) {
-                VStack(spacing: 10) {
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 80))
-                    Text("Play")
-                        .font(.title2.weight(.semibold))
-                    Text("\(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets")")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.55))
-                }
+            // Auto/Manual toggle — всегда виден
+            animationModeToggle
+                .padding(.bottom, 8)
+
+            // All/Due toggle — только если SRS включён
+            if srsEnabled {
+                modeToggle
+                    .padding(.bottom, 20)
             }
-            .foregroundStyle(Color.myColors.myBlue)
-            .buttonStyle(.plain)
+
+            if displayedSets.isEmpty {
+                // Due mode, но нет due-сетов
+                caughtUpView
+            } else {
+                NavigationLink(destination: PairsSessionView(sets: displayedSets, pileName: activePile?.name ?? "Pairs")) {
+                    VStack(spacing: 10) {
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 80))
+                        Text("Play")
+                            .font(.title2.weight(.semibold))
+                        Text("\(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets")")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.55))
+                    }
+                }
+                .foregroundStyle(Color.myColors.myBlue)
+                .buttonStyle(.plain)
+            }
 
             Spacer()
         }
@@ -66,15 +103,92 @@ struct DynamicCardsView: View {
         .background(Color(.systemBackground).ignoresSafeArea())
     }
 
+    // MARK: - Animation Mode Toggle (Auto / Manual)
+
+    private var animationModeToggle: some View {
+        HStack(spacing: 0) {
+            toggleButton(title: "Manual", active: animationMode == .manual) {
+                animationMode = .manual
+            }
+            toggleButton(title: "Auto", active: animationMode == .automatic) {
+                animationMode = .automatic
+            }
+        }
+        .background(Color.myColors.myAccent.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, 48)
+    }
+
+    // MARK: - All/Due Mode Toggle
+
+    private var modeToggle: some View {
+        HStack(spacing: 0) {
+            toggleButton(title: "All", active: !isDueMode) {
+                withAnimation(.easeInOut(duration: 0.2)) { isDueMode = false }
+            }
+            toggleButton(
+                title: dueSets.isEmpty ? "Due" : "Due (\(dueSets.count))",
+                active: isDueMode
+            ) {
+                withAnimation(.easeInOut(duration: 0.2)) { isDueMode = true }
+            }
+        }
+        .background(Color.myColors.myAccent.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, 48)
+    }
+
+    private func toggleButton(title: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(active ? .semibold : .regular))
+                .foregroundStyle(active ? Color.myColors.myAccent : Color.myColors.myAccent.opacity(0.45))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(active ? Color.myColors.myAccent.opacity(0.12) : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Caught Up (Due mode, нет due-сетов)
+
+    private var caughtUpView: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "checkmark.circle")
+                .font(.system(size: 52))
+                .foregroundStyle(Color.myColors.myGreen.opacity(0.7))
+            Text("All caught up!")
+                .font(.title3.bold())
+                .foregroundStyle(Color.myColors.myAccent)
+            Text("No sets due for review")
+                .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { isDueMode = false }
+            } label: {
+                Text("Play All")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(Color.myColors.myBlue)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+        }
+    }
+
     // MARK: - Pile Strip
-    // Всегда видна: имя активного pile или подсказка, + кнопка смены pile.
 
     private var pileStrip: some View {
         HStack {
             if let pile = activePile {
-                Text(pile.name)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.myColors.myAccent)
+                let pairsCount = displayedSets.reduce(0) { $0 + $1.items.count }
+                Text("\(pile.name)  ·  \(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets") (\(pairsCount))")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
             } else {
                 Text("No pile set — all sets will play")
                     .font(.subheadline)
@@ -97,7 +211,7 @@ struct DynamicCardsView: View {
         .background(Color.myColors.myAccent.opacity(0.05))
     }
 
-    // MARK: - Empty State
+    // MARK: - Empty State (нет сетов вообще)
 
     private var emptyState: some View {
         VStack(spacing: 16) {

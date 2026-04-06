@@ -145,8 +145,10 @@ struct PairsLibraryView: View {
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                     .foregroundStyle(Color.myColors.myAccent)
-                let count = PairsPileService().sets(for: pile, from: allSets).count
-                Text("\(count) \(count == 1 ? "set" : "sets")")
+                let sets   = PairsPileService().sets(for: pile, from: allSets)
+                let count  = sets.count
+                let pairs  = sets.reduce(0) { $0 + $1.items.count }
+                Text("\(count) \(count == 1 ? "set" : "sets") (\(pairs))")
                     .font(.caption)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
             }

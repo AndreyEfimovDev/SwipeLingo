@@ -448,13 +448,13 @@
 		47DE7EF42F80013700F6BCF3 /* DynamicCards */ = {
 			isa = PBXGroup;
 			children = (
-				47DE7F8D2F83D20100F6BCF3 /* PairsLibraryView.swift */,
-				47DE7F8B2F83D1EA00F6BCF3 /* PairsSessionView.swift */,
-				47DE7F892F83CB3C00F6BCF3 /* PairsPileBuilderView.swift */,
-				47DE7F872F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift */,
 				47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */,
 				47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */,
 				47DE7EF32F80013700F6BCF3 /* DynamicSetPlayerView.swift */,
+				47DE7F8B2F83D1EA00F6BCF3 /* PairsSessionView.swift */,
+				47DE7F892F83CB3C00F6BCF3 /* PairsPileBuilderView.swift */,
+				47DE7F872F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift */,
+				47DE7F8D2F83D20100F6BCF3 /* PairsLibraryView.swift */,
 			);
 			path = DynamicCards;
 			sourceTree = "<group>";
