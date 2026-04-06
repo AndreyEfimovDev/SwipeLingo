@@ -56,7 +56,47 @@ struct DynamicCardsView: View {
             }
             .navigationTitle("Pairs")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar { pairsToolbar }
             .onAppear { selectDefaultMode() }
+        }
+    }
+
+    // MARK: - Toolbar
+
+    @ToolbarContentBuilder
+    private var pairsToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Button { appViewModel.studyMode = .cards } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "rectangle.stack").frame(width: 20)
+                        Text("Switch to Cards")
+                    }
+                }
+                Divider()
+                Button { appViewModel.activeSheet = .pairsLibrary } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "books.vertical").frame(width: 20)
+                        Text("Library")
+                    }
+                }
+                Button { appViewModel.activeSheet = .statistics } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
+                        Text("Statistics")
+                    }
+                }
+                Button { appViewModel.activeSheet = .settings } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "gear").frame(width: 20)
+                        Text("Settings")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myBlue)
+            }
         }
     }
 
@@ -123,7 +163,7 @@ struct DynamicCardsView: View {
         }
         .background(Color.myColors.myAccent.opacity(0.07))
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .padding(.horizontal, 48)
+        .padding(.horizontal, 24)
     }
 
     // MARK: - All/Due Mode Toggle
@@ -142,7 +182,7 @@ struct DynamicCardsView: View {
         }
         .background(Color.myColors.myAccent.opacity(0.07))
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .padding(.horizontal, 48)
+        .padding(.horizontal, 24)
     }
 
     private func toggleButton(title: String, active: Bool, action: @escaping () -> Void) -> some View {
@@ -205,7 +245,7 @@ struct DynamicCardsView: View {
             Spacer()
 
             Button {
-                appViewModel.selectedTab = .pairsLibrary
+                appViewModel.activeSheet = .pairsLibrary
             } label: {
                 Text("Set Pile")
                     .font(.subheadline.weight(.medium))
