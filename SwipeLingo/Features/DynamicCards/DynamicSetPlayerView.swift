@@ -25,6 +25,12 @@ import SwiftUI
 struct DynamicSetPlayerView: View {
 
     let set: DynamicSet
+    /// Если задан — вызывается когда воспроизведение сета завершено.
+    /// В этом режиме SRS-кнопки и Replay не показываются (управление передаётся наружу).
+    var onComplete: (() -> Void)? = nil
+    /// Если true — воспроизведение стартует автоматически без экрана Start.
+    /// Используется в PairsSessionView чтобы убрать лишний шаг между сетами.
+    var autoStart: Bool = false
 
     @AppStorage("dynamicAnimationMode")     private var defaultAnimationMode: AnimationMode = .manual
     @AppStorage("dynamicCardsAudioEnabled") private var audioEnabled: Bool = true
@@ -101,8 +107,8 @@ struct DynamicSetPlayerView: View {
                         .myShadow()
                         .padding(.horizontal, 16)
 
-                        // SRS buttons + replay — после окончания аудио последней строки
-                        if showCompletion {
+                        // SRS buttons + replay — только в standalone режиме (без onComplete)
+                        if showCompletion && onComplete == nil {
                             if srsEnabled { srsRatingButtons.padding(.top, 24) }
                             replayButton
                                 .padding(.top, srsEnabled ? 8 : 24)
@@ -161,9 +167,13 @@ struct DynamicSetPlayerView: View {
                     audioService.speak(text: text, voiceIdentifier: ttsVoiceIdentifier)
                 }
             }
-            // SRS-блок появился → ждём окончания transition, затем прокручиваем вниз
+            // Завершение сета: в session-режиме вызываем onComplete, иначе прокручиваем к SRS
             .onChange(of: showCompletion) { _, show in
                 guard show else { return }
+                if let onComplete {
+                    onComplete()
+                    return
+                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                     withAnimation(.easeOut(duration: 0.4)) {
                         proxy.scrollTo("bottom", anchor: .bottom)
@@ -181,15 +191,19 @@ struct DynamicSetPlayerView: View {
                 }
             }
         }
-        .customBackButton("Pairs")
-        .navigationTitle(set.title ?? "Pairs")
-        .navigationBarTitleDisplayMode(.inline)
+        // В session-режиме (onComplete != nil) заголовок и back button задаёт PairsSessionView
+        .if(onComplete == nil) { $0
+            .customBackButton("Pairs")
+            .navigationTitle(set.title ?? "Pairs")
+            .navigationBarTitleDisplayMode(.inline)
+        }
         .toolbar { toolbarContent }
         .onAppear {
             let computed = computeThresholds()
             thresholds = computed
             totalSteps = computed.reduce(0) { max($0, max($1.leftStep ?? 0, $1.rightStep ?? 0)) }
             animationMode = defaultAnimationMode
+            if autoStart { startPlayback() }
         }
         .onDisappear {
             cancelAllTasks()
