@@ -22,11 +22,11 @@ final class DynamicSet {
     var createdAt: Date
 
     // MARK: SRS fields (SM-2) — оценка всего сета целиком
-    var dueDate:      Date   = Date.now
+    var dueDate:      Date   = Date.distantFuture  // новый сет не в Due до первой оценки
     var interval:     Int    = 1
     var easeFactor:   Double = 2.5
     var repetitions:  Int    = 0
-    var lastReviewed: Date   = Date.now
+    var lastReviewed: Date   = Date.distantPast
 
     // MARK: Computed wrappers
 

@@ -20,6 +20,13 @@ struct FlashCardsView: View {
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
+    /// true если есть хотя бы одна активная карточка с подошедшим dueDate
+    private var hasDueCards: Bool {
+        let now = Date.now
+        return allCards.contains { $0.status == .active && $0.dueDate <= now }
+    }
+
+
     var body: some View {
         NavigationStack {
             content
@@ -88,18 +95,25 @@ struct FlashCardsView: View {
                 pileLearntCount: viewModel.pileLearntCount,
                 onToggleMode: srsEnabled ? {
                     if viewModel.studyMode == .due {
+                        // Due → All: перезагружаем сессию со всеми карточками
                         viewModel.studyAll(
                             piles: piles, allCards: allCards,
                             cardSets: cardSets, collections: collections
                         )
-                    } else {
+                    } else if hasDueCards {
+                        // All → Due: есть due карточки — загружаем их
                         viewModel.startNewSession(
                             piles: piles, allCards: allCards,
                             cardSets: cardSets, collections: collections,
                             dueHour: studyStartHour, srsEnabled: srsEnabled
                         )
+                    } else {
+                        // All → Due: нет due карточек — не сбрасываем сессию,
+                        // только меняем режим отображения → покажет caught-up оверлей
+                        viewModel.switchToDueDisplay()
                     }
                 } : nil,
+                hasDueCards: hasDueCards,
                 onDone: {
                     viewModel.onSessionComplete(
                         piles: piles, allCards: allCards,
