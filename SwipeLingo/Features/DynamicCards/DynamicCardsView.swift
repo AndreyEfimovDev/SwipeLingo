@@ -38,6 +38,13 @@ struct DynamicCardsView: View {
         isDueMode && srsEnabled ? dueSets : candidateSets
     }
 
+    /// Суммарное количество пар — вычисляется один раз на рендер, не инлайн в body.
+    /// DynamicSet.items декодирует JSON при каждом обращении, поэтому важно не
+    /// вызывать его внутри withAnimation или повторяющихся вложенных вычислений.
+    private var displayedPairsCount: Int {
+        displayedSets.reduce(0) { $0 + $1.items.count }
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -124,13 +131,13 @@ struct DynamicCardsView: View {
     private var modeToggle: some View {
         HStack(spacing: 0) {
             toggleButton(title: "All", active: !isDueMode) {
-                withAnimation(.easeInOut(duration: 0.2)) { isDueMode = false }
+                isDueMode = false
             }
             toggleButton(
                 title: dueSets.isEmpty ? "Due" : "Due (\(dueSets.count))",
                 active: isDueMode
             ) {
-                withAnimation(.easeInOut(duration: 0.2)) { isDueMode = true }
+                isDueMode = true
             }
         }
         .background(Color.myColors.myAccent.opacity(0.07))
@@ -147,6 +154,7 @@ struct DynamicCardsView: View {
                 .padding(.vertical, 8)
                 .background(active ? Color.myColors.myAccent.opacity(0.12) : Color.clear)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -165,7 +173,7 @@ struct DynamicCardsView: View {
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) { isDueMode = false }
+                isDueMode = false
             } label: {
                 Text("Play All")
                     .font(.subheadline.weight(.semibold))
@@ -185,8 +193,7 @@ struct DynamicCardsView: View {
     private var pileStrip: some View {
         HStack {
             if let pile = activePile {
-                let pairsCount = displayedSets.reduce(0) { $0 + $1.items.count }
-                Text("\(pile.name)  ·  \(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets") (\(pairsCount))")
+                Text("\(pile.name)  ·  \(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets") (\(displayedPairsCount))")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
             } else {
