@@ -5,6 +5,8 @@ import SwiftUI
 
 struct SettingsView: View {
 
+    @Environment(\.dismiss) private var dismiss
+
     @AppStorage("nativeLanguage")     private var nativeLanguage     = "Русский"
     @AppStorage("englishVariant")     private var englishVariant     = "en-US"
     @AppStorage("colorScheme")        private var theme: Theme       = .system
@@ -40,6 +42,15 @@ struct SettingsView: View {
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myBlue)
+                    }
+                }
+            }
         }
     }
 
@@ -53,10 +64,12 @@ struct SettingsView: View {
 
             NavigationLink { ProfileView() } label: {
                 HStack {
-                    Label("Profile", systemImage: "person.circle")
+                    Label("Your profile", systemImage: "person.circle")
                         .labelStyle(.fixedIcon)
-                    Spacer()
                     AccessTierBadge(tier: userPlan)
+                    
+                    Spacer()
+                    
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
@@ -130,7 +143,7 @@ struct SettingsView: View {
                 if srsEnabled {
                     Divider().padding(.leading, 16)
                     HStack {
-                        Label("Due cards from", systemImage: "clock")
+                        Label("Due from", systemImage: "clock")
                             .labelStyle(.fixedIcon)
                         Spacer()
                         Picker("", selection: $studyStartHour) {

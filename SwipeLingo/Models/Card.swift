@@ -40,8 +40,8 @@ final class Card {
     var easeFactor:  Double = 2.5
     var interval:    Int    = 1
     var repetitions: Int    = 0
-    var dueDate:     Date   = Date.now
-    var lastReviewed: Date  = Date.now
+    var dueDate:     Date   = Date.distantFuture  // новая карточка не в Due до первой оценки
+    var lastReviewed: Date  = Date.distantPast
 
     // Dictionary cache — plain String, CloudKit compatible (empty = not yet fetched)
     var dictTranscription: String = ""
@@ -98,8 +98,8 @@ final class Card {
         easeFactor: Double = 2.5,
         interval: Int = 1,
         repetitions: Int = 0,
-        dueDate: Date = .now,
-        lastReviewed: Date = .now,
+        dueDate: Date = .distantFuture,
+        lastReviewed: Date = .distantPast,
         dictTranscription: String = "",
         dictAudioURL: String = "",
         dictDefinition: String = "",

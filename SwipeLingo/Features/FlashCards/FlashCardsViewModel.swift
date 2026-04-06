@@ -73,6 +73,13 @@ final class FlashCardsViewModel {
              userPlan: userPlan)
     }
 
+    /// Switches display to Due mode without reloading cards or resetting sessionID.
+    /// Used when user taps Due toggle but no due cards exist — shows caught-up overlay
+    /// without disrupting the current card position.
+    func switchToDueDisplay() {
+        studyMode = .due
+    }
+
     /// "Study anyway" — loads ALL active cards ignoring dueDate and hour threshold.
     func studyAll(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],

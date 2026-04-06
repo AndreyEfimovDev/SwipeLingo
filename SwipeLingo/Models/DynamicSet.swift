@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 // MARK: - DynamicSet
-// Контент формата English+ — сравнение уровней (B2↔C1, Basic↔Advanced).
+// Контент формата Pairs — сравнение уровней (B2↔C1, Basic↔Advanced).
 // Создаётся командой, хранится в Firebase Firestore.
 // Локально сохраняется в SwiftData, синхронизируется через CloudKit.
 //
@@ -20,6 +20,13 @@ final class DynamicSet {
     var accessTierRaw: String       // AccessTier.rawValue   — хранится как String (CloudKit-safe)
     var itemsJSON: String           // JSON-encoded [DynamicPair] — хранится как String (CloudKit-safe)
     var createdAt: Date
+
+    // MARK: SRS fields (SM-2) — оценка всего сета целиком
+    var dueDate:      Date   = Date.distantFuture  // новый сет не в Due до первой оценки
+    var interval:     Int    = 1
+    var easeFactor:   Double = 2.5
+    var repetitions:  Int    = 0
+    var lastReviewed: Date   = Date.distantPast
 
     // MARK: Computed wrappers
 
@@ -105,21 +112,8 @@ struct DynamicPair: Codable, Identifiable {
 }
 
 // MARK: - DynamicItem
-// Один элемент пары: текст и/или картинка.
+// Один элемент пары: текст.
 
 struct DynamicItem: Codable {
     var text: String?
-    var image: ImageRef?
-}
-
-// MARK: - ImageRef
-// Ссылка на картинку в Firebase Storage.
-// Хранится как путь (не URL) — URL может устареть, генерируется при показе.
-//
-// Генерация URL:
-//   Storage.storage().reference(withPath: storagePath).downloadURL { url, error in ... }
-// URL кешируется в памяти на время сессии, не сохраняется в SwiftData.
-
-struct ImageRef: Codable {
-    var storagePath: String     // пример: "dynamic_sets/<setId>/image.jpg"
 }

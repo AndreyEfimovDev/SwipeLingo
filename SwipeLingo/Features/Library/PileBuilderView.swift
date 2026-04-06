@@ -235,7 +235,6 @@ struct PileBuilderView: View {
         ToolbarItem(placement: .confirmationAction) {
             Button("Save") {
                 viewModel.saveAndActivate(context: context, allPiles: allPiles)
-                appViewModel.selectedTab = .flashCards
                 dismiss()
             }
             .disabled(!viewModel.canSave)
