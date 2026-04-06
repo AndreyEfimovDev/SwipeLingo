@@ -76,6 +76,7 @@
 		47DE7F8C2F83D1EA00F6BCF3 /* PairsSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F8B2F83D1EA00F6BCF3 /* PairsSessionView.swift */; };
 		47DE7F8E2F83D20100F6BCF3 /* PairsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F8D2F83D20100F6BCF3 /* PairsLibraryView.swift */; };
 		47DE7F902F83D2EB00F6BCF3 /* AccessTierBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F8F2F83D2EB00F6BCF3 /* AccessTierBadge.swift */; };
+		47DE7F922F844EF700F6BCF3 /* PairsVerticalToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -187,6 +188,7 @@
 		47DE7F8B2F83D1EA00F6BCF3 /* PairsSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSessionView.swift; sourceTree = "<group>"; };
 		47DE7F8D2F83D20100F6BCF3 /* PairsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsLibraryView.swift; sourceTree = "<group>"; };
 		47DE7F8F2F83D2EB00F6BCF3 /* AccessTierBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTierBadge.swift; sourceTree = "<group>"; };
+		47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsVerticalToggle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -448,13 +450,14 @@
 		47DE7EF42F80013700F6BCF3 /* DynamicCards */ = {
 			isa = PBXGroup;
 			children = (
-				47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */,
 				47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */,
+				47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */,
 				47DE7EF32F80013700F6BCF3 /* DynamicSetPlayerView.swift */,
 				47DE7F8B2F83D1EA00F6BCF3 /* PairsSessionView.swift */,
 				47DE7F892F83CB3C00F6BCF3 /* PairsPileBuilderView.swift */,
 				47DE7F872F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift */,
 				47DE7F8D2F83D20100F6BCF3 /* PairsLibraryView.swift */,
+				47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */,
 			);
 			path = DynamicCards;
 			sourceTree = "<group>";
@@ -669,6 +672,7 @@
 				478C78652F794487005FBDFE /* StatisticsView.swift in Sources */,
 				478C78662F794487005FBDFE /* DictionaryLookupView.swift in Sources */,
 				47DE7F8C2F83D1EA00F6BCF3 /* PairsSessionView.swift in Sources */,
+				47DE7F922F844EF700F6BCF3 /* PairsVerticalToggle.swift in Sources */,
 				478C78672F794487005FBDFE /* TinderCardsView.swift in Sources */,
 				478C78682F794487005FBDFE /* TinderCardsViewModel.swift in Sources */,
 				478C78692F794487005FBDFE /* FlashCardsView.swift in Sources */,

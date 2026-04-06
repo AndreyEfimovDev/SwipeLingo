@@ -3,8 +3,7 @@ import SwiftData
 
 // MARK: - DynamicCardsView
 // Главный экран раздела Pairs.
-// Центральная кнопка Play запускает PairsSessionView.
-// Если SRS включён — переключатель All/Due фильтрует сеты по dueDate.
+// Layout: pile badge вверху, тройка (toggle | Set Pile | toggle) по центру, Play внизу.
 
 struct DynamicCardsView: View {
 
@@ -23,24 +22,18 @@ struct DynamicCardsView: View {
     private var activePile: PairsPile? { allPiles.first { $0.isActive } }
 
     private var candidateSets: [DynamicSet] {
-        if let pile = activePile {
-            return service.sets(for: pile, from: allSets)
-        }
+        if let pile = activePile { return service.sets(for: pile, from: allSets) }
         return allSets
     }
 
     private var dueSets: [DynamicSet] {
-        let now = Date.now
-        return candidateSets.filter { $0.dueDate <= now }
+        candidateSets.filter { $0.dueDate <= Date.now }
     }
 
     private var displayedSets: [DynamicSet] {
         isDueMode && srsEnabled ? dueSets : candidateSets
     }
 
-    /// Суммарное количество пар — вычисляется один раз на рендер, не инлайн в body.
-    /// DynamicSet.items декодирует JSON при каждом обращении, поэтому важно не
-    /// вызывать его внутри withAnimation или повторяющихся вложенных вычислений.
     private var displayedPairsCount: Int {
         displayedSets.reduce(0) { $0 + $1.items.count }
     }
@@ -48,11 +41,7 @@ struct DynamicCardsView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if candidateSets.isEmpty {
-                    emptyState
-                } else {
-                    playScreen
-                }
+                if candidateSets.isEmpty { emptyState } else { playScreen }
             }
             .navigationTitle("Pairs")
             .navigationBarTitleDisplayMode(.inline)
@@ -111,95 +100,136 @@ struct DynamicCardsView: View {
 
     private var playScreen: some View {
         VStack(spacing: 0) {
-            pileStrip
+
+            // Pile badge
+            pileBadge
+                .padding(.top, 8)
 
             Spacer()
 
-            // Auto/Manual toggle — всегда виден
-            animationModeToggle
-                .padding(.bottom, 8)
+            // Центральная тройка: toggle | Set Pile | toggle
+            controlsRow
 
-            // All/Due toggle — только если SRS включён
-            if srsEnabled {
-                modeToggle
-                    .padding(.bottom, 20)
-            }
+            Spacer()
 
-            if displayedSets.isEmpty {
-                // Due mode, но нет due-сетов
+            // Play button / Caught up — ZStack резервирует высоту под бо́льший элемент,
+            // переключение через opacity не вызывает прыжков layout
+            ZStack {
+                playButton
+                    .opacity(displayedSets.isEmpty ? 0 : 1)
                 caughtUpView
-            } else {
-                NavigationLink(destination: PairsSessionView(sets: displayedSets, pileName: activePile?.name ?? "Pairs")) {
-                    VStack(spacing: 10) {
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 80))
-                        Text("Play")
-                            .font(.title2.weight(.semibold))
-                        Text("\(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets")")
-                            .font(.subheadline)
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.55))
-                    }
-                }
-                .foregroundStyle(Color.myColors.myBlue)
-                .buttonStyle(.plain)
+                    .opacity(displayedSets.isEmpty ? 1 : 0)
             }
+            .animation(.easeInOut(duration: 0.2), value: displayedSets.isEmpty)
 
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground).ignoresSafeArea())
+        .background(Color.myColors.myBackground.ignoresSafeArea())
     }
 
-    // MARK: - Animation Mode Toggle (Auto / Manual)
+    // MARK: - Pile Badge
 
-    private var animationModeToggle: some View {
-        HStack(spacing: 0) {
-            toggleButton(title: "Manual", active: animationMode == .manual) {
-                animationMode = .manual
-            }
-            toggleButton(title: "Auto", active: animationMode == .automatic) {
-                animationMode = .automatic
+    private var pileBadge: some View {
+        Text(activePile?.name ?? "All Sets")
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(
+                activePile != nil
+                    ? Color.myColors.myAccent.opacity(0.75)
+                    : Color.myColors.myAccent.opacity(0.35)
+            )
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(Color.myColors.myAccent.opacity(activePile != nil ? 0.09 : 0.05))
+            )
+    }
+
+    // MARK: - Controls Row
+
+    private var controlsRow: some View {
+        HStack(alignment: .center, spacing: 0) {
+
+            // Auto / Manual
+            PairsVerticalToggle(
+                topLabel:    "Auto",
+                bottomLabel: "Manual",
+                activeColor: Color.myColors.myBlue,
+                isOn: Binding(
+                    get: { animationMode == .automatic },
+                    set: { animationMode = $0 ? .automatic : .manual }
+                )
+            )
+            .frame(width: 80)
+
+            Spacer()
+
+            // Set Pile — центральный элемент
+            setPileButton
+
+            Spacer()
+
+            // Due / All (только если SRS включён, иначе placeholder для симметрии)
+            if srsEnabled {
+                PairsVerticalToggle(
+                    topLabel:    "Due",
+                    bottomLabel: "All",
+                    activeColor: Color.myColors.myOrange,
+                    isOn: $isDueMode
+                )
+                .frame(width: 80)
+            } else {
+                Color.clear.frame(width: 80)
             }
         }
-        .background(Color.myColors.myAccent.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 32)
     }
 
-    // MARK: - All/Due Mode Toggle
+    // MARK: - Set Pile Button
 
-    private var modeToggle: some View {
-        HStack(spacing: 0) {
-            toggleButton(title: "All", active: !isDueMode) {
-                isDueMode = false
+    private var setPileButton: some View {
+        Button { appViewModel.activeSheet = .pairsLibrary } label: {
+            VStack(spacing: 6) {
+                Image(systemName: activePile != nil ? "folder.fill" : "folder.badge.plus")
+                    .font(.system(size: 22))
+                Text("Set Pile")
+                    .font(.subheadline.weight(.medium))
             }
-            toggleButton(
-                title: dueSets.isEmpty ? "Due" : "Due (\(dueSets.count))",
-                active: isDueMode
-            ) {
-                isDueMode = true
-            }
-        }
-        .background(Color.myColors.myAccent.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .padding(.horizontal, 24)
-    }
-
-    private func toggleButton(title: String, active: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline.weight(active ? .semibold : .regular))
-                .foregroundStyle(active ? Color.myColors.myAccent : Color.myColors.myAccent.opacity(0.45))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(active ? Color.myColors.myAccent.opacity(0.12) : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .contentShape(Rectangle())
+            .foregroundStyle(Color.myColors.myBlue)
+            .frame(width: 100, height: 76)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.myColors.myBlue.opacity(0.08))
+            )
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Caught Up (Due mode, нет due-сетов)
+    // MARK: - Play Button
+
+    private var playButton: some View {
+        NavigationLink(
+            destination: PairsSessionView(
+                sets: displayedSets,
+                pileName: activePile?.name ?? "Pairs"
+            )
+        ) {
+            VStack(spacing: 8) {
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 108))
+//                Text("Play")
+//                    .font(.largeTitle.weight(.semibold))
+                Text("\(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets")")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            }
+        }
+        .foregroundStyle(Color.myColors.myBlue)
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Caught Up
 
     private var caughtUpView: some View {
         VStack(spacing: 10) {
@@ -212,9 +242,7 @@ struct DynamicCardsView: View {
             Text("No sets due for review")
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
-            Button {
-                isDueMode = false
-            } label: {
+            Button { isDueMode = false } label: {
                 Text("Play All")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
@@ -228,37 +256,7 @@ struct DynamicCardsView: View {
         }
     }
 
-    // MARK: - Pile Strip
-
-    private var pileStrip: some View {
-        HStack {
-            if let pile = activePile {
-                Text("\(pile.name)  ·  \(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets") (\(displayedPairsCount))")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
-            } else {
-                Text("No pile set — all sets will play")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
-            }
-
-            Spacer()
-
-            Button {
-                appViewModel.activeSheet = .pairsLibrary
-            } label: {
-                Text("Set Pile")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.myColors.myBlue)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .background(Color.myColors.myAccent.opacity(0.05))
-    }
-
-    // MARK: - Empty State (нет сетов вообще)
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 16) {
@@ -276,13 +274,19 @@ struct DynamicCardsView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
-            VStack(spacing: 0) { pileStrip }
-                .background(Color.myColors.myAccent.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
+            Button { appViewModel.activeSheet = .pairsLibrary } label: {
+                Text("Set Pile")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myBlue)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(Color.myColors.myBlue.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground).ignoresSafeArea())
+        .background(Color.myColors.myBackground.ignoresSafeArea())
     }
 }

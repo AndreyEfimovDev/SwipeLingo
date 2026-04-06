@@ -31,6 +31,8 @@ struct TinderCardsView: View {
     private let pileLearntCount: Int
     /// Called when the user taps the mode toggle in the progress row.
     private let onToggleMode: (() -> Void)?
+    /// False when no due cards exist — triggers caught-up overlay in Due mode.
+    private let hasDueCards: Bool
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
@@ -50,6 +52,7 @@ struct TinderCardsView: View {
          isDueMode: Bool = false,
          pileLearntCount: Int = 0,
          onToggleMode: (() -> Void)? = nil,
+         hasDueCards: Bool = true,
          onDone: (() -> Void)? = nil) {
         _viewModel             = State(initialValue: TinderCardsViewModel(
                                     cards: cards,
@@ -61,6 +64,7 @@ struct TinderCardsView: View {
         self.isDueMode         = isDueMode
         self.pileLearntCount   = pileLearntCount
         self.onToggleMode      = onToggleMode
+        self.hasDueCards       = hasDueCards
     }
 
     // MARK: - Body
@@ -73,6 +77,13 @@ struct TinderCardsView: View {
         .animation(.spring(duration: 0.3), value: viewModel.currentIndex)
         .animation(.spring(duration: 0.3), value: viewModel.isFlipped)
         .animation(.spring(duration: 0.4), value: viewModel.isDone)
+        .overlay {
+            // Показываем caught-up когда пользователь переключился в Due,
+            // но due карточек нет — сессия не сбрасывается, карточка за оверлеем сохраняется
+            if isDueMode && !hasDueCards {
+                cardsCaughtUpOverlay
+            }
+        }
         .sheet(item: $lookupCard) { DictionaryLookupView(card: $0) }
         .onDisappear { audioService.stop() }
         .onChange(of: viewModel.currentIndex) { _, _ in
@@ -208,6 +219,38 @@ struct TinderCardsView: View {
         }
     }
 
+
+    // MARK: - Caught Up Overlay (Due mode, нет due карточек)
+
+    private var cardsCaughtUpOverlay: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 56))
+                .foregroundStyle(Color.myColors.myGreen)
+            Text("All caught up!")
+                .font(.title3.bold())
+                .foregroundStyle(Color.myColors.myAccent)
+            Text("No cards due for review")
+                .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+            if let toggle = onToggleMode {
+                Button(action: toggle) {
+                    Text("Study All")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(Color.myColors.myBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.myColors.myBackground.opacity(0.97))
+        .transition(.opacity)
+    }
 
     private func statLabel(_ title: String, value: Int, status: CardStatus) -> some View {
         VStack(spacing: 2) {
