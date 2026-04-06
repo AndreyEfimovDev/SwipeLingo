@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 // MARK: - DynamicCardsView
-// Каталог English+ сетов. Простой List с карточками.
+// Каталог Pairs сетов. Простой List с карточками.
 // При выборе → DynamicSetPlayerView.
 
 struct DynamicCardsView: View {
@@ -19,7 +19,7 @@ struct DynamicCardsView: View {
                     setList
                 }
             }
-            .navigationTitle("English+")
+            .navigationTitle("Pairs")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -61,7 +61,7 @@ struct DynamicCardsView: View {
             Text("No sets available")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
-            Text("English+ sets will appear here once downloaded")
+            Text("Pairs sets will appear here once downloaded")
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
