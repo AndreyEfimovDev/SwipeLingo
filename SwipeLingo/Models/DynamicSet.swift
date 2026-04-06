@@ -105,21 +105,8 @@ struct DynamicPair: Codable, Identifiable {
 }
 
 // MARK: - DynamicItem
-// Один элемент пары: текст и/или картинка.
+// Один элемент пары: текст.
 
 struct DynamicItem: Codable {
     var text: String?
-    var image: ImageRef?
-}
-
-// MARK: - ImageRef
-// Ссылка на картинку в Firebase Storage.
-// Хранится как путь (не URL) — URL может устареть, генерируется при показе.
-//
-// Генерация URL:
-//   Storage.storage().reference(withPath: storagePath).downloadURL { url, error in ... }
-// URL кешируется в памяти на время сессии, не сохраняется в SwiftData.
-
-struct ImageRef: Codable {
-    var storagePath: String     // пример: "dynamic_sets/<setId>/image.jpg"
 }
