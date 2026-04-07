@@ -107,7 +107,7 @@ struct AppView: View {
     private var studyContent: some View {
         switch viewModel.studyMode {
         case .cards: FlashCardsView()
-        case .pairs: DynamicCardsView()
+        case .pairs: PairsView()
         }
     }
 

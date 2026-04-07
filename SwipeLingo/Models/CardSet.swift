@@ -20,6 +20,8 @@ final class CardSet {
     // Access tier — stored as String for CloudKit/SwiftData compatibility
     var accessTierRaw: String = AccessTier.free.rawValue
 
+    var updatedAt: Date = Date.distantPast  // обновляется Admin Tool при публикации
+
     var cefrLevel: CEFRLevel {
         get { CEFRLevel(rawValue: level) ?? .a0a1 }
         set { level = newValue.rawValue }
@@ -37,6 +39,7 @@ final class CardSet {
         level: CEFRLevel = .a0a1,
         isUserCreated: Bool = true,
         accessTier: AccessTier = .free,
+        updatedAt: Date = .distantPast,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -45,6 +48,7 @@ final class CardSet {
         self.level = level.rawValue
         self.isUserCreated = isUserCreated
         self.accessTierRaw = accessTier.rawValue
+        self.updatedAt = updatedAt
         self.createdAt = createdAt
     }
 }

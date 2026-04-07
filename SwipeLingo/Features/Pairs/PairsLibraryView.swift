@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 // MARK: - PairsLibraryView
-// Управление PairsPiles и просмотр всех DynamicSets.
+// Управление PairsPiles и просмотр всех PairsSets.
 //
 // PILES — список пайлов:
 //   • По умолчанию виден только активный пайл (или "No active pile").
@@ -10,14 +10,14 @@ import SwiftData
 //   • Тап на кружок → активировать пайл.
 //   • Синяя кнопка карандаша → редактировать.
 //   • Context menu → удалить.
-// SETS — все доступные сеты → NavigationLink → DynamicSetPlayerView.
+// SETS — все доступные сеты → NavigationLink → PairsSetPlayerView.
 
 struct PairsLibraryView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
 
-    @Query(sort: \DynamicSet.createdAt, order: .reverse)  private var allSets: [DynamicSet]
+    @Query(sort: \PairsSet.createdAt, order: .reverse)  private var allSets: [PairsSet]
     @Query(sort: \PairsPile.createdAt, order: .reverse)   private var allPiles: [PairsPile]
 
     @State private var showAllPiles  = false
@@ -208,7 +208,7 @@ struct PairsLibraryView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(allSets) { set in
-                        NavigationLink(destination: DynamicSetPlayerView(set: set)) {
+                        NavigationLink(destination: PairsSetPlayerView(set: set)) {
                             LibrarySetRow(set: set)
                         }
                         .buttonStyle(.plain)
@@ -252,7 +252,7 @@ private enum PairsPileSheet: Identifiable {
 // MARK: - LibrarySetRow
 
 private struct LibrarySetRow: View {
-    let set: DynamicSet
+    let set: PairsSet
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {

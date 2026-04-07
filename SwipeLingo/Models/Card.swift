@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import SwiftData
 
 // MARK: - Array ↔ String helpers
@@ -58,6 +59,7 @@ final class Card {
 
     // Metadata
     var createdAt:  Date  = Date.now
+    var updatedAt:  Date  = Date.distantPast  // обновляется Admin Tool при публикации
     var importedAt: Date? = nil
     var setId:      UUID  = UUID()
 
@@ -104,6 +106,7 @@ final class Card {
         dictAudioURL: String = "",
         dictDefinition: String = "",
         createdAt: Date = .now,
+        updatedAt: Date = .distantPast,
         importedAt: Date? = nil,
         setId: UUID
     ) {
@@ -125,7 +128,22 @@ final class Card {
         self.dictAudioURL      = dictAudioURL
         self.dictDefinition    = dictDefinition
         self.createdAt         = createdAt
+        self.updatedAt         = updatedAt
         self.importedAt        = importedAt
         self.setId             = setId
+    }
+}
+
+enum CardStatus: String, Codable, CaseIterable {
+    case active
+    case learnt
+    case deleted
+    
+    var color: Color {
+        switch self {
+        case .active: Color.myColors.myBlue
+        case .learnt: Color.myColors.myGreen
+        case .deleted: Color.myColors.myRed
+        }
     }
 }
