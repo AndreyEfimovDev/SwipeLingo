@@ -55,11 +55,20 @@ struct SwipeLingoApp: App {
         }
     }
 
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     var body: some Scene {
         WindowGroup {
             if let container {
-                AppView()
+                if hasCompletedOnboarding {
+                    AppView()
+                        .modelContainer(container)
+                } else {
+                    OnboardingView {
+                        hasCompletedOnboarding = true
+                    }
                     .modelContainer(container)
+                }
             } else {
                 DatabseErrorView()
             }
@@ -100,7 +109,17 @@ struct SwipeLingoApp: App {
             return
         }
 
+        let inboxSetId = inboxSet.id
+        let existingCards = context.fetchWithErrorHandling(
+            FetchDescriptor<Card>(predicate: #Predicate { $0.setId == inboxSetId })
+        )
+
         for word in pending {
+            let wordLower = word.lowercased()
+            guard !existingCards.contains(where: { $0.en.lowercased() == wordLower }) else {
+                log("[InboxDrain] skipped duplicate '\(word)'", level: .info)
+                continue
+            }
             let card = Card(en: word, item: "", setId: inboxSet.id)
             context.insert(card)
             log("[InboxDrain] inserted '\(word)' → Inbox")

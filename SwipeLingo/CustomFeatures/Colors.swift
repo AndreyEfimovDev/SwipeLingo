@@ -28,7 +28,6 @@ struct MyColors {
 
 }
 
-
 struct LaunchColors {
     
 }

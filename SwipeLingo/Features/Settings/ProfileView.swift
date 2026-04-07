@@ -16,6 +16,7 @@ struct ProfileView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
+                nameSection
                 planSection
                 levelSection
             }
@@ -26,6 +27,40 @@ struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if profiles.isEmpty { context.insert(UserProfile()) }
+        }
+        .onDisappear {
+            context.saveWithErrorHandling()
+        }
+    }
+
+    // MARK: - Name
+
+    private var nameSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("NAME")
+                .font(.caption)
+                .padding(.horizontal, 32)
+
+            HStack(spacing: 12) {
+                Image(systemName: "person.circle")
+                    .font(.title2)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+
+                TextField("Anonymous", text: Binding(
+                    get: { profile?.name ?? "" },
+                    set: { profile?.name = $0 }
+                ))
+                .font(.body)
+                .foregroundStyle(Color.myColors.myAccent)
+                .submitLabel(.done)
+                .onSubmit { context.saveWithErrorHandling() }
+            }
+            .frame(height: 52)
+            .padding(.horizontal, 16)
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
         }
     }
 
