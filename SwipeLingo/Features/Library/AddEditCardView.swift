@@ -123,7 +123,7 @@ struct AddEditCardView: View {
         guard let original = originalCard else {
             // Add mode — any filled field counts as a change
             return !enTrim.isEmpty || !itemTrim.isEmpty ||
-                   !newSetName.isEmpty || selectedSetId != nil ||
+                   !newSetName.isEmpty || selectedSetId != preselectedSetId ||
                    snEN.contains(where: { !$0.isEmpty }) ||
                    snItem.contains(where: { !$0.isEmpty })
         }

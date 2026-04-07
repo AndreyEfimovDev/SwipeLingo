@@ -109,8 +109,9 @@ struct SwipeLingoApp: App {
             return
         }
 
+        let inboxSetId = inboxSet.id
         let existingCards = context.fetchWithErrorHandling(
-            FetchDescriptor<Card>(predicate: #Predicate { $0.setId == inboxSet.id })
+            FetchDescriptor<Card>(predicate: #Predicate { $0.setId == inboxSetId })
         )
 
         for word in pending {
