@@ -10,7 +10,7 @@ struct PairsPileBuilderView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
 
-    @Query(sort: \DynamicSet.createdAt, order: .reverse) private var allSets: [DynamicSet]
+    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets: [PairsSet]
     @Query private var allPiles: [PairsPile]
 
     @State private var viewModel: PairsPileBuilderViewModel
@@ -111,7 +111,7 @@ struct PairsPileBuilderView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(filteredSets) { set in
-                        DynamicSetToggleRow(
+                        PairsSetToggleRow(
                             set: set,
                             isSelected: viewModel.selectedSetIds.contains(set.id)
                         ) {
@@ -163,7 +163,7 @@ struct PairsPileBuilderView: View {
 
     // MARK: - Helpers
 
-    private var filteredSets: [DynamicSet] {
+    private var filteredSets: [PairsSet] {
         guard !searchText.isEmpty else { return allSets }
         return allSets.filter {
             ($0.title ?? "").localizedCaseInsensitiveContains(searchText) ||
@@ -172,10 +172,10 @@ struct PairsPileBuilderView: View {
     }
 }
 
-// MARK: - DynamicSetToggleRow
+// MARK: - PairsSetToggleRow
 
-private struct DynamicSetToggleRow: View {
-    let set: DynamicSet
+private struct PairsSetToggleRow: View {
+    let set: PairsSet
     let isSelected: Bool
     let onTap: () -> Void
 

@@ -68,19 +68,19 @@
 		47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F32F84F0B80049858B /* OnboardingView.swift */; };
 		47C099FA2F84F0B80049858B /* OnboardingNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F22F84F0B80049858B /* OnboardingNameView.swift */; };
 		47C099FC2F84F3A10049858B /* OnboardingIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */; };
+		47C09A492F8531910049858B /* PairsSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A482F8531910049858B /* PairsSet.swift */; };
+		47C09A532F8531C20049858B /* PairsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A512F8531C20049858B /* PairsViewModel.swift */; };
+		47C09A542F8531C20049858B /* PairsSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4E2F8531C20049858B /* PairsSessionView.swift */; };
+		47C09A552F8531C20049858B /* PairsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4B2F8531C20049858B /* PairsLibraryView.swift */; };
+		47C09A562F8531C20049858B /* PairsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A502F8531C20049858B /* PairsView.swift */; };
+		47C09A572F8531C20049858B /* PairsPileBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4C2F8531C20049858B /* PairsPileBuilderView.swift */; };
+		47C09A582F8531C20049858B /* PairsSetPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */; };
+		47C09A592F8531C20049858B /* PairsPileBuilderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4D2F8531C20049858B /* PairsPileBuilderViewModel.swift */; };
 		47DE7EEE2F8000E500F6BCF3 /* AccessTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */; };
-		47DE7EF02F8000F700F6BCF3 /* DynamicSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EEF2F8000F700F6BCF3 /* DynamicSet.swift */; };
-		47DE7EF52F80013700F6BCF3 /* DynamicCardsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */; };
-		47DE7EF62F80013700F6BCF3 /* DynamicSetPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EF32F80013700F6BCF3 /* DynamicSetPlayerView.swift */; };
-		47DE7EF72F80013700F6BCF3 /* DynamicCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */; };
 		47DE7F352F82D5EC00F6BCF3 /* PlansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */; };
 		47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */; };
 		47DE7F842F83CAF500F6BCF3 /* PairsPile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F832F83CAF500F6BCF3 /* PairsPile.swift */; };
 		47DE7F862F83CB0300F6BCF3 /* PairsPileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F852F83CB0300F6BCF3 /* PairsPileService.swift */; };
-		47DE7F882F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F872F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift */; };
-		47DE7F8A2F83CB3C00F6BCF3 /* PairsPileBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F892F83CB3C00F6BCF3 /* PairsPileBuilderView.swift */; };
-		47DE7F8C2F83D1EA00F6BCF3 /* PairsSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F8B2F83D1EA00F6BCF3 /* PairsSessionView.swift */; };
-		47DE7F8E2F83D20100F6BCF3 /* PairsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F8D2F83D20100F6BCF3 /* PairsLibraryView.swift */; };
 		47DE7F902F83D2EB00F6BCF3 /* AccessTierBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F8F2F83D2EB00F6BCF3 /* AccessTierBadge.swift */; };
 		47DE7F922F844EF700F6BCF3 /* PairsVerticalToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */; };
 /* End PBXBuildFile section */
@@ -186,19 +186,19 @@
 		47C099F32F84F0B80049858B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		47C099F42F84F0B80049858B /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroView.swift; sourceTree = "<group>"; };
+		47C09A482F8531910049858B /* PairsSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSet.swift; sourceTree = "<group>"; };
+		47C09A4B2F8531C20049858B /* PairsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsLibraryView.swift; sourceTree = "<group>"; };
+		47C09A4C2F8531C20049858B /* PairsPileBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPileBuilderView.swift; sourceTree = "<group>"; };
+		47C09A4D2F8531C20049858B /* PairsPileBuilderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPileBuilderViewModel.swift; sourceTree = "<group>"; };
+		47C09A4E2F8531C20049858B /* PairsSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSessionView.swift; sourceTree = "<group>"; };
+		47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSetPlayerView.swift; sourceTree = "<group>"; };
+		47C09A502F8531C20049858B /* PairsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsView.swift; sourceTree = "<group>"; };
+		47C09A512F8531C20049858B /* PairsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsViewModel.swift; sourceTree = "<group>"; };
 		47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTier.swift; sourceTree = "<group>"; };
-		47DE7EEF2F8000F700F6BCF3 /* DynamicSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicSet.swift; sourceTree = "<group>"; };
-		47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicCardsView.swift; sourceTree = "<group>"; };
-		47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicCardsViewModel.swift; sourceTree = "<group>"; };
-		47DE7EF32F80013700F6BCF3 /* DynamicSetPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicSetPlayerView.swift; sourceTree = "<group>"; };
 		47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlansView.swift; sourceTree = "<group>"; };
 		47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		47DE7F832F83CAF500F6BCF3 /* PairsPile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPile.swift; sourceTree = "<group>"; };
 		47DE7F852F83CB0300F6BCF3 /* PairsPileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPileService.swift; sourceTree = "<group>"; };
-		47DE7F872F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPileBuilderViewModel.swift; sourceTree = "<group>"; };
-		47DE7F892F83CB3C00F6BCF3 /* PairsPileBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPileBuilderView.swift; sourceTree = "<group>"; };
-		47DE7F8B2F83D1EA00F6BCF3 /* PairsSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSessionView.swift; sourceTree = "<group>"; };
-		47DE7F8D2F83D20100F6BCF3 /* PairsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsLibraryView.swift; sourceTree = "<group>"; };
 		47DE7F8F2F83D2EB00F6BCF3 /* AccessTierBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTierBadge.swift; sourceTree = "<group>"; };
 		47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsVerticalToggle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -385,6 +385,7 @@
 				478C78332F794487005FBDFE /* FlashCardsView.swift */,
 				478C78342F794487005FBDFE /* FlashCardsViewModel.swift */,
 				478C78322F794487005FBDFE /* TinderCards */,
+				478C78292F794487005FBDFE /* Library */,
 			);
 			path = FlashCards;
 			sourceTree = "<group>";
@@ -392,10 +393,9 @@
 		478C78362F794487005FBDFE /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				47C09A522F8531C20049858B /* Pairs */,
 				47C099F52F84F0B80049858B /* Onboarding */,
 				478C78352F794487005FBDFE /* FlashCards */,
-				47DE7EF42F80013700F6BCF3 /* DynamicCards */,
-				478C78292F794487005FBDFE /* Library */,
 				478C782C2F794487005FBDFE /* Settings */,
 				478C782E2F794487005FBDFE /* Statistics */,
 			);
@@ -405,8 +405,8 @@
 		478C78422F794487005FBDFE /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				47C09A482F8531910049858B /* PairsSet.swift */,
 				47DE7F832F83CAF500F6BCF3 /* PairsPile.swift */,
-				47DE7EEF2F8000F700F6BCF3 /* DynamicSet.swift */,
 				47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */,
 				478C78372F794487005FBDFE /* Card.swift */,
 				478C78382F794487005FBDFE /* CardSet.swift */,
@@ -473,19 +473,19 @@
 			path = Onboarding;
 			sourceTree = "<group>";
 		};
-		47DE7EF42F80013700F6BCF3 /* DynamicCards */ = {
+		47C09A522F8531C20049858B /* Pairs */ = {
 			isa = PBXGroup;
 			children = (
-				47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */,
-				47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */,
-				47DE7EF32F80013700F6BCF3 /* DynamicSetPlayerView.swift */,
-				47DE7F8B2F83D1EA00F6BCF3 /* PairsSessionView.swift */,
-				47DE7F892F83CB3C00F6BCF3 /* PairsPileBuilderView.swift */,
-				47DE7F872F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift */,
-				47DE7F8D2F83D20100F6BCF3 /* PairsLibraryView.swift */,
+				47C09A4B2F8531C20049858B /* PairsLibraryView.swift */,
+				47C09A4C2F8531C20049858B /* PairsPileBuilderView.swift */,
+				47C09A4D2F8531C20049858B /* PairsPileBuilderViewModel.swift */,
+				47C09A4E2F8531C20049858B /* PairsSessionView.swift */,
+				47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */,
+				47C09A502F8531C20049858B /* PairsView.swift */,
+				47C09A512F8531C20049858B /* PairsViewModel.swift */,
 				47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */,
 			);
-			path = DynamicCards;
+			path = Pairs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -668,13 +668,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47C09A532F8531C20049858B /* PairsViewModel.swift in Sources */,
+				47C09A542F8531C20049858B /* PairsSessionView.swift in Sources */,
+				47C09A552F8531C20049858B /* PairsLibraryView.swift in Sources */,
+				47C09A562F8531C20049858B /* PairsView.swift in Sources */,
+				47C09A572F8531C20049858B /* PairsPileBuilderView.swift in Sources */,
+				47C09A582F8531C20049858B /* PairsSetPlayerView.swift in Sources */,
+				47C09A592F8531C20049858B /* PairsPileBuilderViewModel.swift in Sources */,
 				474F1FEA2F7DAA9F00128E83 /* OnTopButton.swift in Sources */,
 				474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */,
 				478C784F2F794487005FBDFE /* AppFeature.swift in Sources */,
 				478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */,
 				478C78512F794487005FBDFE /* CEFRBadgeView.swift in Sources */,
 				478C78522F794487005FBDFE /* UnderlineSermentedPicker.swift in Sources */,
-				47DE7F882F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift in Sources */,
 				47C099FC2F84F3A10049858B /* OnboardingIntroView.swift in Sources */,
 				478C78532F794487005FBDFE /* UnderlineSermentedPickerNotOptional.swift in Sources */,
 				478C78542F794487005FBDFE /* Bundle.swift in Sources */,
@@ -688,6 +694,7 @@
 				478C785B2F794487005FBDFE /* AddCollectionView.swift in Sources */,
 				478C785C2F794487005FBDFE /* AddEditCardView.swift in Sources */,
 				47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */,
+				47C09A492F8531910049858B /* PairsSet.swift in Sources */,
 				478C785D2F794487005FBDFE /* CardSetDetailView.swift in Sources */,
 				478C785E2F794487005FBDFE /* CollectionDetailView.swift in Sources */,
 				478C785F2F794487005FBDFE /* DeletedCardsView.swift in Sources */,
@@ -698,7 +705,6 @@
 				478C78642F794487005FBDFE /* VoiceSettingsView.swift in Sources */,
 				478C78652F794487005FBDFE /* StatisticsView.swift in Sources */,
 				478C78662F794487005FBDFE /* DictionaryLookupView.swift in Sources */,
-				47DE7F8C2F83D1EA00F6BCF3 /* PairsSessionView.swift in Sources */,
 				47DE7F922F844EF700F6BCF3 /* PairsVerticalToggle.swift in Sources */,
 				478C78672F794487005FBDFE /* TinderCardsView.swift in Sources */,
 				47C099F62F84F0B80049858B /* OnboardingLevelView.swift in Sources */,
@@ -711,20 +717,15 @@
 				474F1FE62F7BE2BA00128E83 /* DatabseErrorView.swift in Sources */,
 				478C786A2F794487005FBDFE /* FlashCardsViewModel.swift in Sources */,
 				478C786B2F794487005FBDFE /* Card.swift in Sources */,
-				47DE7F8A2F83CB3C00F6BCF3 /* PairsPileBuilderView.swift in Sources */,
 				47DE7F842F83CAF500F6BCF3 /* PairsPile.swift in Sources */,
 				478C786C2F794487005FBDFE /* CardSet.swift in Sources */,
 				478C786D2F794487005FBDFE /* CardStatus.swift in Sources */,
 				478C786E2F794487005FBDFE /* CEFRLevel.swift in Sources */,
 				47DE7F902F83D2EB00F6BCF3 /* AccessTierBadge.swift in Sources */,
 				478C786F2F794487005FBDFE /* Collection.swift in Sources */,
-				47DE7EF02F8000F700F6BCF3 /* DynamicSet.swift in Sources */,
 				478C78702F794487005FBDFE /* DictionaryModels.swift in Sources */,
 				478C78722F794487005FBDFE /* Pile.swift in Sources */,
 				478C78732F794487005FBDFE /* Secrets.swift in Sources */,
-				47DE7EF52F80013700F6BCF3 /* DynamicCardsViewModel.swift in Sources */,
-				47DE7EF62F80013700F6BCF3 /* DynamicSetPlayerView.swift in Sources */,
-				47DE7EF72F80013700F6BCF3 /* DynamicCardsView.swift in Sources */,
 				47DE7EEE2F8000E500F6BCF3 /* AccessTier.swift in Sources */,
 				478C78742F794487005FBDFE /* ShuffleMethod.swift in Sources */,
 				474F1FEC2F7DAAD900128E83 /* CircleStrokeButtonView.swift in Sources */,
@@ -737,7 +738,6 @@
 				478C78792F794487005FBDFE /* KeyboardManager.swift in Sources */,
 				478C787A2F794487005FBDFE /* MockDataSeeder.swift in Sources */,
 				478C787B2F794487005FBDFE /* PileService.swift in Sources */,
-				47DE7F8E2F83D20100F6BCF3 /* PairsLibraryView.swift in Sources */,
 				478C787C2F794487005FBDFE /* SRSService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

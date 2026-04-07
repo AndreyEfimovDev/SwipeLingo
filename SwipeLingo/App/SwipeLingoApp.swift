@@ -17,7 +17,7 @@ struct SwipeLingoApp: App {
             FirestoreImportService().importIfNeeded(into: ctx)
             MockDataSeeder.ensureSystemCollections(into: ctx)
             MockDataSeeder.ensureMockDevCollection(into: ctx)
-            MockDataSeeder.ensureMockDynamicSets(into: ctx)
+            MockDataSeeder.ensureMockPairsSets(into: ctx)
         }
     }
 
@@ -27,7 +27,7 @@ struct SwipeLingoApp: App {
             CardSet.self,
             Collection.self,
             Pile.self,
-            DynamicSet.self,
+            PairsSet.self,
             PairsPile.self,
             UserProfile.self
         ])
