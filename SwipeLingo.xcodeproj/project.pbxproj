@@ -62,6 +62,12 @@
 		478C787E2F794487005FBDFE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 478C78432F794487005FBDFE /* Assets.xcassets */; };
 		478C787F2F794487005FBDFE /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C781A2F794487005FBDFE /* Colors.swift */; };
 		478C78802F794487005FBDFE /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C781E2F794487005FBDFE /* Views.swift */; };
+		47C099F62F84F0B80049858B /* OnboardingLevelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F12F84F0B80049858B /* OnboardingLevelView.swift */; };
+		47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */; };
+		47C099F82F84F0B80049858B /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F42F84F0B80049858B /* OnboardingWelcomeView.swift */; };
+		47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F32F84F0B80049858B /* OnboardingView.swift */; };
+		47C099FA2F84F0B80049858B /* OnboardingNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F22F84F0B80049858B /* OnboardingNameView.swift */; };
+		47C099FC2F84F3A10049858B /* OnboardingIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */; };
 		47DE7EEE2F8000E500F6BCF3 /* AccessTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */; };
 		47DE7EF02F8000F700F6BCF3 /* DynamicSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EEF2F8000F700F6BCF3 /* DynamicSet.swift */; };
 		47DE7EF52F80013700F6BCF3 /* DynamicCardsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EF22F80013700F6BCF3 /* DynamicCardsViewModel.swift */; };
@@ -174,6 +180,12 @@
 		478C784A2F794487005FBDFE /* PileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PileService.swift; sourceTree = "<group>"; };
 		478C784B2F794487005FBDFE /* SRSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRSService.swift; sourceTree = "<group>"; };
 		478C784D2F794487005FBDFE /* SwipeLingo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwipeLingo.entitlements; sourceTree = "<group>"; };
+		47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLanguageView.swift; sourceTree = "<group>"; };
+		47C099F12F84F0B80049858B /* OnboardingLevelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelView.swift; sourceTree = "<group>"; };
+		47C099F22F84F0B80049858B /* OnboardingNameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNameView.swift; sourceTree = "<group>"; };
+		47C099F32F84F0B80049858B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		47C099F42F84F0B80049858B /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
+		47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroView.swift; sourceTree = "<group>"; };
 		47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTier.swift; sourceTree = "<group>"; };
 		47DE7EEF2F8000F700F6BCF3 /* DynamicSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicSet.swift; sourceTree = "<group>"; };
 		47DE7EF12F80013700F6BCF3 /* DynamicCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicCardsView.swift; sourceTree = "<group>"; };
@@ -258,9 +270,9 @@
 			isa = PBXGroup;
 			children = (
 				478C784E2F794487005FBDFE /* SwipeLingo */,
+				478C77F92F7902F4005FBDFE /* SwipeLingoShare */,
 				474BFB722F3C825C006E639B /* SwipeLingoTests */,
 				474BFB7C2F3C825C006E639B /* SwipeLingoUITests */,
-				478C77F92F7902F4005FBDFE /* SwipeLingoShare */,
 				474BFB632F3C8255006E639B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -380,6 +392,7 @@
 		478C78362F794487005FBDFE /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				47C099F52F84F0B80049858B /* Onboarding */,
 				478C78352F794487005FBDFE /* FlashCards */,
 				47DE7EF42F80013700F6BCF3 /* DynamicCards */,
 				478C78292F794487005FBDFE /* Library */,
@@ -445,6 +458,19 @@
 				478C784D2F794487005FBDFE /* SwipeLingo.entitlements */,
 			);
 			path = SwipeLingo;
+			sourceTree = "<group>";
+		};
+		47C099F52F84F0B80049858B /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				47C099F32F84F0B80049858B /* OnboardingView.swift */,
+				47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */,
+				47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */,
+				47C099F22F84F0B80049858B /* OnboardingNameView.swift */,
+				47C099F12F84F0B80049858B /* OnboardingLevelView.swift */,
+				47C099F42F84F0B80049858B /* OnboardingWelcomeView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		47DE7EF42F80013700F6BCF3 /* DynamicCards */ = {
@@ -649,6 +675,7 @@
 				478C78512F794487005FBDFE /* CEFRBadgeView.swift in Sources */,
 				478C78522F794487005FBDFE /* UnderlineSermentedPicker.swift in Sources */,
 				47DE7F882F83CB2200F6BCF3 /* PairsPileBuilderViewModel.swift in Sources */,
+				47C099FC2F84F3A10049858B /* OnboardingIntroView.swift in Sources */,
 				478C78532F794487005FBDFE /* UnderlineSermentedPickerNotOptional.swift in Sources */,
 				478C78542F794487005FBDFE /* Bundle.swift in Sources */,
 				478C78552F794487005FBDFE /* Colors.swift in Sources */,
@@ -674,6 +701,11 @@
 				47DE7F8C2F83D1EA00F6BCF3 /* PairsSessionView.swift in Sources */,
 				47DE7F922F844EF700F6BCF3 /* PairsVerticalToggle.swift in Sources */,
 				478C78672F794487005FBDFE /* TinderCardsView.swift in Sources */,
+				47C099F62F84F0B80049858B /* OnboardingLevelView.swift in Sources */,
+				47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */,
+				47C099F82F84F0B80049858B /* OnboardingWelcomeView.swift in Sources */,
+				47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */,
+				47C099FA2F84F0B80049858B /* OnboardingNameView.swift in Sources */,
 				478C78682F794487005FBDFE /* TinderCardsViewModel.swift in Sources */,
 				478C78692F794487005FBDFE /* FlashCardsView.swift in Sources */,
 				474F1FE62F7BE2BA00128E83 /* DatabseErrorView.swift in Sources */,

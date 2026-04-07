@@ -41,8 +41,6 @@ final class FlashCardsViewModel {
     /// Cards already in .learnt status in the current pile at session start.
     private(set) var pileLearntCount: Int = 0
 
-    var isShowingAddCard = false
-
     // MARK: Private
 
     private let pileService = PileService()

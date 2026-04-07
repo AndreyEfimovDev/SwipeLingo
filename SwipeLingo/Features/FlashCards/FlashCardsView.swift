@@ -34,9 +34,6 @@ struct FlashCardsView: View {
                 .navigationTitle(viewModel.activePileName.isEmpty ? "Study" : viewModel.activePileName)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
-                .sheet(isPresented: $viewModel.isShowingAddCard) {
-                    AddEditCardView()
-                }
         }
         .onAppear {
             viewModel.startSessionIfNeeded(
@@ -187,13 +184,6 @@ struct FlashCardsView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button { viewModel.isShowingAddCard = true } label: {
-                Image(systemName: "plus")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.myColors.myBlue)
-            }
-        }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button { appViewModel.studyMode = .pairs } label: {
