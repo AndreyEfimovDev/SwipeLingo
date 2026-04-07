@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-// MARK: - DynamicSet
+// MARK: - PairsSet
 // Контент формата Pairs — сравнение уровней (B2↔C1, Basic↔Advanced).
 // Создаётся командой, хранится в Firebase Firestore.
 // Локально сохраняется в SwiftData, синхронизируется через CloudKit.
@@ -10,7 +10,7 @@ import SwiftData
 // CloudKit поддерживает только примитивные типы и Data/String, не Codable-структуры напрямую.
 
 @Model
-final class DynamicSet {
+final class PairsSet {
     var id: UUID
     var title: String?
     var subtitle: String?
@@ -18,7 +18,9 @@ final class DynamicSet {
     var rightTitle: String?         // название правой колонки ("C1", "Advanced")
     var displayModeRaw: String      // DisplayMode.rawValue — хранится как String (CloudKit-safe)
     var accessTierRaw: String       // AccessTier.rawValue   — хранится как String (CloudKit-safe)
-    var itemsJSON: String           // JSON-encoded [DynamicPair] — хранится как String (CloudKit-safe)
+    var itemsJSON: String           // JSON-encoded [Pair] — хранится как String (CloudKit-safe)
+    var collectionId: UUID?         // nil = локальный/мок; UUID = Firebase-коллекция
+    var updatedAt: Date = Date.distantPast  // обновляется Admin Tool при публикации
     var createdAt: Date
 
     // MARK: SRS fields (SM-2) — оценка всего сета целиком
@@ -40,10 +42,10 @@ final class DynamicSet {
         set { accessTierRaw = newValue.rawValue }
     }
 
-    var items: [DynamicPair] {
+    var items: [Pair] {
         get {
             guard let data = itemsJSON.data(using: .utf8),
-                  let pairs = try? JSONDecoder().decode([DynamicPair].self, from: data)
+                  let pairs = try? JSONDecoder().decode([Pair].self, from: data)
             else { return [] }
             return pairs
         }
@@ -65,7 +67,9 @@ final class DynamicSet {
         rightTitle: String? = nil,
         displayMode: DisplayMode = .parallel,
         accessTier: AccessTier = .free,
-        items: [DynamicPair] = [],
+        items: [Pair] = [],
+        collectionId: UUID? = nil,
+        updatedAt: Date = .distantPast,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -76,44 +80,38 @@ final class DynamicSet {
         self.displayModeRaw = displayMode.rawValue
         self.accessTierRaw = accessTier.rawValue
         self.itemsJSON = (try? String(data: JSONEncoder().encode(items), encoding: .utf8)) ?? "[]"
+        self.collectionId = collectionId
+        self.updatedAt = updatedAt
         self.createdAt = createdAt
     }
 }
 
-// MARK: - DisplayMode
-// Порядок появления элементов пары в UI.
-// Задаётся автором сета при создании контента.
-// Если right == nil в паре — показывается только left (в любом режиме).
-
-enum DisplayMode: String, Codable, CaseIterable {
-    case sequential // left → right → новая строка → left → right...
-    case parallel   // left + right одновременно → новая строка
-}
+// DisplayMode — см. Models/DisplayMode.swift
 
 // MARK: - AnimationMode
 // Способ перехода к следующему элементу сета.
 // НЕ хранится в модели — это пользовательская настройка:
-//   @AppStorage("dynamicAnimationMode") — значение по умолчанию (Settings)
-//   @State var animationMode в DynamicSetPlayerView — может переключаться во время просмотра
+//   @AppStorage("pairsAnimationMode") — значение по умолчанию (Settings)
+//   @State var animationMode в PairsSetPlayerView — может переключаться во время просмотра
 
 enum AnimationMode: String, Codable, CaseIterable {
     case manual    // пользователь тапает для показа следующего элемента
     case automatic // авто-показ с задержкой между элементами
 }
 
-// MARK: - DynamicPair
+// MARK: - Pair
 // Одна строка контента: левый и правый элемент.
 // Оба optional — если right == nil, показывается только left.
 
-struct DynamicPair: Codable, Identifiable {
+struct Pair: Codable, Identifiable {
     var id: UUID = UUID()
-    var left: DynamicItem?
-    var right: DynamicItem?
+    var left: PairSide?
+    var right: PairSide?
 }
 
-// MARK: - DynamicItem
+// MARK: - PairSide
 // Один элемент пары: текст.
 
-struct DynamicItem: Codable {
+struct PairSide: Codable {
     var text: String?
 }

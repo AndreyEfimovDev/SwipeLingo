@@ -62,7 +62,7 @@ struct SRSService {
 
     /// Applies SM-2 to `set`, mutating its SRS fields in place.
     /// The caller is responsible for saving the ModelContext afterwards.
-    func evaluate(set: DynamicSet, rating: SRSRating) {
+    func evaluate(set: PairsSet, rating: SRSRating) {
         let now = Date.now
         set.lastReviewed = now
 
