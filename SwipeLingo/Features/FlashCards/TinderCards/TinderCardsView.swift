@@ -31,6 +31,8 @@ struct TinderCardsView: View {
     private let pileLearntCount: Int
     /// Called when the user taps the mode toggle in the progress row.
     private let onToggleMode: (() -> Void)?
+    /// False when no due cards exist — triggers caught-up overlay in Due mode.
+    private let hasDueCards: Bool
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
@@ -50,6 +52,7 @@ struct TinderCardsView: View {
          isDueMode: Bool = false,
          pileLearntCount: Int = 0,
          onToggleMode: (() -> Void)? = nil,
+         hasDueCards: Bool = true,
          onDone: (() -> Void)? = nil) {
         _viewModel             = State(initialValue: TinderCardsViewModel(
                                     cards: cards,
@@ -61,6 +64,7 @@ struct TinderCardsView: View {
         self.isDueMode         = isDueMode
         self.pileLearntCount   = pileLearntCount
         self.onToggleMode      = onToggleMode
+        self.hasDueCards       = hasDueCards
     }
 
     // MARK: - Body
@@ -73,6 +77,13 @@ struct TinderCardsView: View {
         .animation(.spring(duration: 0.3), value: viewModel.currentIndex)
         .animation(.spring(duration: 0.3), value: viewModel.isFlipped)
         .animation(.spring(duration: 0.4), value: viewModel.isDone)
+        .overlay {
+            // Показываем caught-up когда пользователь переключился в Due,
+            // но due карточек нет — сессия не сбрасывается, карточка за оверлеем сохраняется
+            if isDueMode && !hasDueCards {
+                cardsCaughtUpOverlay
+            }
+        }
         .sheet(item: $lookupCard) { DictionaryLookupView(card: $0) }
         .onDisappear { audioService.stop() }
         .onChange(of: viewModel.currentIndex) { _, _ in
@@ -130,15 +141,16 @@ struct TinderCardsView: View {
             VStack(spacing: 0) {
                 Spacer()
                 statLabel("Learnt", value: learnt, status: .learnt)
+                    .frame(maxWidth: .infinity)
                 Spacer()
-                modeCenterButton(current: current, effTotal: effTotal)
+                modeVCenterButton(current: current, effTotal: effTotal)
                     .font(.caption2)
+                    .frame(maxWidth: .infinity)
                 Spacer()
                 statLabel(isDueMode ? "Due" : "Active", value: active, status: .active)
+                    .frame(maxWidth: .infinity)
                 Spacer()
             }
-            .frame(maxWidth: .infinity)
-
             // Vertical progress bar — right edge, replaces Divider with meaning
             GeometryReader { geo in
                 ZStack(alignment: .bottom) {
@@ -154,25 +166,51 @@ struct TinderCardsView: View {
             }
             .frame(width: 8)
         }
-        .frame(maxWidth: 64)
+        .frame(maxWidth: 60)
     }
 
-    /// Centre of the progress row: "1 / 14" when no toggle, or "Due · 1/14 ⇅" when tappable.
+    /// Centre of the progress row: "1 / 14" when no toggle, or vertical stack Due/All + count with ⇅ when tappable.
     @ViewBuilder
-    private func modeCenterButton(current: Int, effTotal: Int) -> some View {
+    private func modeVCenterButton(current: Int, effTotal: Int) -> some View {
+        if let toggle = onToggleMode {
+            Button(action: toggle) {
+                VStack(spacing: 1) {
+                    Image(systemName: "chevron.up")
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+                    VStack(spacing: 0) {
+                        Text(isDueMode ? "Due" : "All")
+                            .foregroundStyle(isDueMode ? Color.myColors.myOrange : Color.myColors.myGreen)
+                        Text("\(current) / \(effTotal)")
+                            .foregroundStyle(Color.myColors.myAccent)
+                    }
+                    .padding(.vertical, 6)
+                    Image(systemName: "chevron.down")
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+                }
+                .font(.caption)
+                .fontWeight(.semibold)
+            }
+            .buttonStyle(.plain)
+        } else {
+            Text("\(current) / \(effTotal)")
+                .fontWeight(.semibold)
+        }
+    }
+    
+    @ViewBuilder
+    private func modeHCenterButton(current: Int, effTotal: Int) -> some View {
         if let toggle = onToggleMode {
             Button(action: toggle) {
                 HStack(spacing: 3) {
                     Text(isDueMode ? "Due" : "All")
                         .foregroundStyle(isDueMode ? Color.myColors.myOrange : Color.myColors.myGreen)
-                    Text("·")
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
                     Text("\(current) / \(effTotal)")
-                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.myColors.myAccent)
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 8, weight: .semibold))
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
                 }
+                .font(.caption)
+                .fontWeight(.semibold)
             }
             .buttonStyle(.plain)
         } else {
@@ -181,10 +219,43 @@ struct TinderCardsView: View {
         }
     }
 
+
+    // MARK: - Caught Up Overlay (Due mode, нет due карточек)
+
+    private var cardsCaughtUpOverlay: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 56))
+                .foregroundStyle(Color.myColors.myGreen)
+            Text("All caught up!")
+                .font(.title3.bold())
+                .foregroundStyle(Color.myColors.myAccent)
+            Text("No cards due for review")
+                .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+            if let toggle = onToggleMode {
+                Button(action: toggle) {
+                    Text("Study All")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(Color.myColors.myBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.myColors.myBackground.opacity(0.97))
+        .transition(.opacity)
+    }
+
     private func statLabel(_ title: String, value: Int, status: CardStatus) -> some View {
         VStack(spacing: 2) {
             Text(title)
-                .font(.system(size: 9))
+                .font(.system(size: 11))
             Text("\(value)")
                 .font(.callout)
                 .fontWeight(.semibold)
@@ -212,7 +283,7 @@ struct TinderCardsView: View {
                     HStack {
                         Text(isDueMode ? "Due" : "Active")
                         Spacer()
-                        modeCenterButton(current: current, effTotal: effTotal)
+                        modeHCenterButton(current: current, effTotal: effTotal)
                         Spacer()
                         Text("Learnt")
                     }.font(.caption2)

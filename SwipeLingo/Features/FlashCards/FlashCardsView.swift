@@ -7,6 +7,7 @@ struct FlashCardsView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(AppViewModel.self) private var appViewModel
     @Query private var piles: [Pile]
     @Query private var allCards: [Card]
     @Query private var cardSets: [CardSet]
@@ -19,6 +20,13 @@ struct FlashCardsView: View {
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
+    /// true если есть хотя бы одна активная карточка с подошедшим dueDate
+    private var hasDueCards: Bool {
+        let now = Date.now
+        return allCards.contains { $0.status == .active && $0.dueDate <= now }
+    }
+
+
     var body: some View {
         NavigationStack {
             content
@@ -26,9 +34,6 @@ struct FlashCardsView: View {
                 .navigationTitle(viewModel.activePileName.isEmpty ? "Study" : viewModel.activePileName)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
-                .sheet(isPresented: $viewModel.isShowingAddCard) {
-                    AddEditCardView()
-                }
         }
         .onAppear {
             viewModel.startSessionIfNeeded(
@@ -87,18 +92,25 @@ struct FlashCardsView: View {
                 pileLearntCount: viewModel.pileLearntCount,
                 onToggleMode: srsEnabled ? {
                     if viewModel.studyMode == .due {
+                        // Due → All: перезагружаем сессию со всеми карточками
                         viewModel.studyAll(
                             piles: piles, allCards: allCards,
                             cardSets: cardSets, collections: collections
                         )
-                    } else {
+                    } else if hasDueCards {
+                        // All → Due: есть due карточки — загружаем их
                         viewModel.startNewSession(
                             piles: piles, allCards: allCards,
                             cardSets: cardSets, collections: collections,
                             dueHour: studyStartHour, srsEnabled: srsEnabled
                         )
+                    } else {
+                        // All → Due: нет due карточек — не сбрасываем сессию,
+                        // только меняем режим отображения → покажет caught-up оверлей
+                        viewModel.switchToDueDisplay()
                     }
                 } : nil,
+                hasDueCards: hasDueCards,
                 onDone: {
                     viewModel.onSessionComplete(
                         piles: piles, allCards: allCards,
@@ -172,10 +184,37 @@ struct FlashCardsView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button { viewModel.isShowingAddCard = true } label: {
-                Image(systemName: "plus")
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Button { appViewModel.studyMode = .pairs } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "sparkles").frame(width: 20)
+                        Text("Switch to Pairs")
+                    }
+                }
+                Divider()
+                Button { appViewModel.activeSheet = .cardsLibrary } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "books.vertical").frame(width: 20)
+                        Text("Library")
+                    }
+                }
+                Button { appViewModel.activeSheet = .statistics } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
+                        Text("Statistics")
+                    }
+                }
+                Button { appViewModel.activeSheet = .settings } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "gear").frame(width: 20)
+                        Text("Settings")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
                     .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myBlue)
             }
         }
     }

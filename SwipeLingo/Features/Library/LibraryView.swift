@@ -7,6 +7,7 @@ import SwiftData
 struct LibraryView: View {
 
     @Environment(\.modelContext) private var context
+    @Environment(\.dismiss)      private var dismiss
     @Query(sort: \Collection.createdAt) private var collections: [Collection]
     @Query(sort: \Pile.createdAt)       private var piles:       [Pile]
     @Query                              private var allCards:    [Card]
@@ -47,6 +48,15 @@ struct LibraryView: View {
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Library")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myBlue)
+                    }
+                }
+            }
             .sheet(isPresented: $isShowingAddCollection) {
                 AddCollectionView()
             }

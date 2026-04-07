@@ -41,8 +41,6 @@ final class FlashCardsViewModel {
     /// Cards already in .learnt status in the current pile at session start.
     private(set) var pileLearntCount: Int = 0
 
-    var isShowingAddCard = false
-
     // MARK: Private
 
     private let pileService = PileService()
@@ -71,6 +69,13 @@ final class FlashCardsViewModel {
         load(piles: piles, allCards: allCards, cardSets: cardSets,
              collections: collections, dueHour: dueHour, dueOnly: srsEnabled,
              userPlan: userPlan)
+    }
+
+    /// Switches display to Due mode without reloading cards or resetting sessionID.
+    /// Used when user taps Due toggle but no due cards exist — shows caught-up overlay
+    /// without disrupting the current card position.
+    func switchToDueDisplay() {
+        studyMode = .due
     }
 
     /// "Study anyway" — loads ALL active cards ignoring dueDate and hour threshold.
