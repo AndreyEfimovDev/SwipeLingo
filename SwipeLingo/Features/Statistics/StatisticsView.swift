@@ -76,6 +76,8 @@ struct StatisticsMockData {
 
 struct StatisticsView: View {
 
+    @Environment(\.dismiss) private var dismiss
+
     @State private var selectedRange: TimeRange    = .week
     @State private var isCalendarCompact: Bool     = false
 
@@ -151,8 +153,15 @@ struct StatisticsView: View {
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Statistics")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.myColors.myBackground, for: .tabBar)
-            .toolbarBackground(.visible, for: .tabBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myBlue)
+                    }
+                }
+            }
         }
     }
 

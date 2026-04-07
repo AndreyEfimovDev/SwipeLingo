@@ -23,6 +23,7 @@ struct AddEditCardView: View {
 
     @Query(sort: \CardSet.createdAt)    private var allSets: [CardSet]
     @Query(sort: \Collection.createdAt) private var allCollections: [Collection]
+    @Query                              private var allCards: [Card]
 
     // MARK: - Mode & snapshot
     private let originalCard:  Card?
@@ -122,7 +123,7 @@ struct AddEditCardView: View {
         guard let original = originalCard else {
             // Add mode — any filled field counts as a change
             return !enTrim.isEmpty || !itemTrim.isEmpty ||
-                   !newSetName.isEmpty || selectedSetId != nil ||
+                   !newSetName.isEmpty || selectedSetId != preselectedSetId ||
                    snEN.contains(where: { !$0.isEmpty }) ||
                    snItem.contains(where: { !$0.isEmpty })
         }
@@ -132,6 +133,18 @@ struct AddEditCardView: View {
                snEN != original.sampleEN ||
                snItem != original.sampleItem ||
                selectedSetId != originalSetId
+    }
+
+    private var isDuplicateEN: Bool {
+        guard let setId = selectedSetId, !isCreatingNewSet,
+              !en.trimmingCharacters(in: .whitespaces).isEmpty
+        else { return false }
+        let enLower = en.trimmingCharacters(in: .whitespaces).lowercased()
+        return allCards.contains {
+            $0.setId == setId &&
+            $0.en.lowercased() == enLower &&
+            $0.id != originalCard?.id
+        }
     }
 
     private var canSave: Bool {
@@ -357,20 +370,30 @@ struct AddEditCardView: View {
     // MARK: - Field Sections
 
     private var enSection: some View {
-        fieldSection(label: "ENGLISH") {
-            HStack(spacing: 8) {
-                TextField("Word or phrase", text: $en, axis: .vertical)
-                    .font(.body)
-                    .focused($focused, equals: .en)
-                    .submitLabel(.next)
-                    .onSubmit { focused = .item }
-                if !en.isEmpty {
-                    clearButton { en = "" }
+        VStack(alignment: .leading, spacing: 4) {
+            fieldSection(label: "ENGLISH") {
+                HStack(spacing: 8) {
+                    TextField("Word or phrase", text: $en, axis: .vertical)
+                        .font(.body)
+                        .focused($focused, equals: .en)
+                        .submitLabel(.next)
+                        .onSubmit { focused = .item }
+                    if !en.isEmpty {
+                        clearButton { en = "" }
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            if isDuplicateEN {
+                Label("Already exists in this set", systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(Color.myColors.myOrange)
+                    .padding(.horizontal, 20)
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.2), value: isDuplicateEN)
     }
 
     private var itemSection: some View {
