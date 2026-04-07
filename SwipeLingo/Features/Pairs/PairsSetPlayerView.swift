@@ -1,8 +1,8 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - DynamicSetPlayerView
-// Воспроизведение одного DynamicSet.
+// MARK: - PairsSetPlayerView
+// Воспроизведение одного PairsSet.
 //
 // DisplayMode (.sequential / .parallel) — из модели сета, задаётся автором контента.
 // AnimationMode (.manual / .automatic) — пользовательская настройка:
@@ -23,11 +23,11 @@ import SwiftData
 //   parallel:   left → пауза 0.4с (после окончания left TTS) → right.
 //   Кнопка включения/отключения в тулбаре.
 
-struct DynamicSetPlayerView: View {
+struct PairsSetPlayerView: View {
 
     @Environment(\.modelContext) private var context
 
-    let set: DynamicSet
+    let set: PairsSet
     /// Если задан — вызывается когда воспроизведение сета завершено.
     /// В этом режиме SRS-кнопки и Replay не показываются (управление передаётся наружу).
     var onComplete: (() -> Void)? = nil
@@ -39,8 +39,8 @@ struct DynamicSetPlayerView: View {
     /// поменять его локально для replay, но Next Set всегда получает pile-level.
     var initialAnimationMode: AnimationMode? = nil
 
-    @AppStorage("dynamicAnimationMode")     private var defaultAnimationMode: AnimationMode = .manual
-    @AppStorage("dynamicCardsAudioEnabled") private var audioEnabled: Bool = true
+    @AppStorage("pairsAnimationMode") private var defaultAnimationMode: AnimationMode = .manual
+    @AppStorage("pairsAudioEnabled")  private var audioEnabled: Bool = true
     @AppStorage("ttsVoiceIdentifier")       private var ttsVoiceIdentifier: String = ""
     @AppStorage("srsEnabled")               private var srsEnabled: Bool = true
     @AppStorage("userPlan")                 private var userPlan: AccessTier = .free
@@ -327,7 +327,7 @@ struct DynamicSetPlayerView: View {
     // MARK: - Pair Row
 
     @ViewBuilder
-    private func pairRow(pair: DynamicPair, index: Int) -> some View {
+    private func pairRow(pair: Pair, index: Int) -> some View {
         let thresh = thresholds[index]
         let leftVisible  = thresh.leftStep.map  { revealedSteps >= $0 } ?? false
         let rightVisible = thresh.rightStep.map { revealedSteps >= $0 } ?? false

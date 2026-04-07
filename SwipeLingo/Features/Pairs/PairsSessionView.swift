@@ -5,7 +5,7 @@ import SwiftData
 // Последовательное воспроизведение сетов из PairsPile.
 //
 // Жизненный цикл одного сета:
-//   1. Воспроизведение → DynamicSetPlayerView(autoStart: true, onComplete:)
+//   1. Воспроизведение → PairsSetPlayerView(autoStart: true, onComplete:)
 //   2. Завершение → SRS-панель (если SRS включён): Forgot / Hard / Easy
 //   3. Навигация: [← Back] [↺ Replay] [Next Set →] / [↺ Play Again] + "Pile complete"
 //
@@ -13,7 +13,7 @@ import SwiftData
 
 struct PairsSessionView: View {
 
-    let sets: [DynamicSet]
+    let sets: [PairsSet]
     let pileName: String
 
     @Environment(\.modelContext) private var context
@@ -25,23 +25,23 @@ struct PairsSessionView: View {
     @State private var isSetComplete = false
     @State private var isRated       = false   // SRS оценка выставлена для текущего сета
     /// Pile-level режим — читается из UserDefaults синхронно при создании вью,
-    /// чтобы DynamicSetPlayerView получил правильное значение с первого рендера.
+    /// чтобы PairsSetPlayerView получил правильное значение с первого рендера.
     /// Next Set всегда использует это значение, локальные изменения внутри сета не влияют.
     @State private var sessionMode: AnimationMode = {
-        let raw = UserDefaults.standard.string(forKey: "dynamicAnimationMode") ?? ""
+        let raw = UserDefaults.standard.string(forKey: "pairsAnimationMode") ?? ""
         return AnimationMode(rawValue: raw) ?? .manual
     }()
 
     private var isFirst: Bool { currentIndex == 0 }
     private var isLast:  Bool { currentIndex == sets.count - 1 }
-    private var currentSet: DynamicSet { sets[currentIndex] }
+    private var currentSet: PairsSet { sets[currentIndex] }
 
     /// SRS-панель нужна если SRS включён и оценка ещё не выставлена
     private var showRatingPanel: Bool { srsEnabled && !isRated }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            DynamicSetPlayerView(
+            PairsSetPlayerView(
                 set: currentSet,
                 onComplete: { withAnimation { isSetComplete = true } },
                 autoStart: true,

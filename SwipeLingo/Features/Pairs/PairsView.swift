@@ -1,19 +1,19 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - DynamicCardsView
+// MARK: - PairsView
 // Главный экран раздела Pairs.
 // Layout: pile badge вверху, тройка (toggle | Set Pile | toggle) по центру, Play внизу.
 
-struct DynamicCardsView: View {
+struct PairsView: View {
 
     @Environment(AppViewModel.self) private var appViewModel
 
-    @Query(sort: \DynamicSet.createdAt, order: .reverse) private var allSets: [DynamicSet]
+    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets: [PairsSet]
     @Query private var allPiles: [PairsPile]
 
     @AppStorage("srsEnabled")           private var srsEnabled: Bool = true
-    @AppStorage("dynamicAnimationMode") private var animationMode: AnimationMode = .manual
+    @AppStorage("pairsAnimationMode") private var animationMode: AnimationMode = .manual
 
     @State private var isDueMode = false
 
@@ -21,16 +21,16 @@ struct DynamicCardsView: View {
 
     private var activePile: PairsPile? { allPiles.first { $0.isActive } }
 
-    private var candidateSets: [DynamicSet] {
+    private var candidateSets: [PairsSet] {
         if let pile = activePile { return service.sets(for: pile, from: allSets) }
         return allSets
     }
 
-    private var dueSets: [DynamicSet] {
+    private var dueSets: [PairsSet] {
         candidateSets.filter { $0.dueDate <= Date.now }
     }
 
-    private var displayedSets: [DynamicSet] {
+    private var displayedSets: [PairsSet] {
         isDueMode && srsEnabled ? dueSets : candidateSets
     }
 
