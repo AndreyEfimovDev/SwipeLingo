@@ -19,6 +19,8 @@ final class PairsSet {
     var displayModeRaw: String      // DisplayMode.rawValue — хранится как String (CloudKit-safe)
     var accessTierRaw: String       // AccessTier.rawValue   — хранится как String (CloudKit-safe)
     var itemsJSON: String           // JSON-encoded [Pair] — хранится как String (CloudKit-safe)
+    var collectionId: UUID?         // nil = локальный/мок; UUID = Firebase-коллекция
+    var updatedAt: Date = Date.distantPast  // обновляется Admin Tool при публикации
     var createdAt: Date
 
     // MARK: SRS fields (SM-2) — оценка всего сета целиком
@@ -66,6 +68,8 @@ final class PairsSet {
         displayMode: DisplayMode = .parallel,
         accessTier: AccessTier = .free,
         items: [Pair] = [],
+        collectionId: UUID? = nil,
+        updatedAt: Date = .distantPast,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -76,6 +80,8 @@ final class PairsSet {
         self.displayModeRaw = displayMode.rawValue
         self.accessTierRaw = accessTier.rawValue
         self.itemsJSON = (try? String(data: JSONEncoder().encode(items), encoding: .utf8)) ?? "[]"
+        self.collectionId = collectionId
+        self.updatedAt = updatedAt
         self.createdAt = createdAt
     }
 }
