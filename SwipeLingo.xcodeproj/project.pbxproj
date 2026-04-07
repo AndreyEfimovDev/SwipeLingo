@@ -76,6 +76,16 @@
 		47C09A572F8531C20049858B /* PairsPileBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4C2F8531C20049858B /* PairsPileBuilderView.swift */; };
 		47C09A582F8531C20049858B /* PairsSetPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */; };
 		47C09A592F8531C20049858B /* PairsPileBuilderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4D2F8531C20049858B /* PairsPileBuilderViewModel.swift */; };
+		47C09A862F853B940049858B /* FirestoreModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A852F853B940049858B /* FirestoreModels.swift */; };
+		47C09A872F853B940049858B /* FirestoreModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A852F853B940049858B /* FirestoreModels.swift */; };
+		47C09A882F853D360049858B /* AccessTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */; };
+		47C09A8A2F853D7B0049858B /* CollectionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A892F853D7B0049858B /* CollectionType.swift */; };
+		47C09A8B2F853D7B0049858B /* CollectionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A892F853D7B0049858B /* CollectionType.swift */; };
+		47C09A8D2F853D8B0049858B /* DisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A8C2F853D8B0049858B /* DisplayMode.swift */; };
+		47C09A8E2F853D8B0049858B /* DisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A8C2F853D8B0049858B /* DisplayMode.swift */; };
+		47C09A912F853ED20049858B /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 47C09A902F853ED20049858B /* FirebaseAuth */; };
+		47C09A932F853ED20049858B /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 47C09A922F853ED20049858B /* FirebaseFirestore */; };
+		47C09A982F853F060049858B /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 47C09A972F853F060049858B /* FirebaseFirestore */; };
 		47DE7EEE2F8000E500F6BCF3 /* AccessTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */; };
 		47DE7F352F82D5EC00F6BCF3 /* PlansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */; };
 		47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */; };
@@ -194,6 +204,10 @@
 		47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSetPlayerView.swift; sourceTree = "<group>"; };
 		47C09A502F8531C20049858B /* PairsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsView.swift; sourceTree = "<group>"; };
 		47C09A512F8531C20049858B /* PairsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsViewModel.swift; sourceTree = "<group>"; };
+		47C09A5E2F853A410049858B /* SwipeLingoAdmin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwipeLingoAdmin.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		47C09A852F853B940049858B /* FirestoreModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreModels.swift; sourceTree = "<group>"; };
+		47C09A892F853D7B0049858B /* CollectionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionType.swift; sourceTree = "<group>"; };
+		47C09A8C2F853D8B0049858B /* DisplayMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayMode.swift; sourceTree = "<group>"; };
 		47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTier.swift; sourceTree = "<group>"; };
 		47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlansView.swift; sourceTree = "<group>"; };
 		47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
@@ -232,6 +246,11 @@
 			path = SwipeLingoShare;
 			sourceTree = "<group>";
 		};
+		47C09A5F2F853A410049858B /* SwipeLingoAdmin */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SwipeLingoAdmin;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -239,6 +258,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47C09A912F853ED20049858B /* FirebaseAuth in Frameworks */,
+				47C09A932F853ED20049858B /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,6 +284,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		47C09A5B2F853A410049858B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				47C09A982F853F060049858B /* FirebaseFirestore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -273,6 +302,8 @@
 				478C77F92F7902F4005FBDFE /* SwipeLingoShare */,
 				474BFB722F3C825C006E639B /* SwipeLingoTests */,
 				474BFB7C2F3C825C006E639B /* SwipeLingoUITests */,
+				47C09A5F2F853A410049858B /* SwipeLingoAdmin */,
+				47C09A942F853EFF0049858B /* Frameworks */,
 				474BFB632F3C8255006E639B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -284,6 +315,7 @@
 				474BFB6F2F3C825C006E639B /* SwipeLingoTests.xctest */,
 				474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */,
 				478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */,
+				47C09A5E2F853A410049858B /* SwipeLingoAdmin.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -405,6 +437,9 @@
 		478C78422F794487005FBDFE /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				47C09A8C2F853D8B0049858B /* DisplayMode.swift */,
+				47C09A892F853D7B0049858B /* CollectionType.swift */,
+				47C09A852F853B940049858B /* FirestoreModels.swift */,
 				47C09A482F8531910049858B /* PairsSet.swift */,
 				47DE7F832F83CAF500F6BCF3 /* PairsPile.swift */,
 				47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */,
@@ -488,6 +523,13 @@
 			path = Pairs;
 			sourceTree = "<group>";
 		};
+		47C09A942F853EFF0049858B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -507,6 +549,8 @@
 			);
 			name = SwipeLingo;
 			packageProductDependencies = (
+				47C09A902F853ED20049858B /* FirebaseAuth */,
+				47C09A922F853ED20049858B /* FirebaseFirestore */,
 			);
 			productName = SwipeLingo;
 			productReference = 474BFB622F3C8255006E639B /* SwipeLingo.app */;
@@ -580,6 +624,29 @@
 			productReference = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		47C09A5D2F853A410049858B /* SwipeLingoAdmin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 47C09A7C2F853A450049858B /* Build configuration list for PBXNativeTarget "SwipeLingoAdmin" */;
+			buildPhases = (
+				47C09A5A2F853A410049858B /* Sources */,
+				47C09A5B2F853A410049858B /* Frameworks */,
+				47C09A5C2F853A410049858B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				47C09A5F2F853A410049858B /* SwipeLingoAdmin */,
+			);
+			name = SwipeLingoAdmin;
+			packageProductDependencies = (
+				47C09A972F853F060049858B /* FirebaseFirestore */,
+			);
+			productName = SwipeLingoAdmin;
+			productReference = 47C09A5E2F853A410049858B /* SwipeLingoAdmin.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -587,7 +654,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2630;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					474BFB612F3C8255006E639B = {
@@ -604,6 +671,9 @@
 					478C77F72F7902F4005FBDFE = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					47C09A5D2F853A410049858B = {
+						CreatedOnToolsVersion = 26.4;
+					};
 				};
 			};
 			buildConfigurationList = 474BFB5D2F3C8255006E639B /* Build configuration list for PBXProject "SwipeLingo" */;
@@ -616,6 +686,7 @@
 			mainGroup = 474BFB592F3C8255006E639B;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				47C09A8F2F853ED20049858B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 474BFB632F3C8255006E639B /* Products */;
@@ -626,6 +697,7 @@
 				474BFB6E2F3C825C006E639B /* SwipeLingoTests */,
 				474BFB782F3C825C006E639B /* SwipeLingoUITests */,
 				478C77F72F7902F4005FBDFE /* SwipeLingoShare */,
+				47C09A5D2F853A410049858B /* SwipeLingoAdmin */,
 			);
 		};
 /* End PBXProject section */
@@ -661,6 +733,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		47C09A5C2F853A410049858B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -671,6 +750,7 @@
 				47C09A532F8531C20049858B /* PairsViewModel.swift in Sources */,
 				47C09A542F8531C20049858B /* PairsSessionView.swift in Sources */,
 				47C09A552F8531C20049858B /* PairsLibraryView.swift in Sources */,
+				47C09A8A2F853D7B0049858B /* CollectionType.swift in Sources */,
 				47C09A562F8531C20049858B /* PairsView.swift in Sources */,
 				47C09A572F8531C20049858B /* PairsPileBuilderView.swift in Sources */,
 				47C09A582F8531C20049858B /* PairsSetPlayerView.swift in Sources */,
@@ -694,6 +774,7 @@
 				478C785B2F794487005FBDFE /* AddCollectionView.swift in Sources */,
 				478C785C2F794487005FBDFE /* AddEditCardView.swift in Sources */,
 				47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */,
+				47C09A8E2F853D8B0049858B /* DisplayMode.swift in Sources */,
 				47C09A492F8531910049858B /* PairsSet.swift in Sources */,
 				478C785D2F794487005FBDFE /* CardSetDetailView.swift in Sources */,
 				478C785E2F794487005FBDFE /* CollectionDetailView.swift in Sources */,
@@ -707,6 +788,7 @@
 				478C78662F794487005FBDFE /* DictionaryLookupView.swift in Sources */,
 				47DE7F922F844EF700F6BCF3 /* PairsVerticalToggle.swift in Sources */,
 				478C78672F794487005FBDFE /* TinderCardsView.swift in Sources */,
+				47C09A862F853B940049858B /* FirestoreModels.swift in Sources */,
 				47C099F62F84F0B80049858B /* OnboardingLevelView.swift in Sources */,
 				47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */,
 				47C099F82F84F0B80049858B /* OnboardingWelcomeView.swift in Sources */,
@@ -762,6 +844,17 @@
 			files = (
 				478C787F2F794487005FBDFE /* Colors.swift in Sources */,
 				478C78802F794487005FBDFE /* Views.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		47C09A5A2F853A410049858B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				47C09A8B2F853D7B0049858B /* CollectionType.swift in Sources */,
+				47C09A872F853B940049858B /* FirestoreModels.swift in Sources */,
+				47C09A882F853D360049858B /* AccessTier.swift in Sources */,
+				47C09A8D2F853D8B0049858B /* DisplayMode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1155,6 +1248,94 @@
 			};
 			name = Release;
 		};
+		47C09A7D2F853A450049858B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = USBAK5HKC6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = PELSH.SwipeLingoAdmin;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		47C09A7E2F853A450049858B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = USBAK5HKC6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = PELSH.SwipeLingoAdmin;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1203,7 +1384,45 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		47C09A7C2F853A450049858B /* Build configuration list for PBXNativeTarget "SwipeLingoAdmin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				47C09A7D2F853A450049858B /* Debug */,
+				47C09A7E2F853A450049858B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		47C09A8F2F853ED20049858B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		47C09A902F853ED20049858B /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47C09A8F2F853ED20049858B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		47C09A922F853ED20049858B /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47C09A8F2F853ED20049858B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		47C09A972F853F060049858B /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47C09A8F2F853ED20049858B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 474BFB5A2F3C8255006E639B /* Project object */;
 }
