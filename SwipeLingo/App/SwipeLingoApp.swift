@@ -55,11 +55,20 @@ struct SwipeLingoApp: App {
         }
     }
 
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     var body: some Scene {
         WindowGroup {
             if let container {
-                AppView()
+                if hasCompletedOnboarding {
+                    AppView()
+                        .modelContainer(container)
+                } else {
+                    OnboardingView {
+                        hasCompletedOnboarding = true
+                    }
                     .modelContainer(container)
+                }
             } else {
                 DatabseErrorView()
             }
