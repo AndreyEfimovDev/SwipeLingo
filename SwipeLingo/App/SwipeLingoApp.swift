@@ -109,7 +109,16 @@ struct SwipeLingoApp: App {
             return
         }
 
+        let existingCards = context.fetchWithErrorHandling(
+            FetchDescriptor<Card>(predicate: #Predicate { $0.setId == inboxSet.id })
+        )
+
         for word in pending {
+            let wordLower = word.lowercased()
+            guard !existingCards.contains(where: { $0.en.lowercased() == wordLower }) else {
+                log("[InboxDrain] skipped duplicate '\(word)'", level: .info)
+                continue
+            }
             let card = Card(en: word, item: "", setId: inboxSet.id)
             context.insert(card)
             log("[InboxDrain] inserted '\(word)' → Inbox")
