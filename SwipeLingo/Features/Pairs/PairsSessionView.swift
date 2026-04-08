@@ -111,6 +111,7 @@ struct PairsSessionView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 14)
         }
+        .padding(.horizontal, 24)
     }
 
     private func ratingButton(_ title: String, color: Color, action: @escaping () -> Void) -> some View {
