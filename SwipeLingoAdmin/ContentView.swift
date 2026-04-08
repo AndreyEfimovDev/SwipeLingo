@@ -43,15 +43,17 @@ struct ContentView: View {
                 ContentUnavailableView("Select a section", systemImage: "sidebar.left")
             }
         } detail: {
-            if let collectionId = selectedCollectionId, let section = selectedSection {
-                switch section.collectionType {
-                case .cards:
-                    CardSetsListView(collectionId: collectionId)
-                case .pairs:
-                    PairsSetsListView(collectionId: collectionId)
+            NavigationStack {
+                if let collectionId = selectedCollectionId, let section = selectedSection {
+                    switch section.collectionType {
+                    case .cards:
+                        CardSetsListView(collectionId: collectionId)
+                    case .pairs:
+                        PairsSetsListView(collectionId: collectionId)
+                    }
+                } else {
+                    ContentUnavailableView("Select a collection", systemImage: "rectangle.stack")
                 }
-            } else {
-                ContentUnavailableView("Select a collection", systemImage: "rectangle.stack")
             }
         }
     }

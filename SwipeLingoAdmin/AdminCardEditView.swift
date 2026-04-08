@@ -51,6 +51,8 @@ struct AdminCardEditView: View {
 
     // MARK: - State
 
+    @Environment(\.dismiss) private var dismiss
+
     private let existingCard: FSCard?
     private let onSave: (FSCard) -> Void
 
@@ -142,6 +144,9 @@ struct AdminCardEditView: View {
         .formStyle(.grouped)
         .navigationTitle(existingCard == nil ? "New Card" : "Edit Card")
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save", action: save)
                     .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty)
