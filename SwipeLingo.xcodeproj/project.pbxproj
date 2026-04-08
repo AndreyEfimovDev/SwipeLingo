@@ -427,11 +427,11 @@
 		478C78362F794487005FBDFE /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				47C09A522F8531C20049858B /* Pairs */,
 				47C099F52F84F0B80049858B /* Onboarding */,
 				478C78352F794487005FBDFE /* FlashCards */,
-				478C782C2F794487005FBDFE /* Settings */,
+				47C09A522F8531C20049858B /* Pairs */,
 				478C782E2F794487005FBDFE /* Statistics */,
+				478C782C2F794487005FBDFE /* Settings */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -657,7 +657,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2640;
-				LastUpgradeCheck = 2630;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					474BFB612F3C8255006E639B = {
 						CreatedOnToolsVersion = 26.2;
@@ -1260,6 +1260,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = USBAK5HKC6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1304,6 +1305,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = USBAK5HKC6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
