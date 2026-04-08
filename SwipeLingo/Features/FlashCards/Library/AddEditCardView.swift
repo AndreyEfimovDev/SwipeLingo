@@ -45,7 +45,7 @@ struct AddEditCardView: View {
     @FocusState private var focused: Field?
 
     // Auto-fill (dictionary + Apple Translation)
-    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
+    @AppStorage("nativeLanguage") private var nativeLanguage: NativeLanguage = .russian
     @State private var translationSession: TranslationSession?
     @State private var translationConfig: TranslationSession.Configuration?
     @State private var isAutoFilling = false
@@ -86,11 +86,10 @@ struct AddEditCardView: View {
 
     private func buildTranslationConfig() {
         #if !targetEnvironment(simulator)
-        let langId = DictionaryLookupViewModel.targetLangId(for: nativeLanguage)
-        log("buildTranslationConfig: nativeLanguage=\(nativeLanguage) → langId=\(langId)", level: .info)
+        log("buildTranslationConfig: nativeLanguage=\(nativeLanguage.langId)", level: .info)
         translationConfig = TranslationSession.Configuration(
             source: Locale.Language(identifier: "en"),
-            target: Locale.Language(identifier: langId)
+            target: Locale.Language(identifier: nativeLanguage.langId)
         )
         #else
         log("buildTranslationConfig: skipped on simulator", level: .warning)

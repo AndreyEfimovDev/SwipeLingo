@@ -3,10 +3,11 @@ import SwiftUI
 // MARK: - OnboardingView
 // Координатор онбординга. Управляет шагами и анимацией перехода.
 // Шаги:
-//   0 — выбор языка
-//   1 — ввод имени
-//   2 — выбор уровня CEFR
-//   3 — приветствие
+//   0 — intro
+//   1 — выбор языка (с предупреждением о постоянстве)
+//   2 — ввод имени
+//   3 — выбор уровня CEFR
+//   4 — подтверждение настроек → в приложение
 
 struct OnboardingView: View {
 
@@ -41,7 +42,7 @@ struct OnboardingView: View {
                         OnboardingLevelView(onNext: { next() }, onBack: { back() })
                             .transition(stepTransition)
                     default:
-                        OnboardingWelcomeView(onComplete: onComplete)
+                        OnboardingConfirmView(onComplete: onComplete, onBack: { back() })
                             .transition(stepTransition)
                     }
                 }
@@ -55,7 +56,7 @@ struct OnboardingView: View {
 
     private var navBar: some View {
         HStack {
-            // Back — скрыт на intro (0) и финальном экране
+            // Back — скрыт на intro (0), language (1) и финальном экране (confirm имеет свою кнопку)
             if step > 1 && step < totalSteps - 1 {
                 Button { back() } label: {
                     Image(systemName: "chevron.left")

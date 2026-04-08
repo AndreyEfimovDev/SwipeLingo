@@ -2,25 +2,14 @@ import SwiftUI
 
 // MARK: - OnboardingLanguageView
 // Шаг 1: выбор родного языка пользователя.
-// Сохраняет выбор в @AppStorage("nativeLanguage") — тот же ключ используется
-// в SettingsView, AddEditCardView и DictionaryLookupView.
+// Сохраняет выбор в @AppStorage("nativeLanguage") как ISO-код (NativeLanguage.rawValue).
+// Язык выбирается однократно — сменить после онбординга нельзя.
 
 struct OnboardingLanguageView: View {
 
     var onNext: () -> Void
 
-    @AppStorage("nativeLanguage") private var nativeLanguage = "Русский"
-
-    private let languages: [(name: String, flag: String)] = [
-        ("Русский",   "🇷🇺"),
-        ("中文",       "🇨🇳"),
-        ("Español",   "🇪🇸"),
-        ("Français",  "🇫🇷"),
-        ("العربية",   "🇸🇦"),
-        ("Português", "🇧🇷"),
-        ("Deutsch",   "🇩🇪"),
-        ("日本語",     "🇯🇵"),
-    ]
+    @AppStorage("nativeLanguage") private var nativeLanguage: NativeLanguage = .russian
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 
@@ -46,13 +35,23 @@ struct OnboardingLanguageView: View {
 
             // Language grid
             LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(languages, id: \.name) { lang in
+                ForEach(NativeLanguage.allCases, id: \.self) { lang in
                     languageCard(lang)
                 }
             }
             .padding(.horizontal, 24)
 
             Spacer()
+
+            // Warning
+            HStack(spacing: 6) {
+                Image(systemName: "lock")
+                    .font(.caption2.weight(.semibold))
+                Text("This choice cannot be changed after setup")
+                    .font(.caption)
+            }
+            .foregroundStyle(Color.myColors.myRed.opacity(0.8))
+            .padding(.bottom, 12)
 
             // Continue button
             continueButton
@@ -61,13 +60,13 @@ struct OnboardingLanguageView: View {
         }
     }
 
-    private func languageCard(_ lang: (name: String, flag: String)) -> some View {
-        let isSelected = nativeLanguage == lang.name
-        return Button { nativeLanguage = lang.name } label: {
+    private func languageCard(_ lang: NativeLanguage) -> some View {
+        let isSelected = nativeLanguage == lang
+        return Button { nativeLanguage = lang } label: {
             HStack(spacing: 10) {
                 Text(lang.flag)
                     .font(.title3)
-                Text(lang.name)
+                Text(lang.displayName)
                     .font(.subheadline.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.myAccent)
                 Spacer()
@@ -79,15 +78,15 @@ struct OnboardingLanguageView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .background {
+                RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial)
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 12).fill(Color.myColors.myBlue.opacity(0.08))
+                }
+            }
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.myColors.myBlue.opacity(0.08) : .clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.myColors.myBlue.opacity(0.3) : Color.clear,
-                            lineWidth: 1.5)
+                    .stroke(isSelected ? Color.myColors.myBlue.opacity(0.3) : .clear, lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)

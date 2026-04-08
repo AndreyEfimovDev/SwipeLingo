@@ -51,10 +51,10 @@ struct FSCard: Codable, Identifiable {
     var id: String              // firestoreId
     var setId: String           // firestoreId родительского CardSet
     var en: String
-    var item: String
     var transcription: String   // MW-нотация или IPA, пустая если фраза или не найдено
-    var sampleEN: [String]      // Firestore нативно поддерживает [String]
-    var sampleItem: [String]
+    var translations: [String: String]          // ["ru": "серендипность", "zh": "天缘巧合", ...]
+    var sampleEN: [String]                      // Firestore нативно поддерживает [String]
+    var sampleTranslations: [String: [String]]  // ["ru": ["пример1", "пример2"], "zh": ["示例1"]]
     var level: String           // CEFRLevel.rawValue
     var accessTierRaw: String   // AccessTier.rawValue
     var isPublished: Bool
@@ -63,6 +63,16 @@ struct FSCard: Codable, Identifiable {
 
     var accessTier: AccessTier {
         AccessTier(rawValue: accessTierRaw) ?? .free
+    }
+
+    /// Перевод для указанного языка (пустая строка если не заполнен)
+    func translation(for language: NativeLanguage) -> String {
+        translations[language.langId] ?? ""
+    }
+
+    /// Примеры перевода для указанного языка
+    func sampleTranslation(for language: NativeLanguage) -> [String] {
+        sampleTranslations[language.langId] ?? []
     }
 }
 
