@@ -15,10 +15,15 @@ struct CardsListView: View {
     let setName: String
 
     @State private var showEditor  = false
+    @State private var showImport  = false
     @State private var editingCard: FSCard?
 
     private var cards: [FSCard] {
         store.cards(for: setId)
+    }
+
+    private var cardSet: FSCardSet? {
+        store.cardSets.first { $0.id == setId }
     }
 
     // MARK: Body
@@ -42,6 +47,21 @@ struct CardsListView: View {
                 }
                 .help("New card")
             }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showImport = true
+                } label: {
+                    Label("Import", systemImage: "square.and.arrow.down")
+                }
+                .help("Import words from text")
+            }
+        }
+        .sheet(isPresented: $showImport) {
+            ImportCardsSheet(
+                setId:        setId,
+                defaultLevel: cardSet.map { CEFRLevel(rawValue: $0.level) ?? .b1 } ?? .b1,
+                defaultTier:  cardSet?.accessTier ?? .free
+            )
         }
         .sheet(isPresented: $showEditor) {
             NavigationStack {
