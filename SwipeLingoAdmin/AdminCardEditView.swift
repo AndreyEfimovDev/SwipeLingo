@@ -3,14 +3,9 @@ import SwiftUI
 // MARK: - AdminCardEditView
 //
 // Форма создания / редактирования FSCard в SwipeLingoAdmin.
-//
-// Логика транскрипции:
-//   • При изменении поля "en" (с задержкой 0.8 с) автоматически вызывается
-//     DictionaryService.lookup() и заполняет поле transcription.
-//   • Пользователь может скорректировать транскрипцию вручную.
-//   • Для фраз (несколько слов) API ничего не вернёт — поле останется пустым.
-//   • При сохранении transcription записывается в FSCard.transcription →
-//     при импорте в SwiftData попадёт в card.dictTranscription.
+// Phase 1: базовый редактор — EN слово, транскрипция, примеры EN,
+//          переводы на все 13 языков (NativeLanguage).
+// Phase 2: авто-обогащение через DictionaryService + Apple Translation.
 
 struct AdminCardEditView: View {
 
@@ -20,28 +15,38 @@ struct AdminCardEditView: View {
     init(card: FSCard? = nil, setId: String, onSave: @escaping (FSCard) -> Void) {
         self.existingCard = card
         self.onSave = onSave
+
         let c = card ?? FSCard(
             id: FirestoreID.make(name: ""),
             setId: setId,
             en: "",
-            item: "",
             transcription: "",
+            translations: [:],
             sampleEN: [],
-            sampleItem: [],
+            sampleTranslations: [:],
             level: CEFRLevel.b1.rawValue,
             accessTierRaw: AccessTier.free.rawValue,
             isPublished: false,
             updatedAt: .now,
             createdAt: .now
         )
+
         _en            = State(initialValue: c.en)
-        _item          = State(initialValue: c.item)
         _transcription = State(initialValue: c.transcription)
         _sampleEN      = State(initialValue: c.sampleEN.joined(separator: "\n"))
-        _sampleItem    = State(initialValue: c.sampleItem.joined(separator: "\n"))
         _level         = State(initialValue: CEFRLevel(rawValue: c.level) ?? .b1)
         _accessTier    = State(initialValue: AccessTier(rawValue: c.accessTierRaw) ?? .free)
         _isPublished   = State(initialValue: c.isPublished)
+
+        var translationsInit: [String: String] = [:]
+        var sampleTranslationsInit: [String: String] = [:]
+        for lang in NativeLanguage.allCases {
+            translationsInit[lang.rawValue] = c.translations[lang.langId] ?? ""
+            let samples = c.sampleTranslations[lang.langId] ?? []
+            sampleTranslationsInit[lang.rawValue] = samples.joined(separator: "\n")
+        }
+        _translations       = State(initialValue: translationsInit)
+        _sampleTranslations = State(initialValue: sampleTranslationsInit)
     }
 
     // MARK: - State
@@ -49,17 +54,19 @@ struct AdminCardEditView: View {
     private let existingCard: FSCard?
     private let onSave: (FSCard) -> Void
 
-    @State private var en:            String
-    @State private var item:          String
-    @State private var transcription: String
-    @State private var sampleEN:      String   // многострочный — каждая строка = один пример
-    @State private var sampleItem:    String
-    @State private var level:         CEFRLevel
-    @State private var accessTier:    AccessTier
-    @State private var isPublished:   Bool
+    @State private var en:                 String
+    @State private var transcription:      String
+    @State private var sampleEN:           String          // каждая строка = один пример
+    @State private var level:              CEFRLevel
+    @State private var accessTier:         AccessTier
+    @State private var isPublished:        Bool
+
+    // [NativeLanguage.rawValue: text]
+    @State private var translations:       [String: String]
+    @State private var sampleTranslations: [String: String]
 
     @State private var isFetchingTranscription = false
-    @State private var fetchTask: Task<Void, Never>? = nil
+    @State private var fetchTask: Task<Void, Never>?
 
     private let dictionaryService = DictionaryService()
 
@@ -67,7 +74,7 @@ struct AdminCardEditView: View {
 
     var body: some View {
         Form {
-            // ── English word ──────────────────────────────
+            // ── English ───────────────────────────────────
             Section("English") {
                 TextField("Word or phrase", text: $en)
                     .onChange(of: en) { _, newValue in
@@ -76,13 +83,9 @@ struct AdminCardEditView: View {
 
                 HStack {
                     TextField("Transcription", text: $transcription)
-                        .foregroundStyle(transcription.isEmpty
-                                         ? Color.secondary
-                                         : Color.primary)
+                        .foregroundStyle(transcription.isEmpty ? Color.secondary : Color.primary)
                     if isFetchingTranscription {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(width: 20, height: 20)
+                        ProgressView().scaleEffect(0.7).frame(width: 20, height: 20)
                     } else if !transcription.isEmpty {
                         Text("[\(transcription)]")
                             .font(.system(.body, design: .monospaced))
@@ -90,26 +93,34 @@ struct AdminCardEditView: View {
                     }
                 }
 
-                TextField("Translation (item)", text: $item)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Examples EN (one per line)")
+                        .font(.caption).foregroundStyle(.secondary)
+                    TextEditor(text: $sampleEN)
+                        .frame(minHeight: 70)
+                }
             }
 
-            // ── Examples ──────────────────────────────────
-            Section("Examples (one per line)") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("English examples")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextEditor(text: $sampleEN)
-                        .frame(minHeight: 80)
-                        .font(.body)
+            // ── Translations ──────────────────────────────
+            Section("Translations") {
+                ForEach(NativeLanguage.allCases, id: \.self) { lang in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(lang.flag) \(lang.displayName)")
+                            .font(.caption).foregroundStyle(.secondary)
+                        TextField("Translation", text: binding(for: lang, in: $translations))
+                    }
                 }
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Translated examples")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextEditor(text: $sampleItem)
-                        .frame(minHeight: 80)
-                        .font(.body)
+            }
+
+            // ── Example translations ───────────────────────
+            Section("Example Translations (one per line)") {
+                ForEach(NativeLanguage.allCases, id: \.self) { lang in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(lang.flag) \(lang.displayName)")
+                            .font(.caption).foregroundStyle(.secondary)
+                        TextEditor(text: binding(for: lang, in: $sampleTranslations))
+                            .frame(minHeight: 50)
+                    }
                 }
             }
 
@@ -117,7 +128,7 @@ struct AdminCardEditView: View {
             Section("Metadata") {
                 Picker("CEFR Level", selection: $level) {
                     ForEach(CEFRLevel.allCases, id: \.self) { l in
-                        Text(l.rawValue.uppercased()).tag(l)
+                        Text(l.displayCode).tag(l)
                     }
                 }
                 Picker("Access Tier", selection: $accessTier) {
@@ -132,11 +143,19 @@ struct AdminCardEditView: View {
         .navigationTitle(existingCard == nil ? "New Card" : "Edit Card")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") { save() }
-                    .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty ||
-                              item.trimmingCharacters(in: .whitespaces).isEmpty)
+                Button("Save", action: save)
+                    .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
+    }
+
+    // MARK: - Binding helpers
+
+    private func binding(for lang: NativeLanguage, in dict: Binding<[String: String]>) -> Binding<String> {
+        Binding(
+            get: { dict.wrappedValue[lang.rawValue] ?? "" },
+            set: { dict.wrappedValue[lang.rawValue] = $0 }
+        )
     }
 
     // MARK: - Transcription auto-fetch
@@ -144,17 +163,13 @@ struct AdminCardEditView: View {
     private func scheduleTranscriptionFetch(for word: String) {
         fetchTask?.cancel()
         let trimmed = word.trimmingCharacters(in: .whitespaces)
-
-        // Не фетчим для пустых строк и фраз (больше одного слова)
         guard !trimmed.isEmpty, !trimmed.contains(" ") else {
             if trimmed.isEmpty { transcription = "" }
             return
         }
-
         fetchTask = Task {
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
-
             await MainActor.run { isFetchingTranscription = true }
             do {
                 let entry = try await dictionaryService.lookup(word: trimmed)
@@ -164,9 +179,7 @@ struct AdminCardEditView: View {
                     isFetchingTranscription = false
                 }
             } catch {
-                await MainActor.run {
-                    isFetchingTranscription = false
-                }
+                await MainActor.run { isFetchingTranscription = false }
             }
         }
     }
@@ -174,20 +187,30 @@ struct AdminCardEditView: View {
     // MARK: - Save
 
     private func save() {
-        let existing = existingCard
+        var translationsDict: [String: String] = [:]
+        var sampleTranslationsDict: [String: [String]] = [:]
+
+        for lang in NativeLanguage.allCases {
+            let text = (translations[lang.rawValue] ?? "").trimmingCharacters(in: .whitespaces)
+            if !text.isEmpty { translationsDict[lang.langId] = text }
+
+            let samples = lines(from: sampleTranslations[lang.rawValue] ?? "")
+            if !samples.isEmpty { sampleTranslationsDict[lang.langId] = samples }
+        }
+
         let card = FSCard(
-            id:            existing?.id ?? FirestoreID.make(name: en),
-            setId:         existing?.setId ?? "",
-            en:            en.trimmingCharacters(in: .whitespaces),
-            item:          item.trimmingCharacters(in: .whitespaces),
-            transcription: transcription.trimmingCharacters(in: .whitespaces),
-            sampleEN:      lines(from: sampleEN),
-            sampleItem:    lines(from: sampleItem),
-            level:         level.rawValue,
-            accessTierRaw: accessTier.rawValue,
-            isPublished:   isPublished,
-            updatedAt:     .now,
-            createdAt:     existing?.createdAt ?? .now
+            id:                 existingCard?.id ?? FirestoreID.make(name: en),
+            setId:              existingCard?.setId ?? "",
+            en:                 en.trimmingCharacters(in: .whitespaces),
+            transcription:      transcription.trimmingCharacters(in: .whitespaces),
+            translations:       translationsDict,
+            sampleEN:           lines(from: sampleEN),
+            sampleTranslations: sampleTranslationsDict,
+            level:              level.rawValue,
+            accessTierRaw:      accessTier.rawValue,
+            isPublished:        isPublished,
+            updatedAt:          .now,
+            createdAt:          existingCard?.createdAt ?? .now
         )
         onSave(card)
     }

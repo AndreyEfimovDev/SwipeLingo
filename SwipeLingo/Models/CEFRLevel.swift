@@ -33,6 +33,7 @@ enum CEFRLevel: String, CaseIterable, Codable {
     }
 
     var color: Color {
+        #if os(iOS)
         switch self {
         case .a0a1: return Color.myColors.myGreen
         case .a2:   return Color.myColors.myBlue
@@ -41,5 +42,15 @@ enum CEFRLevel: String, CaseIterable, Codable {
         case .c1:   return Color.myColors.myPurple
         case .c2:   return Color.myColors.myRed
         }
+        #else
+        switch self {
+        case .a0a1: return .green
+        case .a2:   return .blue
+        case .b1:   return .yellow
+        case .b2:   return .orange
+        case .c1:   return .purple
+        case .c2:   return .red
+        }
+        #endif
     }
 }

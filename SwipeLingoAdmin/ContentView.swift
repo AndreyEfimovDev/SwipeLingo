@@ -1,10 +1,10 @@
 import SwiftUI
 
-// MARK: - Sidebar Item
+// MARK: - AdminSection
 
 enum AdminSection: String, CaseIterable, Identifiable {
-    case cardsCollections  = "Cards Collections"
-    case pairsCollections  = "Pairs Collections"
+    case cardsCollections = "Cards"
+    case pairsCollections = "Pairs"
 
     var id: String { rawValue }
 
@@ -14,6 +14,13 @@ enum AdminSection: String, CaseIterable, Identifiable {
         case .pairsCollections: "square.grid.2x2"
         }
     }
+
+    var collectionType: CollectionType {
+        switch self {
+        case .cardsCollections: .cards
+        case .pairsCollections: .pairs
+        }
+    }
 }
 
 // MARK: - ContentView
@@ -21,12 +28,22 @@ enum AdminSection: String, CaseIterable, Identifiable {
 struct ContentView: View {
 
     @State private var selectedSection: AdminSection? = .cardsCollections
+    @State private var selectedCollectionId: String?
 
     var body: some View {
         NavigationSplitView {
             sidebar
+        } content: {
+            if let section = selectedSection {
+                CollectionsListView(
+                    type: section.collectionType,
+                    selectedCollectionId: $selectedCollectionId
+                )
+            } else {
+                ContentUnavailableView("Select a section", systemImage: "sidebar.left")
+            }
         } detail: {
-            detailView
+            ContentUnavailableView("Select a collection", systemImage: "rectangle.stack")
         }
     }
 
@@ -37,43 +54,7 @@ struct ContentView: View {
             Label(section.rawValue, systemImage: section.icon)
                 .tag(section)
         }
-        .navigationSplitViewColumnWidth(min: 200, ideal: 220)
-        .navigationTitle("SwipeLingo Admin")
-    }
-
-    // MARK: Detail
-
-    @ViewBuilder
-    private var detailView: some View {
-        switch selectedSection {
-        case .cardsCollections:
-            CollectionsView(type: .cards)
-        case .pairsCollections:
-            CollectionsView(type: .pairs)
-        case .none:
-            Text("Select a section")
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-// MARK: - CollectionsView (placeholder)
-
-struct CollectionsView: View {
-
-    let type: CollectionType
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: type == .cards ? "rectangle.stack" : "square.grid.2x2")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-            Text(type == .cards ? "Cards Collections" : "Pairs Collections")
-                .font(.title2.weight(.semibold))
-            Text("Firebase not connected yet")
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .navigationTitle(type == .cards ? "Cards Collections" : "Pairs Collections")
+        .navigationSplitViewColumnWidth(min: 160, ideal: 180)
+        .navigationTitle("SwipeLingo")
     }
 }
