@@ -14,6 +14,7 @@ struct PairsListView: View {
     let setName: String
 
     @State private var showEditor  = false
+    @State private var showImport  = false
     @State private var editingPair: FSPair?
 
     private var pairsSet: FSPairsSet? {
@@ -48,6 +49,24 @@ struct PairsListView: View {
                     Image(systemName: "plus")
                 }
                 .help("New pair")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showImport = true
+                } label: {
+                    Label("Import", systemImage: "square.and.arrow.down")
+                }
+                .help("Import pairs from text")
+            }
+        }
+        .sheet(isPresented: $showImport) {
+            ImportPairsSheet(
+                leftTitle:  leftTitle,
+                rightTitle: rightTitle
+            ) { newPairs in
+                guard var updated = pairsSet else { return }
+                updated.items.append(contentsOf: newPairs)
+                store.update(updated)
             }
         }
         .sheet(isPresented: $showEditor) {

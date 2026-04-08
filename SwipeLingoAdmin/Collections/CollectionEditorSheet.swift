@@ -1,9 +1,6 @@
 import SwiftUI
 
 // MARK: - CollectionEditorSheet
-//
-// Sheet для создания (collection == nil) и редактирования коллекции.
-// Тип (cards/pairs) задаётся снаружи и не меняется после создания.
 
 struct CollectionEditorSheet: View {
 
@@ -17,6 +14,7 @@ struct CollectionEditorSheet: View {
 
     @State private var name: String = ""
     @State private var icon: String = ""
+    @State private var showSymbolPicker = false
 
     private var isEditing: Bool { collection != nil }
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -29,32 +27,39 @@ struct CollectionEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                // ── Основное ──────────────────────────────────
-                Section("Collection") {
-                    TextField("Name", text: $name)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
 
-                    HStack(spacing: 12) {
-                        TextField("Icon (SF Symbol or emoji)", text: $icon)
+                    // ── Name ──────────────────────────────────────
+                    fieldLabel("Name")
+                    clearableField("Collection name", text: $name)
+
+                    // ── Icon ──────────────────────────────────────
+                    fieldLabel("Icon (SF Symbol or emoji)")
+                    HStack(spacing: 10) {
+                        clearableField("folder, star.fill, 📚 …", text: $icon)
                         iconPreview
                     }
-                }
 
-                // ── Мета ──────────────────────────────────────
-                Section("Info") {
-                    LabeledContent("Type") {
-                        Text(type == .cards ? "Cards" : "Pairs")
-                            .foregroundStyle(.secondary)
-                    }
-                    if isEditing {
-                        LabeledContent("Status") {
-                            Text(collection?.isPublished == true ? "Published" : "Draft")
-                                .foregroundStyle(collection?.isPublished == true ? .green : .secondary)
+                    // ── Info ──────────────────────────────────────
+                    GroupBox("Info") {
+                        LabeledContent("Type") {
+                            Text(type == .cards ? "Cards" : "Pairs")
+                                .foregroundStyle(.secondary)
+                        }
+                        if isEditing {
+                            Divider()
+                            LabeledContent("Status") {
+                                Text(collection?.isPublished == true ? "Published" : "Draft")
+                                    .foregroundStyle(collection?.isPublished == true ? .green : .secondary)
+                            }
                         }
                     }
+
+                    Spacer()
                 }
+                .padding(20)
             }
-            .formStyle(.grouped)
             .frame(minWidth: 420, minHeight: 280)
             .navigationTitle(isEditing ? "Edit Collection" : "New Collection")
             .toolbar {
@@ -73,6 +78,33 @@ struct CollectionEditorSheet: View {
                 icon = c.icon ?? ""
             }
         }
+    }
+
+    // MARK: Helpers
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+    }
+
+    private func clearableField(_ placeholder: String, text: Binding<String>) -> some View {
+        HStack(spacing: 0) {
+            TextField(placeholder, text: text)
+                .textFieldStyle(.plain)
+                .padding(.vertical, 5)
+                .padding(.leading, 8)
+            if !text.wrappedValue.isEmpty {
+                Button { text.wrappedValue = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 6)
+            }
+        }
+        .background(Color(NSColor.textBackgroundColor))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
     }
 
     // MARK: Icon preview

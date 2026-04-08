@@ -1,9 +1,6 @@
 import SwiftUI
 
 // MARK: - CardSetEditorSheet
-//
-// Sheet для создания и редактирования FSCardSet.
-// При изменении CEFR уровня автоматически предлагает AccessTier.
 
 struct CardSetEditorSheet: View {
 
@@ -27,41 +24,50 @@ struct CardSetEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Set") {
-                    TextField("Name", text: $name)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
 
-                    Picker("CEFR Level", selection: $level) {
-                        ForEach(CEFRLevel.allCases, id: \.self) { l in
-                            HStack {
-                                Text(l.displayCode)
-                                Text("· \(l.displayName)")
-                                    .foregroundStyle(.secondary)
+                    // ── Name ──────────────────────────────────────
+                    fieldLabel("Name")
+                    clearableField("Set name", text: $name)
+
+                    // ── Level & Access ────────────────────────────
+                    GroupBox("Level & Access") {
+                        Picker("CEFR Level", selection: $level) {
+                            ForEach(CEFRLevel.allCases, id: \.self) { l in
+                                HStack {
+                                    Text(l.displayCode)
+                                    Text("· \(l.displayName)").foregroundStyle(.secondary)
+                                }
+                                .tag(l)
                             }
-                            .tag(l)
                         }
-                    }
-                    .onChange(of: level) { _, newLevel in
-                        // Авто-предзаполнение accessTier по CEFR
-                        switch newLevel {
-                        case .a0a1, .a2: accessTier = .free
-                        case .b1, .b2:   accessTier = .go
-                        case .c1, .c2:   accessTier = .pro
+                        .onChange(of: level) { _, newLevel in
+                            switch newLevel {
+                            case .a0a1, .a2: accessTier = .free
+                            case .b1, .b2:   accessTier = .go
+                            case .c1, .c2:   accessTier = .pro
+                            }
+                        }
+
+                        Divider()
+
+                        Picker("Access Tier", selection: $accessTier) {
+                            ForEach(AccessTier.allCases, id: \.self) { t in
+                                Text(t.displayName).tag(t)
+                            }
                         }
                     }
 
-                    Picker("Access Tier", selection: $accessTier) {
-                        ForEach(AccessTier.allCases, id: \.self) { t in
-                            Text(t.displayName).tag(t)
-                        }
+                    // ── Publishing ────────────────────────────────
+                    GroupBox("Publishing") {
+                        Toggle("Published", isOn: $isPublished)
                     }
-                }
 
-                Section("Publishing") {
-                    Toggle("Published", isOn: $isPublished)
+                    Spacer()
                 }
+                .padding(20)
             }
-            .formStyle(.grouped)
             .frame(minWidth: 400, minHeight: 260)
             .navigationTitle(isEditing ? "Edit Set" : "New Set")
             .toolbar {
@@ -82,6 +88,31 @@ struct CardSetEditorSheet: View {
                 isPublished = s.isPublished
             }
         }
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+    }
+
+    private func clearableField(_ placeholder: String, text: Binding<String>) -> some View {
+        HStack(spacing: 0) {
+            TextField(placeholder, text: text)
+                .textFieldStyle(.plain)
+                .padding(.vertical, 5)
+                .padding(.leading, 8)
+            if !text.wrappedValue.isEmpty {
+                Button { text.wrappedValue = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 6)
+            }
+        }
+        .background(Color(NSColor.textBackgroundColor))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
     }
 
     // MARK: Save

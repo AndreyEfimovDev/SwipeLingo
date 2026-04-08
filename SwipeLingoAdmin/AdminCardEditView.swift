@@ -75,17 +75,19 @@ struct AdminCardEditView: View {
     // MARK: - Body
 
     var body: some View {
-        Form {
-            // ── English ───────────────────────────────────
-            Section("English") {
-                TextField("Word or phrase", text: $en)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+
+                // ── English ───────────────────────────────────
+                fieldLabel("Word or phrase")
+                clearableField("Word or phrase", text: $en)
                     .onChange(of: en) { _, newValue in
                         scheduleTranscriptionFetch(for: newValue)
                     }
 
+                fieldLabel("Transcription")
                 HStack {
-                    TextField("Transcription", text: $transcription)
-                        .foregroundStyle(transcription.isEmpty ? Color.secondary : Color.primary)
+                    clearableField("Transcription", text: $transcription)
                     if isFetchingTranscription {
                         ProgressView().scaleEffect(0.7).frame(width: 20, height: 20)
                     } else if !transcription.isEmpty {
@@ -95,53 +97,60 @@ struct AdminCardEditView: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Examples EN (one per line)")
-                        .font(.caption).foregroundStyle(.secondary)
-                    TextEditor(text: $sampleEN)
-                        .frame(minHeight: 70)
-                }
-            }
+                fieldLabel("Examples EN (one per line)")
+                TextEditor(text: $sampleEN)
+                    .frame(minHeight: 70)
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.25)))
 
-            // ── Translations ──────────────────────────────
-            Section("Translations") {
+                Divider()
+
+                // ── Translations ──────────────────────────────
+                fieldLabel("Translations")
                 ForEach(NativeLanguage.allCases, id: \.self) { lang in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(lang.flag) \(lang.displayName)")
                             .font(.caption).foregroundStyle(.secondary)
-                        TextField("Translation", text: binding(for: lang, in: $translations))
+                        clearableField("Translation", text: binding(for: lang, in: $translations))
                     }
                 }
-            }
 
-            // ── Example translations ───────────────────────
-            Section("Example Translations (one per line)") {
+                Divider()
+
+                // ── Example translations ───────────────────────
+                fieldLabel("Example Translations (one per line)")
                 ForEach(NativeLanguage.allCases, id: \.self) { lang in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(lang.flag) \(lang.displayName)")
                             .font(.caption).foregroundStyle(.secondary)
                         TextEditor(text: binding(for: lang, in: $sampleTranslations))
                             .frame(minHeight: 50)
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.25)))
                     }
                 }
-            }
 
-            // ── Metadata ──────────────────────────────────
-            Section("Metadata") {
-                Picker("CEFR Level", selection: $level) {
-                    ForEach(CEFRLevel.allCases, id: \.self) { l in
-                        Text(l.displayCode).tag(l)
+                Divider()
+
+                // ── Metadata ──────────────────────────────────
+                GroupBox("Metadata") {
+                    Picker("CEFR Level", selection: $level) {
+                        ForEach(CEFRLevel.allCases, id: \.self) { l in
+                            Text(l.displayCode).tag(l)
+                        }
                     }
-                }
-                Picker("Access Tier", selection: $accessTier) {
-                    ForEach(AccessTier.allCases, id: \.self) { t in
-                        Text(t.rawValue.capitalized).tag(t)
+                    Divider()
+                    Picker("Access Tier", selection: $accessTier) {
+                        ForEach(AccessTier.allCases, id: \.self) { t in
+                            Text(t.rawValue.capitalized).tag(t)
+                        }
                     }
+                    Divider()
+                    Toggle("Published", isOn: $isPublished)
                 }
-                Toggle("Published", isOn: $isPublished)
+
+                Spacer()
             }
+            .padding(20)
         }
-        .formStyle(.grouped)
         .navigationTitle(existingCard == nil ? "New Card" : "Edit Card")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -152,6 +161,33 @@ struct AdminCardEditView: View {
                     .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
+    }
+
+    // MARK: - Helpers
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+    }
+
+    private func clearableField(_ placeholder: String, text: Binding<String>) -> some View {
+        HStack(spacing: 0) {
+            TextField(placeholder, text: text)
+                .textFieldStyle(.plain)
+                .padding(.vertical, 5)
+                .padding(.leading, 8)
+            if !text.wrappedValue.isEmpty {
+                Button { text.wrappedValue = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 6)
+            }
+        }
+        .background(Color(NSColor.textBackgroundColor))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
     }
 
     // MARK: - Binding helpers
