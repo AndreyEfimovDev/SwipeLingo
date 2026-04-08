@@ -1,23 +1,28 @@
 import SwiftUI
+import Translation
 
 // MARK: - ImportDraft
 
 private struct ImportDraft: Identifiable {
     let id = UUID()
-    var word:          String
-    var transcription: String   = ""
-    var sampleEN:      [String] = []
-    var status:        Status   = .pending
+    var word:               String
+    var transcription:      String          = ""
+    var sampleEN:           [String]        = []
+    var translations:       [String: String] = [:]   // [langId: translatedWord]
+    var sampleTranslations: [String: String] = [:]   // [langId: translatedExample]
+    var enrichStatus:       EnrichStatus    = .pending
+    var translateStatus:    TranslateStatus = .pending
 
-    enum Status: Equatable {
-        case pending
-        case enriching
-        case done
-        case failed
+    enum EnrichStatus: Equatable {
+        case pending, enriching, done, failed
     }
 
-    var statusIcon:  String {
-        switch status {
+    enum TranslateStatus: Equatable {
+        case pending, translating, done
+    }
+
+    var enrichIcon:  String {
+        switch enrichStatus {
         case .pending:   "circle"
         case .enriching: "arrow.trianglehead.clockwise"
         case .done:      "checkmark.circle.fill"
@@ -25,8 +30,8 @@ private struct ImportDraft: Identifiable {
         }
     }
 
-    var statusColor: Color {
-        switch status {
+    var enrichColor: Color {
+        switch enrichStatus {
         case .pending:   .secondary
         case .enriching: .blue
         case .done:      .green
@@ -40,11 +45,11 @@ private struct ImportDraft: Identifiable {
 struct ImportCardsSheet: View {
 
     @Environment(AdminStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)       private var dismiss
 
-    let setId:           String
-    let defaultLevel:    CEFRLevel
-    let defaultTier:     AccessTier
+    let setId:        String
+    let defaultLevel: CEFRLevel
+    let defaultTier:  AccessTier
 
     // MARK: State
 
@@ -54,13 +59,36 @@ struct ImportCardsSheet: View {
     @State private var isEnriching: Bool          = false
     @State private var enrichTask:  Task<Void, Never>?
 
+    // Translation state
+    @State private var isTranslating:        Bool                              = false
+    @State private var translationConfig:    TranslationSession.Configuration? = nil
+    @State private var currentLang:          NativeLanguage?                   = nil
+    @State private var pendingLangs:         [NativeLanguage]                  = []
+    @State private var translatedLangCount:  Int                               = 0
+
     private enum Step { case paste, review }
 
     private let dictionaryService = DictionaryService()
 
-    // Прогресс обогащения
-    private var enrichedCount: Int { drafts.filter { $0.status == .done || $0.status == .failed }.count }
-    private var progress: Double  { drafts.isEmpty ? 0 : Double(enrichedCount) / Double(drafts.count) }
+    // MARK: Computed
+
+    private var enrichedCount: Int {
+        drafts.filter { $0.enrichStatus == .done || $0.enrichStatus == .failed }.count
+    }
+    private var enrichProgress: Double {
+        drafts.isEmpty ? 0 : Double(enrichedCount) / Double(drafts.count)
+    }
+    private var translateProgress: Double {
+        Double(translatedLangCount) / Double(NativeLanguage.allCases.count)
+    }
+    private var isAnyOperationRunning: Bool { isEnriching || isTranslating }
+
+    private var wordCount: Int {
+        pasteText.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .count
+    }
 
     // MARK: Body
 
@@ -75,11 +103,17 @@ struct ImportCardsSheet: View {
             .navigationTitle(step == .paste ? "Import Cards" : "Review & Enrich")
             .toolbar { toolbarItems }
         }
-        .frame(minWidth: 540, minHeight: 480)
-        .onDisappear { enrichTask?.cancel() }
+        .frame(minWidth: 560, minHeight: 500)
+        .onDisappear {
+            enrichTask?.cancel()
+            translationConfig = nil
+        }
+        .translationTask(translationConfig) { session in
+            await runTranslationBatch(session: session)
+        }
     }
 
-    // MARK: Step 1 — Paste
+    // MARK: — Step 1: Paste
 
     private var pasteView: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -108,68 +142,90 @@ struct ImportCardsSheet: View {
         .padding()
     }
 
-    private var wordCount: Int {
-        pasteText.components(separatedBy: "\n")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-            .count
-    }
-
-    // MARK: Step 2 — Review & Enrich
+    // MARK: — Step 2: Review
 
     private var reviewView: some View {
         VStack(spacing: 0) {
-            // Прогресс-бар обогащения
-            if isEnriching || enrichedCount > 0 {
-                VStack(spacing: 6) {
-                    ProgressView(value: progress)
-                        .padding(.horizontal)
-                    Text("Enriched \(enrichedCount) / \(drafts.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 10)
-                .background(Color(nsColor: .windowBackgroundColor))
-                Divider()
-            }
-
-            // Список черновиков
-            List(drafts) { draft in
-                DraftRow(draft: draft)
-            }
-
+            progressBars
+            List(drafts) { draft in DraftRow(draft: draft) }
             Divider()
+            bottomBar
+        }
+    }
 
-            // Нижняя панель
-            HStack(spacing: 12) {
-                Button("← Back") {
+    @ViewBuilder
+    private var progressBars: some View {
+        if isEnriching || enrichedCount > 0 || isTranslating || translatedLangCount > 0 {
+            VStack(spacing: 8) {
+                if isEnriching || enrichedCount > 0 {
+                    LabeledProgressRow(
+                        label: "Enriched",
+                        value: enrichProgress,
+                        detail: "\(enrichedCount)/\(drafts.count)"
+                    )
+                }
+                if isTranslating || translatedLangCount > 0 {
+                    LabeledProgressRow(
+                        label: "Translated",
+                        value: translateProgress,
+                        detail: "\(translatedLangCount)/\(NativeLanguage.allCases.count) languages"
+                    )
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            .background(Color(nsColor: .windowBackgroundColor))
+            Divider()
+        }
+    }
+
+    private var bottomBar: some View {
+        HStack(spacing: 12) {
+            Button("← Back") {
+                enrichTask?.cancel()
+                isEnriching = false
+                translationConfig = nil
+                isTranslating = false
+                step = .paste
+            }
+            .disabled(isAnyOperationRunning)
+
+            Spacer()
+
+            // Enrich button
+            if !isEnriching && enrichedCount < drafts.count {
+                Button("Enrich All") { startEnrichment() }
+                    .buttonStyle(.bordered)
+                    .disabled(isTranslating)
+            }
+            if isEnriching {
+                Button("Stop Enrich") {
                     enrichTask?.cancel()
                     isEnriching = false
-                    step = .paste
                 }
-                .disabled(isEnriching)
+                .foregroundStyle(.red)
+            }
 
-                Spacer()
-
-                if !isEnriching && enrichedCount < drafts.count {
-                    Button("Enrich All") { startEnrichment() }
-                        .buttonStyle(.bordered)
-                }
-
-                if isEnriching {
-                    Button("Stop") {
-                        enrichTask?.cancel()
-                        isEnriching = false
-                    }
-                    .foregroundStyle(.red)
-                }
-
-                Button("Import \(drafts.count) Cards") { importCards() }
-                    .buttonStyle(.borderedProminent)
+            // Translate button
+            if !isTranslating && translatedLangCount < NativeLanguage.allCases.count {
+                Button("Translate All") { startTranslation() }
+                    .buttonStyle(.bordered)
                     .disabled(isEnriching)
             }
-            .padding()
+            if isTranslating {
+                Button("Stop Translate") {
+                    isTranslating = false
+                    translationConfig = nil
+                    pendingLangs = []
+                }
+                .foregroundStyle(.red)
+            }
+
+            Button("Import \(drafts.count) Cards") { importCards() }
+                .buttonStyle(.borderedProminent)
+                .disabled(isAnyOperationRunning)
         }
+        .padding()
     }
 
     // MARK: Toolbar
@@ -179,105 +235,190 @@ struct ImportCardsSheet: View {
         ToolbarItem(placement: .cancellationAction) {
             Button("Cancel") {
                 enrichTask?.cancel()
+                translationConfig = nil
                 dismiss()
             }
         }
     }
 
-    // MARK: Parse
+    // MARK: — Parse
 
     private func parseDrafts() {
-        let words = pasteText
+        var seen = Set<String>()
+        drafts = pasteText
             .components(separatedBy: "\n")
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
-
-        // Убираем дубликаты, сохраняем порядок
-        var seen = Set<String>()
-        drafts = words.compactMap { word in
-            let lower = word.lowercased()
-            guard !seen.contains(lower) else { return nil }
-            seen.insert(lower)
-            return ImportDraft(word: word)
-        }
+            .compactMap { word in
+                let lower = word.lowercased()
+                guard !seen.contains(lower) else { return nil }
+                seen.insert(lower)
+                return ImportDraft(word: word)
+            }
         step = .review
     }
 
-    // MARK: Enrich
+    // MARK: — Enrich (MW + FreeDictionary)
 
     private func startEnrichment() {
         isEnriching = true
-
-        // Сбрасываем статусы незавершённых
-        for i in drafts.indices where drafts[i].status != .done {
-            drafts[i].status = .pending
+        for i in drafts.indices where drafts[i].enrichStatus != .done {
+            drafts[i].enrichStatus = .pending
         }
 
         enrichTask = Task {
             let batchSize = 5
-            let delayBetweenBatches: UInt64 = 1_000_000_000  // 1 секунда
-
             var idx = 0
             while idx < drafts.count {
                 guard !Task.isCancelled else { break }
-
-                let batchEnd = min(idx + batchSize, drafts.count)
-                let batchIndices = Array(idx..<batchEnd)
-
-                // Обрабатываем батч последовательно
-                for i in batchIndices {
+                let end = min(idx + batchSize, drafts.count)
+                for i in idx..<end {
                     guard !Task.isCancelled else { break }
-
-                    await MainActor.run { drafts[i].status = .enriching }
-
+                    await MainActor.run { drafts[i].enrichStatus = .enriching }
                     do {
                         let entry = try await dictionaryService.lookup(word: drafts[i].word)
                         await MainActor.run {
                             drafts[i].transcription = entry.transcription
-                            if let firstDef = entry.meanings.first?.definitions.first,
-                               let example = firstDef.example {
+                            if let example = entry.meanings.first?.definitions.first?.example {
                                 drafts[i].sampleEN = [example]
                             }
-                            drafts[i].status = .done
+                            drafts[i].enrichStatus = .done
                         }
                     } catch {
-                        await MainActor.run { drafts[i].status = .failed }
+                        await MainActor.run { drafts[i].enrichStatus = .failed }
                     }
                 }
-
-                idx = batchEnd
-
-                // Пауза между батчами
+                idx = end
                 if idx < drafts.count && !Task.isCancelled {
-                    try? await Task.sleep(nanoseconds: delayBetweenBatches)
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                 }
             }
-
             await MainActor.run { isEnriching = false }
         }
     }
 
-    // MARK: Import
+    // MARK: — Translate (Apple Translation)
+
+    private func startTranslation() {
+        translatedLangCount = 0
+        isTranslating = true
+
+        // Сбрасываем статусы переводов
+        for i in drafts.indices {
+            drafts[i].translations = [:]
+            drafts[i].sampleTranslations = [:]
+            drafts[i].translateStatus = .pending
+        }
+
+        var allLangs = NativeLanguage.allCases
+        let first = allLangs.removeFirst()
+        pendingLangs  = allLangs
+        currentLang   = first
+        translationConfig = TranslationSession.Configuration(
+            source: Locale.Language(identifier: "en"),
+            target: Locale.Language(identifier: first.langId)
+        )
+    }
+
+    private func runTranslationBatch(session: TranslationSession) async {
+        guard let lang = currentLang, isTranslating else { return }
+
+        // Строим батч: слово + пример (если есть)
+        // clientIdentifier: "w_<idx>" для слова, "s_<idx>" для примера
+        var requests: [TranslationSession.Request] = []
+        for (i, draft) in drafts.enumerated() {
+            requests.append(.init(sourceText: draft.word, clientIdentifier: "w_\(i)"))
+            if let sample = draft.sampleEN.first, !sample.isEmpty {
+                requests.append(.init(sourceText: sample, clientIdentifier: "s_\(i)"))
+            }
+        }
+
+        do {
+            let responses = try await session.translations(from: requests)
+            await MainActor.run {
+                for response in responses {
+                    guard let key = response.clientIdentifier else { continue }
+                    if key.hasPrefix("w_"), let idx = Int(key.dropFirst(2)) {
+                        drafts[idx].translations[lang.langId] = response.targetText
+                    } else if key.hasPrefix("s_"), let idx = Int(key.dropFirst(2)) {
+                        drafts[idx].sampleTranslations[lang.langId] = response.targetText
+                    }
+                }
+                for i in drafts.indices {
+                    drafts[i].translateStatus = .done
+                }
+            }
+        } catch {
+            // Язык не доступен — пропускаем
+            log("Translation failed for \(lang.langId): \(error)", level: .warning)
+        }
+
+        // Переходим к следующему языку
+        await MainActor.run {
+            translatedLangCount += 1
+            if let nextLang = pendingLangs.first, isTranslating {
+                pendingLangs.removeFirst()
+                currentLang = nextLang
+                translationConfig = TranslationSession.Configuration(
+                    source: Locale.Language(identifier: "en"),
+                    target: Locale.Language(identifier: nextLang.langId)
+                )
+            } else {
+                isTranslating     = false
+                translationConfig = nil
+                currentLang       = nil
+            }
+        }
+    }
+
+    // MARK: — Import
 
     private func importCards() {
         for draft in drafts {
+            // sampleTranslations: [langId: [String]] — берём по одному переводу примера
+            var sampleTranslationsDict: [String: [String]] = [:]
+            for (langId, sample) in draft.sampleTranslations {
+                sampleTranslationsDict[langId] = [sample]
+            }
             let card = FSCard(
-                id:           FirestoreID.make(name: draft.word),
-                setId:        setId,
-                en:           draft.word,
-                transcription: draft.transcription,
-                translations: [:],
-                sampleEN:     draft.sampleEN,
-                sampleTranslations: [:],
-                level:        defaultLevel.rawValue,
-                accessTierRaw: defaultTier.rawValue,
-                isPublished:  false,
-                updatedAt:    .now,
-                createdAt:    .now
+                id:                 FirestoreID.make(name: draft.word),
+                setId:              setId,
+                en:                 draft.word,
+                transcription:      draft.transcription,
+                translations:       draft.translations,
+                sampleEN:           draft.sampleEN,
+                sampleTranslations: sampleTranslationsDict,
+                level:              defaultLevel.rawValue,
+                accessTierRaw:      defaultTier.rawValue,
+                isPublished:        false,
+                updatedAt:          .now,
+                createdAt:          .now
             )
             store.add(card)
         }
         dismiss()
+    }
+}
+
+// MARK: - LabeledProgressRow
+
+private struct LabeledProgressRow: View {
+    let label:  String
+    let value:  Double
+    let detail: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 72, alignment: .leading)
+            ProgressView(value: value)
+            Text(detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 100, alignment: .trailing)
+        }
     }
 }
 
@@ -289,18 +430,19 @@ private struct DraftRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: draft.statusIcon)
-                .foregroundStyle(draft.statusColor)
+            // Статус обогащения
+            Image(systemName: draft.enrichIcon)
+                .foregroundStyle(draft.enrichColor)
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(draft.word)
-                    .font(.body.weight(.medium))
-
-                if !draft.transcription.isEmpty {
-                    Text("[\(draft.transcription)]")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text(draft.word).font(.body.weight(.medium))
+                    if !draft.transcription.isEmpty {
+                        Text("[\(draft.transcription)]")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 if let example = draft.sampleEN.first {
                     Text(example)
@@ -312,7 +454,15 @@ private struct DraftRow: View {
 
             Spacer()
 
-            if draft.status == .enriching {
+            // Статус переводов
+            if draft.translateStatus == .done {
+                let count = draft.translations.count
+                Text("\(count) lang\(count == 1 ? "" : "s")")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+
+            if draft.enrichStatus == .enriching {
                 ProgressView().scaleEffect(0.7).frame(width: 20)
             }
         }
