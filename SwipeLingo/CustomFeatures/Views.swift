@@ -6,7 +6,7 @@ import SwiftUI
 // Параметр title — название предыдущего экрана (как в стандартной iOS-кнопке).
 //
 // Использование:
-//   .customBackButton("Pairs")   // в DynamicSetPlayerView
+//   .customBackButton("Pairs")   // в PairsSetPlayerView
 //   .customBackButton("Settings")   // в VoiceSettingsView
 
 private struct CustomBackButtonModifier: ViewModifier {

@@ -15,7 +15,7 @@ private func decodeUUIDs(_ raw: String) -> [UUID] {
 }
 
 // MARK: - PairsPile
-// Именованная подборка DynamicSet-ов для раздела Pairs.
+// Именованная подборка PairsSet-ов для раздела Pairs.
 // Без shuffleMethod — сеты воспроизводятся в заданном порядке.
 // Только один pile может быть isActive в каждый момент.
 
