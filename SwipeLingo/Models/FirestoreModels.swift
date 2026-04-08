@@ -52,6 +52,7 @@ struct FSCard: Codable, Identifiable {
     var setId: String           // firestoreId родительского CardSet
     var en: String
     var item: String
+    var transcription: String   // MW-нотация или IPA, пустая если фраза или не найдено
     var sampleEN: [String]      // Firestore нативно поддерживает [String]
     var sampleItem: [String]
     var level: String           // CEFRLevel.rawValue
