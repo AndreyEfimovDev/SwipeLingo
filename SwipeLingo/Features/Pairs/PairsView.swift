@@ -212,7 +212,15 @@ struct PairsView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 64))
                 .foregroundStyle(Color.myColors.myGreen.opacity(0.7))
-            Button { isDueMode = false } label: {
+            Text("Nothing due right now")
+                .font(.caption)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+            NavigationLink(
+                destination: PairsSessionView(
+                    sets: candidateSets,
+                    pileName: activePile?.name ?? "Pairs"
+                )
+            ) {
                 Text("Play All")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.myColors.myBlue)
