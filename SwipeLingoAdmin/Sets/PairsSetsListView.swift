@@ -49,17 +49,21 @@ struct PairsSetsListView: View {
 
     private var list: some View {
         List(sets, id: \.id) { set in
-            PairsSetRow(set: set)
-                .contextMenu {
-                    Button("Edit") {
-                        editingSet = set
-                        showEditor = true
-                    }
-                    Divider()
-                    Button("Delete", role: .destructive) {
-                        store.delete(pairsSetId: set.id)
-                    }
+            NavigationLink {
+                PairsListView(setId: set.id, setName: set.title ?? "Untitled")
+            } label: {
+                PairsSetRow(set: set)
+            }
+            .contextMenu {
+                Button("Edit") {
+                    editingSet = set
+                    showEditor = true
                 }
+                Divider()
+                Button("Delete", role: .destructive) {
+                    store.delete(pairsSetId: set.id)
+                }
+            }
         }
     }
 
