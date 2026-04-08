@@ -1,10 +1,6 @@
 import SwiftUI
 
 // MARK: - PairEditorSheet
-//
-// Sheet для создания (pair == nil) и редактирования одной пары FSPair.
-// leftTitle / rightTitle берутся из родительского PairsSet и используются
-// как заголовки секций, чтобы контекст был понятен при вводе.
 
 struct PairEditorSheet: View {
 
@@ -28,16 +24,20 @@ struct PairEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section(leftTitle) {
-                    TextField("Word or phrase", text: $leftText)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+
+                    fieldLabel(leftTitle)
+                    clearableField("Word or phrase", text: $leftText)
+
+                    fieldLabel(rightTitle)
+                    clearableField("Synonym / advanced form", text: $rightText)
+
+                    Spacer()
                 }
-                Section(rightTitle) {
-                    TextField("Synonym / advanced form", text: $rightText)
-                }
+                .padding(20)
             }
-            .formStyle(.grouped)
-            .frame(minWidth: 380, minHeight: 240)
+            .frame(minWidth: 380, minHeight: 200)
             .navigationTitle(pair == nil ? "New Pair" : "Edit Pair")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -53,6 +53,31 @@ struct PairEditorSheet: View {
             leftText  = pair?.left?.text  ?? ""
             rightText = pair?.right?.text ?? ""
         }
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+    }
+
+    private func clearableField(_ placeholder: String, text: Binding<String>) -> some View {
+        HStack(spacing: 0) {
+            TextField(placeholder, text: text)
+                .textFieldStyle(.plain)
+                .padding(.vertical, 5)
+                .padding(.leading, 8)
+            if !text.wrappedValue.isEmpty {
+                Button { text.wrappedValue = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 6)
+            }
+        }
+        .background(Color(NSColor.textBackgroundColor))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
     }
 
     // MARK: Save

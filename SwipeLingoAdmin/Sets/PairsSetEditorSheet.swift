@@ -1,9 +1,6 @@
 import SwiftUI
 
 // MARK: - PairsSetEditorSheet
-//
-// Sheet для создания и редактирования FSPairsSet.
-// Пары (items) редактируются отдельно в Phase 1.6.
 
 struct PairsSetEditorSheet: View {
 
@@ -30,35 +27,47 @@ struct PairsSetEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Set") {
-                    TextField("Title", text: $title)
-                    TextField("Subtitle (optional)", text: $subtitle)
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
 
-                Section("Columns") {
-                    TextField("Left column title (e.g. B2, Basic)", text: $leftTitle)
-                    TextField("Right column title (e.g. C1, Advanced)", text: $rightTitle)
+                    // ── Title ─────────────────────────────────────
+                    fieldLabel("Title")
+                    clearableField("Set title", text: $title)
 
-                    Picker("Display Mode", selection: $displayMode) {
-                        Text("Parallel").tag(DisplayMode.parallel)
-                        Text("Sequential").tag(DisplayMode.sequential)
-                    }
-                }
+                    // ── Subtitle ──────────────────────────────────
+                    fieldLabel("Subtitle (optional)")
+                    clearableField("Subtitle", text: $subtitle)
 
-                Section("Access") {
-                    Picker("Access Tier", selection: $accessTier) {
-                        ForEach(AccessTier.allCases, id: \.self) { t in
-                            Text(t.displayName).tag(t)
+                    // ── Columns ───────────────────────────────────
+                    fieldLabel("Columns")
+                    clearableField("Left column (e.g. B2, Basic)", text: $leftTitle)
+                    clearableField("Right column (e.g. C1, Advanced)", text: $rightTitle)
+
+                    // ── Display & Access ──────────────────────────
+                    GroupBox("Display & Access") {
+                        Picker("Display Mode", selection: $displayMode) {
+                            Text("Parallel").tag(DisplayMode.parallel)
+                            Text("Sequential").tag(DisplayMode.sequential)
+                        }
+
+                        Divider()
+
+                        Picker("Access Tier", selection: $accessTier) {
+                            ForEach(AccessTier.allCases, id: \.self) { t in
+                                Text(t.displayName).tag(t)
+                            }
                         }
                     }
-                }
 
-                Section("Publishing") {
-                    Toggle("Published", isOn: $isPublished)
+                    // ── Publishing ────────────────────────────────
+                    GroupBox("Publishing") {
+                        Toggle("Published", isOn: $isPublished)
+                    }
+
+                    Spacer()
                 }
+                .padding(20)
             }
-            .formStyle(.grouped)
             .frame(minWidth: 420, minHeight: 360)
             .navigationTitle(isEditing ? "Edit Set" : "New Set")
             .toolbar {
@@ -84,6 +93,31 @@ struct PairsSetEditorSheet: View {
         }
     }
 
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+    }
+
+    private func clearableField(_ placeholder: String, text: Binding<String>) -> some View {
+        HStack(spacing: 0) {
+            TextField(placeholder, text: text)
+                .textFieldStyle(.plain)
+                .padding(.vertical, 5)
+                .padding(.leading, 8)
+            if !text.wrappedValue.isEmpty {
+                Button { text.wrappedValue = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 6)
+            }
+        }
+        .background(Color(NSColor.textBackgroundColor))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
+    }
+
     // MARK: Save
 
     private func save() {
@@ -94,29 +128,29 @@ struct PairsSetEditorSheet: View {
 
         if let existing = pairsSet {
             var updated = existing
-            updated.title        = trimmedTitle
-            updated.subtitle     = trimmedSubtitle.isEmpty ? nil : trimmedSubtitle
-            updated.leftTitle    = trimmedLeft.isEmpty ? nil : trimmedLeft
-            updated.rightTitle   = trimmedRight.isEmpty ? nil : trimmedRight
+            updated.title          = trimmedTitle
+            updated.subtitle       = trimmedSubtitle.isEmpty ? nil : trimmedSubtitle
+            updated.leftTitle      = trimmedLeft.isEmpty ? nil : trimmedLeft
+            updated.rightTitle     = trimmedRight.isEmpty ? nil : trimmedRight
             updated.displayModeRaw = displayMode.rawValue
-            updated.accessTierRaw = accessTier.rawValue
-            updated.isPublished  = isPublished
-            updated.updatedAt    = .now
+            updated.accessTierRaw  = accessTier.rawValue
+            updated.isPublished    = isPublished
+            updated.updatedAt      = .now
             store.update(updated)
         } else {
             let new = FSPairsSet(
-                id:           FirestoreID.make(name: trimmedTitle),
-                collectionId: collectionId,
-                title:        trimmedTitle,
-                subtitle:     trimmedSubtitle.isEmpty ? nil : trimmedSubtitle,
-                leftTitle:    trimmedLeft.isEmpty ? nil : trimmedLeft,
-                rightTitle:   trimmedRight.isEmpty ? nil : trimmedRight,
+                id:             FirestoreID.make(name: trimmedTitle),
+                collectionId:   collectionId,
+                title:          trimmedTitle,
+                subtitle:       trimmedSubtitle.isEmpty ? nil : trimmedSubtitle,
+                leftTitle:      trimmedLeft.isEmpty ? nil : trimmedLeft,
+                rightTitle:     trimmedRight.isEmpty ? nil : trimmedRight,
                 displayModeRaw: displayMode.rawValue,
-                accessTierRaw: accessTier.rawValue,
-                items:        [],
-                isPublished:  isPublished,
-                updatedAt:    .now,
-                createdAt:    .now
+                accessTierRaw:  accessTier.rawValue,
+                items:          [],
+                isPublished:    isPublished,
+                updatedAt:      .now,
+                createdAt:      .now
             )
             store.add(new)
         }
