@@ -22,6 +22,7 @@
 		47631B642F86E379002F1666 /* DictionaryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783C2F794487005FBDFE /* DictionaryModels.swift */; };
 		47631B652F86E41E002F1666 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C781D2F794487005FBDFE /* Logger.swift */; };
 		47631B662F86E460002F1666 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783F2F794487005FBDFE /* Secrets.swift */; };
+		47631B7B2F86F048002F1666 /* Translation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47631B7A2F86F048002F1666 /* Translation.framework */; };
 		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		478C784F2F794487005FBDFE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppFeature.swift */; };
 		478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78122F794487005FBDFE /* SwipeLingoApp.swift */; };
@@ -154,6 +155,7 @@
 		474F1FEB2F7DAAD900128E83 /* CircleStrokeButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleStrokeButtonView.swift; sourceTree = "<group>"; };
 		47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingConfirmView.swift; sourceTree = "<group>"; };
 		47631B582F86B82F002F1666 /* NativeLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLanguage.swift; sourceTree = "<group>"; };
+		47631B7A2F86F048002F1666 /* Translation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Translation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk/System/Library/Frameworks/Translation.framework; sourceTree = DEVELOPER_DIR; };
 		478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwipeLingoShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		478C78112F794487005FBDFE /* AppFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
 		478C78122F794487005FBDFE /* SwipeLingoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoApp.swift; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47631B7B2F86F048002F1666 /* Translation.framework in Frameworks */,
 				47C09A982F853F060049858B /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -540,6 +543,7 @@
 		47C09A942F853EFF0049858B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				47631B7A2F86F048002F1666 /* Translation.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1302,7 +1306,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = PELSH.SwipeLingoAdmin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1347,7 +1351,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = PELSH.SwipeLingoAdmin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
