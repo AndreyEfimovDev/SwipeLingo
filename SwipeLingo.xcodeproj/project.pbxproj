@@ -16,6 +16,12 @@
 		47631B032F86949F002F1666 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78462F794487005FBDFE /* DictionaryService.swift */; };
 		47631B572F86B78F002F1666 /* OnboardingConfirmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */; };
 		47631B592F86B82F002F1666 /* NativeLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47631B582F86B82F002F1666 /* NativeLanguage.swift */; };
+		47631B612F86E21F002F1666 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C781A2F794487005FBDFE /* Colors.swift */; };
+		47631B622F86E295002F1666 /* NativeLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47631B582F86B82F002F1666 /* NativeLanguage.swift */; };
+		47631B632F86E2BF002F1666 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 478C78432F794487005FBDFE /* Assets.xcassets */; };
+		47631B642F86E379002F1666 /* DictionaryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783C2F794487005FBDFE /* DictionaryModels.swift */; };
+		47631B652F86E41E002F1666 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C781D2F794487005FBDFE /* Logger.swift */; };
+		47631B662F86E460002F1666 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783F2F794487005FBDFE /* Secrets.swift */; };
 		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		478C784F2F794487005FBDFE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppFeature.swift */; };
 		478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78122F794487005FBDFE /* SwipeLingoApp.swift */; };
@@ -745,6 +751,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47631B632F86E2BF002F1666 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -862,10 +869,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				47C09A8B2F853D7B0049858B /* CollectionType.swift in Sources */,
+				47631B642F86E379002F1666 /* DictionaryModels.swift in Sources */,
 				47631B032F86949F002F1666 /* DictionaryService.swift in Sources */,
 				47631B022F86941C002F1666 /* CEFRLevel.swift in Sources */,
+				47631B662F86E460002F1666 /* Secrets.swift in Sources */,
 				47C09A872F853B940049858B /* FirestoreModels.swift in Sources */,
 				47C09A882F853D360049858B /* AccessTier.swift in Sources */,
+				47631B652F86E41E002F1666 /* Logger.swift in Sources */,
+				47631B622F86E295002F1666 /* NativeLanguage.swift in Sources */,
+				47631B612F86E21F002F1666 /* Colors.swift in Sources */,
 				47C09A8D2F853D8B0049858B /* DisplayMode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
