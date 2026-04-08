@@ -32,26 +32,6 @@ final class DictionaryLookupViewModel {
 
     private let service = DictionaryService()
 
-    // MARK: - Language helpers
-
-    /// Single source of truth for supported native languages.
-    /// Used by SettingsView (picker) and targetLangId (BCP-47 mapping).
-    static let supportedLanguages: [(name: String, langId: String)] = [
-        ("Русский",   "ru"),
-        ("中文",       "zh"),
-        ("Español",   "es"),
-        ("Français",  "fr"),
-        ("العربية",   "ar"),
-        ("Português", "pt"),
-        ("Deutsch",   "de"),
-        ("日本語",     "ja"),
-    ]
-
-    /// Maps display name ("Русский", "Español" …) → BCP-47 identifier used by Translation framework.
-    static func targetLangId(for nativeLanguage: String) -> String {
-        supportedLanguages.first(where: { $0.name == nativeLanguage })?.langId
-            ?? String(nativeLanguage.prefix(2)).lowercased()
-    }
 
     // MARK: Actions
 
@@ -149,7 +129,7 @@ struct DictionaryLookupView: View {
     @State private var viewModel = DictionaryLookupViewModel()
 
     // Reads native language from the same AppStorage key used across the app.
-    @AppStorage("nativeLanguage")      private var nativeLanguage      = "Русский"
+    @AppStorage("nativeLanguage")      private var nativeLanguage: NativeLanguage = .russian
     @AppStorage("ttsVoiceIdentifier")  private var ttsVoiceIdentifier  = ""
     @AppStorage("englishVariant")      private var englishVariant      = "en-US"
 
@@ -162,7 +142,7 @@ struct DictionaryLookupView: View {
         #if !targetEnvironment(simulator)
         translationConfig = TranslationSession.Configuration(
             source: Locale.Language(identifier: "en"),
-            target: Locale.Language(identifier: DictionaryLookupViewModel.targetLangId(for: nativeLanguage))
+            target: Locale.Language(identifier: nativeLanguage.langId)
         )
         #endif
     }
