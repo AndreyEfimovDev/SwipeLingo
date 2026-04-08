@@ -55,7 +55,7 @@ struct OnboardingWelcomeView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
-            .background(Capsule().fill(Color.myColors.myAccent.opacity(0.07)))
+            .background(.ultraThinMaterial, in: Capsule())
 
             Spacer()
 

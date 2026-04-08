@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - AccessTier
 // Контролирует доступ к контенту в зависимости от плана подписки пользователя.
-// Применяется к CardSet и DynamicSet.
+// Применяется к CardSet и PairsSet.
 // Планы: Free / Go / Pro
 
 enum AccessTier: String, Codable, CaseIterable {

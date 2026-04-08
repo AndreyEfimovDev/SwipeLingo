@@ -27,6 +27,23 @@ struct FirestoreImportService {
         log("Developer content imported (stub)", level: .info)
     }
 
+    // MARK: - FSCard → Card conversion
+
+    /// Converts an FSCard (Firestore model) into a SwiftData Card.
+    /// - Parameters:
+    ///   - fsCard: The Firestore card to convert.
+    ///   - swiftDataSetId: The SwiftData UUID of the parent CardSet (not the Firestore string ID).
+    func card(from fsCard: FSCard, swiftDataSetId: UUID) -> Card {
+        Card(
+            en:                fsCard.en,
+            item:              fsCard.item,
+            sampleEN:          fsCard.sampleEN,
+            sampleItem:        fsCard.sampleItem,
+            dictTranscription: fsCard.transcription,
+            setId:             swiftDataSetId
+        )
+    }
+
     // MARK: - Stub implementation
     // TODO: Delete importStubContent() and implement fetchFromFirestore() instead.
 

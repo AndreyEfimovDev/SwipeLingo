@@ -46,16 +46,13 @@ struct OnboardingNameView: View {
                     .foregroundStyle(Color.myColors.myAccent)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
-                    .background(
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.myColors.myAccent.opacity(0.06))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(isFocused
-                                            ? Color.myColors.myBlue.opacity(0.5)
-                                            : Color.clear,
-                                            lineWidth: 1.5)
-                            )
+                            .stroke(isFocused
+                                    ? Color.myColors.myBlue.opacity(0.5)
+                                    : Color.clear,
+                                    lineWidth: 1.5)
                     )
                     .focused($isFocused)
                     .submitLabel(.done)

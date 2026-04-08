@@ -1,19 +1,19 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - DynamicCardsView
+// MARK: - PairsView
 // Главный экран раздела Pairs.
-// Layout: pile badge вверху, тройка (toggle | Set Pile | toggle) по центру, Play внизу.
+// Layout: pile badge (кнопка) вверху, два toggle по краям, Play внизу.
 
-struct DynamicCardsView: View {
+struct PairsView: View {
 
     @Environment(AppViewModel.self) private var appViewModel
 
-    @Query(sort: \DynamicSet.createdAt, order: .reverse) private var allSets: [DynamicSet]
+    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets: [PairsSet]
     @Query private var allPiles: [PairsPile]
 
     @AppStorage("srsEnabled")           private var srsEnabled: Bool = true
-    @AppStorage("dynamicAnimationMode") private var animationMode: AnimationMode = .manual
+    @AppStorage("pairsAnimationMode") private var animationMode: AnimationMode = .manual
 
     @State private var isDueMode = false
 
@@ -21,16 +21,16 @@ struct DynamicCardsView: View {
 
     private var activePile: PairsPile? { allPiles.first { $0.isActive } }
 
-    private var candidateSets: [DynamicSet] {
+    private var candidateSets: [PairsSet] {
         if let pile = activePile { return service.sets(for: pile, from: allSets) }
         return allSets
     }
 
-    private var dueSets: [DynamicSet] {
+    private var dueSets: [PairsSet] {
         candidateSets.filter { $0.dueDate <= Date.now }
     }
 
-    private var displayedSets: [DynamicSet] {
+    private var displayedSets: [PairsSet] {
         isDueMode && srsEnabled ? dueSets : candidateSets
     }
 
@@ -63,12 +63,6 @@ struct DynamicCardsView: View {
                     }
                 }
                 Divider()
-                Button { appViewModel.activeSheet = .pairsLibrary } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "books.vertical").frame(width: 20)
-                        Text("Library")
-                    }
-                }
                 Button { appViewModel.activeSheet = .statistics } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
@@ -82,9 +76,11 @@ struct DynamicCardsView: View {
                     }
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.myColors.myBlue)
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    .frame(width: 32, height: 32)
+                    .background(.ultraThinMaterial, in: Circle())
             }
         }
     }
@@ -101,26 +97,14 @@ struct DynamicCardsView: View {
     private var playScreen: some View {
         VStack(spacing: 0) {
 
-            // Pile badge
+            // Pile badge — кнопка, открывает библиотеку для смены pile
             pileBadge
                 .padding(.top, 8)
 
             Spacer()
 
-            // Центральная тройка: toggle | Set Pile | toggle
-            controlsRow
-
-            Spacer()
-
-            // Play button / Caught up — ZStack резервирует высоту под бо́льший элемент,
-            // переключение через opacity не вызывает прыжков layout
-            ZStack {
-                playButton
-                    .opacity(displayedSets.isEmpty ? 0 : 1)
-                caughtUpView
-                    .opacity(displayedSets.isEmpty ? 1 : 0)
-            }
-            .animation(.easeInOut(duration: 0.2), value: displayedSets.isEmpty)
+            // [Auto/Manual] · [Play / Caught up] · [Due/All]
+            mainRow
 
             Spacer()
         }
@@ -128,34 +112,16 @@ struct DynamicCardsView: View {
         .background(Color.myColors.myBackground.ignoresSafeArea())
     }
 
-    // MARK: - Pile Badge
+    // MARK: - Main Row
 
-    private var pileBadge: some View {
-        Text(activePile?.name ?? "All Sets")
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(
-                activePile != nil
-                    ? Color.myColors.myAccent.opacity(0.75)
-                    : Color.myColors.myAccent.opacity(0.35)
-            )
-            .padding(.horizontal, 20)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(Color.myColors.myAccent.opacity(activePile != nil ? 0.09 : 0.05))
-            )
-    }
-
-    // MARK: - Controls Row
-
-    private var controlsRow: some View {
+    private var mainRow: some View {
         HStack(alignment: .center, spacing: 0) {
 
             // Auto / Manual
             PairsVerticalToggle(
                 topLabel:    "Auto",
                 bottomLabel: "Manual",
-                activeColor: Color.myColors.myBlue,
+                activeColor: Color.myColors.myPurple,
                 isOn: Binding(
                     get: { animationMode == .automatic },
                     set: { animationMode = $0 ? .automatic : .manual }
@@ -165,8 +131,14 @@ struct DynamicCardsView: View {
 
             Spacer()
 
-            // Set Pile — центральный элемент
-            setPileButton
+            // Play / Caught up — ZStack резервирует размер под бо́льший элемент
+            ZStack {
+                playButton
+                    .opacity(displayedSets.isEmpty ? 0 : 1)
+                caughtUpCenter
+                    .opacity(displayedSets.isEmpty ? 1 : 0)
+            }
+            .animation(.easeInOut(duration: 0.2), value: displayedSets.isEmpty)
 
             Spacer()
 
@@ -183,25 +155,31 @@ struct DynamicCardsView: View {
                 Color.clear.frame(width: 80)
             }
         }
-        .padding(.horizontal, 32)
+        .padding(.vertical, 24)
+        .padding(.horizontal, 24)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28))
+        .padding(.horizontal, 24)
     }
 
-    // MARK: - Set Pile Button
+    // MARK: - Pile Badge
 
-    private var setPileButton: some View {
+    private var pileBadge: some View {
         Button { appViewModel.activeSheet = .pairsLibrary } label: {
-            VStack(spacing: 6) {
-                Image(systemName: activePile != nil ? "folder.fill" : "folder.badge.plus")
-                    .font(.system(size: 22))
-                Text("Set Pile")
+            HStack(spacing: 6) {
+                Text(activePile?.name ?? "All Sets")
                     .font(.subheadline.weight(.medium))
+                    .foregroundStyle(
+                        activePile != nil
+                            ? Color.myColors.myAccent.opacity(0.75)
+                            : Color.myColors.myAccent.opacity(0.35)
+                    )
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
             }
-            .foregroundStyle(Color.myColors.myBlue)
-            .frame(width: 100, height: 76)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.myColors.myBlue.opacity(0.08))
-            )
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+            .background(.ultraThinMaterial, in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -217,9 +195,7 @@ struct DynamicCardsView: View {
         ) {
             VStack(spacing: 8) {
                 Image(systemName: "play.circle.fill")
-                    .font(.system(size: 108))
-//                Text("Play")
-//                    .font(.largeTitle.weight(.semibold))
+                    .font(.system(size: 88))
                 Text("\(displayedSets.count) \(displayedSets.count == 1 ? "set" : "sets")")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
@@ -229,30 +205,31 @@ struct DynamicCardsView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Caught Up
+    // MARK: - Caught Up (компактный, центр mainRow)
 
-    private var caughtUpView: some View {
+    private var caughtUpCenter: some View {
         VStack(spacing: 10) {
             Image(systemName: "checkmark.circle")
-                .font(.system(size: 52))
+                .font(.system(size: 64))
                 .foregroundStyle(Color.myColors.myGreen.opacity(0.7))
-            Text("All caught up!")
-                .font(.title3.bold())
-                .foregroundStyle(Color.myColors.myAccent)
-            Text("No sets due for review")
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
-            Button { isDueMode = false } label: {
+            Text("Nothing due right now")
+                .font(.caption)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+            NavigationLink(
+                destination: PairsSessionView(
+                    sets: candidateSets,
+                    pileName: activePile?.name ?? "Pairs"
+                )
+            ) {
                 Text("Play All")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(Color.myColors.myBlue)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .foregroundStyle(Color.myColors.myBlue)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(Color.myColors.myBlue.opacity(0.1))
+                    .clipShape(Capsule())
             }
             .buttonStyle(.plain)
-            .padding(.top, 4)
         }
     }
 
@@ -260,6 +237,9 @@ struct DynamicCardsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
+            pileBadge
+                .padding(.bottom, 8)
+
             Image(systemName: "square.stack")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
@@ -273,18 +253,6 @@ struct DynamicCardsView: View {
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-
-            Button { appViewModel.activeSheet = .pairsLibrary } label: {
-                Text("Set Pile")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.myColors.myBlue)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(Color.myColors.myBlue.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.myColors.myBackground.ignoresSafeArea())

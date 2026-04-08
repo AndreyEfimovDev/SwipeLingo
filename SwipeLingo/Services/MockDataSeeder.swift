@@ -152,17 +152,17 @@ struct MockDataSeeder {
         )
     }
 
-    // MARK: - Mock DynamicSets
+    // MARK: - Mock PairsSets
 
     /// Seeds mock Pairs sets for UI testing.
-    /// Safe to call on every launch — skips if any DynamicSet already exists.
-    #warning("STUB: Mock DynamicSets are for UI testing only. Remove before App Store release.")
-    static func ensureMockDynamicSets(into context: ModelContext) {
-        let existing = context.fetchWithErrorHandling(FetchDescriptor<DynamicSet>())
+    /// Safe to call on every launch — skips if any PairsSet already exists.
+    #warning("STUB: Mock PairsSets are for UI testing only. Remove before App Store release.")
+    static func ensureMockPairsSets(into context: ModelContext) {
+        let existing = context.fetchWithErrorHandling(FetchDescriptor<PairsSet>())
         guard existing.isEmpty else { return }
 
         // Set 1: B2 → C1, sequential mode (left появляется первым, потом right)
-        let set1 = DynamicSet(
+        let set1 = PairsSet(
             title: "B2 → C1 Vocabulary",
             subtitle: "Upgrade your word choice",
             leftTitle: "B2",
@@ -170,18 +170,18 @@ struct MockDataSeeder {
             displayMode: .sequential,
             accessTier: .free,
             items: [
-                DynamicPair(left: DynamicItem(text: "important"),    right: DynamicItem(text: "pivotal")),
-                DynamicPair(left: DynamicItem(text: "use"),          right: DynamicItem(text: "utilize")),
-                DynamicPair(left: DynamicItem(text: "show"),         right: DynamicItem(text: "demonstrate")),
-                DynamicPair(left: DynamicItem(text: "think about"),  right: DynamicItem(text: "contemplate")),
-                DynamicPair(left: DynamicItem(text: "change"),       right: DynamicItem(text: "transform")),
-                DynamicPair(left: DynamicItem(text: "get better"),   right: DynamicItem(text: "improve")),
+                Pair(left: PairSide(text: "important"),    right: PairSide(text: "pivotal")),
+                Pair(left: PairSide(text: "use"),          right: PairSide(text: "utilize")),
+                Pair(left: PairSide(text: "show"),         right: PairSide(text: "demonstrate")),
+                Pair(left: PairSide(text: "think about"),  right: PairSide(text: "contemplate")),
+                Pair(left: PairSide(text: "change"),       right: PairSide(text: "transform")),
+                Pair(left: PairSide(text: "get better"),   right: PairSide(text: "improve")),
             ]
         )
         context.insert(set1)
 
         // Set 2: Basic → Advanced, parallel mode (оба появляются одновременно)
-        let set2 = DynamicSet(
+        let set2 = PairsSet(
             title: "Everyday → Advanced",
             subtitle: "Replace weak intensifiers",
             leftTitle: "Basic",
@@ -189,18 +189,18 @@ struct MockDataSeeder {
             displayMode: .parallel,
             accessTier: .go,
             items: [
-                DynamicPair(left: DynamicItem(text: "very tired"),     right: DynamicItem(text: "exhausted")),
-                DynamicPair(left: DynamicItem(text: "very happy"),     right: DynamicItem(text: "elated")),
-                DynamicPair(left: DynamicItem(text: "very angry"),     right: DynamicItem(text: "furious")),
-                DynamicPair(left: DynamicItem(text: "very sad"),       right: DynamicItem(text: "despondent")),
-                DynamicPair(left: DynamicItem(text: "very surprised"), right: DynamicItem(text: "astonished")),
-                DynamicPair(left: DynamicItem(text: "very scared"),    right: DynamicItem(text: "terrified")),
+                Pair(left: PairSide(text: "very tired"),     right: PairSide(text: "exhausted")),
+                Pair(left: PairSide(text: "very happy"),     right: PairSide(text: "elated")),
+                Pair(left: PairSide(text: "very angry"),     right: PairSide(text: "furious")),
+                Pair(left: PairSide(text: "very sad"),       right: PairSide(text: "despondent")),
+                Pair(left: PairSide(text: "very surprised"), right: PairSide(text: "astonished")),
+                Pair(left: PairSide(text: "very scared"),    right: PairSide(text: "terrified")),
             ]
         )
         context.insert(set2)
 
         // Set 3: Informal → Formal, parallel mode, Pro tier (тест badge + длинный список для тест скролла)
-        let set3 = DynamicSet(
+        let set3 = PairsSet(
             title: "Informal → Formal",
             subtitle: "Business writing register",
             leftTitle: "Informal",
@@ -208,21 +208,21 @@ struct MockDataSeeder {
             displayMode: .parallel,
             accessTier: .pro,
             items: [
-                DynamicPair(left: DynamicItem(text: "get in touch"),  right: DynamicItem(text: "contact")),
-                DynamicPair(left: DynamicItem(text: "find out"),      right: DynamicItem(text: "ascertain")),
-                DynamicPair(left: DynamicItem(text: "go up"),         right: DynamicItem(text: "increase")),
-                DynamicPair(left: DynamicItem(text: "look into"),     right: DynamicItem(text: "investigate")),
-                DynamicPair(left: DynamicItem(text: "set up"),        right: DynamicItem(text: "establish")),
-                DynamicPair(left: DynamicItem(text: "think about"),   right: DynamicItem(text: "consider")),
-                DynamicPair(left: DynamicItem(text: "make sure"),     right: DynamicItem(text: "ensure")),
-                DynamicPair(left: DynamicItem(text: "talk about"),    right: DynamicItem(text: "discuss")),
-                DynamicPair(left: DynamicItem(text: "get rid of"),    right: DynamicItem(text: "eliminate")),
-                DynamicPair(left: DynamicItem(text: "bring up"),      right: DynamicItem(text: "raise")),
-                DynamicPair(left: DynamicItem(text: "point out"),     right: DynamicItem(text: "indicate")),
-                DynamicPair(left: DynamicItem(text: "go along with"), right: DynamicItem(text: "comply with")),
-                DynamicPair(left: DynamicItem(text: "check out"),     right: DynamicItem(text: "examine")),
-                DynamicPair(left: DynamicItem(text: "come up with"),  right: DynamicItem(text: "propose")),
-                DynamicPair(left: DynamicItem(text: "wrap up"),       right: DynamicItem(text: "conclude")),
+                Pair(left: PairSide(text: "get in touch"),  right: PairSide(text: "contact")),
+                Pair(left: PairSide(text: "find out"),      right: PairSide(text: "ascertain")),
+                Pair(left: PairSide(text: "go up"),         right: PairSide(text: "increase")),
+                Pair(left: PairSide(text: "look into"),     right: PairSide(text: "investigate")),
+                Pair(left: PairSide(text: "set up"),        right: PairSide(text: "establish")),
+                Pair(left: PairSide(text: "think about"),   right: PairSide(text: "consider")),
+                Pair(left: PairSide(text: "make sure"),     right: PairSide(text: "ensure")),
+                Pair(left: PairSide(text: "talk about"),    right: PairSide(text: "discuss")),
+                Pair(left: PairSide(text: "get rid of"),    right: PairSide(text: "eliminate")),
+                Pair(left: PairSide(text: "bring up"),      right: PairSide(text: "raise")),
+                Pair(left: PairSide(text: "point out"),     right: PairSide(text: "indicate")),
+                Pair(left: PairSide(text: "go along with"), right: PairSide(text: "comply with")),
+                Pair(left: PairSide(text: "check out"),     right: PairSide(text: "examine")),
+                Pair(left: PairSide(text: "come up with"),  right: PairSide(text: "propose")),
+                Pair(left: PairSide(text: "wrap up"),       right: PairSide(text: "conclude")),
             ]
         )
         context.insert(set3)
