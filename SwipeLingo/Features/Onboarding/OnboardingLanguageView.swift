@@ -79,16 +79,15 @@ struct OnboardingLanguageView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected
-                          ? Color.myColors.myBlue.opacity(0.08)
-                          : Color.myColors.myAccent.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isSelected ? Color.myColors.myBlue.opacity(0.3) : Color.clear,
-                                    lineWidth: 1.5)
-                    )
+                    .fill(isSelected ? Color.myColors.myBlue.opacity(0.08) : .clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.myColors.myBlue.opacity(0.3) : Color.clear,
+                            lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)

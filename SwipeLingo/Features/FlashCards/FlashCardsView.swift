@@ -29,11 +29,15 @@ struct FlashCardsView: View {
 
     var body: some View {
         NavigationStack {
-            content
-                .animation(.spring(duration: 0.35, bounce: 0.1), value: viewModel.sessionID)
-                .navigationTitle(viewModel.activePileName.isEmpty ? "Study" : viewModel.activePileName)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar { toolbarContent }
+            VStack(spacing: 0) {
+                pileBadge
+                    .padding(.top, 4)
+                content
+                    .animation(.spring(duration: 0.35, bounce: 0.1), value: viewModel.sessionID)
+            }
+            .navigationTitle("Cards")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
         }
         .onAppear {
             viewModel.startSessionIfNeeded(
@@ -125,6 +129,31 @@ struct FlashCardsView: View {
         }
     }
 
+    // MARK: - Pile Badge
+
+    private var pileBadge: some View {
+        let name = viewModel.activePileName
+        let hasActivePile = !name.isEmpty && name != "All Cards"
+        return Button { appViewModel.activeSheet = .cardsLibrary } label: {
+            HStack(spacing: 6) {
+                Text(hasActivePile ? name : "All Cards")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(
+                        hasActivePile
+                            ? Color.myColors.myAccent.opacity(0.75)
+                            : Color.myColors.myAccent.opacity(0.35)
+                    )
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+            .background(.ultraThinMaterial, in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Caught-up Screen
 
     private var caughtUpView: some View {
@@ -193,12 +222,6 @@ struct FlashCardsView: View {
                     }
                 }
                 Divider()
-                Button { appViewModel.activeSheet = .cardsLibrary } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "books.vertical").frame(width: 20)
-                        Text("Library")
-                    }
-                }
                 Button { appViewModel.activeSheet = .statistics } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
@@ -212,9 +235,11 @@ struct FlashCardsView: View {
                     }
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.myColors.myBlue)
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    .frame(width: 32, height: 32)
+                    .background(.ultraThinMaterial, in: Circle())
             }
         }
     }

@@ -541,6 +541,11 @@ struct TinderCardsView: View {
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 24)
+            if !card.dictTranscription.isEmpty {
+                Text("[\(card.dictTranscription)]")
+                    .font(.system(size: 17, weight: .regular, design: .monospaced))
+                    .foregroundStyle(Color.myColors.mySecondary)
+            }
             audioButton(for: card.en, isTTS: true)
                 .font(.largeTitle)
             Spacer()
@@ -706,6 +711,11 @@ struct TinderCardsView: View {
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal, 24)
+                if !card.dictTranscription.isEmpty {
+                    Text("[\(card.dictTranscription)]")
+                        .font(.system(size: 17, weight: .regular, design: .monospaced))
+                        .foregroundStyle(Color.myColors.mySecondary)
+                }
                 audioButton(for: card.en, isTTS: true)
                     .font(.largeTitle)
                 Spacer()

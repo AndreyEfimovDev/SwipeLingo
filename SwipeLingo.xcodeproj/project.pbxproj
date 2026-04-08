@@ -12,6 +12,8 @@
 		474F1FE82F7D304B00128E83 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE72F7D304B00128E83 /* SearchBar.swift */; };
 		474F1FEA2F7DAA9F00128E83 /* OnTopButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE92F7DAA9F00128E83 /* OnTopButton.swift */; };
 		474F1FEC2F7DAAD900128E83 /* CircleStrokeButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FEB2F7DAAD900128E83 /* CircleStrokeButtonView.swift */; };
+		47631B022F86941C002F1666 /* CEFRLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783A2F794487005FBDFE /* CEFRLevel.swift */; };
+		47631B032F86949F002F1666 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78462F794487005FBDFE /* DictionaryService.swift */; };
 		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		478C784F2F794487005FBDFE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppFeature.swift */; };
 		478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78122F794487005FBDFE /* SwipeLingoApp.swift */; };
@@ -425,11 +427,11 @@
 		478C78362F794487005FBDFE /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				47C09A522F8531C20049858B /* Pairs */,
 				47C099F52F84F0B80049858B /* Onboarding */,
 				478C78352F794487005FBDFE /* FlashCards */,
-				478C782C2F794487005FBDFE /* Settings */,
+				47C09A522F8531C20049858B /* Pairs */,
 				478C782E2F794487005FBDFE /* Statistics */,
+				478C782C2F794487005FBDFE /* Settings */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -655,7 +657,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2640;
-				LastUpgradeCheck = 2630;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					474BFB612F3C8255006E639B = {
 						CreatedOnToolsVersion = 26.2;
@@ -852,6 +854,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				47C09A8B2F853D7B0049858B /* CollectionType.swift in Sources */,
+				47631B032F86949F002F1666 /* DictionaryService.swift in Sources */,
+				47631B022F86941C002F1666 /* CEFRLevel.swift in Sources */,
 				47C09A872F853B940049858B /* FirestoreModels.swift in Sources */,
 				47C09A882F853D360049858B /* AccessTier.swift in Sources */,
 				47C09A8D2F853D8B0049858B /* DisplayMode.swift in Sources */,
@@ -1256,6 +1260,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = USBAK5HKC6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1300,6 +1305,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = USBAK5HKC6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
