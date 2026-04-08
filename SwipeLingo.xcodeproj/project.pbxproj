@@ -387,8 +387,8 @@
 		478C782C2F794487005FBDFE /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */,
 				478C782A2F794487005FBDFE /* SettingsView.swift */,
+				47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */,
 				478C782B2F794487005FBDFE /* VoiceSettingsView.swift */,
 				47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */,
 			);
