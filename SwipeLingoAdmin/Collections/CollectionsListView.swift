@@ -105,12 +105,19 @@ private struct CollectionRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 7))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(collection.name)
-                    .font(.body.weight(.medium))
-                    .lineLimit(1)
-                Text(collection.isPublished ? "Published" : "Draft")
-                    .font(.caption)
-                    .foregroundStyle(collection.isPublished ? .green : .secondary)
+                HStack(spacing: 6) {
+                    Text(collection.name)
+                        .font(.body.weight(.medium))
+                        .lineLimit(1)
+                    if !collection.isSynced {
+                        Text("New")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(.green, in: Capsule())
+                    }
+                }
             }
         }
         .padding(.vertical, 2)
@@ -129,7 +136,7 @@ private struct CollectionRow: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
-            Image(systemName: collection.collectionType == .cards ? "rectangle.stack" : "square.grid.2x2")
+            Image(systemName: collection.type == .cards ? "rectangle.stack" : "square.grid.2x2")
                 .foregroundStyle(.blue)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

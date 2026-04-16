@@ -19,29 +19,56 @@ struct CardsListView: View {
     @State private var showImport:    Bool    = false
     @State private var editingCard:   FSCard? = nil
     @State private var selectedCard:  FSCard? = nil
-
-    private var cards: [FSCard] {
-        store.cards(for: setId)
-    }
+    @State private var selectedTag:   String? = nil
 
     private var cardSet: FSCardSet? {
         store.cardSets.first { $0.id == setId }
     }
 
+    private var allCards: [FSCard] {
+        store.cards(for: setId)
+    }
+
+    private var cards: [FSCard] {
+        guard let tag = selectedTag else { return allCards }
+        return allCards.filter { $0.tag == tag }
+    }
+
+    private var uniqueTags: [String] {
+        Array(Set(allCards.compactMap { $0.tag.isEmpty ? nil : $0.tag })).sorted()
+    }
+
     // MARK: Body
 
     var body: some View {
-        Group {
-            if cards.isEmpty {
-                emptyState
-            } else {
-                list
+        VStack(spacing: 0) {
+            if uniqueTags.count > 1 {
+                tagFilterBar
+            }
+            Group {
+                if cards.isEmpty {
+                    emptyState
+                } else {
+                    list
+                }
             }
         }
         .navigationTitle(setName)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text(setName).font(.headline)
+                HStack(spacing: 8) {
+                    if let level = cardSet?.cefrLevel {
+                        Text(level.displayCode)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(level.color, in: RoundedRectangle(cornerRadius: 5))
+                    }
+                    Text(setName)
+                        .font(.headline)
+                }
+                .padding(.horizontal)
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -61,11 +88,7 @@ struct CardsListView: View {
             }
         }
         .sheet(isPresented: $showImport) {
-            ImportCardsSheet(
-                setId:        setId,
-                defaultLevel: cardSet.map { CEFRLevel(rawValue: $0.level) ?? .b1 } ?? .b1,
-                defaultTier:  cardSet?.accessTier ?? .free
-            )
+            ImportCardsSheet(setId: setId)
         }
         .sheet(isPresented: $showNewEditor) {
             NavigationStack {
@@ -89,6 +112,42 @@ struct CardsListView: View {
                 editingCard  = card
             }
         }
+    }
+
+    // MARK: Tag Filter Bar
+
+    private var tagFilterBar: some View {
+        VStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterChip(title: "All", isSelected: selectedTag == nil) {
+                        selectedTag = nil
+                    }
+                    ForEach(uniqueTags, id: \.self) { tag in
+                        filterChip(title: tag, isSelected: selectedTag == tag) {
+                            selectedTag = (selectedTag == tag) ? nil : tag
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+            .background(.bar)
+            Divider()
+        }
+    }
+
+    private func filterChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.12),
+                            in: Capsule())
+                .foregroundStyle(isSelected ? .white : .primary)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: List
@@ -148,16 +207,6 @@ private struct CardRow: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                // Уровень
-                if let level = CEFRLevel(rawValue: card.level) {
-                    Text(level.displayCode)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-                // Статус
-                Text(card.isPublished ? "Published" : "Draft")
-                    .font(.caption)
-                    .foregroundStyle(card.isPublished ? .green : .secondary)
             }
 
             // Строка 2: пример на EN
@@ -208,23 +257,10 @@ struct CardDetailView: View {
                 }
 
                 // ── Метаданные ────────────────────────────────
-                HStack(spacing: 16) {
-                    if !card.tag.isEmpty {
-                        Label(card.tag, systemImage: "tag")
-                            .font(.caption)
-                            .foregroundStyle(.blue)
-                    }
-                    if let level = CEFRLevel(rawValue: card.level) {
-                        Label(level.displayCode, systemImage: "chart.bar")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Label(card.accessTier.rawValue.capitalized, systemImage: "lock")
+                if !card.tag.isEmpty {
+                    Label(card.tag, systemImage: "tag")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Label(card.isPublished ? "Published" : "Draft", systemImage: card.isPublished ? "checkmark.circle" : "circle.dashed")
-                        .font(.caption)
-                        .foregroundStyle(card.isPublished ? .green : .secondary)
+                        .foregroundStyle(.blue)
                 }
 
                 Divider()

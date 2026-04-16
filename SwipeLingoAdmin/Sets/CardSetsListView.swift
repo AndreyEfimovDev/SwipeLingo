@@ -128,7 +128,7 @@ private struct CardSetRow: View {
                         .font(.caption)
                 }
                 .buttonStyle(.bordered)
-                .tint(set.deployStatus == .ready ? .blue : .orange)
+                .tint(.red)
             }
 
             // Status badge
@@ -140,19 +140,16 @@ private struct CardSetRow: View {
     @ViewBuilder
     private func deployStatusBadge(_ status: SetDeployStatus) -> some View {
         let color: Color = switch status {
-            case .draft:    .secondary
-            case .ready:    .blue
-            case .live:     .green
-            case .outdated: .orange
+            case .new:      .green
+            case .ready:    .red
+            case .live:     .blue
+            case .outdated: .yellow
         }
         Text(status.label)
-            .font(.caption)
+            .font(.caption.weight(.medium))
             .foregroundStyle(color)
     }
 }
 
 // MARK: - FSCardSet + helper
 
-private extension FSCardSet {
-    var cefrLevel: CEFRLevel { CEFRLevel(rawValue: level) ?? .b1 }
-}

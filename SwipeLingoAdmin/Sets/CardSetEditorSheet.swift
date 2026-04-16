@@ -15,8 +15,7 @@ struct CardSetEditorSheet: View {
     @State private var name:         String          = ""
     @State private var level:        CEFRLevel       = .b1
     @State private var accessTier:   AccessTier      = .go
-    @State private var deployStatus: SetDeployStatus = .draft
-    @State private var isPublished:  Bool            = false
+    @State private var deployStatus: SetDeployStatus = .new
 
     private var isEditing: Bool { cardSet != nil }
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -45,7 +44,7 @@ struct CardSetEditorSheet: View {
                         }
                         .onChange(of: level) { _, newLevel in
                             switch newLevel {
-                            case .a0a1, .a2: accessTier = .free
+                            case .a1, .a2: accessTier = .free
                             case .b1, .b2:   accessTier = .go
                             case .c1, .c2:   accessTier = .pro
                             }
@@ -63,7 +62,7 @@ struct CardSetEditorSheet: View {
                     // ── Status ───────────────────────────────────
                     GroupBox("Status") {
                         Picker("Deploy Status", selection: $deployStatus) {
-                            ForEach([SetDeployStatus.draft, .ready], id: \.self) { s in
+                            ForEach([SetDeployStatus.new, .ready], id: \.self) { s in
                                 Text(s.label).tag(s)
                             }
                         }
@@ -73,8 +72,6 @@ struct CardSetEditorSheet: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        Divider()
-                        Toggle("Published", isOn: $isPublished)
                     }
 
                     Spacer()
@@ -96,10 +93,9 @@ struct CardSetEditorSheet: View {
         .onAppear {
             if let s = cardSet {
                 name         = s.name
-                level        = CEFRLevel(rawValue: s.level) ?? .b1
+                level        = s.cefrLevel
                 accessTier   = s.accessTier
                 deployStatus = s.deployStatus
-                isPublished  = s.isPublished
             }
         }
     }
@@ -136,24 +132,22 @@ struct CardSetEditorSheet: View {
 
         if let existing = cardSet {
             var updated = existing
-            updated.name            = trimmedName
-            updated.level           = level.rawValue
-            updated.accessTierRaw   = accessTier.rawValue
-            updated.deployStatusRaw = deployStatus.rawValue
-            updated.isPublished     = isPublished
-            updated.updatedAt       = .now
+            updated.name         = trimmedName
+            updated.cefrLevel    = level
+            updated.accessTier   = accessTier
+            updated.deployStatus = deployStatus
+            updated.updatedAt    = .now
             store.update(updated)
         } else {
             let new = FSCardSet(
-                id:              FirestoreID.make(name: trimmedName),
-                collectionId:    collectionId,
-                name:            trimmedName,
-                level:           level.rawValue,
-                accessTierRaw:   accessTier.rawValue,
-                deployStatusRaw: SetDeployStatus.draft.rawValue,
-                isPublished:     isPublished,
-                updatedAt:       .now,
-                createdAt:       .now
+                id:           FirestoreID.make(name: trimmedName),
+                collectionId: collectionId,
+                name:         trimmedName,
+                cefrLevel:    level,
+                accessTier:   accessTier,
+                deployStatus: .new,
+                updatedAt:    .now,
+                createdAt:    .now
             )
             store.add(new)
         }

@@ -18,7 +18,6 @@ struct PairsSetEditorSheet: View {
     @State private var rightTitle:  String      = ""
     @State private var displayMode: DisplayMode = .parallel
     @State private var accessTier:  AccessTier  = .free
-    @State private var isPublished: Bool        = false
 
     private var isEditing: Bool { pairsSet != nil }
     private var canSave: Bool { !title.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -59,11 +58,6 @@ struct PairsSetEditorSheet: View {
                         }
                     }
 
-                    // ── Publishing ────────────────────────────────
-                    GroupBox("Publishing") {
-                        Toggle("Published", isOn: $isPublished)
-                    }
-
                     Spacer()
                 }
                 .padding(20)
@@ -88,7 +82,6 @@ struct PairsSetEditorSheet: View {
                 rightTitle  = s.rightTitle ?? ""
                 displayMode = s.displayMode
                 accessTier  = s.accessTier
-                isPublished = s.isPublished
             }
         }
     }
@@ -132,9 +125,8 @@ struct PairsSetEditorSheet: View {
             updated.subtitle       = trimmedSubtitle.isEmpty ? nil : trimmedSubtitle
             updated.leftTitle      = trimmedLeft.isEmpty ? nil : trimmedLeft
             updated.rightTitle     = trimmedRight.isEmpty ? nil : trimmedRight
-            updated.displayModeRaw = displayMode.rawValue
-            updated.accessTierRaw  = accessTier.rawValue
-            updated.isPublished    = isPublished
+            updated.displayMode = displayMode
+            updated.accessTier  = accessTier
             updated.updatedAt      = .now
             store.update(updated)
         } else {
@@ -145,10 +137,9 @@ struct PairsSetEditorSheet: View {
                 subtitle:       trimmedSubtitle.isEmpty ? nil : trimmedSubtitle,
                 leftTitle:      trimmedLeft.isEmpty ? nil : trimmedLeft,
                 rightTitle:     trimmedRight.isEmpty ? nil : trimmedRight,
-                displayModeRaw: displayMode.rawValue,
-                accessTierRaw:  accessTier.rawValue,
+                displayMode: displayMode,
+                accessTier:  accessTier,
                 items:          [],
-                isPublished:    isPublished,
                 updatedAt:      .now,
                 createdAt:      .now
             )
