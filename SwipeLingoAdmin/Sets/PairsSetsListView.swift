@@ -119,10 +119,6 @@ private struct PairsSetRow: View {
             }
 
             Spacer()
-
-            Text(set.isPublished ? "Published" : "Draft")
-                .font(.caption)
-                .foregroundStyle(set.isPublished ? .green : .secondary)
         }
         .padding(.vertical, 2)
     }

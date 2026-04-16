@@ -47,9 +47,7 @@ struct ImportCardsSheet: View {
     @Environment(AdminStore.self) private var store
     @Environment(\.dismiss)       private var dismiss
 
-    let setId:        String
-    let defaultLevel: CEFRLevel
-    let defaultTier:  AccessTier
+    let setId: String
 
     // MARK: State
 
@@ -399,9 +397,6 @@ struct ImportCardsSheet: View {
                 sampleEN:           draft.sampleEN,
                 sampleTranslations: sampleTranslationsDict,
                 tag:                tag,
-                level:              defaultLevel.rawValue,
-                accessTierRaw:      defaultTier.rawValue,
-                isPublished:        false,
                 updatedAt:          .now,
                 createdAt:          .now
             )

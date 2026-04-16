@@ -3,10 +3,17 @@ import SwiftUI
 // MARK: - AdminSection
 
 enum AdminSection: String, CaseIterable, Identifiable {
-    case cardsCollections = "Cards"
-    case pairsCollections = "Pairs"
+    case cardsCollections
+    case pairsCollections
 
-    var id: String { rawValue }
+    var id: String { label }
+
+    var label: String {
+        switch self {
+        case .cardsCollections: "Cards"
+        case .pairsCollections: "Pairs"
+        }
+    }
 
     var icon: String {
         switch self {
@@ -62,7 +69,7 @@ struct ContentView: View {
 
     private var sidebar: some View {
         List(AdminSection.allCases, selection: $selectedSection) { section in
-            Label(section.rawValue, systemImage: section.icon)
+            Label(section.label, systemImage: section.icon)
                 .tag(section)
         }
         .navigationSplitViewColumnWidth(min: 160, ideal: 180)

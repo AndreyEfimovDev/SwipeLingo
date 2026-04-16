@@ -27,7 +27,7 @@ final class AdminStore {
     // MARK: - Collections
 
     func collections(of type: CollectionType) -> [FSCollection] {
-        collections.filter { $0.collectionType == type }
+        collections.filter { $0.type == type }
     }
 
     func add(_ collection: FSCollection) {
@@ -104,7 +104,8 @@ final class AdminStore {
     private func markOutdatedIfLive(setId: String) {
         guard let idx = cardSets.firstIndex(where: { $0.id == setId }),
               cardSets[idx].deployStatus == .live else { return }
-        cardSets[idx].deployStatus = .outdated
+        cardSets[idx].deployStatus  = .outdated
+        cardSets[idx].updatedAt     = .now
     }
 
     // MARK: - PairsSets

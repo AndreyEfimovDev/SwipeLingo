@@ -6,7 +6,6 @@ import Translation
 // Форма создания / редактирования FSCard в SwipeLingoAdmin.
 // Auto-Fill: транскрипция через DictionaryService + переводы через Apple Translation
 // для всех незаполненных полей.
-// CEFR Level и Access Tier — read-only, наследуются из сета.
 
 struct AdminCardEditView: View {
 
@@ -27,27 +26,21 @@ struct AdminCardEditView: View {
             sampleEN: [],
             sampleTranslations: [:],
             tag: "",
-            level: CEFRLevel.b1.rawValue,
-            accessTierRaw: AccessTier.free.rawValue,
-            isPublished: false,
-            updatedAt: .now,
-            createdAt: .now
+            updatedAt:    .now,
+            createdAt:    .now
         )
 
         _en            = State(initialValue: c.en)
         _transcription = State(initialValue: c.transcription)
         _sampleEN      = State(initialValue: c.sampleEN.joined(separator: "\n"))
         _tagText       = State(initialValue: c.tag)
-        _level         = State(initialValue: CEFRLevel(rawValue: c.level) ?? .b1)
-        _accessTier    = State(initialValue: AccessTier(rawValue: c.accessTierRaw) ?? .free)
-        _isPublished   = State(initialValue: c.isPublished)
 
         var translationsInit: [String: String] = [:]
         var sampleTranslationsInit: [String: String] = [:]
         for lang in NativeLanguage.allCases {
-            translationsInit[lang.rawValue] = c.translations[lang.langId] ?? ""
+            translationsInit[lang.langId] = c.translations[lang.langId] ?? ""
             let samples = c.sampleTranslations[lang.langId] ?? []
-            sampleTranslationsInit[lang.rawValue] = samples.joined(separator: "\n")
+            sampleTranslationsInit[lang.langId] = samples.joined(separator: "\n")
         }
         _translations       = State(initialValue: translationsInit)
         _sampleTranslations = State(initialValue: sampleTranslationsInit)
@@ -65,11 +58,8 @@ struct AdminCardEditView: View {
     @State private var transcription:      String
     @State private var sampleEN:           String
     @State private var tagText:            String
-    @State private var level:              CEFRLevel
-    @State private var accessTier:         AccessTier
-    @State private var isPublished:        Bool
 
-    // [NativeLanguage.rawValue: text]
+    // [lang.langId: text]
     @State private var translations:       [String: String]
     @State private var sampleTranslations: [String: String]
 
@@ -171,21 +161,6 @@ struct AdminCardEditView: View {
 
                 Divider()
 
-                // ── Metadata (read-only level/tier) ───────────
-                GroupBox("Metadata") {
-                    LabeledContent("CEFR Level") {
-                        Text(level.displayCode)
-                            .foregroundStyle(.secondary)
-                    }
-                    Divider()
-                    LabeledContent("Access Tier") {
-                        Text(accessTier.rawValue.capitalized)
-                            .foregroundStyle(.secondary)
-                    }
-                    Divider()
-                    Toggle("Published", isOn: $isPublished)
-                }
-
                 Spacer()
             }
             .padding(20)
@@ -242,8 +217,8 @@ struct AdminCardEditView: View {
 
     private func binding(for lang: NativeLanguage, in dict: Binding<[String: String]>) -> Binding<String> {
         Binding(
-            get: { dict.wrappedValue[lang.rawValue] ?? "" },
-            set: { dict.wrappedValue[lang.rawValue] = $0 }
+            get: { dict.wrappedValue[lang.langId] ?? "" },
+            set: { dict.wrappedValue[lang.langId] = $0 }
         )
     }
 
@@ -309,7 +284,7 @@ struct AdminCardEditView: View {
 
         // Переводы — только пустые языки
         let emptyLangs = NativeLanguage.allCases.filter {
-            (translations[$0.rawValue] ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+            (translations[$0.langId] ?? "").trimmingCharacters(in: .whitespaces).isEmpty
         }
         guard !emptyLangs.isEmpty else {
             isAutoFilling = false
@@ -347,9 +322,9 @@ struct AdminCardEditView: View {
                 for response in responses {
                     switch response.clientIdentifier {
                     case "word":
-                        translations[lang.rawValue] = response.targetText
+                        translations[lang.langId] = response.targetText
                     case "sample":
-                        sampleTranslations[lang.rawValue] = response.targetText
+                        sampleTranslations[lang.langId] = response.targetText
                     default: break
                     }
                 }
@@ -382,10 +357,10 @@ struct AdminCardEditView: View {
         var sampleTranslationsDict: [String: [String]] = [:]
 
         for lang in NativeLanguage.allCases {
-            let text = (translations[lang.rawValue] ?? "").trimmingCharacters(in: .whitespaces)
+            let text = (translations[lang.langId] ?? "").trimmingCharacters(in: .whitespaces)
             if !text.isEmpty { translationsDict[lang.langId] = text }
 
-            let samples = lines(from: sampleTranslations[lang.rawValue] ?? "")
+            let samples = lines(from: sampleTranslations[lang.langId] ?? "")
             if !samples.isEmpty { sampleTranslationsDict[lang.langId] = samples }
         }
 
@@ -398,9 +373,6 @@ struct AdminCardEditView: View {
             sampleEN:           lines(from: sampleEN),
             sampleTranslations: sampleTranslationsDict,
             tag:                tagText.trimmingCharacters(in: .whitespaces),
-            level:              level.rawValue,
-            accessTierRaw:      accessTier.rawValue,
-            isPublished:        isPublished,
             updatedAt:          .now,
             createdAt:          existingCard?.createdAt ?? .now
         )

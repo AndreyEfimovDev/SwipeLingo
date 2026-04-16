@@ -47,13 +47,6 @@ struct CollectionEditorSheet: View {
                             Text(type == .cards ? "Cards" : "Pairs")
                                 .foregroundStyle(.secondary)
                         }
-                        if isEditing {
-                            Divider()
-                            LabeledContent("Status") {
-                                Text(collection?.isPublished == true ? "Published" : "Draft")
-                                    .foregroundStyle(collection?.isPublished == true ? .green : .secondary)
-                            }
-                        }
                     }
 
                     Spacer()
@@ -147,8 +140,7 @@ struct CollectionEditorSheet: View {
                 id: FirestoreID.make(name: trimmedName),
                 name: trimmedName,
                 icon: iconValue,
-                typeRaw: type.rawValue,
-                isPublished: false,
+                type: type,
                 updatedAt: .now,
                 createdAt: .now
             )
