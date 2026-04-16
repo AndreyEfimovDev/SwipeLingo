@@ -1,11 +1,12 @@
 import SwiftUI
+import Translation
 
 // MARK: - AdminCardEditView
 //
 // Форма создания / редактирования FSCard в SwipeLingoAdmin.
-// Phase 1: базовый редактор — EN слово, транскрипция, примеры EN,
-//          переводы на все 13 языков (NativeLanguage).
-// Phase 2: авто-обогащение через DictionaryService + Apple Translation.
+// Auto-Fill: транскрипция через DictionaryService + переводы через Apple Translation
+// для всех незаполненных полей.
+// CEFR Level и Access Tier — read-only, наследуются из сета.
 
 struct AdminCardEditView: View {
 
@@ -14,7 +15,8 @@ struct AdminCardEditView: View {
     /// Если card == nil — режим создания; иначе — редактирование.
     init(card: FSCard? = nil, setId: String, onSave: @escaping (FSCard) -> Void) {
         self.existingCard = card
-        self.onSave = onSave
+        self.setId        = setId
+        self.onSave       = onSave
 
         let c = card ?? FSCard(
             id: FirestoreID.make(name: ""),
@@ -24,6 +26,7 @@ struct AdminCardEditView: View {
             translations: [:],
             sampleEN: [],
             sampleTranslations: [:],
+            tag: "",
             level: CEFRLevel.b1.rawValue,
             accessTierRaw: AccessTier.free.rawValue,
             isPublished: false,
@@ -34,6 +37,7 @@ struct AdminCardEditView: View {
         _en            = State(initialValue: c.en)
         _transcription = State(initialValue: c.transcription)
         _sampleEN      = State(initialValue: c.sampleEN.joined(separator: "\n"))
+        _tagText       = State(initialValue: c.tag)
         _level         = State(initialValue: CEFRLevel(rawValue: c.level) ?? .b1)
         _accessTier    = State(initialValue: AccessTier(rawValue: c.accessTierRaw) ?? .free)
         _isPublished   = State(initialValue: c.isPublished)
@@ -54,11 +58,13 @@ struct AdminCardEditView: View {
     @Environment(\.dismiss) private var dismiss
 
     private let existingCard: FSCard?
-    private let onSave: (FSCard) -> Void
+    private let setId:        String
+    private let onSave:       (FSCard) -> Void
 
     @State private var en:                 String
     @State private var transcription:      String
-    @State private var sampleEN:           String          // каждая строка = один пример
+    @State private var sampleEN:           String
+    @State private var tagText:            String
     @State private var level:              CEFRLevel
     @State private var accessTier:         AccessTier
     @State private var isPublished:        Bool
@@ -67,10 +73,20 @@ struct AdminCardEditView: View {
     @State private var translations:       [String: String]
     @State private var sampleTranslations: [String: String]
 
+    // Transcription fetch
     @State private var isFetchingTranscription = false
     @State private var fetchTask: Task<Void, Never>?
 
+    // Auto-Fill (translation)
+    @State private var isAutoFilling:      Bool                               = false
+    @State private var translationConfig:  TranslationSession.Configuration?  = nil
+    @State private var pendingFillLangs:   [NativeLanguage]                   = []
+    @State private var currentFillLang:    NativeLanguage?                    = nil
+    @State private var filledLangCount:    Int                                = 0
+
     private let dictionaryService = DictionaryService()
+
+    private var isAnyOperationRunning: Bool { isFetchingTranscription || isAutoFilling }
 
     // MARK: - Body
 
@@ -102,10 +118,35 @@ struct AdminCardEditView: View {
                     .frame(minHeight: 70)
                     .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.25)))
 
+                fieldLabel("Tag")
+                clearableField("e.g. Family Members", text: $tagText)
+
                 Divider()
 
                 // ── Translations ──────────────────────────────
-                fieldLabel("Translations")
+                HStack {
+                    fieldLabel("Translations")
+                    Spacer()
+                    if isAutoFilling {
+                        HStack(spacing: 6) {
+                            ProgressView().scaleEffect(0.7)
+                            Text("\(filledLangCount)/\(NativeLanguage.allCases.count)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Button {
+                            startAutoFill()
+                        } label: {
+                            Label("Auto-Fill", systemImage: "sparkles")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .help("Fill transcription and missing translations automatically")
+                    }
+                }
+
                 ForEach(NativeLanguage.allCases, id: \.self) { lang in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(lang.flag) \(lang.displayName)")
@@ -130,18 +171,16 @@ struct AdminCardEditView: View {
 
                 Divider()
 
-                // ── Metadata ──────────────────────────────────
+                // ── Metadata (read-only level/tier) ───────────
                 GroupBox("Metadata") {
-                    Picker("CEFR Level", selection: $level) {
-                        ForEach(CEFRLevel.allCases, id: \.self) { l in
-                            Text(l.displayCode).tag(l)
-                        }
+                    LabeledContent("CEFR Level") {
+                        Text(level.displayCode)
+                            .foregroundStyle(.secondary)
                     }
                     Divider()
-                    Picker("Access Tier", selection: $accessTier) {
-                        ForEach(AccessTier.allCases, id: \.self) { t in
-                            Text(t.rawValue.capitalized).tag(t)
-                        }
+                    LabeledContent("Access Tier") {
+                        Text(accessTier.rawValue.capitalized)
+                            .foregroundStyle(.secondary)
                     }
                     Divider()
                     Toggle("Published", isOn: $isPublished)
@@ -154,12 +193,23 @@ struct AdminCardEditView: View {
         .navigationTitle(existingCard == nil ? "New Card" : "Edit Card")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
+                Button("Cancel") {
+                    fetchTask?.cancel()
+                    translationConfig = nil
+                    dismiss()
+                }
             }
-            ToolbarItem(placement: .confirmationAction) {
+            ToolbarItem(placement: .primaryAction) {
                 Button("Save", action: save)
-                    .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty || isAnyOperationRunning)
             }
+        }
+        .translationTask(translationConfig) { session in
+            await runAutoFillTranslation(session: session)
+        }
+        .onDisappear {
+            fetchTask?.cancel()
+            translationConfig = nil
         }
     }
 
@@ -190,8 +240,6 @@ struct AdminCardEditView: View {
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
     }
 
-    // MARK: - Binding helpers
-
     private func binding(for lang: NativeLanguage, in dict: Binding<[String: String]>) -> Binding<String> {
         Binding(
             get: { dict.wrappedValue[lang.rawValue] ?? "" },
@@ -217,10 +265,112 @@ struct AdminCardEditView: View {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     transcription = entry.transcription
+                    if sampleEN.trimmingCharacters(in: .whitespaces).isEmpty,
+                       let example = entry.meanings.first?.definitions.first?.example {
+                        sampleEN = example
+                    }
                     isFetchingTranscription = false
                 }
             } catch {
                 await MainActor.run { isFetchingTranscription = false }
+            }
+        }
+    }
+
+    // MARK: - Auto-Fill
+
+    private func startAutoFill() {
+        isAutoFilling   = true
+        filledLangCount = 0
+
+        // Транскрипция — если пустая
+        let word = en.trimmingCharacters(in: .whitespaces)
+        if transcription.trimmingCharacters(in: .whitespaces).isEmpty, !word.isEmpty {
+            fetchTask?.cancel()
+            fetchTask = Task {
+                await MainActor.run { isFetchingTranscription = true }
+                do {
+                    let entry = try await dictionaryService.lookup(word: word)
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        transcription = entry.transcription
+                        // Пример EN — если пустой
+                        if sampleEN.trimmingCharacters(in: .whitespaces).isEmpty,
+                           let example = entry.meanings.first?.definitions.first?.example {
+                            sampleEN = example
+                        }
+                        isFetchingTranscription = false
+                    }
+                } catch {
+                    await MainActor.run { isFetchingTranscription = false }
+                }
+            }
+        }
+
+        // Переводы — только пустые языки
+        let emptyLangs = NativeLanguage.allCases.filter {
+            (translations[$0.rawValue] ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+        }
+        guard !emptyLangs.isEmpty else {
+            isAutoFilling = false
+            return
+        }
+
+        var langs    = emptyLangs
+        let first    = langs.removeFirst()
+        pendingFillLangs = langs
+        currentFillLang  = first
+        translationConfig = TranslationSession.Configuration(
+            source: Locale.Language(identifier: "en"),
+            target: Locale.Language(identifier: first.langId)
+        )
+    }
+
+    private func runAutoFillTranslation(session: TranslationSession) async {
+        guard let lang = currentFillLang, isAutoFilling else { return }
+
+        let word   = en.trimmingCharacters(in: .whitespaces)
+        let sample = sampleEN.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .first { !$0.isEmpty } ?? ""
+
+        var requests: [TranslationSession.Request] = [
+            .init(sourceText: word, clientIdentifier: "word")
+        ]
+        if !sample.isEmpty {
+            requests.append(.init(sourceText: sample, clientIdentifier: "sample"))
+        }
+
+        do {
+            let responses = try await session.translations(from: requests)
+            await MainActor.run {
+                for response in responses {
+                    switch response.clientIdentifier {
+                    case "word":
+                        translations[lang.rawValue] = response.targetText
+                    case "sample":
+                        sampleTranslations[lang.rawValue] = response.targetText
+                    default: break
+                    }
+                }
+            }
+        } catch {
+            log("Auto-fill translation failed for \(lang.langId): \(error)", level: .warning)
+        }
+
+        await MainActor.run {
+            filledLangCount += 1
+            if let nextLang = pendingFillLangs.first, isAutoFilling {
+                pendingFillLangs.removeFirst()
+                currentFillLang   = nextLang
+                translationConfig = TranslationSession.Configuration(
+                    source: Locale.Language(identifier: "en"),
+                    target: Locale.Language(identifier: nextLang.langId)
+                )
+            } else {
+                isAutoFilling     = false
+                translationConfig = nil
+                currentFillLang   = nil
             }
         }
     }
@@ -241,12 +391,13 @@ struct AdminCardEditView: View {
 
         let card = FSCard(
             id:                 existingCard?.id ?? FirestoreID.make(name: en),
-            setId:              existingCard?.setId ?? "",
+            setId:              existingCard?.setId ?? setId,
             en:                 en.trimmingCharacters(in: .whitespaces),
             transcription:      transcription.trimmingCharacters(in: .whitespaces),
             translations:       translationsDict,
             sampleEN:           lines(from: sampleEN),
             sampleTranslations: sampleTranslationsDict,
+            tag:                tagText.trimmingCharacters(in: .whitespaces),
             level:              level.rawValue,
             accessTierRaw:      accessTier.rawValue,
             isPublished:        isPublished,

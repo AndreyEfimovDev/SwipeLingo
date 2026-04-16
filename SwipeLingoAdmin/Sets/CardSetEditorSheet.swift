@@ -12,10 +12,11 @@ struct CardSetEditorSheet: View {
 
     // MARK: State
 
-    @State private var name:        String     = ""
-    @State private var level:       CEFRLevel  = .b1
-    @State private var accessTier:  AccessTier = .go
-    @State private var isPublished: Bool       = false
+    @State private var name:         String          = ""
+    @State private var level:        CEFRLevel       = .b1
+    @State private var accessTier:   AccessTier      = .go
+    @State private var deployStatus: SetDeployStatus = .draft
+    @State private var isPublished:  Bool            = false
 
     private var isEditing: Bool { cardSet != nil }
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -59,8 +60,20 @@ struct CardSetEditorSheet: View {
                         }
                     }
 
-                    // ── Publishing ────────────────────────────────
-                    GroupBox("Publishing") {
+                    // ── Status ───────────────────────────────────
+                    GroupBox("Status") {
+                        Picker("Deploy Status", selection: $deployStatus) {
+                            ForEach([SetDeployStatus.draft, .ready], id: \.self) { s in
+                                Text(s.label).tag(s)
+                            }
+                        }
+                        .disabled(deployStatus == .live || deployStatus == .outdated)
+                        if deployStatus == .live || deployStatus == .outdated {
+                            Text("Status is managed automatically after deployment")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Divider()
                         Toggle("Published", isOn: $isPublished)
                     }
 
@@ -82,10 +95,11 @@ struct CardSetEditorSheet: View {
         }
         .onAppear {
             if let s = cardSet {
-                name        = s.name
-                level       = CEFRLevel(rawValue: s.level) ?? .b1
-                accessTier  = s.accessTier
-                isPublished = s.isPublished
+                name         = s.name
+                level        = CEFRLevel(rawValue: s.level) ?? .b1
+                accessTier   = s.accessTier
+                deployStatus = s.deployStatus
+                isPublished  = s.isPublished
             }
         }
     }
@@ -122,22 +136,24 @@ struct CardSetEditorSheet: View {
 
         if let existing = cardSet {
             var updated = existing
-            updated.name          = trimmedName
-            updated.level         = level.rawValue
-            updated.accessTierRaw = accessTier.rawValue
-            updated.isPublished   = isPublished
-            updated.updatedAt     = .now
+            updated.name            = trimmedName
+            updated.level           = level.rawValue
+            updated.accessTierRaw   = accessTier.rawValue
+            updated.deployStatusRaw = deployStatus.rawValue
+            updated.isPublished     = isPublished
+            updated.updatedAt       = .now
             store.update(updated)
         } else {
             let new = FSCardSet(
-                id:           FirestoreID.make(name: trimmedName),
-                collectionId: collectionId,
-                name:         trimmedName,
-                level:        level.rawValue,
-                accessTierRaw: accessTier.rawValue,
-                isPublished:  isPublished,
-                updatedAt:    .now,
-                createdAt:    .now
+                id:              FirestoreID.make(name: trimmedName),
+                collectionId:    collectionId,
+                name:            trimmedName,
+                level:           level.rawValue,
+                accessTierRaw:   accessTier.rawValue,
+                deployStatusRaw: SetDeployStatus.draft.rawValue,
+                isPublished:     isPublished,
+                updatedAt:       .now,
+                createdAt:       .now
             )
             store.add(new)
         }
