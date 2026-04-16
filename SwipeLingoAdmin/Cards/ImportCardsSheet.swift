@@ -54,6 +54,7 @@ struct ImportCardsSheet: View {
     // MARK: State
 
     @State private var pasteText:   String        = ""
+    @State private var tagText:     String        = ""
     @State private var drafts:      [ImportDraft] = []
     @State private var step:        Step          = .paste
     @State private var isEnriching: Bool          = false
@@ -84,10 +85,14 @@ struct ImportCardsSheet: View {
     private var isAnyOperationRunning: Bool { isEnriching || isTranslating }
 
     private var wordCount: Int {
-        pasteText.components(separatedBy: "\n")
+        parseWords(from: pasteText).count
+    }
+
+    private func parseWords(from text: String) -> [String] {
+        text
+            .components(separatedBy: CharacterSet.newlines.union(CharacterSet(charactersIn: ",")))
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
-            .count
     }
 
     // MARK: Body
@@ -117,7 +122,7 @@ struct ImportCardsSheet: View {
 
     private var pasteView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Paste one word or phrase per line:")
+            Text("Paste words or phrases — one per line or comma-separated:")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -128,6 +133,14 @@ struct ImportCardsSheet: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                 )
+
+            HStack(spacing: 8) {
+                Text("Tag:")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                TextField("e.g. Family Members", text: $tagText)
+                    .textFieldStyle(.roundedBorder)
+            }
 
             HStack {
                 Text(wordCount == 0 ? "No words" : "\(wordCount) word\(wordCount == 1 ? "" : "s") detected")
@@ -206,11 +219,10 @@ struct ImportCardsSheet: View {
                 .foregroundStyle(.red)
             }
 
-            // Translate button
-            if !isTranslating && translatedLangCount < NativeLanguage.allCases.count {
+            // Translate button — доступен только после завершения Enrich
+            if enrichedCount == drafts.count && !isTranslating && translatedLangCount < NativeLanguage.allCases.count {
                 Button("Translate All") { startTranslation() }
                     .buttonStyle(.bordered)
-                    .disabled(isEnriching)
             }
             if isTranslating {
                 Button("Stop Translate") {
@@ -245,10 +257,7 @@ struct ImportCardsSheet: View {
 
     private func parseDrafts() {
         var seen = Set<String>()
-        drafts = pasteText
-            .components(separatedBy: "\n")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        drafts = parseWords(from: pasteText)
             .compactMap { word in
                 let lower = word.lowercased()
                 guard !seen.contains(lower) else { return nil }
@@ -374,8 +383,9 @@ struct ImportCardsSheet: View {
     // MARK: — Import
 
     private func importCards() {
+        let tag = tagText.trimmingCharacters(in: .whitespaces)
+
         for draft in drafts {
-            // sampleTranslations: [langId: [String]] — берём по одному переводу примера
             var sampleTranslationsDict: [String: [String]] = [:]
             for (langId, sample) in draft.sampleTranslations {
                 sampleTranslationsDict[langId] = [sample]
@@ -388,6 +398,7 @@ struct ImportCardsSheet: View {
                 translations:       draft.translations,
                 sampleEN:           draft.sampleEN,
                 sampleTranslations: sampleTranslationsDict,
+                tag:                tag,
                 level:              defaultLevel.rawValue,
                 accessTierRaw:      defaultTier.rawValue,
                 isPublished:        false,

@@ -14,8 +14,8 @@ struct CollectionsListView: View {
     let type: CollectionType
     @Binding var selectedCollectionId: String?
 
-    @State private var showEditor = false
-    @State private var editingCollection: FSCollection?
+    @State private var showNewEditor:      Bool          = false
+    @State private var editingCollection:  FSCollection? = nil
 
     private var collections: [FSCollection] {
         store.collections(of: type)
@@ -36,16 +36,18 @@ struct CollectionsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    editingCollection = nil
-                    showEditor = true
+                    showNewEditor = true
                 } label: {
                     Image(systemName: "plus")
                 }
                 .help("New collection")
             }
         }
-        .sheet(isPresented: $showEditor) {
-            CollectionEditorSheet(type: type, collection: editingCollection)
+        .sheet(isPresented: $showNewEditor) {
+            CollectionEditorSheet(type: type, collection: nil)
+        }
+        .sheet(item: $editingCollection) { collection in
+            CollectionEditorSheet(type: type, collection: collection)
         }
     }
 
@@ -58,7 +60,6 @@ struct CollectionsListView: View {
                 .contextMenu {
                     Button("Edit") {
                         editingCollection = collection
-                        showEditor = true
                     }
                     Divider()
                     Button("Delete", role: .destructive) {
@@ -82,8 +83,7 @@ struct CollectionsListView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Button("New Collection") {
-                editingCollection = nil
-                showEditor = true
+                showNewEditor = true
             }
             .buttonStyle(.bordered)
         }

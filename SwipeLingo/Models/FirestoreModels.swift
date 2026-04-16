@@ -14,7 +14,7 @@ import Foundation
 
 // MARK: - FSCollection
 
-struct FSCollection: Codable, Identifiable {
+struct FSCollection: Codable, Identifiable, Hashable {
     var id: String              // firestoreId: NAMEPREFIX_UUID
     var name: String
     var icon: String?           // SF Symbol name or emoji
@@ -28,14 +28,42 @@ struct FSCollection: Codable, Identifiable {
     }
 }
 
+// MARK: - SetDeployStatus
+
+enum SetDeployStatus: String, Codable, CaseIterable {
+    case draft      // черновик, ещё не готов
+    case ready      // помечен вручную как готов к деплою
+    case live       // загружен в Firebase
+    case outdated   // в Firebase, но есть локальные изменения
+
+    var label: String {
+        switch self {
+        case .draft:    "Draft"
+        case .ready:    "Ready"
+        case .live:     "Live"
+        case .outdated: "Outdated"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .draft:    "secondary"
+        case .ready:    "blue"
+        case .live:     "green"
+        case .outdated: "orange"
+        }
+    }
+}
+
 // MARK: - FSCardSet
 
-struct FSCardSet: Codable, Identifiable {
+struct FSCardSet: Codable, Identifiable, Hashable {
     var id: String              // firestoreId
     var collectionId: String    // firestoreId родительской Collection
     var name: String
     var level: String           // CEFRLevel.rawValue
     var accessTierRaw: String   // AccessTier.rawValue: "free" | "go" | "pro"
+    var deployStatusRaw: String
     var isPublished: Bool
     var updatedAt: Date
     var createdAt: Date
@@ -43,11 +71,45 @@ struct FSCardSet: Codable, Identifiable {
     var accessTier: AccessTier {
         AccessTier(rawValue: accessTierRaw) ?? .free
     }
+
+    var deployStatus: SetDeployStatus {
+        get { SetDeployStatus(rawValue: deployStatusRaw) ?? .draft }
+        set { deployStatusRaw = newValue.rawValue }
+    }
+
+    // Кастомный декодер: deployStatusRaw опциональный для совместимости со старыми данными
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id              = try c.decode(String.self, forKey: .id)
+        collectionId    = try c.decode(String.self, forKey: .collectionId)
+        name            = try c.decode(String.self, forKey: .name)
+        level           = try c.decode(String.self, forKey: .level)
+        accessTierRaw   = try c.decode(String.self, forKey: .accessTierRaw)
+        deployStatusRaw = try c.decodeIfPresent(String.self, forKey: .deployStatusRaw) ?? SetDeployStatus.draft.rawValue
+        isPublished     = try c.decode(Bool.self,   forKey: .isPublished)
+        updatedAt       = try c.decode(Date.self,   forKey: .updatedAt)
+        createdAt       = try c.decode(Date.self,   forKey: .createdAt)
+    }
+
+    // Явный memberwise init (нужен после кастомного декодера)
+    init(id: String, collectionId: String, name: String, level: String,
+         accessTierRaw: String, deployStatusRaw: String = SetDeployStatus.draft.rawValue,
+         isPublished: Bool, updatedAt: Date, createdAt: Date) {
+        self.id              = id
+        self.collectionId    = collectionId
+        self.name            = name
+        self.level           = level
+        self.accessTierRaw   = accessTierRaw
+        self.deployStatusRaw = deployStatusRaw
+        self.isPublished     = isPublished
+        self.updatedAt       = updatedAt
+        self.createdAt       = createdAt
+    }
 }
 
 // MARK: - FSCard
 
-struct FSCard: Codable, Identifiable {
+struct FSCard: Codable, Identifiable, Hashable {
     var id: String              // firestoreId
     var setId: String           // firestoreId родительского CardSet
     var en: String
@@ -55,6 +117,7 @@ struct FSCard: Codable, Identifiable {
     var translations: [String: String]          // ["ru": "серендипность", "zh": "天缘巧合", ...]
     var sampleEN: [String]                      // Firestore нативно поддерживает [String]
     var sampleTranslations: [String: [String]]  // ["ru": ["пример1", "пример2"], "zh": ["示例1"]]
+    var tag: String              // контекстная группа, e.g. "Family Members" — lowercase при сравнении
     var level: String           // CEFRLevel.rawValue
     var accessTierRaw: String   // AccessTier.rawValue
     var isPublished: Bool

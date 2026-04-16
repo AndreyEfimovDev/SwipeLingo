@@ -11,8 +11,8 @@ struct CardSetsListView: View {
 
     let collectionId: String
 
-    @State private var showEditor = false
-    @State private var editingSet: FSCardSet?
+    @State private var showNewEditor = false
+    @State private var editingSet:   FSCardSet?
 
     private var sets: [FSCardSet] {
         store.cardSets(for: collectionId)
@@ -32,16 +32,18 @@ struct CardSetsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    editingSet = nil
-                    showEditor = true
+                    showNewEditor = true
                 } label: {
                     Image(systemName: "plus")
                 }
                 .help("New set")
             }
         }
-        .sheet(isPresented: $showEditor) {
-            CardSetEditorSheet(collectionId: collectionId, cardSet: editingSet)
+        .sheet(isPresented: $showNewEditor) {
+            CardSetEditorSheet(collectionId: collectionId, cardSet: nil)
+        }
+        .sheet(item: $editingSet) { set in
+            CardSetEditorSheet(collectionId: collectionId, cardSet: set)
         }
     }
 
@@ -57,7 +59,6 @@ struct CardSetsListView: View {
             .contextMenu {
                 Button("Edit") {
                     editingSet = set
-                    showEditor = true
                 }
                 Divider()
                 Button("Delete", role: .destructive) {
@@ -78,8 +79,7 @@ struct CardSetsListView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Button("New Set") {
-                editingSet = nil
-                showEditor = true
+                showNewEditor = true
             }
             .buttonStyle(.bordered)
         }
@@ -95,6 +95,7 @@ struct CardSetsListView: View {
 
 private struct CardSetRow: View {
 
+    @Environment(AdminStore.self) private var store
     let set: FSCardSet
 
     var body: some View {
@@ -118,11 +119,35 @@ private struct CardSetRow: View {
 
             Spacer()
 
-            Text(set.isPublished ? "Published" : "Draft")
-                .font(.caption)
-                .foregroundStyle(set.isPublished ? .green : .secondary)
+            // Deploy button (placeholder)
+            if set.deployStatus == .ready || set.deployStatus == .outdated {
+                Button {
+                    // Phase 4: Firebase write
+                } label: {
+                    Label("Deploy", systemImage: "arrow.up.circle")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .tint(set.deployStatus == .ready ? .blue : .orange)
+            }
+
+            // Status badge
+            deployStatusBadge(set.deployStatus)
         }
         .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private func deployStatusBadge(_ status: SetDeployStatus) -> some View {
+        let color: Color = switch status {
+            case .draft:    .secondary
+            case .ready:    .blue
+            case .live:     .green
+            case .outdated: .orange
+        }
+        Text(status.label)
+            .font(.caption)
+            .foregroundStyle(color)
     }
 }
 

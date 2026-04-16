@@ -38,6 +38,18 @@ struct DictionaryService {
 
         if let entry = try? await fetchMW(word: trimmed) {
             log("MW lookup succeeded for '\(trimmed)'")
+            // MW иногда не содержит транскрипцию — берём её из FreeDictionary
+            if entry.transcription.isEmpty,
+               let freeEntry = try? await fetchFreeDictionary(word: trimmed),
+               !freeEntry.transcription.isEmpty {
+                log("MW transcription empty — using FreeDictionary transcription for '\(trimmed)'")
+                return DictionaryEntry(
+                    word:          entry.word,
+                    transcription: freeEntry.transcription,
+                    audioURL:      entry.audioURL,
+                    meanings:      entry.meanings
+                )
+            }
             return entry
         }
         log("MW lookup failed for '\(trimmed)' — falling back to FreeDictionary")
