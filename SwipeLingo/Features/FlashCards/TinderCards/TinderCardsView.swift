@@ -323,12 +323,22 @@ struct TinderCardsView: View {
     @ViewBuilder
     private var breadcrumbRow: some View {
         let label = cardBreadcrumb
+        let tag   = viewModel.currentCard?.tags.first ?? ""
+        let level = viewModel.currentCard.flatMap { cefrLabels[$0.setId] }
         if !label.isEmpty {
-            HStack(spacing: 6) {
-                Text(label)
-                CEFRBadgeView(level: viewModel.currentCard.flatMap { cefrLabels[$0.setId] })
+            VStack(spacing: 3) {
+                // Строка 1: Collection › Set · Group
+                Text(tag.isEmpty ? label : "\(label) · \(tag)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                // Строка 2: уровень сложности
+                if level != nil {
+                    CEFRBadgeView(level: level)
+                        .font(.caption2)
+                }
             }
-            .font(.caption2)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
             .padding(.top, 12)
