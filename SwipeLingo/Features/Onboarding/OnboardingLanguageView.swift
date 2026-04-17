@@ -69,6 +69,8 @@ struct OnboardingLanguageView: View {
                 Text(lang.displayName)
                     .font(.subheadline.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.myAccent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
