@@ -13,7 +13,7 @@ final class Collection {
     // false → developer-seeded content (IELTS, Psychology) — show CEFR badge in set list
     var isUserCreated: Bool = true
     var typeRaw: String     = CollectionType.cards.rawValue  // "cards" | "pairs" — CloudKit-safe
-    var updatedAt: Date     = Date.distantPast                // обновляется Admin Tool при публикации
+    var updatedAt: Date     = Date.epoch                // обновляется Admin Tool при публикации
     var createdAt: Date
 
     var collectionType: CollectionType {
@@ -28,7 +28,7 @@ final class Collection {
         isOwned: Bool = true,
         isUserCreated: Bool = true,
         type: CollectionType = .cards,
-        updatedAt: Date = .distantPast,
+        updatedAt: Date = .epoch,
         createdAt: Date = .now
     ) {
         self.id = id

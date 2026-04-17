@@ -8,18 +8,18 @@ final class AppViewModel {
     private static let studyModeKey = "studyMode"
 
     var studyMode: StudyMode {
-        didSet { UserDefaults.standard.set(studyMode.rawValue, forKey: Self.studyModeKey) }
+        didSet { UserDefaults.standard.set(studyMode.label, forKey: Self.studyModeKey) }
     }
     var activeSheet: AppSheet? = nil
 
     init() {
         let saved = UserDefaults.standard.string(forKey: Self.studyModeKey) ?? ""
-        studyMode = StudyMode(rawValue: saved) ?? .cards
+        studyMode = StudyMode.allCases.first { $0.label == saved } ?? .cards
     }
 
     // MARK: - StudyMode
 
-    enum StudyMode: String {
+    enum StudyMode: String, CaseIterable {
         case cards
         case pairs
 
