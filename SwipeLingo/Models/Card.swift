@@ -41,8 +41,8 @@ final class Card {
     var easeFactor:  Double = 2.5
     var interval:    Int    = 1
     var repetitions: Int    = 0
-    var dueDate:     Date   = Date.distantFuture  // новая карточка не в Due до первой оценки
-    var lastReviewed: Date  = Date.distantPast
+    var dueDate:     Date   = Date.farFuture  // новая карточка не в Due до первой оценки
+    var lastReviewed: Date  = Date.epoch
 
     // Dictionary cache — plain String, CloudKit compatible (empty = not yet fetched)
     var dictTranscription: String = ""
@@ -50,16 +50,16 @@ final class Card {
     var dictDefinition:    String = ""
 
     // CEFR level — stored as String for CloudKit/SwiftData compatibility
-    var level: String = CEFRLevel.a0a1.rawValue
+    var level: String = CEFRLevel.a1.rawValue
 
     var cefrLevel: CEFRLevel {
-        get { CEFRLevel(rawValue: level) ?? .a0a1 }
+        get { CEFRLevel(rawValue: level) ?? .a1 }
         set { level = newValue.rawValue }
     }
 
     // Metadata
     var createdAt:  Date  = Date.now
-    var updatedAt:  Date  = Date.distantPast  // обновляется Admin Tool при публикации
+    var updatedAt:  Date  = Date.epoch  // обновляется Admin Tool при публикации
     var importedAt: Date? = nil
     var setId:      UUID  = UUID()
 
@@ -100,13 +100,13 @@ final class Card {
         easeFactor: Double = 2.5,
         interval: Int = 1,
         repetitions: Int = 0,
-        dueDate: Date = .distantFuture,
-        lastReviewed: Date = .distantPast,
+        dueDate: Date = .farFuture,
+        lastReviewed: Date = .epoch,
         dictTranscription: String = "",
         dictAudioURL: String = "",
         dictDefinition: String = "",
         createdAt: Date = .now,
-        updatedAt: Date = .distantPast,
+        updatedAt: Date = .epoch,
         importedAt: Date? = nil,
         setId: UUID
     ) {

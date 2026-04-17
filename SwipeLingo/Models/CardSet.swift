@@ -15,15 +15,15 @@ final class CardSet {
     var isUserCreated: Bool = true
 
     // CEFR level — stored as String for CloudKit/SwiftData compatibility
-    var level: String = CEFRLevel.a0a1.rawValue
+    var level: String = CEFRLevel.a1.rawValue
 
     // Access tier — stored as String for CloudKit/SwiftData compatibility
     var accessTierRaw: String = AccessTier.free.rawValue
 
-    var updatedAt: Date = Date.distantPast  // обновляется Admin Tool при публикации
+    var updatedAt: Date = Date.epoch  // обновляется Admin Tool при публикации
 
     var cefrLevel: CEFRLevel {
-        get { CEFRLevel(rawValue: level) ?? .a0a1 }
+        get { CEFRLevel(rawValue: level) ?? .a1 }
         set { level = newValue.rawValue }
     }
 
@@ -36,10 +36,10 @@ final class CardSet {
         id: UUID = UUID(),
         name: String,
         collectionId: UUID,
-        level: CEFRLevel = .a0a1,
+        level: CEFRLevel = .a1,
         isUserCreated: Bool = true,
         accessTier: AccessTier = .free,
-        updatedAt: Date = .distantPast,
+        updatedAt: Date = .epoch,
         createdAt: Date = .now
     ) {
         self.id = id

@@ -4,10 +4,10 @@ import SwiftData
 @Model
 final class UserProfile {
     var name:         String = ""
-    var cefrLevelRaw: String = CEFRLevel.a0a1.rawValue
+    var cefrLevelRaw: String = CEFRLevel.a1.rawValue
 
     var cefrLevel: CEFRLevel {
-        get { CEFRLevel(rawValue: cefrLevelRaw) ?? .a0a1 }
+        get { CEFRLevel(rawValue: cefrLevelRaw) ?? .a1 }
         set { cefrLevelRaw = newValue.rawValue }
     }
 
@@ -17,7 +17,7 @@ final class UserProfile {
         return trimmed.isEmpty ? "Anonymous" : trimmed
     }
 
-    init(name: String = "", level: CEFRLevel = .a0a1) {
+    init(name: String = "", level: CEFRLevel = .a1) {
         self.name         = name
         self.cefrLevelRaw = level.rawValue
     }
