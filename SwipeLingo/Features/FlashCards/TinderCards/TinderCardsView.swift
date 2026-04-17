@@ -330,7 +330,7 @@ struct TinderCardsView: View {
                 // Строка 1: Collection › Set · Group
                 Text(tag.isEmpty ? label : "\(label) · \(tag)")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.myColors.mySecondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 // Строка 2: уровень сложности

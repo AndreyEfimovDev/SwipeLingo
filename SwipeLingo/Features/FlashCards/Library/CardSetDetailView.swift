@@ -128,19 +128,28 @@ struct CardSetDetailView: View {
 
     private var metadataBar: some View {
         VStack(spacing: 0) {
-            if !cardSet.isUserCreated {
-                HStack {
+            HStack {
+                if !cardSet.isUserCreated {
                     CEFRBadgeView(level: cardSet.cefrLevel)
                         .font(.caption.weight(.semibold))
-                    Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-                .padding(.bottom, 4)
+                
+                SearchBar(text: $searchText, prompt: "Search words/phrases")
             }
-            SearchBar(text: $searchText, prompt: "Search words")
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
+
+            
+            if let desc = cardSet.setDescription, !desc.isEmpty {
+                Text(desc)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.85))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.top, cardSet.isUserCreated ? 12 : 4)
+                    .padding(.bottom, 8)
+            }
         }
         .background(Color.myColors.myBackground)
     }

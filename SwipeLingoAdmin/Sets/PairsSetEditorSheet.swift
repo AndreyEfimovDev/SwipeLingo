@@ -14,6 +14,7 @@ struct PairsSetEditorSheet: View {
 
     @State private var title:       String      = ""
     @State private var subtitle:    String      = ""
+    @State private var desc:        String      = ""
     @State private var leftTitle:   String      = ""
     @State private var rightTitle:  String      = ""
     @State private var displayMode: DisplayMode = .parallel
@@ -36,6 +37,10 @@ struct PairsSetEditorSheet: View {
                     // ── Subtitle ──────────────────────────────────
                     fieldLabel("Subtitle (optional)")
                     clearableField("Subtitle", text: $subtitle)
+
+                    // ── Description ───────────────────────────────
+                    fieldLabel("Description (optional)")
+                    clearableField("Longer description shown in the library", text: $desc)
 
                     // ── Columns ───────────────────────────────────
                     fieldLabel("Columns")
@@ -78,6 +83,7 @@ struct PairsSetEditorSheet: View {
             if let s = pairsSet {
                 title       = s.title ?? ""
                 subtitle    = s.subtitle ?? ""
+                desc        = s.description ?? ""
                 leftTitle   = s.leftTitle ?? ""
                 rightTitle  = s.rightTitle ?? ""
                 displayMode = s.displayMode
@@ -116,32 +122,35 @@ struct PairsSetEditorSheet: View {
     private func save() {
         let trimmedTitle    = title.trimmingCharacters(in: .whitespaces)
         let trimmedSubtitle = subtitle.trimmingCharacters(in: .whitespaces)
+        let trimmedDesc     = desc.trimmingCharacters(in: .whitespaces)
         let trimmedLeft     = leftTitle.trimmingCharacters(in: .whitespaces)
         let trimmedRight    = rightTitle.trimmingCharacters(in: .whitespaces)
 
         if let existing = pairsSet {
             var updated = existing
-            updated.title          = trimmedTitle
-            updated.subtitle       = trimmedSubtitle.isEmpty ? nil : trimmedSubtitle
-            updated.leftTitle      = trimmedLeft.isEmpty ? nil : trimmedLeft
-            updated.rightTitle     = trimmedRight.isEmpty ? nil : trimmedRight
+            updated.title       = trimmedTitle
+            updated.subtitle    = trimmedSubtitle.isEmpty ? nil : trimmedSubtitle
+            updated.description = trimmedDesc.isEmpty ? nil : trimmedDesc
+            updated.leftTitle   = trimmedLeft.isEmpty ? nil : trimmedLeft
+            updated.rightTitle  = trimmedRight.isEmpty ? nil : trimmedRight
             updated.displayMode = displayMode
             updated.accessTier  = accessTier
-            updated.updatedAt      = .now
+            updated.updatedAt   = .now
             store.update(updated)
         } else {
             let new = FSPairsSet(
-                id:             FirestoreID.make(name: trimmedTitle),
-                collectionId:   collectionId,
-                title:          trimmedTitle,
-                subtitle:       trimmedSubtitle.isEmpty ? nil : trimmedSubtitle,
-                leftTitle:      trimmedLeft.isEmpty ? nil : trimmedLeft,
-                rightTitle:     trimmedRight.isEmpty ? nil : trimmedRight,
+                id:          FirestoreID.make(name: trimmedTitle),
+                collectionId: collectionId,
+                title:       trimmedTitle,
+                subtitle:    trimmedSubtitle.isEmpty ? nil : trimmedSubtitle,
+                description: trimmedDesc.isEmpty ? nil : trimmedDesc,
+                leftTitle:   trimmedLeft.isEmpty ? nil : trimmedLeft,
+                rightTitle:  trimmedRight.isEmpty ? nil : trimmedRight,
                 displayMode: displayMode,
                 accessTier:  accessTier,
-                items:          [],
-                updatedAt:      .now,
-                createdAt:      .now
+                items:       [],
+                updatedAt:   .now,
+                createdAt:   .now
             )
             store.add(new)
         }

@@ -10,7 +10,7 @@ import SwiftData
 //   • Тап на кружок → активировать пайл.
 //   • Синяя кнопка карандаша → редактировать.
 //   • Context menu → удалить.
-// SETS — все доступные сеты → NavigationLink → PairsSetPlayerView.
+// SETS — все доступные сеты → NavigationLink → PairsSetContentView.
 
 struct PairsLibraryView: View {
 
@@ -208,7 +208,7 @@ struct PairsLibraryView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(allSets) { set in
-                        NavigationLink(destination: PairsSetPlayerView(set: set)) {
+                        NavigationLink(destination: PairsSetContentView(set: set)) {
                             LibrarySetRow(set: set)
                         }
                         .buttonStyle(.plain)
