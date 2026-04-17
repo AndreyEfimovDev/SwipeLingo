@@ -7,7 +7,7 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @AppStorage("nativeLanguage")     private var nativeLanguage     = "Русский"
+    @AppStorage("nativeLanguage")     private var nativeLanguage: NativeLanguage = .russian
     @AppStorage("englishVariant")     private var englishVariant     = "en-US"
     @AppStorage("colorScheme")        private var theme: Theme       = .system
     @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
@@ -25,7 +25,6 @@ struct SettingsView: View {
         return voice.name
     }
 
-    private let languages = DictionaryLookupViewModel.supportedLanguages.map(\.name)
 
     var body: some View {
         NavigationStack {
@@ -98,12 +97,8 @@ struct SettingsView: View {
                 HStack {
                     Text("Native language")
                     Spacer()
-                    Picker("", selection: $nativeLanguage) {
-                        ForEach(languages, id: \.self) { Text($0).tag($0) }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                    .tint(Color.myColors.myBlue)
+                    Text("\(nativeLanguage.flag) \(nativeLanguage.displayName)")
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
                 }
                 .font(textFont)
                 .frame(height: 52)

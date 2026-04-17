@@ -170,7 +170,7 @@ struct StatisticsView: View {
     private var timeRangePicker: some View {
         Picker("Range", selection: $selectedRange) {
             ForEach(TimeRange.allCases, id: \.self) {
-                Text($0.rawValue).tag($0)
+                Text($0.displayName).tag($0)
             }
         }
         .pickerStyle(.segmented)

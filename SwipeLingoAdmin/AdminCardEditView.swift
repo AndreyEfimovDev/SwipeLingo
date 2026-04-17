@@ -1,16 +1,11 @@
 import SwiftUI
+import Translation
 
 // MARK: - AdminCardEditView
 //
 // Форма создания / редактирования FSCard в SwipeLingoAdmin.
-//
-// Логика транскрипции:
-//   • При изменении поля "en" (с задержкой 0.8 с) автоматически вызывается
-//     DictionaryService.lookup() и заполняет поле transcription.
-//   • Пользователь может скорректировать транскрипцию вручную.
-//   • Для фраз (несколько слов) API ничего не вернёт — поле останется пустым.
-//   • При сохранении transcription записывается в FSCard.transcription →
-//     при импорте в SwiftData попадёт в card.dictTranscription.
+// Auto-Fill: транскрипция через DictionaryService + переводы через Apple Translation
+// для всех незаполненных полей.
 
 struct AdminCardEditView: View {
 
@@ -19,70 +14,88 @@ struct AdminCardEditView: View {
     /// Если card == nil — режим создания; иначе — редактирование.
     init(card: FSCard? = nil, setId: String, onSave: @escaping (FSCard) -> Void) {
         self.existingCard = card
-        self.onSave = onSave
+        self.setId        = setId
+        self.onSave       = onSave
+
         let c = card ?? FSCard(
             id: FirestoreID.make(name: ""),
             setId: setId,
             en: "",
-            item: "",
             transcription: "",
+            translations: [:],
             sampleEN: [],
-            sampleItem: [],
-            level: CEFRLevel.b1.rawValue,
-            accessTierRaw: AccessTier.free.rawValue,
-            isPublished: false,
-            updatedAt: .now,
-            createdAt: .now
+            sampleTranslations: [:],
+            tag: "",
+            updatedAt:    .now,
+            createdAt:    .now
         )
+
         _en            = State(initialValue: c.en)
-        _item          = State(initialValue: c.item)
         _transcription = State(initialValue: c.transcription)
         _sampleEN      = State(initialValue: c.sampleEN.joined(separator: "\n"))
-        _sampleItem    = State(initialValue: c.sampleItem.joined(separator: "\n"))
-        _level         = State(initialValue: CEFRLevel(rawValue: c.level) ?? .b1)
-        _accessTier    = State(initialValue: AccessTier(rawValue: c.accessTierRaw) ?? .free)
-        _isPublished   = State(initialValue: c.isPublished)
+        _tagText       = State(initialValue: c.tag)
+
+        var translationsInit: [String: String] = [:]
+        var sampleTranslationsInit: [String: String] = [:]
+        for lang in NativeLanguage.allCases {
+            translationsInit[lang.langId] = c.translations[lang.langId] ?? ""
+            let samples = c.sampleTranslations[lang.langId] ?? []
+            sampleTranslationsInit[lang.langId] = samples.joined(separator: "\n")
+        }
+        _translations       = State(initialValue: translationsInit)
+        _sampleTranslations = State(initialValue: sampleTranslationsInit)
     }
 
     // MARK: - State
 
+    @Environment(\.dismiss) private var dismiss
+
     private let existingCard: FSCard?
-    private let onSave: (FSCard) -> Void
+    private let setId:        String
+    private let onSave:       (FSCard) -> Void
 
-    @State private var en:            String
-    @State private var item:          String
-    @State private var transcription: String
-    @State private var sampleEN:      String   // многострочный — каждая строка = один пример
-    @State private var sampleItem:    String
-    @State private var level:         CEFRLevel
-    @State private var accessTier:    AccessTier
-    @State private var isPublished:   Bool
+    @State private var en:                 String
+    @State private var transcription:      String
+    @State private var sampleEN:           String
+    @State private var tagText:            String
 
+    // [lang.langId: text]
+    @State private var translations:       [String: String]
+    @State private var sampleTranslations: [String: String]
+
+    // Transcription fetch
     @State private var isFetchingTranscription = false
-    @State private var fetchTask: Task<Void, Never>? = nil
+    @State private var fetchTask: Task<Void, Never>?
+
+    // Auto-Fill (translation)
+    @State private var isAutoFilling:      Bool                               = false
+    @State private var translationConfig:  TranslationSession.Configuration?  = nil
+    @State private var pendingFillLangs:   [NativeLanguage]                   = []
+    @State private var currentFillLang:    NativeLanguage?                    = nil
+    @State private var filledLangCount:    Int                                = 0
 
     private let dictionaryService = DictionaryService()
+
+    private var isAnyOperationRunning: Bool { isFetchingTranscription || isAutoFilling }
 
     // MARK: - Body
 
     var body: some View {
-        Form {
-            // ── English word ──────────────────────────────
-            Section("English") {
-                TextField("Word or phrase", text: $en)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+
+                // ── English ───────────────────────────────────
+                fieldLabel("Word or phrase")
+                clearableField("Word or phrase", text: $en)
                     .onChange(of: en) { _, newValue in
                         scheduleTranscriptionFetch(for: newValue)
                     }
 
+                fieldLabel("Transcription")
                 HStack {
-                    TextField("Transcription", text: $transcription)
-                        .foregroundStyle(transcription.isEmpty
-                                         ? Color.secondary
-                                         : Color.primary)
+                    clearableField("Transcription", text: $transcription)
                     if isFetchingTranscription {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(width: 20, height: 20)
+                        ProgressView().scaleEffect(0.7).frame(width: 20, height: 20)
                     } else if !transcription.isEmpty {
                         Text("[\(transcription)]")
                             .font(.system(.body, design: .monospaced))
@@ -90,53 +103,123 @@ struct AdminCardEditView: View {
                     }
                 }
 
-                TextField("Translation (item)", text: $item)
-            }
+                fieldLabel("Examples EN (one per line)")
+                TextEditor(text: $sampleEN)
+                    .frame(minHeight: 70)
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.25)))
 
-            // ── Examples ──────────────────────────────────
-            Section("Examples (one per line)") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("English examples")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextEditor(text: $sampleEN)
-                        .frame(minHeight: 80)
-                        .font(.body)
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Translated examples")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextEditor(text: $sampleItem)
-                        .frame(minHeight: 80)
-                        .font(.body)
-                }
-            }
+                fieldLabel("Tag")
+                clearableField("e.g. Family Members", text: $tagText)
 
-            // ── Metadata ──────────────────────────────────
-            Section("Metadata") {
-                Picker("CEFR Level", selection: $level) {
-                    ForEach(CEFRLevel.allCases, id: \.self) { l in
-                        Text(l.rawValue.uppercased()).tag(l)
+                Divider()
+
+                // ── Translations ──────────────────────────────
+                HStack {
+                    fieldLabel("Translations")
+                    Spacer()
+                    if isAutoFilling {
+                        HStack(spacing: 6) {
+                            ProgressView().scaleEffect(0.7)
+                            Text("\(filledLangCount)/\(NativeLanguage.allCases.count)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Button {
+                            startAutoFill()
+                        } label: {
+                            Label("Auto-Fill", systemImage: "sparkles")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .help("Fill transcription and missing translations automatically")
                     }
                 }
-                Picker("Access Tier", selection: $accessTier) {
-                    ForEach(AccessTier.allCases, id: \.self) { t in
-                        Text(t.rawValue.capitalized).tag(t)
+
+                ForEach(NativeLanguage.allCases, id: \.self) { lang in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(lang.flag) \(lang.displayName)")
+                            .font(.caption).foregroundStyle(.secondary)
+                        clearableField("Translation", text: binding(for: lang, in: $translations))
                     }
                 }
-                Toggle("Published", isOn: $isPublished)
+
+                Divider()
+
+                // ── Example translations ───────────────────────
+                fieldLabel("Example Translations (one per line)")
+                ForEach(NativeLanguage.allCases, id: \.self) { lang in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(lang.flag) \(lang.displayName)")
+                            .font(.caption).foregroundStyle(.secondary)
+                        TextEditor(text: binding(for: lang, in: $sampleTranslations))
+                            .frame(minHeight: 50)
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.25)))
+                    }
+                }
+
+                Divider()
+
+                Spacer()
             }
+            .padding(20)
         }
-        .formStyle(.grouped)
         .navigationTitle(existingCard == nil ? "New Card" : "Edit Card")
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") { save() }
-                    .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty ||
-                              item.trimmingCharacters(in: .whitespaces).isEmpty)
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    fetchTask?.cancel()
+                    translationConfig = nil
+                    dismiss()
+                }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button("Save", action: save)
+                    .disabled(en.trimmingCharacters(in: .whitespaces).isEmpty || isAnyOperationRunning)
             }
         }
+        .translationTask(translationConfig) { session in
+            await runAutoFillTranslation(session: session)
+        }
+        .onDisappear {
+            fetchTask?.cancel()
+            translationConfig = nil
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+    }
+
+    private func clearableField(_ placeholder: String, text: Binding<String>) -> some View {
+        HStack(spacing: 0) {
+            TextField(placeholder, text: text)
+                .textFieldStyle(.plain)
+                .padding(.vertical, 5)
+                .padding(.leading, 8)
+            if !text.wrappedValue.isEmpty {
+                Button { text.wrappedValue = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 6)
+            }
+        }
+        .background(Color(NSColor.textBackgroundColor))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
+    }
+
+    private func binding(for lang: NativeLanguage, in dict: Binding<[String: String]>) -> Binding<String> {
+        Binding(
+            get: { dict.wrappedValue[lang.langId] ?? "" },
+            set: { dict.wrappedValue[lang.langId] = $0 }
+        )
     }
 
     // MARK: - Transcription auto-fetch
@@ -144,29 +227,125 @@ struct AdminCardEditView: View {
     private func scheduleTranscriptionFetch(for word: String) {
         fetchTask?.cancel()
         let trimmed = word.trimmingCharacters(in: .whitespaces)
-
-        // Не фетчим для пустых строк и фраз (больше одного слова)
         guard !trimmed.isEmpty, !trimmed.contains(" ") else {
             if trimmed.isEmpty { transcription = "" }
             return
         }
-
         fetchTask = Task {
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
-
             await MainActor.run { isFetchingTranscription = true }
             do {
                 let entry = try await dictionaryService.lookup(word: trimmed)
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     transcription = entry.transcription
+                    if sampleEN.trimmingCharacters(in: .whitespaces).isEmpty,
+                       let example = entry.meanings.first?.definitions.first?.example {
+                        sampleEN = example
+                    }
                     isFetchingTranscription = false
                 }
             } catch {
-                await MainActor.run {
-                    isFetchingTranscription = false
+                await MainActor.run { isFetchingTranscription = false }
+            }
+        }
+    }
+
+    // MARK: - Auto-Fill
+
+    private func startAutoFill() {
+        isAutoFilling   = true
+        filledLangCount = 0
+
+        // Транскрипция — если пустая
+        let word = en.trimmingCharacters(in: .whitespaces)
+        if transcription.trimmingCharacters(in: .whitespaces).isEmpty, !word.isEmpty {
+            fetchTask?.cancel()
+            fetchTask = Task {
+                await MainActor.run { isFetchingTranscription = true }
+                do {
+                    let entry = try await dictionaryService.lookup(word: word)
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        transcription = entry.transcription
+                        // Пример EN — если пустой
+                        if sampleEN.trimmingCharacters(in: .whitespaces).isEmpty,
+                           let example = entry.meanings.first?.definitions.first?.example {
+                            sampleEN = example
+                        }
+                        isFetchingTranscription = false
+                    }
+                } catch {
+                    await MainActor.run { isFetchingTranscription = false }
                 }
+            }
+        }
+
+        // Переводы — только пустые языки
+        let emptyLangs = NativeLanguage.allCases.filter {
+            (translations[$0.langId] ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+        }
+        guard !emptyLangs.isEmpty else {
+            isAutoFilling = false
+            return
+        }
+
+        var langs    = emptyLangs
+        let first    = langs.removeFirst()
+        pendingFillLangs = langs
+        currentFillLang  = first
+        translationConfig = TranslationSession.Configuration(
+            source: Locale.Language(identifier: "en"),
+            target: Locale.Language(identifier: first.langId)
+        )
+    }
+
+    private func runAutoFillTranslation(session: TranslationSession) async {
+        guard let lang = currentFillLang, isAutoFilling else { return }
+
+        let word   = en.trimmingCharacters(in: .whitespaces)
+        let sample = sampleEN.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .first { !$0.isEmpty } ?? ""
+
+        var requests: [TranslationSession.Request] = [
+            .init(sourceText: word, clientIdentifier: "word")
+        ]
+        if !sample.isEmpty {
+            requests.append(.init(sourceText: sample, clientIdentifier: "sample"))
+        }
+
+        do {
+            let responses = try await session.translations(from: requests)
+            await MainActor.run {
+                for response in responses {
+                    switch response.clientIdentifier {
+                    case "word":
+                        translations[lang.langId] = response.targetText
+                    case "sample":
+                        sampleTranslations[lang.langId] = response.targetText
+                    default: break
+                    }
+                }
+            }
+        } catch {
+            log("Auto-fill translation failed for \(lang.langId): \(error)", level: .warning)
+        }
+
+        await MainActor.run {
+            filledLangCount += 1
+            if let nextLang = pendingFillLangs.first, isAutoFilling {
+                pendingFillLangs.removeFirst()
+                currentFillLang   = nextLang
+                translationConfig = TranslationSession.Configuration(
+                    source: Locale.Language(identifier: "en"),
+                    target: Locale.Language(identifier: nextLang.langId)
+                )
+            } else {
+                isAutoFilling     = false
+                translationConfig = nil
+                currentFillLang   = nil
             }
         }
     }
@@ -174,20 +353,28 @@ struct AdminCardEditView: View {
     // MARK: - Save
 
     private func save() {
-        let existing = existingCard
+        var translationsDict: [String: String] = [:]
+        var sampleTranslationsDict: [String: [String]] = [:]
+
+        for lang in NativeLanguage.allCases {
+            let text = (translations[lang.langId] ?? "").trimmingCharacters(in: .whitespaces)
+            if !text.isEmpty { translationsDict[lang.langId] = text }
+
+            let samples = lines(from: sampleTranslations[lang.langId] ?? "")
+            if !samples.isEmpty { sampleTranslationsDict[lang.langId] = samples }
+        }
+
         let card = FSCard(
-            id:            existing?.id ?? FirestoreID.make(name: en),
-            setId:         existing?.setId ?? "",
-            en:            en.trimmingCharacters(in: .whitespaces),
-            item:          item.trimmingCharacters(in: .whitespaces),
-            transcription: transcription.trimmingCharacters(in: .whitespaces),
-            sampleEN:      lines(from: sampleEN),
-            sampleItem:    lines(from: sampleItem),
-            level:         level.rawValue,
-            accessTierRaw: accessTier.rawValue,
-            isPublished:   isPublished,
-            updatedAt:     .now,
-            createdAt:     existing?.createdAt ?? .now
+            id:                 existingCard?.id ?? FirestoreID.make(name: en),
+            setId:              existingCard?.setId ?? setId,
+            en:                 en.trimmingCharacters(in: .whitespaces),
+            transcription:      transcription.trimmingCharacters(in: .whitespaces),
+            translations:       translationsDict,
+            sampleEN:           lines(from: sampleEN),
+            sampleTranslations: sampleTranslationsDict,
+            tag:                tagText.trimmingCharacters(in: .whitespaces),
+            updatedAt:          .now,
+            createdAt:          existingCard?.createdAt ?? .now
         )
         onSave(card)
     }

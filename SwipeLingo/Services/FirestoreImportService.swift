@@ -33,12 +33,13 @@ struct FirestoreImportService {
     /// - Parameters:
     ///   - fsCard: The Firestore card to convert.
     ///   - swiftDataSetId: The SwiftData UUID of the parent CardSet (not the Firestore string ID).
-    func card(from fsCard: FSCard, swiftDataSetId: UUID) -> Card {
+    ///   - language: The user's native language — selects the correct translation from FSCard.
+    func card(from fsCard: FSCard, swiftDataSetId: UUID, language: NativeLanguage) -> Card {
         Card(
             en:                fsCard.en,
-            item:              fsCard.item,
+            item:              fsCard.translation(for: language),
             sampleEN:          fsCard.sampleEN,
-            sampleItem:        fsCard.sampleItem,
+            sampleItem:        fsCard.sampleTranslation(for: language),
             dictTranscription: fsCard.transcription,
             setId:             swiftDataSetId
         )

@@ -15,7 +15,7 @@ struct OnboardingWelcomeView: View {
 
     private var profile: UserProfile? { profiles.first }
     private var displayName: String { profile?.displayName ?? "Anonymous" }
-    private var cefrLevel: CEFRLevel  { profile?.cefrLevel  ?? .a0a1 }
+    private var cefrLevel: CEFRLevel  { profile?.cefrLevel  ?? .a1 }
 
     var body: some View {
         VStack(spacing: 0) {
