@@ -71,58 +71,59 @@ struct MockDataSeeder {
         let collection = Collection(name: "Academic Words", icon: "book", isOwned: true, isUserCreated: false)
         context.insert(collection)
 
-        let sets: [(name: String, level: CEFRLevel, accessTier: AccessTier, cards: [(en: String, item: String)])] = [
+        let sets: [(name: String, level: CEFRLevel, accessTier: AccessTier, cards: [(en: String, item: String, tag: String)])] = [
             (
                 name: "Foundations", level: .a2, accessTier: .free,
                 cards: [
-                    ("Concept",     "понятие, концепция"),
-                    ("Factor",      "фактор, причина"),
-                    ("Source",      "источник"),
-                    ("Process",     "процесс"),
-                    ("Structure",   "структура"),
+                    ("Concept",     "понятие, концепция",               "Key Nouns"),
+                    ("Factor",      "фактор, причина",                  "Key Nouns"),
+                    ("Source",      "источник",                         "Key Nouns"),
+                    ("Process",     "процесс",                          "Key Nouns"),
+                    ("Structure",   "структура",                        "Key Nouns"),
                 ]
             ),
             (
                 name: "Core Academic", level: .b1, accessTier: .go,
                 cards: [
-                    ("Analyse",     "анализировать"),
-                    ("Approach",    "подход"),
-                    ("Constitute",  "составлять, образовывать"),
-                    ("Context",     "контекст"),
-                    ("Evidence",    "доказательство, свидетельство"),
+                    ("Analyse",     "анализировать",                    "Verbs"),
+                    ("Approach",    "подход",                           "Nouns"),
+                    ("Constitute",  "составлять, образовывать",         "Verbs"),
+                    ("Context",     "контекст",                         "Nouns"),
+                    ("Evidence",    "доказательство, свидетельство",    "Nouns"),
                 ]
             ),
             (
                 name: "Upper Academic", level: .b2, accessTier: .go,
                 cards: [
-                    ("Albeit",      "хотя, несмотря на то что"),
-                    ("Comprehensive","всесторонний, полный"),
-                    ("Derive",      "происходить, получать"),
-                    ("Implicit",    "подразумеваемый, неявный"),
-                    ("Rationale",   "обоснование, логика"),
+                    ("Albeit",          "хотя, несмотря на то что",     "Linking Words"),
+                    ("Comprehensive",   "всесторонний, полный",         "Adjectives"),
+                    ("Derive",          "происходить, получать",        "Verbs"),
+                    ("Implicit",        "подразумеваемый, неявный",     "Adjectives"),
+                    ("Rationale",       "обоснование, логика",          "Nouns"),
                 ]
             ),
             (
                 name: "Advanced", level: .c1, accessTier: .pro,
                 cards: [
-                    ("Nuance",      "нюанс, оттенок"),
-                    ("Perpetuate",  "увековечивать, сохранять"),
-                    ("Dichotomy",   "дихотомия, противопоставление"),
-                    ("Pragmatic",   "прагматичный"),
-                    ("Ubiquitous",  "повсеместный, вездесущий"),
+                    ("Nuance",      "нюанс, оттенок",                   "Nouns"),
+                    ("Perpetuate",  "увековечивать, сохранять",         "Verbs"),
+                    ("Dichotomy",   "дихотомия, противопоставление",    "Nouns"),
+                    ("Pragmatic",   "прагматичный",                     "Adjectives"),
+                    ("Ubiquitous",  "повсеместный, вездесущий",         "Adjectives"),
                 ]
             ),
         ]
 
         for setData in sets {
             let cardSet = CardSet(name: setData.name, collectionId: collection.id,
-                                  accessTier: setData.accessTier)
+                                  isUserCreated: false, accessTier: setData.accessTier)
             cardSet.level = setData.level.rawValue
             context.insert(cardSet)
 
             for cardData in setData.cards {
                 let card = Card(en: cardData.en, item: cardData.item, setId: cardSet.id)
                 card.level = setData.level.rawValue
+                card.tags  = [cardData.tag]
                 context.insert(card)
             }
         }
@@ -244,7 +245,7 @@ struct MockDataSeeder {
 
         for setData in sets {
             let cardSet = CardSet(name: setData.name, collectionId: collection.id,
-                                  accessTier: setData.accessTier)
+                                  isUserCreated: false, accessTier: setData.accessTier)
             cardSet.level = setData.level.rawValue
             context.insert(cardSet)
             for (en, item) in setData.cards {

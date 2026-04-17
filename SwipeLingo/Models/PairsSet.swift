@@ -20,15 +20,15 @@ final class PairsSet {
     var accessTierRaw: String       // AccessTier.rawValue   — хранится как String (CloudKit-safe)
     var itemsJSON: String           // JSON-encoded [Pair] — хранится как String (CloudKit-safe)
     var collectionId: UUID?         // nil = локальный/мок; UUID = Firebase-коллекция
-    var updatedAt: Date = Date.distantPast  // обновляется Admin Tool при публикации
+    var updatedAt: Date = Date.epoch  // обновляется Admin Tool при публикации
     var createdAt: Date
 
     // MARK: SRS fields (SM-2) — оценка всего сета целиком
-    var dueDate:      Date   = Date.distantFuture  // новый сет не в Due до первой оценки
+    var dueDate:      Date   = Date.farFuture  // новый сет не в Due до первой оценки
     var interval:     Int    = 1
     var easeFactor:   Double = 2.5
     var repetitions:  Int    = 0
-    var lastReviewed: Date   = Date.distantPast
+    var lastReviewed: Date   = Date.epoch
 
     // MARK: Computed wrappers
 
@@ -69,7 +69,7 @@ final class PairsSet {
         accessTier: AccessTier = .free,
         items: [Pair] = [],
         collectionId: UUID? = nil,
-        updatedAt: Date = .distantPast,
+        updatedAt: Date = .epoch,
         createdAt: Date = .now
     ) {
         self.id = id

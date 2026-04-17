@@ -6,96 +6,153 @@ import Foundation
 //   1. SwipeLingoAdmin — создание/редактирование/публикация контента
 //   2. FirestoreImportService (основное приложение) — загрузка и конвертация в SwiftData-модели
 //
-// Отличия от SwiftData @Model классов:
-//   - id: String (firestoreId = NAMEPREFIX_UUID), не UUID
-//   - isPublished: Bool — черновик vs опубликован
-//   - Нет SRS-полей (они пользовательские, хранятся только в SwiftData)
-//   - [String] и вложенные объекты хранятся нативно (Firestore поддерживает)
+// Все enum-поля хранятся напрямую (Codable сериализует через rawValue автоматически).
+
+// MARK: - SetDeployStatus
+
+enum SetDeployStatus: String, Codable, CaseIterable {
+    case new        // создан локально, в Firebase нет
+    case ready      // помечен к деплою
+    case live       // синхронизирован с Firebase
+    case outdated   // был Live, внесены локальные изменения
+
+    var label: String {
+        switch self {
+        case .new:      "New"
+        case .ready:    "Ready"
+        case .live:     "Live"
+        case .outdated: "Outdated"
+        }
+    }
+}
 
 // MARK: - FSCollection
 
-struct FSCollection: Codable, Identifiable {
-    var id: String              // firestoreId: NAMEPREFIX_UUID
-    var name: String
-    var icon: String?           // SF Symbol name or emoji
-    var typeRaw: String         // CollectionType.rawValue: "cards" | "pairs"
-    var isPublished: Bool       // false = черновик, iOS не синхронизирует
+struct FSCollection: Codable, Identifiable, Hashable {
+    var id:        String
+    var name:      String
+    var icon:      String?         // SF Symbol name or emoji
+    var type:      CollectionType
+    var isSynced:  Bool            // false = New (локальная), true = из/в Firebase
     var updatedAt: Date
     var createdAt: Date
 
-    var collectionType: CollectionType {
-        CollectionType(rawValue: typeRaw) ?? .cards
+    init(id: String, name: String, icon: String? = nil, type: CollectionType,
+         isSynced: Bool = false, updatedAt: Date, createdAt: Date) {
+        self.id        = id
+        self.name      = name
+        self.icon      = icon
+        self.type      = type
+        self.isSynced  = isSynced
+        self.updatedAt = updatedAt
+        self.createdAt = createdAt
     }
 }
 
 // MARK: - FSCardSet
 
-struct FSCardSet: Codable, Identifiable {
-    var id: String              // firestoreId
-    var collectionId: String    // firestoreId родительской Collection
-    var name: String
-    var level: String           // CEFRLevel.rawValue
-    var accessTierRaw: String   // AccessTier.rawValue: "free" | "go" | "pro"
-    var isPublished: Bool
-    var updatedAt: Date
-    var createdAt: Date
+struct FSCardSet: Codable, Identifiable, Hashable {
+    var id:           String
+    var collectionId: String
+    var name:         String
+    var cefrLevel:    CEFRLevel
+    var accessTier:   AccessTier
+    var deployStatus: SetDeployStatus
+    var updatedAt:    Date
+    var createdAt:    Date
 
-    var accessTier: AccessTier {
-        AccessTier(rawValue: accessTierRaw) ?? .free
+    init(id: String, collectionId: String, name: String,
+         cefrLevel: CEFRLevel, accessTier: AccessTier,
+         deployStatus: SetDeployStatus = .new,
+         updatedAt: Date, createdAt: Date) {
+        self.id           = id
+        self.collectionId = collectionId
+        self.name         = name
+        self.cefrLevel    = cefrLevel
+        self.accessTier   = accessTier
+        self.deployStatus = deployStatus
+        self.updatedAt    = updatedAt
+        self.createdAt    = createdAt
     }
 }
 
 // MARK: - FSCard
 
-struct FSCard: Codable, Identifiable {
-    var id: String              // firestoreId
-    var setId: String           // firestoreId родительского CardSet
-    var en: String
-    var item: String
-    var transcription: String   // MW-нотация или IPA, пустая если фраза или не найдено
-    var sampleEN: [String]      // Firestore нативно поддерживает [String]
-    var sampleItem: [String]
-    var level: String           // CEFRLevel.rawValue
-    var accessTierRaw: String   // AccessTier.rawValue
-    var isPublished: Bool
-    var updatedAt: Date
-    var createdAt: Date
+struct FSCard: Codable, Identifiable, Hashable {
+    var id:                 String
+    var setId:              String
+    var en:                 String
+    var transcription:      String
+    var translations:       [String: String]         // ["ru": "мать", ...]
+    var sampleEN:           [String]
+    var sampleTranslations: [String: [String]]       // ["ru": ["пример1"], ...]
+    var tag:                String
+    var updatedAt:          Date
+    var createdAt:          Date
 
-    var accessTier: AccessTier {
-        AccessTier(rawValue: accessTierRaw) ?? .free
+    init(id: String, setId: String, en: String, transcription: String,
+         translations: [String: String], sampleEN: [String],
+         sampleTranslations: [String: [String]], tag: String,
+         updatedAt: Date, createdAt: Date) {
+        self.id                 = id
+        self.setId              = setId
+        self.en                 = en
+        self.transcription      = transcription
+        self.translations       = translations
+        self.sampleEN           = sampleEN
+        self.sampleTranslations = sampleTranslations
+        self.tag                = tag
+        self.updatedAt          = updatedAt
+        self.createdAt          = createdAt
+    }
+
+    func translation(for language: NativeLanguage) -> String {
+        translations[language.langId] ?? ""
+    }
+
+    func sampleTranslation(for language: NativeLanguage) -> [String] {
+        sampleTranslations[language.langId] ?? []
     }
 }
 
 // MARK: - FSPairsSet
 
 struct FSPairsSet: Codable, Identifiable {
-    var id: String              // firestoreId
-    var collectionId: String    // firestoreId родительской Collection
-    var title: String?
-    var subtitle: String?
-    var leftTitle: String?      // название левой колонки  ("B2", "Basic")
-    var rightTitle: String?     // название правой колонки ("C1", "Advanced")
-    var displayModeRaw: String  // DisplayMode.rawValue: "sequential" | "parallel"
-    var accessTierRaw: String   // AccessTier.rawValue
-    var items: [FSPair]         // Firestore нативно поддерживает массив объектов
-    var isPublished: Bool
-    var updatedAt: Date
-    var createdAt: Date
+    var id:           String
+    var collectionId: String
+    var title:        String?
+    var subtitle:     String?
+    var leftTitle:    String?
+    var rightTitle:   String?
+    var displayMode:  DisplayMode
+    var accessTier:   AccessTier
+    var items:        [FSPair]
+    var updatedAt:    Date
+    var createdAt:    Date
 
-    var displayMode: DisplayMode {
-        DisplayMode(rawValue: displayModeRaw) ?? .parallel
-    }
-
-    var accessTier: AccessTier {
-        AccessTier(rawValue: accessTierRaw) ?? .free
+    init(id: String, collectionId: String, title: String? = nil, subtitle: String? = nil,
+         leftTitle: String? = nil, rightTitle: String? = nil,
+         displayMode: DisplayMode, accessTier: AccessTier,
+         items: [FSPair], updatedAt: Date, createdAt: Date) {
+        self.id           = id
+        self.collectionId = collectionId
+        self.title        = title
+        self.subtitle     = subtitle
+        self.leftTitle    = leftTitle
+        self.rightTitle   = rightTitle
+        self.displayMode  = displayMode
+        self.accessTier   = accessTier
+        self.items        = items
+        self.updatedAt    = updatedAt
+        self.createdAt    = createdAt
     }
 }
 
 // MARK: - FSPair
 
 struct FSPair: Codable, Identifiable {
-    var id: String              // UUID().uuidString
-    var left: FSPairSide?
+    var id:    String
+    var left:  FSPairSide?
     var right: FSPairSide?
 }
 
@@ -106,11 +163,6 @@ struct FSPairSide: Codable {
 }
 
 // MARK: - FirestoreID
-
-// Утилита для вычисления firestoreId из имени и UUID.
-// Формат: NAMEPREFIX_UUID
-// Prefix: первые 11 символов имени (uppercase, только буквы и цифры, дополнение "_" справа)
-// Пример: "IELTSVOCABL_550e8400-e29b-41d4-a716-446655440000"
 
 enum FirestoreID {
     static func make(name: String, uuid: UUID = UUID()) -> String {
