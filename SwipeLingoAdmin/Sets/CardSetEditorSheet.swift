@@ -13,6 +13,7 @@ struct CardSetEditorSheet: View {
     // MARK: State
 
     @State private var name:         String          = ""
+    @State private var desc:         String          = ""
     @State private var level:        CEFRLevel       = .b1
     @State private var accessTier:   AccessTier      = .go
     @State private var deployStatus: SetDeployStatus = .new
@@ -30,6 +31,10 @@ struct CardSetEditorSheet: View {
                     // ── Name ──────────────────────────────────────
                     fieldLabel("Name")
                     clearableField("Set name", text: $name)
+
+                    // ── Description ───────────────────────────────
+                    fieldLabel("Description (optional)")
+                    clearableField("Brief description shown in the library", text: $desc)
 
                     // ── Level & Access ────────────────────────────
                     GroupBox("Level & Access") {
@@ -93,6 +98,7 @@ struct CardSetEditorSheet: View {
         .onAppear {
             if let s = cardSet {
                 name         = s.name
+                desc         = s.description ?? ""
                 level        = s.cefrLevel
                 accessTier   = s.accessTier
                 deployStatus = s.deployStatus
@@ -129,10 +135,12 @@ struct CardSetEditorSheet: View {
 
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedDesc = desc.trimmingCharacters(in: .whitespaces)
 
         if let existing = cardSet {
             var updated = existing
             updated.name         = trimmedName
+            updated.description  = trimmedDesc.isEmpty ? nil : trimmedDesc
             updated.cefrLevel    = level
             updated.accessTier   = accessTier
             updated.deployStatus = deployStatus
@@ -143,6 +151,7 @@ struct CardSetEditorSheet: View {
                 id:           FirestoreID.make(name: trimmedName),
                 collectionId: collectionId,
                 name:         trimmedName,
+                description:  trimmedDesc.isEmpty ? nil : trimmedDesc,
                 cefrLevel:    level,
                 accessTier:   accessTier,
                 deployStatus: .new,

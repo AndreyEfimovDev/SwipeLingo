@@ -86,6 +86,7 @@
 		47C09A562F8531C20049858B /* PairsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A502F8531C20049858B /* PairsView.swift */; };
 		47C09A572F8531C20049858B /* PairsPileBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4C2F8531C20049858B /* PairsPileBuilderView.swift */; };
 		47C09A582F8531C20049858B /* PairsSetPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */; };
+		47EF10022F8531C20049858B /* PairsSetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EF10012F8531C20049858B /* PairsSetContentView.swift */; };
 		47C09A592F8531C20049858B /* PairsPileBuilderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A4D2F8531C20049858B /* PairsPileBuilderViewModel.swift */; };
 		47C09A862F853B940049858B /* FirestoreModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A852F853B940049858B /* FirestoreModels.swift */; };
 		47C09A872F853B940049858B /* FirestoreModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A852F853B940049858B /* FirestoreModels.swift */; };
@@ -216,6 +217,7 @@
 		47C09A4D2F8531C20049858B /* PairsPileBuilderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPileBuilderViewModel.swift; sourceTree = "<group>"; };
 		47C09A4E2F8531C20049858B /* PairsSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSessionView.swift; sourceTree = "<group>"; };
 		47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSetPlayerView.swift; sourceTree = "<group>"; };
+		47EF10012F8531C20049858B /* PairsSetContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSetContentView.swift; sourceTree = "<group>"; };
 		47C09A502F8531C20049858B /* PairsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsView.swift; sourceTree = "<group>"; };
 		47C09A512F8531C20049858B /* PairsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsViewModel.swift; sourceTree = "<group>"; };
 		47C09A5E2F853A410049858B /* SwipeLingoAdmin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwipeLingoAdmin.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -533,6 +535,7 @@
 				47C09A4D2F8531C20049858B /* PairsPileBuilderViewModel.swift */,
 				47C09A4E2F8531C20049858B /* PairsSessionView.swift */,
 				47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */,
+				47EF10012F8531C20049858B /* PairsSetContentView.swift */,
 				47C09A502F8531C20049858B /* PairsView.swift */,
 				47C09A512F8531C20049858B /* PairsViewModel.swift */,
 				47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */,
@@ -773,6 +776,7 @@
 				47C09A562F8531C20049858B /* PairsView.swift in Sources */,
 				47C09A572F8531C20049858B /* PairsPileBuilderView.swift in Sources */,
 				47C09A582F8531C20049858B /* PairsSetPlayerView.swift in Sources */,
+				47EF10022F8531C20049858B /* PairsSetContentView.swift in Sources */,
 				47C09A592F8531C20049858B /* PairsPileBuilderViewModel.swift in Sources */,
 				474F1FEA2F7DAA9F00128E83 /* OnTopButton.swift in Sources */,
 				474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */,

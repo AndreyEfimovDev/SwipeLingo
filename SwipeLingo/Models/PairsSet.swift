@@ -16,6 +16,7 @@ final class PairsSet {
     var subtitle: String?
     var leftTitle: String?          // название левой колонки  ("B2", "Basic")
     var rightTitle: String?         // название правой колонки ("C1", "Advanced")
+    var setDescription: String?         // optional longer description shown in content view
     var displayModeRaw: String      // DisplayMode.rawValue — хранится как String (CloudKit-safe)
     var accessTierRaw: String       // AccessTier.rawValue   — хранится как String (CloudKit-safe)
     var itemsJSON: String           // JSON-encoded [Pair] — хранится как String (CloudKit-safe)
@@ -63,6 +64,7 @@ final class PairsSet {
         id: UUID = UUID(),
         title: String? = nil,
         subtitle: String? = nil,
+        setDescription: String? = nil,
         leftTitle: String? = nil,
         rightTitle: String? = nil,
         displayMode: DisplayMode = .parallel,
@@ -75,6 +77,7 @@ final class PairsSet {
         self.id = id
         self.title = title
         self.subtitle = subtitle
+        self.setDescription = setDescription
         self.leftTitle = leftTitle
         self.rightTitle = rightTitle
         self.displayModeRaw = displayMode.rawValue

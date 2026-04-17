@@ -55,6 +55,7 @@ struct FSCardSet: Codable, Identifiable, Hashable {
     var id:           String
     var collectionId: String
     var name:         String
+    var description:  String?        // optional set description shown in library
     var cefrLevel:    CEFRLevel
     var accessTier:   AccessTier
     var deployStatus: SetDeployStatus
@@ -62,12 +63,14 @@ struct FSCardSet: Codable, Identifiable, Hashable {
     var createdAt:    Date
 
     init(id: String, collectionId: String, name: String,
+         description: String? = nil,
          cefrLevel: CEFRLevel, accessTier: AccessTier,
          deployStatus: SetDeployStatus = .new,
          updatedAt: Date, createdAt: Date) {
         self.id           = id
         self.collectionId = collectionId
         self.name         = name
+        self.description  = description
         self.cefrLevel    = cefrLevel
         self.accessTier   = accessTier
         self.deployStatus = deployStatus
@@ -122,6 +125,7 @@ struct FSPairsSet: Codable, Identifiable {
     var collectionId: String
     var title:        String?
     var subtitle:     String?
+    var description:  String?        // optional set description shown in library
     var leftTitle:    String?
     var rightTitle:   String?
     var displayMode:  DisplayMode
@@ -131,6 +135,7 @@ struct FSPairsSet: Codable, Identifiable {
     var createdAt:    Date
 
     init(id: String, collectionId: String, title: String? = nil, subtitle: String? = nil,
+         description: String? = nil,
          leftTitle: String? = nil, rightTitle: String? = nil,
          displayMode: DisplayMode, accessTier: AccessTier,
          items: [FSPair], updatedAt: Date, createdAt: Date) {
@@ -138,6 +143,7 @@ struct FSPairsSet: Codable, Identifiable {
         self.collectionId = collectionId
         self.title        = title
         self.subtitle     = subtitle
+        self.description  = description
         self.leftTitle    = leftTitle
         self.rightTitle   = rightTitle
         self.displayMode  = displayMode

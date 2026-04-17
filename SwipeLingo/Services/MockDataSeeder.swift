@@ -71,9 +71,10 @@ struct MockDataSeeder {
         let collection = Collection(name: "Academic Words", icon: "book", isOwned: true, isUserCreated: false)
         context.insert(collection)
 
-        let sets: [(name: String, level: CEFRLevel, accessTier: AccessTier, cards: [(en: String, item: String, tag: String)])] = [
+        let sets: [(name: String, level: CEFRLevel, accessTier: AccessTier, description: String, cards: [(en: String, item: String, tag: String)])] = [
             (
                 name: "Foundations", level: .a2, accessTier: .free,
+                description: "Essential academic vocabulary for lower-intermediate learners. Covers core nouns used across academic disciplines.",
                 cards: [
                     ("Concept",     "понятие, концепция",               "Key Nouns"),
                     ("Factor",      "фактор, причина",                  "Key Nouns"),
@@ -84,6 +85,7 @@ struct MockDataSeeder {
             ),
             (
                 name: "Core Academic", level: .b1, accessTier: .go,
+                description: "High-frequency words from the Academic Word List. Builds the vocabulary foundation needed for academic reading and essay writing.",
                 cards: [
                     ("Analyse",     "анализировать",                    "Verbs"),
                     ("Approach",    "подход",                           "Nouns"),
@@ -94,6 +96,7 @@ struct MockDataSeeder {
             ),
             (
                 name: "Upper Academic", level: .b2, accessTier: .go,
+                description: "Advanced linking words, adjectives and verbs that appear frequently in academic papers and formal writing.",
                 cards: [
                     ("Albeit",          "хотя, несмотря на то что",     "Linking Words"),
                     ("Comprehensive",   "всесторонний, полный",         "Adjectives"),
@@ -104,6 +107,7 @@ struct MockDataSeeder {
             ),
             (
                 name: "Advanced", level: .c1, accessTier: .pro,
+                description: "Sophisticated vocabulary for C1-level academic writing and discussion. These words add precision and nuance to your expression.",
                 cards: [
                     ("Nuance",      "нюанс, оттенок",                   "Nouns"),
                     ("Perpetuate",  "увековечивать, сохранять",         "Verbs"),
@@ -116,7 +120,8 @@ struct MockDataSeeder {
 
         for setData in sets {
             let cardSet = CardSet(name: setData.name, collectionId: collection.id,
-                                  isUserCreated: false, accessTier: setData.accessTier)
+                                  isUserCreated: false, accessTier: setData.accessTier,
+                                  setDescription: setData.description)
             cardSet.level = setData.level.rawValue
             context.insert(cardSet)
 
@@ -166,6 +171,7 @@ struct MockDataSeeder {
         let set1 = PairsSet(
             title: "B2 → C1 Vocabulary",
             subtitle: "Upgrade your word choice",
+            setDescription: "Replace common B2 words with more precise C1 synonyms. Each pair shows a B2 word you already know alongside a stronger C1 equivalent to add to your active vocabulary.",
             leftTitle: "B2",
             rightTitle: "C1",
             displayMode: .sequential,
@@ -185,6 +191,7 @@ struct MockDataSeeder {
         let set2 = PairsSet(
             title: "Everyday → Advanced",
             subtitle: "Replace weak intensifiers",
+            setDescription: "Ditch weak 'very + adjective' combinations in favour of single expressive words. Native speakers prefer one strong word over a weak intensifier — this set helps you make that switch.",
             leftTitle: "Basic",
             rightTitle: "Advanced",
             displayMode: .parallel,
@@ -204,6 +211,7 @@ struct MockDataSeeder {
         let set3 = PairsSet(
             title: "Informal → Formal",
             subtitle: "Business writing register",
+            setDescription: "Switch casual spoken phrases for their formal written equivalents. Essential for business emails, reports and academic writing — where register makes all the difference.",
             leftTitle: "Informal",
             rightTitle: "Formal",
             displayMode: .parallel,

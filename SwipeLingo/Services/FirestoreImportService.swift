@@ -66,7 +66,8 @@ struct FirestoreImportService {
             name: "Academic Words",
             collectionId: ielts.id,
             level: .b2,
-            isUserCreated: false
+            isUserCreated: false,
+            setDescription: "25 high-frequency academic words drawn from the IELTS word list. Covers verbs, adjectives and nouns that appear across all four IELTS papers."
         )
         context.insert(academicSet)
         let sid = academicSet.id
@@ -181,7 +182,8 @@ struct FirestoreImportService {
             name: "Writing Task 2",
             collectionId: ielts.id,
             level: .b2,
-            isUserCreated: false
+            isUserCreated: false,
+            setDescription: "10 advanced linking words and expressions for IELTS Writing Task 2 essays. Master these to raise your Lexical Resource band score."
         )
         context.insert(writingSet)
         let wid = writingSet.id
@@ -246,7 +248,8 @@ struct FirestoreImportService {
             name: "Cognitive Biases",
             collectionId: psych.id,
             level: .c1,
-            isUserCreated: false
+            isUserCreated: false,
+            setDescription: "Six core concepts from cognitive psychology and behavioural economics. Understanding these biases improves critical thinking and helps you recognise flawed reasoning."
         )
         context.insert(biasSet)
         let bid = biasSet.id
