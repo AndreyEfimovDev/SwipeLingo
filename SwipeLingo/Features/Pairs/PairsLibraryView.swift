@@ -17,11 +17,28 @@ struct PairsLibraryView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
 
-    @Query(sort: \PairsSet.createdAt, order: .reverse)  private var allSets: [PairsSet]
-    @Query(sort: \PairsPile.createdAt, order: .reverse)   private var allPiles: [PairsPile]
+    @Query(sort: \PairsSet.createdAt, order: .reverse)    private var allSets:         [PairsSet]
+    @Query(sort: \PairsPile.createdAt, order: .reverse)   private var allPiles:        [PairsPile]
+    @Query(filter: #Predicate<Collection> { $0.typeRaw == "pairs" },
+           sort: \Collection.createdAt)                   private var pairsCollections: [Collection]
 
-    @State private var showAllPiles  = false
+    @State private var showAllPiles = false
     @State private var pileSheet: PairsPileSheet?
+
+    // MARK: - Grouping helpers
+
+    private func sets(for collection: Collection) -> [PairsSet] {
+        allSets.filter { $0.collectionId == collection.id }
+    }
+
+    /// Сеты без коллекции или с неизвестным collectionId
+    private var orphanedSets: [PairsSet] {
+        let knownIds = Set(pairsCollections.map(\.id))
+        return allSets.filter { set in
+            guard let colId = set.collectionId else { return true }
+            return !knownIds.contains(colId)
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -189,7 +206,7 @@ struct PairsLibraryView: View {
     // MARK: - Sets Section
 
     private var setsSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("SETS")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
@@ -205,25 +222,85 @@ struct PairsLibraryView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .myShadow()
                     .padding(.horizontal, 16)
+            } else if pairsCollections.isEmpty {
+                // Нет коллекций — плоский список (резервный вариант)
+                flatSetsBlock(allSets)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(allSets) { set in
-                        NavigationLink(destination: PairsSetContentView(set: set)) {
-                            LibrarySetRow(set: set)
-                        }
-                        .buttonStyle(.plain)
-
-                        if set.id != allSets.last?.id {
-                            Divider().padding(.leading, 16)
-                        }
-                    }
+                // Сгруппировано по коллекциям
+                ForEach(pairsCollections) { collection in
+                    collectionSetBlock(collection)
                 }
-                .background(Color.myColors.myBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .myShadow()
-                .padding(.horizontal, 16)
+                // Сеты без коллекции
+                if !orphanedSets.isEmpty {
+                    flatSetsBlock(orphanedSets)
+                }
             }
         }
+    }
+
+    // MARK: - Collection Set Block
+
+    @ViewBuilder
+    private func collectionSetBlock(_ collection: Collection) -> some View {
+        let items = sets(for: collection)
+
+        VStack(spacing: 0) {
+            // Collection header
+            HStack(spacing: 0) {
+                Label(collection.name, systemImage: collection.icon ?? "folder")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent)
+                    .labelStyle(.fixedIcon)
+                    .lineLimit(1)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color.myColors.myAccent.opacity(0.04))
+
+            if items.isEmpty {
+                Divider().padding(.leading, 16)
+                Text("No sets yet")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.45))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+            } else {
+                ForEach(items) { set in
+                    Divider().padding(.leading, 16)
+                    NavigationLink(destination: PairsSetContentView(set: set)) {
+                        LibrarySetRow(set: set)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .background(Color.myColors.myBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .myShadow()
+        .padding(.horizontal, 16)
+    }
+
+    // MARK: - Flat Sets Block (no collection)
+
+    @ViewBuilder
+    private func flatSetsBlock(_ items: [PairsSet]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(items) { set in
+                NavigationLink(destination: PairsSetContentView(set: set)) {
+                    LibrarySetRow(set: set)
+                }
+                .buttonStyle(.plain)
+                if set.id != items.last?.id {
+                    Divider().padding(.leading, 16)
+                }
+            }
+        }
+        .background(Color.myColors.myBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .myShadow()
+        .padding(.horizontal, 16)
     }
 
     // MARK: - Actions
