@@ -167,6 +167,24 @@ struct MockDataSeeder {
         let existing = context.fetchWithErrorHandling(FetchDescriptor<PairsSet>())
         guard existing.isEmpty else { return }
 
+        // Mock pairs collection
+        let col1 = Collection(
+            name: "Vocabulary Upgrade",
+            icon: "arrow.up.right.circle",
+            isOwned: true,
+            isUserCreated: false,
+            type: .pairs
+        )
+        let col2 = Collection(
+            name: "Phrasal Verbs",
+            icon: "text.quote",
+            isOwned: true,
+            isUserCreated: false,
+            type: .pairs
+        )
+        context.insert(col1)
+        context.insert(col2)
+
         // Set 1: classic — B2 → C1
         let set1 = PairsSet(
             title: "B2 → C1 Vocabulary",
@@ -180,7 +198,8 @@ struct MockDataSeeder {
                 Pair(left: "think about", right: "contemplate"),
                 Pair(left: "change",      right: "transform"),
                 Pair(left: "get better",  right: "improve"),
-            ]
+            ],
+            collectionId: col1.id
         )
         context.insert(set1)
 
@@ -197,7 +216,8 @@ struct MockDataSeeder {
                 Pair(left: "very sad",       right: "despondent"),
                 Pair(left: "very surprised", right: "astonished"),
                 Pair(left: "very scared",    right: "terrified"),
-            ]
+            ],
+            collectionId: col1.id
         )
         context.insert(set2)
 
@@ -223,7 +243,8 @@ struct MockDataSeeder {
                 Pair(left: "check out",     right: "examine"),
                 Pair(left: "come up with",  right: "propose"),
                 Pair(left: "wrap up",       right: "conclude"),
-            ]
+            ],
+            collectionId: col1.id
         )
         context.insert(set3)
 
@@ -234,7 +255,6 @@ struct MockDataSeeder {
             cefrLevel: .b1,
             accessTier: .free,
             items: [
-                // pairs + sample (left–right–nil–sample)
                 Pair(left: "wake up",    right: "stop sleeping",
                      sample: "I wake up at 7 am every day.",                        tag: "Morning Routine"),
                 Pair(left: "get up",     right: "leave your bed",
@@ -243,7 +263,6 @@ struct MockDataSeeder {
                      sample: "He got dressed quickly and left for work.",            tag: "Morning Routine"),
                 Pair(left: "turn on",    right: "switch on (light, TV, radio)",
                      sample: "I turn on the radio while having breakfast.",          tag: "Morning Routine"),
-                // left-sample (left–nil–nil–sample)
                 Pair(left: "afraid of",
                      sample: "She is afraid of spiders.",                            tag: "Adjective + Preposition"),
                 Pair(left: "aware of",
@@ -252,7 +271,8 @@ struct MockDataSeeder {
                      sample: "He is capable of handling the project alone.",        tag: "Adjective + Preposition"),
                 Pair(left: "interested in",
                      sample: "I'm interested in learning more about this.",         tag: "Adjective + Preposition"),
-            ]
+            ],
+            collectionId: col2.id
         )
         context.insert(set4)
 

@@ -24,7 +24,6 @@ struct CardSetDetailView: View {
     @State private var isLearntExpanded  = false
     @State private var isShowingAddCard  = false
     @State private var editingCard: Card? = nil
-    @State private var searchText        = ""
 
     // Fallback covers first render; updated by PreferenceKey after layout
     @State private var rowHeight: CGFloat = 68
@@ -35,12 +34,10 @@ struct CardSetDetailView: View {
 
     private var activeCards: [Card] {
         allCards.filter { $0.setId == cardSet.id && $0.status == .active }
-            .filtered(by: searchText)
     }
 
     private var learntCards: [Card] {
         allCards.filter { $0.setId == cardSet.id && $0.status == .learnt }
-            .filtered(by: searchText)
     }
 
     var body: some View {
@@ -116,42 +113,39 @@ struct CardSetDetailView: View {
         }
         .overlay {
             let hasCards = allCards.contains { $0.setId == cardSet.id && $0.status != .deleted }
-            if !hasCards {
-                emptyState
-            } else if activeCards.isEmpty && learntCards.isEmpty && !searchText.isEmpty {
-                SearchEmptyState(query: searchText)
-            }
+            if !hasCards { emptyState }
         }
     }
 
     // MARK: - Metadata Bar
 
+    @ViewBuilder
     private var metadataBar: some View {
-        VStack(spacing: 0) {
-            HStack {
-                if !cardSet.isUserCreated {
+        let hasDesc = !(cardSet.setDescription ?? "").isEmpty
+        let hasCEFR = !cardSet.isUserCreated
+
+        if hasDesc || hasCEFR {
+            VStack(alignment: .leading, spacing: 8) {
+                if hasCEFR {
                     CEFRBadgeView(level: cardSet.cefrLevel)
                         .font(.caption.weight(.semibold))
                 }
-                
-                SearchBar(text: $searchText, prompt: "Search words/phrases")
+
+                if let desc = cardSet.setDescription, !desc.isEmpty {
+                    ExpandableSection(
+                        text:        desc,
+                        font:        .subheadline,
+                        lineSpacing: 2,
+                        linesLimit:  3
+                    )
+                    .foregroundStyle(Color.myColors.mySecondary)
+                }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 10)
-            .padding(.bottom, 4)
-
-            
-            if let desc = cardSet.setDescription, !desc.isEmpty {
-                Text(desc)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.myColors.mySecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, cardSet.isUserCreated ? 12 : 4)
-                    .padding(.bottom, 8)
-            }
+//            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.myColors.myBackground)
         }
-        .background(Color.myColors.myBackground)
     }
 
     // MARK: - Card List
