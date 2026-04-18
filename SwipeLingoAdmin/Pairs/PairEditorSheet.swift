@@ -6,15 +6,16 @@ struct PairEditorSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    let pair:       FSPair?
-    let leftTitle:  String
-    let rightTitle: String
-    let onSave:     (FSPair) -> Void
+    let pair:   FSPair?
+    let onSave: (FSPair) -> Void
 
     // MARK: State
 
-    @State private var leftText:  String = ""
-    @State private var rightText: String = ""
+    @State private var leftText:   String = ""
+    @State private var rightText:  String = ""
+    @State private var descText:   String = ""
+    @State private var sampleText: String = ""
+    @State private var tagText:    String = ""
 
     private var canSave: Bool {
         !leftText.trimmingCharacters(in: .whitespaces).isEmpty
@@ -27,17 +28,31 @@ struct PairEditorSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
 
-                    fieldLabel(leftTitle)
+                    // ── Left ──────────────────────────────────────
+                    fieldLabel("Left")
                     clearableField("Word or phrase", text: $leftText)
 
-                    fieldLabel(rightTitle)
-                    clearableField("Synonym / advanced form", text: $rightText)
+                    // ── Right (optional) ──────────────────────────
+                    fieldLabel("Right (optional)")
+                    clearableField("Synonym / counterpart — short", text: $rightText)
+
+                    // ── Description (optional) ────────────────────
+                    fieldLabel("Description (optional)")
+                    clearableField("Definition or explanation — full width", text: $descText)
+
+                    // ── Sample (optional) ─────────────────────────
+                    fieldLabel("Sample sentence (optional)")
+                    clearableField("Example sentence", text: $sampleText)
+
+                    // ── Tag / Group ───────────────────────────────
+                    fieldLabel("Group (optional)")
+                    clearableField("e.g. Morning Routine, Verbs, …", text: $tagText)
 
                     Spacer()
                 }
                 .padding(20)
             }
-            .frame(minWidth: 380, minHeight: 200)
+            .frame(minWidth: 420, minHeight: 320)
             .navigationTitle(pair == nil ? "New Pair" : "Edit Pair")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -50,10 +65,15 @@ struct PairEditorSheet: View {
             }
         }
         .onAppear {
-            leftText  = pair?.left?.text  ?? ""
-            rightText = pair?.right?.text ?? ""
+            leftText   = pair?.left        ?? ""
+            rightText  = pair?.right       ?? ""
+            descText   = pair?.description ?? ""
+            sampleText = pair?.sample      ?? ""
+            tagText    = pair?.tag         ?? ""
         }
     }
+
+    // MARK: Helpers
 
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
@@ -83,13 +103,19 @@ struct PairEditorSheet: View {
     // MARK: Save
 
     private func save() {
-        let trimmedLeft  = leftText.trimmingCharacters(in: .whitespaces)
-        let trimmedRight = rightText.trimmingCharacters(in: .whitespaces)
+        let trimmedLeft   = leftText.trimmingCharacters(in: .whitespaces)
+        let trimmedRight  = rightText.trimmingCharacters(in: .whitespaces)
+        let trimmedDesc   = descText.trimmingCharacters(in: .whitespaces)
+        let trimmedSample = sampleText.trimmingCharacters(in: .whitespaces)
+        let trimmedTag    = tagText.trimmingCharacters(in: .whitespaces)
 
         let saved = FSPair(
-            id:    pair?.id ?? UUID().uuidString,
-            left:  FSPairSide(text: trimmedLeft),
-            right: trimmedRight.isEmpty ? nil : FSPairSide(text: trimmedRight)
+            id:          pair?.id ?? UUID().uuidString,
+            left:        trimmedLeft,
+            right:       trimmedRight.isEmpty  ? nil : trimmedRight,
+            description: trimmedDesc.isEmpty   ? nil : trimmedDesc,
+            sample:      trimmedSample.isEmpty ? nil : trimmedSample,
+            tag:         trimmedTag
         )
         onSave(saved)
     }

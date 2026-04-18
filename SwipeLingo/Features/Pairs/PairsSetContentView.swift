@@ -3,10 +3,14 @@ import SwiftUI
 // MARK: - PairsSetContentView
 //
 // Static content view for a PairsSet shown in the library.
-// Displays the set description (if any), column headers,
-// and all pairs as a scrollable table — no playback, no animation.
+// Displays set description, then all pairs grouped by tag.
 //
-// Paywall: first previewPairCount pairs are free; the rest show a locked row.
+// Row layout per pair:
+//   left + right  → one line, two columns  (right is always short)
+//   description   → new line, full width   (definition / explanation)
+//   sample        → new line, full width   (example sentence, italic)
+//
+// Paywall: first previewPairCount pairs (by original position) are free.
 
 struct PairsSetContentView: View {
 
@@ -18,18 +22,36 @@ struct PairsSetContentView: View {
     private let previewPairCount = 5
     private var isPaywalled: Bool { !userPlan.canAccess(set.accessTier) }
 
+    // Map original position for paywall checks
+    private var globalIndex: [UUID: Int] {
+        Dictionary(uniqueKeysWithValues: set.items.enumerated().map { ($0.element.id, $0.offset) })
+    }
+
+    // Groups preserving first-appearance order of tags
+    private var groupedContent: [(tag: String, pairs: [Pair])] {
+        var seenTags: [String] = []
+        for pair in set.items where !seenTags.contains(pair.tag) {
+            seenTags.append(pair.tag)
+        }
+        return seenTags.map { tag in (tag, set.items.filter { $0.tag == tag }) }
+    }
+
+    private var hasGroups: Bool {
+        groupedContent.contains { !$0.tag.isEmpty }
+    }
+
     // MARK: Body
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
 
-                // ── Description ───────────────────────────────
+                // ── Set description ───────────────────────────
                 if let desc = set.setDescription, !desc.isEmpty {
                     descriptionCard(desc)
                 }
 
-                // ── Content table ─────────────────────────────
+                // ── Content ───────────────────────────────────
                 if set.items.isEmpty {
                     emptyState
                 } else {
@@ -63,22 +85,16 @@ struct PairsSetContentView: View {
 
     private var contentTable: some View {
         VStack(spacing: 0) {
-            // Column headers
-            if set.leftTitle != nil || set.rightTitle != nil {
-                columnHeaders
-                Divider()
-            }
 
-            // Pairs
-            ForEach(Array(set.items.enumerated()), id: \.element.id) { index, pair in
-                if !isPaywalled || index < previewPairCount {
-                    pairRow(pair: pair)
-                } else {
-                    lockedRow
+            // Rows — grouped or flat
+            if hasGroups {
+                ForEach(groupedContent, id: \.tag) { group in
+                    groupHeaderRow(group.tag, pairs: group.pairs)
+                    Divider()
+                    pairRows(group.pairs)
                 }
-                if index < set.items.count - 1 {
-                    Divider().padding(.leading, 16)
-                }
+            } else {
+                pairRows(set.items)
             }
         }
         .background(Color.myColors.myBackground)
@@ -87,59 +103,126 @@ struct PairsSetContentView: View {
         .padding(.horizontal, 16)
     }
 
-    // MARK: Column headers
+    // MARK: Group header row
+    //
+    // Показывает название группы. Если первая пара группы имеет leftTitle/rightTitle —
+    // добавляет заголовки колонок под названием группы.
 
-    private var columnHeaders: some View {
-        HStack(spacing: 0) {
-            if let left = set.leftTitle {
-                Text(left)
+    private func groupHeaderRow(_ tag: String, pairs: [Pair]) -> some View {
+        let first = pairs.first
+        let hasColumnTitles = first?.leftTitle != nil || first?.rightTitle != nil
+        return VStack(alignment: .leading, spacing: 0) {
+            if !tag.isEmpty {
+                Text(tag.uppercased())
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.myColors.myGreen)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
                     .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Spacer()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, hasColumnTitles ? 4 : 8)
             }
-
-            Rectangle()
-                .fill(Color.myColors.myAccent.opacity(0.12))
-                .frame(width: 1, height: 14)
-
-            if let right = set.rightTitle {
-                Text(right)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.myColors.myRed)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 12)
-            } else {
-                Spacer()
+            if hasColumnTitles {
+                HStack(spacing: 0) {
+                    if let left = first?.leftTitle {
+                        Text(left)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myGreen)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Spacer()
+                    }
+                    if let right = first?.rightTitle {
+                        Rectangle()
+                            .fill(Color.myColors.myAccent.opacity(0.12))
+                            .frame(width: 1, height: 12)
+                        Text(right)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myRed)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 12)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .background(Color.myColors.myAccent.opacity(0.04))
+    }
+
+    // MARK: Pair rows
+
+    @ViewBuilder
+    private func pairRows(_ pairs: [Pair]) -> some View {
+        ForEach(Array(pairs.enumerated()), id: \.element.id) { localIndex, pair in
+            let idx = globalIndex[pair.id] ?? 0
+            if isPaywalled && idx >= previewPairCount {
+                lockedRow
+            } else {
+                pairRow(pair)
+            }
+
+            // Divider — not after last in group, not before next group header
+            let isLastInGroup = localIndex == pairs.count - 1
+            if !isLastInGroup {
+                Divider().padding(.leading, 16)
+            }
+        }
     }
 
     // MARK: Pair row
+    //
+    // left + right → two columns on one line
+    // left only    → full width, medium weight
+    // description  → new line, full width, secondary style
+    // sample       → new line, full width, italic
 
-    private func pairRow(pair: Pair) -> some View {
-        HStack(spacing: 0) {
-            Text(pair.left?.text ?? "—")
-                .font(.body)
-                .foregroundStyle(Color.myColors.myAccent)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private func pairRow(_ pair: Pair) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
 
-            Rectangle()
-                .fill(Color.myColors.myAccent.opacity(0.12))
-                .frame(width: 1)
-                .padding(.vertical, 6)
+            // Line 1: left [+ right]
+            if let right = pair.right {
+                HStack(spacing: 0) {
+                    Text(pair.left ?? "—")
+                        .font(.body)
+                        .foregroundStyle(Color.myColors.myAccent)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(pair.right?.text ?? "—")
-                .font(.body)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.85))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 12)
+                    Rectangle()
+                        .fill(Color.myColors.myAccent.opacity(0.12))
+                        .frame(width: 1)
+                        .padding(.vertical, 2)
+
+                    Text(right)
+                        .font(.body)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.85))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 12)
+                }
+            } else {
+                Text(pair.left ?? "—")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Color.myColors.myAccent)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Line 2: description
+            if let desc = pair.description, !desc.isEmpty {
+                Text(desc)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Line 3: sample
+            if let sample = pair.sample, !sample.isEmpty {
+                Text(sample)
+                    .font(.subheadline.italic())
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.55))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 12)
     }
 
     // MARK: Locked row

@@ -167,74 +167,94 @@ struct MockDataSeeder {
         let existing = context.fetchWithErrorHandling(FetchDescriptor<PairsSet>())
         guard existing.isEmpty else { return }
 
-        // Set 1: B2 → C1, sequential mode (left появляется первым, потом right)
+        // Set 1: classic — B2 → C1
         let set1 = PairsSet(
             title: "B2 → C1 Vocabulary",
-            subtitle: "Upgrade your word choice",
             setDescription: "Replace common B2 words with more precise C1 synonyms. Each pair shows a B2 word you already know alongside a stronger C1 equivalent to add to your active vocabulary.",
-            leftTitle: "B2",
-            rightTitle: "C1",
-            displayMode: .sequential,
+            cefrLevel: .b2,
             accessTier: .free,
             items: [
-                Pair(left: PairSide(text: "important"),    right: PairSide(text: "pivotal")),
-                Pair(left: PairSide(text: "use"),          right: PairSide(text: "utilize")),
-                Pair(left: PairSide(text: "show"),         right: PairSide(text: "demonstrate")),
-                Pair(left: PairSide(text: "think about"),  right: PairSide(text: "contemplate")),
-                Pair(left: PairSide(text: "change"),       right: PairSide(text: "transform")),
-                Pair(left: PairSide(text: "get better"),   right: PairSide(text: "improve")),
+                Pair(left: "important",   right: "pivotal"),
+                Pair(left: "use",         right: "utilize"),
+                Pair(left: "show",        right: "demonstrate"),
+                Pair(left: "think about", right: "contemplate"),
+                Pair(left: "change",      right: "transform"),
+                Pair(left: "get better",  right: "improve"),
             ]
         )
         context.insert(set1)
 
-        // Set 2: Basic → Advanced, parallel mode (оба появляются одновременно)
+        // Set 2: classic — Basic → Advanced
         let set2 = PairsSet(
             title: "Everyday → Advanced",
-            subtitle: "Replace weak intensifiers",
             setDescription: "Ditch weak 'very + adjective' combinations in favour of single expressive words. Native speakers prefer one strong word over a weak intensifier — this set helps you make that switch.",
-            leftTitle: "Basic",
-            rightTitle: "Advanced",
-            displayMode: .parallel,
+            cefrLevel: .b1,
             accessTier: .go,
             items: [
-                Pair(left: PairSide(text: "very tired"),     right: PairSide(text: "exhausted")),
-                Pair(left: PairSide(text: "very happy"),     right: PairSide(text: "elated")),
-                Pair(left: PairSide(text: "very angry"),     right: PairSide(text: "furious")),
-                Pair(left: PairSide(text: "very sad"),       right: PairSide(text: "despondent")),
-                Pair(left: PairSide(text: "very surprised"), right: PairSide(text: "astonished")),
-                Pair(left: PairSide(text: "very scared"),    right: PairSide(text: "terrified")),
+                Pair(left: "very tired",     right: "exhausted"),
+                Pair(left: "very happy",     right: "elated"),
+                Pair(left: "very angry",     right: "furious"),
+                Pair(left: "very sad",       right: "despondent"),
+                Pair(left: "very surprised", right: "astonished"),
+                Pair(left: "very scared",    right: "terrified"),
             ]
         )
         context.insert(set2)
 
-        // Set 3: Informal → Formal, parallel mode, Pro tier (тест badge + длинный список для тест скролла)
+        // Set 3: classic — Informal → Formal, Pro
         let set3 = PairsSet(
             title: "Informal → Formal",
-            subtitle: "Business writing register",
             setDescription: "Switch casual spoken phrases for their formal written equivalents. Essential for business emails, reports and academic writing — where register makes all the difference.",
-            leftTitle: "Informal",
-            rightTitle: "Formal",
-            displayMode: .parallel,
+            cefrLevel: .b2,
             accessTier: .pro,
             items: [
-                Pair(left: PairSide(text: "get in touch"),  right: PairSide(text: "contact")),
-                Pair(left: PairSide(text: "find out"),      right: PairSide(text: "ascertain")),
-                Pair(left: PairSide(text: "go up"),         right: PairSide(text: "increase")),
-                Pair(left: PairSide(text: "look into"),     right: PairSide(text: "investigate")),
-                Pair(left: PairSide(text: "set up"),        right: PairSide(text: "establish")),
-                Pair(left: PairSide(text: "think about"),   right: PairSide(text: "consider")),
-                Pair(left: PairSide(text: "make sure"),     right: PairSide(text: "ensure")),
-                Pair(left: PairSide(text: "talk about"),    right: PairSide(text: "discuss")),
-                Pair(left: PairSide(text: "get rid of"),    right: PairSide(text: "eliminate")),
-                Pair(left: PairSide(text: "bring up"),      right: PairSide(text: "raise")),
-                Pair(left: PairSide(text: "point out"),     right: PairSide(text: "indicate")),
-                Pair(left: PairSide(text: "go along with"), right: PairSide(text: "comply with")),
-                Pair(left: PairSide(text: "check out"),     right: PairSide(text: "examine")),
-                Pair(left: PairSide(text: "come up with"),  right: PairSide(text: "propose")),
-                Pair(left: PairSide(text: "wrap up"),       right: PairSide(text: "conclude")),
+                Pair(left: "get in touch",  right: "contact"),
+                Pair(left: "find out",      right: "ascertain"),
+                Pair(left: "go up",         right: "increase"),
+                Pair(left: "look into",     right: "investigate"),
+                Pair(left: "set up",        right: "establish"),
+                Pair(left: "think about",   right: "consider"),
+                Pair(left: "make sure",     right: "ensure"),
+                Pair(left: "talk about",    right: "discuss"),
+                Pair(left: "get rid of",    right: "eliminate"),
+                Pair(left: "bring up",      right: "raise"),
+                Pair(left: "point out",     right: "indicate"),
+                Pair(left: "go along with", right: "comply with"),
+                Pair(left: "check out",     right: "examine"),
+                Pair(left: "come up with",  right: "propose"),
+                Pair(left: "wrap up",       right: "conclude"),
             ]
         )
         context.insert(set3)
+
+        // Set 4: pairs+sample + left-sample — Phrasal Verbs (тест типов контента + tag)
+        let set4 = PairsSet(
+            title: "Phrasal Verbs: Daily",
+            setDescription: "Essential phrasal verbs for describing daily routines. Each entry shows the verb, its meaning, and a natural example sentence.",
+            cefrLevel: .b1,
+            accessTier: .free,
+            items: [
+                // pairs + sample (left–right–nil–sample)
+                Pair(left: "wake up",    right: "stop sleeping",
+                     sample: "I wake up at 7 am every day.",                        tag: "Morning Routine"),
+                Pair(left: "get up",     right: "leave your bed",
+                     sample: "She gets up immediately after her alarm.",             tag: "Morning Routine"),
+                Pair(left: "get dressed", right: "put on clothes",
+                     sample: "He got dressed quickly and left for work.",            tag: "Morning Routine"),
+                Pair(left: "turn on",    right: "switch on (light, TV, radio)",
+                     sample: "I turn on the radio while having breakfast.",          tag: "Morning Routine"),
+                // left-sample (left–nil–nil–sample)
+                Pair(left: "afraid of",
+                     sample: "She is afraid of spiders.",                            tag: "Adjective + Preposition"),
+                Pair(left: "aware of",
+                     sample: "Were you aware of the new policy?",                   tag: "Adjective + Preposition"),
+                Pair(left: "capable of",
+                     sample: "He is capable of handling the project alone.",        tag: "Adjective + Preposition"),
+                Pair(left: "interested in",
+                     sample: "I'm interested in learning more about this.",         tag: "Adjective + Preposition"),
+            ]
+        )
+        context.insert(set4)
 
         context.saveWithErrorHandling()
     }

@@ -3,30 +3,71 @@ import SwiftUI
 // MARK: - ImportPairsSheet
 //
 // Sheet для массового импорта пар из plain text.
-// Формат: "left | right" — одна пара на строку.
-// Разделитель по умолчанию "|", можно изменить в поле Separator.
+// Формат строки зависит от выбранного PairType — разделитель "|".
+//
+// PairType → колонки:
+//   classic:                 left | right
+//   pairsWithSample:         left | right | sample
+//   leftSample:              left | sample
+//   leftDescriptionSample:   left | description | sample
 
 struct ImportPairsSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    let leftTitle:  String
-    let rightTitle: String
-    let onImport:   ([FSPair]) -> Void
+    let onImport: ([FSPair]) -> Void
 
     // MARK: State
 
-    @State private var pasteText: String    = ""
-    @State private var separator: String    = "|"
+    @State private var pasteText:    String      = ""
+    @State private var separator:    String      = "|"
+    @State private var tag:          String      = ""
+    @State private var leftTitle:    String      = ""
+    @State private var rightTitle:   String      = ""
+    @State private var pairType:     PairType    = .classic
+    @State private var displayMode:  DisplayMode = .parallel
     @State private var drafts:    [PairDraft] = []
     @State private var step:      Step      = .paste
 
     private enum Step { case paste, review }
 
+    // MARK: Pair type
+
+    private enum PairType: String, CaseIterable, Identifiable {
+        case classic               = "Classic"
+        case pairsWithSample       = "Pairs + Sample"
+        case leftSample            = "Left + Sample"
+        case leftDescriptionSample = "Left + Desc + Sample"
+
+        var id: String { rawValue }
+
+        var columnHint: String {
+            switch self {
+            case .classic:               "word  |  synonym"
+            case .pairsWithSample:       "word  |  synonym  |  example sentence"
+            case .leftSample:            "word  |  example sentence"
+            case .leftDescriptionSample: "word  |  definition  |  example sentence"
+            }
+        }
+
+        var columnCount: Int {
+            switch self {
+            case .classic:               2
+            case .pairsWithSample:       3
+            case .leftSample:            2
+            case .leftDescriptionSample: 3
+            }
+        }
+    }
+
+    // MARK: Draft
+
     private struct PairDraft: Identifiable {
-        let id   = UUID()
-        var left:  String
-        var right: String
+        let id          = UUID()
+        var left:        String
+        var right:       String
+        var description: String
+        var sample:      String
     }
 
     // MARK: Body
@@ -42,22 +83,79 @@ struct ImportPairsSheet: View {
             .navigationTitle(step == .paste ? "Import Pairs" : "Review Pairs")
             .toolbar { toolbarItems }
         }
-        .frame(minWidth: 520, minHeight: 440)
+        .frame(minWidth: 540, minHeight: 480)
     }
 
     // MARK: — Step 1: Paste
 
     private var pasteView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Hint
+
+            // Pair type picker
+            HStack(spacing: 8) {
+                Text("Type:")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Picker("", selection: $pairType) {
+                    ForEach(PairType.allCases) { type in
+                        Text(type.rawValue).tag(type)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+            }
+
+            // Format hint
             HStack(spacing: 6) {
                 Text("Format:")
                     .foregroundStyle(.secondary)
-                Text("\(leftTitle)  \(separator)  \(rightTitle)")
+                Text(pairType.columnHint)
                     .font(.system(.body, design: .monospaced))
                     .foregroundStyle(.primary)
             }
             .font(.subheadline)
+
+            // Group name
+            HStack(spacing: 8) {
+                Text("Group:")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                TextField("Group name (optional)", text: $tag)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            // Column titles + display mode — только для classic и pairsWithSample
+            if pairType == .classic || pairType == .pairsWithSample {
+                HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Text("Left title:")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("e.g. B2, Informal", text: $leftTitle)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    HStack(spacing: 8) {
+                        Text("Right title:")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("e.g. C1, Formal", text: $rightTitle)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    Text("Display mode:")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: $displayMode) {
+                        Text("Parallel").tag(DisplayMode.parallel)
+                        Text("Sequential").tag(DisplayMode.sequential)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(maxWidth: 220)
+                }
+            }
 
             TextEditor(text: $pasteText)
                 .font(.system(.body, design: .monospaced))
@@ -95,12 +193,12 @@ struct ImportPairsSheet: View {
     private var pairCount: Int {
         let sep = separator.isEmpty ? "|" : separator
         return pasteText
-            .components(separatedBy: "\n")
+            .components(separatedBy: .newlines)
             .filter { line in
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { return false }
                 let parts = trimmed.components(separatedBy: sep)
-                return parts.count >= 2 &&
+                return parts.count >= pairType.columnCount &&
                        !parts[0].trimmingCharacters(in: .whitespaces).isEmpty
             }
             .count
@@ -110,13 +208,13 @@ struct ImportPairsSheet: View {
 
     private var reviewView: some View {
         VStack(spacing: 0) {
-            // Заголовки колонок
+            // Column headers
             HStack {
-                Text(leftTitle)
+                Text("Left")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(rightTitle)
+                Text("Right / Description / Sample")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -128,18 +226,28 @@ struct ImportPairsSheet: View {
             Divider()
 
             List(drafts) { draft in
-                HStack(spacing: 0) {
+                HStack(alignment: .top, spacing: 0) {
                     Text(draft.left)
                         .font(.body.weight(.medium))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Image(systemName: "arrow.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 12)
-                    Text(draft.right.isEmpty ? "—" : draft.right)
-                        .font(.body)
-                        .foregroundStyle(draft.right.isEmpty ? .tertiary : .primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        if !draft.right.isEmpty {
+                            Text(draft.right)
+                                .font(.body)
+                        }
+                        if !draft.description.isEmpty {
+                            Text(draft.description)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        if !draft.sample.isEmpty {
+                            Text(draft.sample)
+                                .font(.subheadline.italic())
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.vertical, 2)
             }
@@ -147,10 +255,13 @@ struct ImportPairsSheet: View {
             Divider()
 
             HStack {
-                Button("← Back") {
-                    step = .paste
-                }
+                Button("← Back") { step = .paste }
                 Spacer()
+                if !tag.isEmpty {
+                    Text("Group: \(tag)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Text("\(drafts.count) pair\(drafts.count == 1 ? "" : "s")")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -178,19 +289,38 @@ struct ImportPairsSheet: View {
         var seen = Set<String>()
 
         drafts = pasteText
-            .components(separatedBy: "\n")
+            .components(separatedBy: .newlines)
             .compactMap { line -> PairDraft? in
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { return nil }
-                let parts = trimmed.components(separatedBy: sep)
-                let left  = parts[0].trimmingCharacters(in: .whitespaces)
-                let right = parts.count >= 2 ? parts[1].trimmingCharacters(in: .whitespaces) : ""
+                let parts = trimmed.components(separatedBy: sep).map {
+                    $0.trimmingCharacters(in: .whitespaces)
+                }
+                let left = parts[0]
                 guard !left.isEmpty else { return nil }
-                // Дедупликация по левой части
                 let key = left.lowercased()
                 guard !seen.contains(key) else { return nil }
                 seen.insert(key)
-                return PairDraft(left: left, right: right)
+
+                switch pairType {
+                case .classic:
+                    let right = parts.count >= 2 ? parts[1] : ""
+                    return PairDraft(left: left, right: right, description: "", sample: "")
+
+                case .pairsWithSample:
+                    let right  = parts.count >= 2 ? parts[1] : ""
+                    let sample = parts.count >= 3 ? parts[2] : ""
+                    return PairDraft(left: left, right: right, description: "", sample: sample)
+
+                case .leftSample:
+                    let sample = parts.count >= 2 ? parts[1] : ""
+                    return PairDraft(left: left, right: "", description: "", sample: sample)
+
+                case .leftDescriptionSample:
+                    let desc   = parts.count >= 2 ? parts[1] : ""
+                    let sample = parts.count >= 3 ? parts[2] : ""
+                    return PairDraft(left: left, right: "", description: desc, sample: sample)
+                }
             }
         step = .review
     }
@@ -198,11 +328,27 @@ struct ImportPairsSheet: View {
     // MARK: — Import
 
     private func importPairs() {
+        let trimmedTag   = tag.trimmingCharacters(in: .whitespaces)
+        let trimmedLeft  = leftTitle.trimmingCharacters(in: .whitespaces)
+        let trimmedRight = rightTitle.trimmingCharacters(in: .whitespaces)
+
+        // Заголовки колонок и displayMode — только для classic и pairsWithSample
+        let hasColumns = pairType == .classic || pairType == .pairsWithSample
+        let colLeft:  String? = hasColumns && !trimmedLeft.isEmpty  ? trimmedLeft  : nil
+        let colRight: String? = hasColumns && !trimmedRight.isEmpty ? trimmedRight : nil
+        let colMode:  DisplayMode = hasColumns ? displayMode : .sequential
+
         let pairs: [FSPair] = drafts.map { draft in
             FSPair(
-                id:    UUID().uuidString,
-                left:  FSPairSide(text: draft.left),
-                right: draft.right.isEmpty ? nil : FSPairSide(text: draft.right)
+                id:          UUID().uuidString,
+                left:        draft.left.isEmpty        ? nil : draft.left,
+                right:       draft.right.isEmpty       ? nil : draft.right,
+                description: draft.description.isEmpty ? nil : draft.description,
+                sample:      draft.sample.isEmpty      ? nil : draft.sample,
+                tag:         trimmedTag,
+                leftTitle:   colLeft,
+                rightTitle:  colRight,
+                displayMode: colMode
             )
         }
         onImport(pairs)

@@ -12,16 +12,18 @@ struct PairsSetEditorSheet: View {
 
     // MARK: State
 
-    @State private var title:       String      = ""
-    @State private var subtitle:    String      = ""
-    @State private var desc:        String      = ""
-    @State private var leftTitle:   String      = ""
-    @State private var rightTitle:  String      = ""
-    @State private var displayMode: DisplayMode = .parallel
-    @State private var accessTier:  AccessTier  = .free
+    @State private var title:        String          = ""
+    @State private var desc:         String          = ""
+    @State private var cefrLevel:    CEFRLevel       = .b2
+    @State private var accessTier:   AccessTier      = .free
+    @State private var deployStatus: SetDeployStatus = .new
 
     private var isEditing: Bool { pairsSet != nil }
     private var canSave: Bool { !title.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    private var collectionName: String {
+        store.collections.first { $0.id == collectionId }?.name ?? "—"
+    }
 
     // MARK: Body
 
@@ -30,28 +32,40 @@ struct PairsSetEditorSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
 
+                    // ── Collection (read-only) ─────────────────────
+                    GroupBox {
+                        HStack {
+                            Text("Collection")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(collectionName)
+                                .foregroundStyle(.primary)
+                        }
+                        .font(.subheadline)
+                    }
+
                     // ── Title ─────────────────────────────────────
                     fieldLabel("Title")
                     clearableField("Set title", text: $title)
 
-                    // ── Subtitle ──────────────────────────────────
-                    fieldLabel("Subtitle (optional)")
-                    clearableField("Subtitle", text: $subtitle)
-
                     // ── Description ───────────────────────────────
                     fieldLabel("Description (optional)")
-                    clearableField("Longer description shown in the library", text: $desc)
+                    clearableField("Shown in the library below the title", text: $desc)
 
-                    // ── Columns ───────────────────────────────────
-                    fieldLabel("Columns")
-                    clearableField("Left column (e.g. B2, Basic)", text: $leftTitle)
-                    clearableField("Right column (e.g. C1, Advanced)", text: $rightTitle)
+                    // ── Level & Status ────────────────────────────
+                    GroupBox("Level & Status") {
+                        Picker("CEFR Level", selection: $cefrLevel) {
+                            ForEach(CEFRLevel.allCases, id: \.self) { l in
+                                Text(l.displayCode).tag(l)
+                            }
+                        }
 
-                    // ── Display & Access ──────────────────────────
-                    GroupBox("Display & Access") {
-                        Picker("Display Mode", selection: $displayMode) {
-                            Text("Parallel").tag(DisplayMode.parallel)
-                            Text("Sequential").tag(DisplayMode.sequential)
+                        Divider()
+
+                        Picker("Deploy Status", selection: $deployStatus) {
+                            ForEach(SetDeployStatus.allCases, id: \.self) { s in
+                                Text(s.label).tag(s)
+                            }
                         }
 
                         Divider()
@@ -67,7 +81,7 @@ struct PairsSetEditorSheet: View {
                 }
                 .padding(20)
             }
-            .frame(minWidth: 420, minHeight: 360)
+            .frame(minWidth: 400, minHeight: 320)
             .navigationTitle(isEditing ? "Edit Set" : "New Set")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -81,16 +95,16 @@ struct PairsSetEditorSheet: View {
         }
         .onAppear {
             if let s = pairsSet {
-                title       = s.title ?? ""
-                subtitle    = s.subtitle ?? ""
-                desc        = s.description ?? ""
-                leftTitle   = s.leftTitle ?? ""
-                rightTitle  = s.rightTitle ?? ""
-                displayMode = s.displayMode
-                accessTier  = s.accessTier
+                title        = s.title ?? ""
+                desc         = s.description ?? ""
+                cefrLevel    = s.cefrLevel
+                accessTier   = s.accessTier
+                deployStatus = s.deployStatus
             }
         }
     }
+
+    // MARK: Helpers
 
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
@@ -120,37 +134,29 @@ struct PairsSetEditorSheet: View {
     // MARK: Save
 
     private func save() {
-        let trimmedTitle    = title.trimmingCharacters(in: .whitespaces)
-        let trimmedSubtitle = subtitle.trimmingCharacters(in: .whitespaces)
-        let trimmedDesc     = desc.trimmingCharacters(in: .whitespaces)
-        let trimmedLeft     = leftTitle.trimmingCharacters(in: .whitespaces)
-        let trimmedRight    = rightTitle.trimmingCharacters(in: .whitespaces)
+        let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
+        let trimmedDesc  = desc.trimmingCharacters(in: .whitespaces)
 
         if let existing = pairsSet {
             var updated = existing
-            updated.title       = trimmedTitle
-            updated.subtitle    = trimmedSubtitle.isEmpty ? nil : trimmedSubtitle
-            updated.description = trimmedDesc.isEmpty ? nil : trimmedDesc
-            updated.leftTitle   = trimmedLeft.isEmpty ? nil : trimmedLeft
-            updated.rightTitle  = trimmedRight.isEmpty ? nil : trimmedRight
-            updated.displayMode = displayMode
-            updated.accessTier  = accessTier
-            updated.updatedAt   = .now
+            updated.title        = trimmedTitle
+            updated.description  = trimmedDesc.isEmpty ? nil : trimmedDesc
+            updated.cefrLevel    = cefrLevel
+            updated.accessTier   = accessTier
+            updated.deployStatus = deployStatus
+            updated.updatedAt    = .now
             store.update(updated)
         } else {
             let new = FSPairsSet(
-                id:          FirestoreID.make(name: trimmedTitle),
+                id:           FirestoreID.make(name: trimmedTitle),
                 collectionId: collectionId,
-                title:       trimmedTitle,
-                subtitle:    trimmedSubtitle.isEmpty ? nil : trimmedSubtitle,
-                description: trimmedDesc.isEmpty ? nil : trimmedDesc,
-                leftTitle:   trimmedLeft.isEmpty ? nil : trimmedLeft,
-                rightTitle:  trimmedRight.isEmpty ? nil : trimmedRight,
-                displayMode: displayMode,
-                accessTier:  accessTier,
-                items:       [],
-                updatedAt:   .now,
-                createdAt:   .now
+                title:        trimmedTitle,
+                description:  trimmedDesc.isEmpty ? nil : trimmedDesc,
+                cefrLevel:    cefrLevel,
+                accessTier:   accessTier,
+                deployStatus: deployStatus,
+                updatedAt:    .now,
+                createdAt:    .now
             )
             store.add(new)
         }

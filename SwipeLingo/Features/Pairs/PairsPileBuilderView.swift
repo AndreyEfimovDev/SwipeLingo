@@ -167,7 +167,7 @@ struct PairsPileBuilderView: View {
         guard !searchText.isEmpty else { return allSets }
         return allSets.filter {
             ($0.title ?? "").localizedCaseInsensitiveContains(searchText) ||
-            ($0.subtitle ?? "").localizedCaseInsensitiveContains(searchText)
+            ($0.setDescription ?? "").localizedCaseInsensitiveContains(searchText)
         }
     }
 }

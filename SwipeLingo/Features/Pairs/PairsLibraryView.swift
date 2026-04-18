@@ -265,18 +265,10 @@ private struct LibrarySetRow: View {
                         .offset(y: -3)
                 }
 
-                if let subtitle = set.subtitle {
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                }
-
                 HStack(spacing: 6) {
-                    if let left = set.leftTitle, let right = set.rightTitle {
-                        Text("\(left) → \(right)")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(Color.myColors.myBlue)
-                    }
+                    Text(set.cefrLevel.displayCode)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
                     let count = set.items.count
                     if count > 0 {
                         Text("·")
