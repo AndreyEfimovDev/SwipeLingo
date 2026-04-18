@@ -124,30 +124,26 @@ struct FSPairsSet: Codable, Identifiable {
     var id:           String
     var collectionId: String
     var title:        String?
-    var subtitle:     String?
     var description:  String?        // optional set description shown in library
-    var leftTitle:    String?
-    var rightTitle:   String?
-    var displayMode:  DisplayMode
+    var cefrLevel:    CEFRLevel
     var accessTier:   AccessTier
+    var deployStatus: SetDeployStatus
     var items:        [FSPair]
     var updatedAt:    Date
     var createdAt:    Date
 
-    init(id: String, collectionId: String, title: String? = nil, subtitle: String? = nil,
+    init(id: String, collectionId: String, title: String? = nil,
          description: String? = nil,
-         leftTitle: String? = nil, rightTitle: String? = nil,
-         displayMode: DisplayMode, accessTier: AccessTier,
-         items: [FSPair], updatedAt: Date, createdAt: Date) {
+         cefrLevel: CEFRLevel = .b2, accessTier: AccessTier = .free,
+         deployStatus: SetDeployStatus = .new,
+         items: [FSPair] = [], updatedAt: Date, createdAt: Date) {
         self.id           = id
         self.collectionId = collectionId
         self.title        = title
-        self.subtitle     = subtitle
         self.description  = description
-        self.leftTitle    = leftTitle
-        self.rightTitle   = rightTitle
-        self.displayMode  = displayMode
+        self.cefrLevel    = cefrLevel
         self.accessTier   = accessTier
+        self.deployStatus = deployStatus
         self.items        = items
         self.updatedAt    = updatedAt
         self.createdAt    = createdAt
@@ -155,17 +151,72 @@ struct FSPairsSet: Codable, Identifiable {
 }
 
 // MARK: - FSPair
+//
+// Единица контента в PairsSet. Поля и правила отображения:
+//
+//   left        — основной термин/фраза (короткий, всегда видим)
+//   right       — контрпара/синоним   (короткий, в одну строку с left)
+//   description — определение/объяснение (полная ширина, новая строка)
+//   sample      — пример предложения    (полная ширина, новая строка)
+//   tag         — группа внутри сета (аналог Cards.tag, "" = без группы)
+//   leftTitle   — заголовок левой колонки для группы (только classic / pairs+sample)
+//   rightTitle  — заголовок правой колонки для группы (только classic / pairs+sample)
+//
+// Типы контента:
+//   classic:                 left – right – nil  – nil
+//   pairs + sample:          left – right – nil  – sample
+//   left-sample:             left – nil   – nil  – sample
+//   left-description-sample: left – nil   – desc – sample
+//
+// Заголовки колонок хранятся на уровне пары, а не сета:
+// разные группы внутри одного сета могут иметь разные заголовки.
+// В отображении берётся leftTitle/rightTitle первой пары группы.
 
 struct FSPair: Codable, Identifiable {
-    var id:    String
-    var left:  FSPairSide?
-    var right: FSPairSide?
-}
+    var id:          String
+    var left:        String?
+    var right:       String?
+    var description: String?
+    var sample:      String?
+    var tag:         String
+    var leftTitle:   String?      // заголовок левой колонки (на уровне группы)
+    var rightTitle:  String?      // заголовок правой колонки (на уровне группы)
+    var displayMode: DisplayMode  // parallel / sequential (на уровне группы)
 
-// MARK: - FSPairSide
+    init(id: String = UUID().uuidString,
+         left: String? = nil,
+         right: String? = nil,
+         description: String? = nil,
+         sample: String? = nil,
+         tag: String = "",
+         leftTitle: String? = nil,
+         rightTitle: String? = nil,
+         displayMode: DisplayMode = .parallel) {
+        self.id          = id
+        self.left        = left
+        self.right       = right
+        self.description = description
+        self.sample      = sample
+        self.tag         = tag
+        self.leftTitle   = leftTitle
+        self.rightTitle  = rightTitle
+        self.displayMode = displayMode
+    }
 
-struct FSPairSide: Codable {
-    var text: String?
+    // Backward-compatible decoder: новые поля (leftTitle, rightTitle, displayMode)
+    // отсутствуют в старых store.json — декодируем с дефолтами.
+    init(from decoder: Decoder) throws {
+        let c       = try decoder.container(keyedBy: CodingKeys.self)
+        id          = try c.decode(String.self,      forKey: .id)
+        left        = try c.decodeIfPresent(String.self,      forKey: .left)
+        right       = try c.decodeIfPresent(String.self,      forKey: .right)
+        description = try c.decodeIfPresent(String.self,      forKey: .description)
+        sample      = try c.decodeIfPresent(String.self,      forKey: .sample)
+        tag         = try c.decodeIfPresent(String.self,      forKey: .tag)         ?? ""
+        leftTitle   = try c.decodeIfPresent(String.self,      forKey: .leftTitle)
+        rightTitle  = try c.decodeIfPresent(String.self,      forKey: .rightTitle)
+        displayMode = try c.decodeIfPresent(DisplayMode.self, forKey: .displayMode) ?? .parallel
+    }
 }
 
 // MARK: - FirestoreID

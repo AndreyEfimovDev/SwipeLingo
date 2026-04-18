@@ -144,7 +144,7 @@ struct CardSetDetailView: View {
             if let desc = cardSet.setDescription, !desc.isEmpty {
                 Text(desc)
                     .font(.subheadline)
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.85))
+                    .foregroundStyle(Color.myColors.mySecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 16)
                     .padding(.top, cardSet.isUserCreated ? 12 : 4)

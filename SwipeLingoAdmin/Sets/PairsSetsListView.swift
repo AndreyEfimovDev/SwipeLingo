@@ -105,13 +105,16 @@ private struct PairsSetRow: View {
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
-                    if let left = set.leftTitle, let right = set.rightTitle {
-                        Text("\(left) → \(right)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("·")
-                            .foregroundStyle(.tertiary)
-                    }
+                    Text(set.cefrLevel.displayCode)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    Text(set.deployStatus.label)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("·")
+                        .foregroundStyle(.tertiary)
                     Text("\(set.items.count) pairs")
                         .font(.caption)
                         .foregroundStyle(.secondary)

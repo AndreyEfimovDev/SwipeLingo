@@ -52,7 +52,7 @@ struct PairsSetPlayerView: View {
     @State private var showCompletion:   Bool = false   // true только после окончания аудио последней строки
     @State private var showTapHint:      Bool = false   // true после окончания TTS текущего шага в manual
     @State private var revealedSteps:  Int = 0
-    @State private var thresholds: [(leftStep: Int?, rightStep: Int?)] = []
+    @State private var thresholds: [(leftStep: Int?, rightStep: Int?, descStep: Int?, sampleStep: Int?)] = []
     @State private var totalSteps: Int = 0
     @State private var autoPlayTask:   Task<Void, Never>?
     @State private var completionTask: Task<Void, Never>?
@@ -88,14 +88,7 @@ struct PairsSetPlayerView: View {
     var body: some View {
         VStack(spacing: 0) {
             subtitleLine
-
-            // Column headers — закреплены под subtitleLine, видны только во время воспроизведения
-            if hasStarted && (set.leftTitle != nil || set.rightTitle != nil) {
-                columnHeaders
-                    .padding(.vertical, 6)
-            } else {
-                Divider()
-            }
+            Divider()
 
             ScrollViewReader { proxy in
                 ScrollView {
@@ -210,7 +203,9 @@ struct PairsSetPlayerView: View {
         .onAppear {
             let computed = computeThresholds()
             thresholds = computed
-            totalSteps = computed.reduce(0) { max($0, max($1.leftStep ?? 0, $1.rightStep ?? 0)) }
+            totalSteps = computed.reduce(0) { result, t in
+                [result, t.leftStep ?? 0, t.rightStep ?? 0, t.descStep ?? 0, t.sampleStep ?? 0].max()!
+            }
             animationMode = initialAnimationMode ?? defaultAnimationMode
             if autoStart { startPlayback() }
         }
@@ -244,21 +239,14 @@ struct PairsSetPlayerView: View {
     }
     
     private var subtitleLine: some View {
-        // Subtitle + mode switcher в одну строку — закреплена над ScrollView
+        // Count + tier badge + mode switcher — закреплена над ScrollView
         HStack(alignment: .center, spacing: 8) {
             HStack(alignment: .top, spacing: 2) {
-                HStack(spacing: 0) {
-                    if let subtitle = set.subtitle {
-                        Text(subtitle)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.myColors.myAccent)
-                    }
-                    let count = set.items.count
-                    if count > 0 {
-                        Text(" (\(count))")
-                            .font(.subheadline)
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
-                    }
+                let count = set.items.count
+                if count > 0 {
+                    Text("\(count) pairs")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
                 }
                 AccessTierBadge(tier: set.accessTier, isSmall: true)
                     .offset(y: -3)
@@ -299,68 +287,68 @@ struct PairsSetPlayerView: View {
         .animation(.easeInOut(duration: 0.2), value: isPlaybackActive)
     }
     
-    // MARK: - Column Headers
-    
-    private var columnHeaders: some View {
-        HStack(spacing: 0) {
-            Group {
-                if let title = set.leftTitle {
-                    Text(title).frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundStyle(Color.myColors.myGreen)
-                } else { Spacer() }
-            }
-            
-            Rectangle()
-                .fill(Color.myColors.myAccent.opacity(0.1))
-                .frame(width: 1, height: 16)
-            
-            Group {
-                if let title = set.rightTitle {
-                    Text(title).frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 12)
-                        .foregroundStyle(Color.myColors.myRed)
-                } else { Spacer() }
-            }
-        }
-        .font(.caption.weight(.semibold))
-        .padding(.horizontal, 28)
-    }
-    
     // MARK: - Pair Row
-    
+    //
+    // Layout:
+    //   left + right  → одна строка, две колонки (right всегда короткий)
+    //   left only     → полная ширина, medium weight
+    //   description   → новая строка, полная ширина
+    //   sample        → новая строка, полная ширина, italic
+
     @ViewBuilder
     private func pairRow(pair: Pair, index: Int) -> some View {
-        let thresh = thresholds[index]
-        let leftVisible  = thresh.leftStep.map  { revealedSteps >= $0 } ?? false
-        let rightVisible = thresh.rightStep.map { revealedSteps >= $0 } ?? false
-        let rightLocked  = isPaywalled && index >= previewPairCount
-        
-        VStack(spacing: 0) {
+        let thresh        = thresholds[index]
+        let leftVisible   = thresh.leftStep.map   { revealedSteps >= $0 } ?? false
+        let rightVisible  = thresh.rightStep.map  { revealedSteps >= $0 } ?? false
+        let descVisible   = thresh.descStep.map   { revealedSteps >= $0 } ?? false
+        let sampleVisible = thresh.sampleStep.map { revealedSteps >= $0 } ?? false
+        let rightLocked   = isPaywalled && index >= previewPairCount
+
+        VStack(alignment: .leading, spacing: 0) {
+
+            // Line 1: left [+ right]
             HStack(alignment: .top, spacing: 0) {
-                cellText(pair.left?.text, visible: leftVisible)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Rectangle()
-                    .fill(Color.myColors.myAccent.opacity(0.1))
-                    .frame(width: 1)
-                    .padding(.vertical, 8)
-                
-                if rightLocked {
-                    lockedCell(visible: rightVisible)
+                if pair.right != nil {
+                    // Two-column layout
+                    cellText(pair.left, visible: leftVisible)
                         .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Rectangle()
+                        .fill(Color.myColors.myAccent.opacity(0.1))
+                        .frame(width: 1)
+                        .padding(.vertical, 8)
+
+                    if rightLocked {
+                        lockedCell(visible: rightVisible)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        cellText(pair.right, visible: rightVisible)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 } else {
-                    cellText(pair.right?.text, visible: rightVisible)
+                    // Full-width left
+                    cellText(pair.left, visible: leftVisible, weight: .medium)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .animation(.spring(duration: 0.4, bounce: 0.05), value: revealedSteps)
-            
+
+            // Line 2: description
+            if pair.description != nil {
+                cellTextSecondary(pair.description, visible: descVisible, isItalic: false)
+            }
+
+            // Line 3: sample
+            if pair.sample != nil {
+                cellTextSecondary(pair.sample, visible: sampleVisible, isItalic: true)
+            }
+
             if index < set.items.count - 1 {
                 Divider().padding(.leading, 12)
             }
         }
+        .animation(.spring(duration: 0.4, bounce: 0.05), value: revealedSteps)
     }
-    
+
     @ViewBuilder
     private func lockedCell(visible: Bool) -> some View {
         Button {
@@ -382,12 +370,12 @@ struct PairsSetPlayerView: View {
         .opacity(visible ? 1 : 0)
         .offset(y: visible ? 0 : 6)
     }
-    
+
     @ViewBuilder
-    private func cellText(_ text: String?, visible: Bool) -> some View {
+    private func cellText(_ text: String?, visible: Bool, weight: Font.Weight = .regular) -> some View {
         if let text {
             Text(text)
-                .font(.body)
+                .font(.body.weight(weight))
                 .foregroundStyle(Color.myColors.myAccent)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 14)
@@ -395,6 +383,22 @@ struct PairsSetPlayerView: View {
                 .offset(y: visible ? 0 : 6)
         } else {
             Color.clear.frame(height: 48)
+        }
+    }
+
+    @ViewBuilder
+    private func cellTextSecondary(_ text: String?, visible: Bool, isItalic: Bool) -> some View {
+        if let text, !text.isEmpty {
+            Text(text)
+                .font(isItalic ? .subheadline.italic() : .subheadline)
+                .foregroundStyle(isItalic
+                    ? Color.myColors.myAccent.opacity(0.55)
+                    : Color.myColors.myAccent.opacity(0.7))
+                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .opacity(visible ? 1 : 0)
+                .offset(y: visible ? 0 : 6)
         }
     }
     
@@ -736,52 +740,62 @@ struct PairsSetPlayerView: View {
     // MARK: - Audio / TTS
     
     /// Определяет текст(ы) для текущего шага и запускает TTS с паузой readPause.
-    /// sequential: один текст (left или right).
-    /// parallel:   left → (ждём окончания TTS через .onChange(isPlaying)) → right.
+    ///
+    /// Матрица шагов:
+    ///   parallel + right != nil:  leftStep == rightStep → primary=left, secondary=right (очередь)
+    ///   sequential left:          leftStep  → primary=left
+    ///   sequential right:         rightStep → primary=right
+    ///   descStep:                 primary=description
+    ///   sampleStep:               primary=sample
+    ///
+    /// secondary (правый в parallel) ставится в pendingRightSpeech и озвучивается
+    /// через .onChange(isPlaying) после окончания левого TTS.
     private func speakCurrentStep() {
         audioTask?.cancel()
         pendingRightSpeech = nil
         isRightSpeechPending = false
         guard audioEnabled else { return }
-        
-        var leftText:  String? = nil
-        var rightText: String? = nil
-        
+
+        var primaryText:   String? = nil
+        var secondaryText: String? = nil   // только для parallel left+right
+
         for (index, thresh) in thresholds.enumerated() {
             guard index < set.items.count else { continue }
             let pair = set.items[index]
             let rightLocked = isPaywalled && index >= previewPairCount
-            
-            switch set.displayMode {
-            case .sequential:
-                if thresh.leftStep  == revealedSteps { leftText  = pair.left?.text  }
-                if thresh.rightStep == revealedSteps && !rightLocked { rightText = pair.right?.text }
-            case .parallel:
-                if thresh.leftStep == revealedSteps || thresh.rightStep == revealedSteps {
-                    leftText  = pair.left?.text
-                    if !rightLocked { rightText = pair.right?.text }
+
+            if thresh.leftStep == revealedSteps {
+                // Left step (sequential) OR shared left+right step (parallel)
+                primaryText = pair.left
+                // Parallel: leftStep == rightStep → queue right as secondary
+                if thresh.rightStep == revealedSteps, !rightLocked {
+                    secondaryText = pair.right
                 }
+            } else if thresh.rightStep == revealedSteps, !rightLocked {
+                // Sequential: right on its own step
+                primaryText = pair.right
+            } else if thresh.descStep == revealedSteps {
+                primaryText = pair.description
+            } else if thresh.sampleStep == revealedSteps {
+                primaryText = pair.sample
             }
         }
-        
+
         let voiceId = ttsVoiceIdentifier
-        
+
         audioTask = Task {
             // Пауза: даём пользователю увидеть текст глазами
             try? await Task.sleep(for: .seconds(readPause))
             guard !Task.isCancelled, audioEnabled else { return }
-            
-            if let text = leftText, !text.isEmpty {
+
+            if let text = primaryText, !text.isEmpty {
                 // speak() внутри вызывает stop() → isPlaying = false → onChange срабатывает.
                 // pendingRightSpeech ставим ПОСЛЕ speak(), иначе onChange подхватит его
                 // раньше времени (до начала воспроизведения левого слова).
                 audioService.speak(text: text, voiceIdentifier: voiceId)
-                if let right = rightText, !right.isEmpty {
+                if let right = secondaryText, !right.isEmpty {
                     pendingRightSpeech = right
                 }
-            } else if let text = rightText, !text.isEmpty {
-                // sequential: только правый элемент в этом шаге
-                audioService.speak(text: text, voiceIdentifier: voiceId)
             }
         }
     }
@@ -791,29 +805,38 @@ struct PairsSetPlayerView: View {
     private func isPairVisible(at index: Int) -> Bool {
         guard index < thresholds.count else { return false }
         let t = thresholds[index]
-        return (t.leftStep.map  { revealedSteps >= $0 } ?? false)
-        || (t.rightStep.map { revealedSteps >= $0 } ?? false)
+        return (t.leftStep.map   { revealedSteps >= $0 } ?? false)
+            || (t.rightStep.map  { revealedSteps >= $0 } ?? false)
+            || (t.descStep.map   { revealedSteps >= $0 } ?? false)
+            || (t.sampleStep.map { revealedSteps >= $0 } ?? false)
     }
     
-    private func computeThresholds() -> [(leftStep: Int?, rightStep: Int?)] {
-        var result: [(leftStep: Int?, rightStep: Int?)] = []
+    private func computeThresholds() -> [(leftStep: Int?, rightStep: Int?, descStep: Int?, sampleStep: Int?)] {
+        var result: [(leftStep: Int?, rightStep: Int?, descStep: Int?, sampleStep: Int?)] = []
         var step = 0
-        
+
         for pair in set.items {
-            switch set.displayMode {
-            case .sequential:
-                var leftStep:  Int? = nil
-                var rightStep: Int? = nil
-                if pair.left  != nil { step += 1; leftStep  = step }
-                if pair.right != nil { step += 1; rightStep = step }
-                result.append((leftStep, rightStep))
-            case .parallel:
+            var leftStep:   Int? = nil
+            var rightStep:  Int? = nil
+            var descStep:   Int? = nil
+            var sampleStep: Int? = nil
+
+            if pair.right != nil && pair.displayMode == .parallel {
+                // Parallel: left + right appear together on one step
                 step += 1
-                result.append((
-                    pair.left  != nil ? step : nil,
-                    pair.right != nil ? step : nil
-                ))
+                if pair.left  != nil { leftStep  = step }
+                rightStep = step
+                if pair.description != nil { step += 1; descStep   = step }
+                if pair.sample      != nil { step += 1; sampleStep = step }
+            } else {
+                // Sequential (or no right): each field is a separate step
+                if pair.left        != nil { step += 1; leftStep   = step }
+                if pair.right       != nil { step += 1; rightStep  = step }
+                if pair.description != nil { step += 1; descStep   = step }
+                if pair.sample      != nil { step += 1; sampleStep = step }
             }
+
+            result.append((leftStep, rightStep, descStep, sampleStep))
         }
         return result
     }
