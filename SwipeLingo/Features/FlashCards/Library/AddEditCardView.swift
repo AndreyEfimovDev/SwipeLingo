@@ -68,8 +68,8 @@ struct AddEditCardView: View {
 
         _en          = State(initialValue: card?.en   ?? "")
         _item        = State(initialValue: card?.item ?? "")
-        _samplesEN   = State(initialValue: card.flatMap { $0.sampleEN.isEmpty   ? nil : $0.sampleEN }   ?? [""])
-        _samplesItem = State(initialValue: card.flatMap { $0.sampleItem.isEmpty ? nil : $0.sampleItem } ?? [""])
+        _samplesEN   = State(initialValue: card?.sampleEN   ?? [])
+        _samplesItem = State(initialValue: card?.sampleItem ?? [])
         _selectedSetId = State(initialValue: card?.setId ?? preselectedSetId)
     }
 
@@ -574,13 +574,9 @@ struct AddEditCardView: View {
                     if !samples.wrappedValue[i].isEmpty {
                         clearButton {
                             withAnimation(.spring(duration: 0.25)) {
-                                if samples.wrappedValue.count > 1 {
-                                    var updated = samples.wrappedValue
-                                    updated.remove(at: i)
-                                    samples.wrappedValue = updated
-                                } else {
-                                    samples.wrappedValue[i] = ""
-                                }
+                                var updated = samples.wrappedValue
+                                updated.remove(at: i)
+                                samples.wrappedValue = updated
                             }
                         }
                     }
@@ -593,7 +589,7 @@ struct AddEditCardView: View {
                 }
             }
 
-            Divider()
+            if !samples.wrappedValue.isEmpty { Divider() }
 
             Button {
                 withAnimation(.spring(duration: 0.25)) { samples.wrappedValue.append("") }

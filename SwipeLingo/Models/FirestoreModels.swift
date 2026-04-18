@@ -11,17 +11,36 @@ import Foundation
 // MARK: - SetDeployStatus
 
 enum SetDeployStatus: String, Codable, CaseIterable {
-    case new        // создан локально, в Firebase нет
-    case ready      // помечен к деплою
-    case live       // синхронизирован с Firebase
-    case outdated   // был Live, внесены локальные изменения
+    case new      // создан локально, в Firebase нет
+    case draft    // изменён после публикации (автоматически)
+    case ready    // помечен к публикации вручную
+    case live     // синхронизирован с Firebase (автоматически после публикации)
+    case deleted  // мягкое удаление — только в Admin, в Firebase удалён
 
     var label: String {
         switch self {
-        case .new:      "New"
-        case .ready:    "Ready"
-        case .live:     "Live"
-        case .outdated: "Outdated"
+        case .new:     "New"
+        case .draft:   "Draft"
+        case .ready:   "Ready"
+        case .live:    "Live"
+        case .deleted: "Deleted"
+        }
+    }
+
+    // Backward-compatible decoder: старый store.json может содержать "outdated" → .draft
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        switch raw {
+        case "outdated": self = .draft
+        default:
+            guard let v = SetDeployStatus(rawValue: raw) else {
+                throw DecodingError.dataCorruptedError(
+                    in: container,
+                    debugDescription: "Unknown SetDeployStatus: \(raw)"
+                )
+            }
+            self = v
         }
     }
 }

@@ -7,6 +7,13 @@ import Observation
 // Данные сохраняются в Application Support при каждой мутации,
 // загружаются автоматически при инициализации.
 // Phase 4: методы add/update/delete будут дополнены записью в Firestore.
+//
+// Deploy Status автопереходы:
+//   Создание                 → .new
+//   Редактирование .live/.ready → .draft (автоматически)
+//   "Mark as Ready"          → .ready
+//   Publish (Phase 4)        → .live
+//   Soft delete              → .deleted (остаётся в store, скрывается из списка)
 
 @Observable
 final class AdminStore {
@@ -44,16 +51,18 @@ final class AdminStore {
     func delete(collectionId: String) {
         collections.removeAll { $0.id == collectionId }
         let removedSetIds = cardSets.filter { $0.collectionId == collectionId }.map(\.id)
-        cardSets.removeAll  { $0.collectionId == collectionId }
-        cards.removeAll     { removedSetIds.contains($0.setId) }
-        pairsSets.removeAll { $0.collectionId == collectionId }
+        // Soft-delete sets and their cards
+        for id in removedSetIds { softDeleteCardSet(id: id) }
+        pairsSets.indices
+            .filter { pairsSets[$0].collectionId == collectionId }
+            .forEach { pairsSets[$0].deployStatus = .deleted }
         save()
     }
 
     // MARK: - CardSets
 
     func cardSets(for collectionId: String) -> [FSCardSet] {
-        cardSets.filter { $0.collectionId == collectionId }
+        cardSets.filter { $0.collectionId == collectionId && $0.deployStatus != .deleted }
     }
 
     func add(_ set: FSCardSet) {
@@ -61,16 +70,38 @@ final class AdminStore {
         save()
     }
 
+    /// Сохраняет изменения сета. Если сет был .live или .ready — автоматически переводит в .draft.
     func update(_ set: FSCardSet) {
         guard let idx = cardSets.firstIndex(where: { $0.id == set.id }) else { return }
-        cardSets[idx] = set
+        var updated = set
+        if set.deployStatus == .live || set.deployStatus == .ready {
+            updated.deployStatus = .draft
+        }
+        updated.updatedAt = .now
+        cardSets[idx] = updated
         save()
     }
 
+    /// Мягкое удаление — сет помечается .deleted, остаётся в store.
     func delete(cardSetId: String) {
-        cardSets.removeAll { $0.id == cardSetId }
-        cards.removeAll    { $0.setId == cardSetId }
+        softDeleteCardSet(id: cardSetId)
         save()
+    }
+
+    /// Переводит сет в .ready (ручное действие из UI).
+    func markReady(cardSetId: String) {
+        guard let idx = cardSets.firstIndex(where: { $0.id == cardSetId }),
+              cardSets[idx].deployStatus != .live
+        else { return }
+        cardSets[idx].deployStatus = .ready
+        cardSets[idx].updatedAt   = .now
+        save()
+    }
+
+    private func softDeleteCardSet(id: String) {
+        guard let idx = cardSets.firstIndex(where: { $0.id == id }) else { return }
+        cardSets[idx].deployStatus = .deleted
+        cardSets[idx].updatedAt   = .now
     }
 
     // MARK: - Cards
@@ -81,37 +112,38 @@ final class AdminStore {
 
     func add(_ card: FSCard) {
         cards.append(card)
-        markOutdatedIfLive(setId: card.setId)
+        markDraftIfPublished(cardSetId: card.setId)
         save()
     }
 
     func update(_ card: FSCard) {
         guard let idx = cards.firstIndex(where: { $0.id == card.id }) else { return }
         cards[idx] = card
-        markOutdatedIfLive(setId: card.setId)
+        markDraftIfPublished(cardSetId: card.setId)
         save()
     }
 
     func delete(cardId: String) {
         if let card = cards.first(where: { $0.id == cardId }) {
-            markOutdatedIfLive(setId: card.setId)
+            markDraftIfPublished(cardSetId: card.setId)
         }
         cards.removeAll { $0.id == cardId }
         save()
     }
 
-    /// Переводит сет из .live → .outdated при изменении его карточек
-    private func markOutdatedIfLive(setId: String) {
-        guard let idx = cardSets.firstIndex(where: { $0.id == setId }),
-              cardSets[idx].deployStatus == .live else { return }
-        cardSets[idx].deployStatus  = .outdated
-        cardSets[idx].updatedAt     = .now
+    /// Переводит сет из .live или .ready → .draft при изменении его карточек.
+    private func markDraftIfPublished(cardSetId: String) {
+        guard let idx = cardSets.firstIndex(where: { $0.id == cardSetId }),
+              cardSets[idx].deployStatus == .live || cardSets[idx].deployStatus == .ready
+        else { return }
+        cardSets[idx].deployStatus = .draft
+        cardSets[idx].updatedAt   = .now
     }
 
     // MARK: - PairsSets
 
     func pairsSets(for collectionId: String) -> [FSPairsSet] {
-        pairsSets.filter { $0.collectionId == collectionId }
+        pairsSets.filter { $0.collectionId == collectionId && $0.deployStatus != .deleted }
     }
 
     func add(_ set: FSPairsSet) {
@@ -119,14 +151,33 @@ final class AdminStore {
         save()
     }
 
+    /// Сохраняет изменения сета. Если сет был .live или .ready — автоматически переводит в .draft.
     func update(_ set: FSPairsSet) {
         guard let idx = pairsSets.firstIndex(where: { $0.id == set.id }) else { return }
-        pairsSets[idx] = set
+        var updated = set
+        if set.deployStatus == .live || set.deployStatus == .ready {
+            updated.deployStatus = .draft
+        }
+        updated.updatedAt = .now
+        pairsSets[idx] = updated
         save()
     }
 
+    /// Мягкое удаление — сет помечается .deleted, остаётся в store.
     func delete(pairsSetId: String) {
-        pairsSets.removeAll { $0.id == pairsSetId }
+        guard let idx = pairsSets.firstIndex(where: { $0.id == pairsSetId }) else { return }
+        pairsSets[idx].deployStatus = .deleted
+        pairsSets[idx].updatedAt   = .now
+        save()
+    }
+
+    /// Переводит сет в .ready (ручное действие из UI).
+    func markReady(pairsSetId: String) {
+        guard let idx = pairsSets.firstIndex(where: { $0.id == pairsSetId }),
+              pairsSets[idx].deployStatus != .live
+        else { return }
+        pairsSets[idx].deployStatus = .ready
+        pairsSets[idx].updatedAt   = .now
         save()
     }
 

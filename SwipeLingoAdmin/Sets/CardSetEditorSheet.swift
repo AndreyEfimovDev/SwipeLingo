@@ -12,11 +12,10 @@ struct CardSetEditorSheet: View {
 
     // MARK: State
 
-    @State private var name:         String          = ""
-    @State private var desc:         String          = ""
-    @State private var level:        CEFRLevel       = .b1
-    @State private var accessTier:   AccessTier      = .go
-    @State private var deployStatus: SetDeployStatus = .new
+    @State private var name:       String      = ""
+    @State private var desc:       String      = ""
+    @State private var level:      CEFRLevel   = .b1
+    @State private var accessTier: AccessTier  = .go
 
     private var isEditing: Bool { cardSet != nil }
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -64,18 +63,20 @@ struct CardSetEditorSheet: View {
                         }
                     }
 
-                    // ── Status ───────────────────────────────────
-                    GroupBox("Status") {
-                        Picker("Deploy Status", selection: $deployStatus) {
-                            ForEach([SetDeployStatus.new, .ready], id: \.self) { s in
-                                Text(s.label).tag(s)
+                    // ── Status (read-only when editing) ──────────
+                    if isEditing, let s = cardSet {
+                        GroupBox("Status") {
+                            HStack {
+                                Text("Deploy Status")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(s.deployStatus.label)
                             }
-                        }
-                        .disabled(deployStatus == .live || deployStatus == .outdated)
-                        if deployStatus == .live || deployStatus == .outdated {
-                            Text("Status is managed automatically after deployment")
+                            .font(.subheadline)
+                            Text("Managed automatically — use "Mark as Ready" in the set list to schedule publishing.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                                .padding(.top, 2)
                         }
                     }
 
@@ -97,11 +98,10 @@ struct CardSetEditorSheet: View {
         }
         .onAppear {
             if let s = cardSet {
-                name         = s.name
-                desc         = s.description ?? ""
-                level        = s.cefrLevel
-                accessTier   = s.accessTier
-                deployStatus = s.deployStatus
+                name       = s.name
+                desc       = s.description ?? ""
+                level      = s.cefrLevel
+                accessTier = s.accessTier
             }
         }
     }
@@ -139,12 +139,11 @@ struct CardSetEditorSheet: View {
 
         if let existing = cardSet {
             var updated = existing
-            updated.name         = trimmedName
-            updated.description  = trimmedDesc.isEmpty ? nil : trimmedDesc
-            updated.cefrLevel    = level
-            updated.accessTier   = accessTier
-            updated.deployStatus = deployStatus
-            updated.updatedAt    = .now
+            updated.name        = trimmedName
+            updated.description = trimmedDesc.isEmpty ? nil : trimmedDesc
+            updated.cefrLevel   = level
+            updated.accessTier  = accessTier
+            // deployStatus intentionally NOT set here — AdminStore.update() handles auto-transition
             store.update(updated)
         } else {
             let new = FSCardSet(

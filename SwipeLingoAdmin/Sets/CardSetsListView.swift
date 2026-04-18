@@ -119,20 +119,32 @@ private struct CardSetRow: View {
 
             Spacer()
 
-            // Deploy button (placeholder)
-            if set.deployStatus == .ready || set.deployStatus == .outdated {
-                Button {
-                    // Phase 4: Firebase write
-                } label: {
-                    Label("Deploy", systemImage: "arrow.up.circle")
-                        .font(.caption)
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
-            }
+            VStack(alignment: .trailing, spacing: 4) {
+                // Status badge
+                deployStatusBadge(set.deployStatus)
 
-            // Status badge
-            deployStatusBadge(set.deployStatus)
+                // Mark as Ready — for .new and .draft
+                if set.deployStatus == .new || set.deployStatus == .draft {
+                    Button("Mark as Ready") {
+                        store.markReady(cardSetId: set.id)
+                    }
+                    .font(.caption)
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                }
+
+                // Deploy — for .ready only (Phase 4: Firebase write)
+                if set.deployStatus == .ready {
+                    Button {
+                        // Phase 4: Firebase write
+                    } label: {
+                        Label("Deploy", systemImage: "arrow.up.circle")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                }
+            }
         }
         .padding(.vertical, 2)
     }
@@ -140,10 +152,11 @@ private struct CardSetRow: View {
     @ViewBuilder
     private func deployStatusBadge(_ status: SetDeployStatus) -> some View {
         let color: Color = switch status {
-            case .new:      .green
-            case .ready:    .red
-            case .live:     .blue
-            case .outdated: .yellow
+            case .new:     .green
+            case .draft:   .orange
+            case .ready:   .red
+            case .live:    .blue
+            case .deleted: .gray
         }
         Text(status.label)
             .font(.caption.weight(.medium))
