@@ -2,8 +2,8 @@ import SwiftUI
 import SwiftData
 
 // MARK: - OnboardingNameView
-// Шаг 2: ввод имени пользователя.
-// Skip → name остаётся пустым, displayName вернёт "Anonymous".
+// Шаг 2: ввод имени пользователя (необязательно).
+// Continue без имени → name остаётся пустым, displayName вернёт "Anonymous".
 // Сохраняет в UserProfile.name (SwiftData).
 
 struct OnboardingNameView: View {
@@ -67,25 +67,16 @@ struct OnboardingNameView: View {
             Spacer()
 
             // Buttons
-            VStack(spacing: 12) {
-                Button(action: { saveName(); onNext() }) {
-                    Text("Continue")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(Color.myColors.myBlue)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-
-                Button(action: { clearName(); onNext() }) {
-                    Text("Skip")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
-                }
-                .buttonStyle(.plain)
+            Button(action: { saveName(); onNext() }) {
+                Text("Continue")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(Color.myColors.myBlue)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
             }
+            .buttonStyle(.plain)
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
@@ -109,10 +100,4 @@ struct OnboardingNameView: View {
         context.saveWithErrorHandling()
     }
 
-    private func clearName() {
-        isFocused = false
-        ensureProfile()
-        profile?.name = ""
-        context.saveWithErrorHandling()
-    }
 }
