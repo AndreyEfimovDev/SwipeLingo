@@ -95,6 +95,7 @@ struct PairsSetsListView: View {
 
 private struct PairsSetRow: View {
 
+    @Environment(AdminStore.self) private var store
     let set: FSPairsSet
 
     var body: some View {
@@ -110,11 +111,6 @@ private struct PairsSetRow: View {
                         .foregroundStyle(.secondary)
                     Text("·")
                         .foregroundStyle(.tertiary)
-                    Text(set.deployStatus.label)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("·")
-                        .foregroundStyle(.tertiary)
                     Text("\(set.items.count) pairs")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -122,7 +118,48 @@ private struct PairsSetRow: View {
             }
 
             Spacer()
+
+            VStack(alignment: .trailing, spacing: 4) {
+                // Status badge
+                deployStatusBadge(set.deployStatus)
+
+                // Mark as Ready — for .new and .draft
+                if set.deployStatus == .new || set.deployStatus == .draft {
+                    Button("Mark as Ready") {
+                        store.markReady(pairsSetId: set.id)
+                    }
+                    .font(.caption)
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                }
+
+                // Deploy — for .ready only (Phase 4: Firebase write)
+                if set.deployStatus == .ready {
+                    Button {
+                        // Phase 4: Firebase write
+                    } label: {
+                        Label("Deploy", systemImage: "arrow.up.circle")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                }
+            }
         }
         .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private func deployStatusBadge(_ status: SetDeployStatus) -> some View {
+        let color: Color = switch status {
+            case .new:     .green
+            case .draft:   .orange
+            case .ready:   .red
+            case .live:    .blue
+            case .deleted: .gray
+        }
+        Text(status.label)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(color)
     }
 }

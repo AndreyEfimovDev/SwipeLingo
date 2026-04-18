@@ -145,8 +145,7 @@ struct PairsPileBuilderView: View {
                 dismiss()
             }
             .disabled(!viewModel.canSave)
-            .font(.subheadline.weight(viewModel.canSave ? .semibold : .regular))
-            .foregroundStyle(viewModel.canSave ? Color.myColors.myGreen : Color.myColors.myAccent.opacity(0.4))
+            .foregroundStyle(viewModel.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
         }
 
         if viewModel.editingPile != nil {

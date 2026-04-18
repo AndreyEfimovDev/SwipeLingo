@@ -12,11 +12,10 @@ struct PairsSetEditorSheet: View {
 
     // MARK: State
 
-    @State private var title:        String          = ""
-    @State private var desc:         String          = ""
-    @State private var cefrLevel:    CEFRLevel       = .b2
-    @State private var accessTier:   AccessTier      = .free
-    @State private var deployStatus: SetDeployStatus = .new
+    @State private var title:      String      = ""
+    @State private var desc:       String      = ""
+    @State private var cefrLevel:  CEFRLevel   = .b2
+    @State private var accessTier: AccessTier  = .free
 
     private var isEditing: Bool { pairsSet != nil }
     private var canSave: Bool { !title.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -52,19 +51,11 @@ struct PairsSetEditorSheet: View {
                     fieldLabel("Description (optional)")
                     clearableField("Shown in the library below the title", text: $desc)
 
-                    // ── Level & Status ────────────────────────────
-                    GroupBox("Level & Status") {
+                    // ── Level & Access ────────────────────────────
+                    GroupBox("Level & Access") {
                         Picker("CEFR Level", selection: $cefrLevel) {
                             ForEach(CEFRLevel.allCases, id: \.self) { l in
                                 Text(l.displayCode).tag(l)
-                            }
-                        }
-
-                        Divider()
-
-                        Picker("Deploy Status", selection: $deployStatus) {
-                            ForEach(SetDeployStatus.allCases, id: \.self) { s in
-                                Text(s.label).tag(s)
                             }
                         }
 
@@ -74,6 +65,23 @@ struct PairsSetEditorSheet: View {
                             ForEach(AccessTier.allCases, id: \.self) { t in
                                 Text(t.displayName).tag(t)
                             }
+                        }
+                    }
+
+                    // ── Status (read-only when editing) ──────────
+                    if isEditing, let s = pairsSet {
+                        GroupBox("Status") {
+                            HStack {
+                                Text("Deploy Status")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(s.deployStatus.label)
+                            }
+                            .font(.subheadline)
+                            Text("Managed automatically — use "Mark as Ready" in the set list to schedule publishing.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 2)
                         }
                     }
 
@@ -95,11 +103,10 @@ struct PairsSetEditorSheet: View {
         }
         .onAppear {
             if let s = pairsSet {
-                title        = s.title ?? ""
-                desc         = s.description ?? ""
-                cefrLevel    = s.cefrLevel
-                accessTier   = s.accessTier
-                deployStatus = s.deployStatus
+                title      = s.title ?? ""
+                desc       = s.description ?? ""
+                cefrLevel  = s.cefrLevel
+                accessTier = s.accessTier
             }
         }
     }
@@ -139,12 +146,11 @@ struct PairsSetEditorSheet: View {
 
         if let existing = pairsSet {
             var updated = existing
-            updated.title        = trimmedTitle
-            updated.description  = trimmedDesc.isEmpty ? nil : trimmedDesc
-            updated.cefrLevel    = cefrLevel
-            updated.accessTier   = accessTier
-            updated.deployStatus = deployStatus
-            updated.updatedAt    = .now
+            updated.title       = trimmedTitle
+            updated.description = trimmedDesc.isEmpty ? nil : trimmedDesc
+            updated.cefrLevel   = cefrLevel
+            updated.accessTier  = accessTier
+            // deployStatus intentionally NOT set here — AdminStore.update() handles auto-transition
             store.update(updated)
         } else {
             let new = FSPairsSet(
@@ -154,7 +160,7 @@ struct PairsSetEditorSheet: View {
                 description:  trimmedDesc.isEmpty ? nil : trimmedDesc,
                 cefrLevel:    cefrLevel,
                 accessTier:   accessTier,
-                deployStatus: deployStatus,
+                deployStatus: .new,
                 updatedAt:    .now,
                 createdAt:    .now
             )
