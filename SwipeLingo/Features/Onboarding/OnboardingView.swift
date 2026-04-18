@@ -59,10 +59,14 @@ struct OnboardingView: View {
             // Back — скрыт на intro (0), language (1) и финальном экране (confirm имеет свою кнопку)
             if step > 1 && step < totalSteps - 1 {
                 Button { back() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myBlue)
-                        .frame(width: 44, height: 44)
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Back")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(Color.myColors.myBlue)
+                    .frame(height: 44)
                 }
                 .buttonStyle(.plain)
             } else {
