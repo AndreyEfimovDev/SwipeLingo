@@ -41,10 +41,11 @@ struct CardSetDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            metadataBar
-            ScrollView {
+        ScrollView {
             VStack(spacing: 16) {
+
+                // MARK: Metadata card (CEFR + description)
+                metadataCard
 
                 // MARK: Active section
                 if !activeCards.isEmpty {
@@ -88,8 +89,6 @@ struct CardSetDetailView: View {
             .padding(.vertical, 16)
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
-        } // VStack
-        .background(Color.myColors.myBackground.ignoresSafeArea())
         .customBackButton(backTitle)
         .navigationTitle(cardSet.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -117,15 +116,15 @@ struct CardSetDetailView: View {
         }
     }
 
-    // MARK: - Metadata Bar
+    // MARK: - Metadata Card (CEFR + expandable description)
 
     @ViewBuilder
-    private var metadataBar: some View {
+    private var metadataCard: some View {
         let hasDesc = !(cardSet.setDescription ?? "").isEmpty
         let hasCEFR = !cardSet.isUserCreated
 
         if hasDesc || hasCEFR {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: (hasDesc && hasCEFR) ? 8 : 0) {
                 if hasCEFR {
                     CEFRBadgeView(level: cardSet.cefrLevel)
                         .font(.caption.weight(.semibold))
@@ -141,10 +140,12 @@ struct CardSetDetailView: View {
                     .foregroundStyle(Color.myColors.mySecondary)
                 }
             }
-            .padding(.horizontal, 16)
-//            .padding(.vertical, 12)
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
         }
     }
 

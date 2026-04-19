@@ -332,39 +332,32 @@ private struct LibrarySetRow: View {
     let set: PairsSet
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .top, spacing: 4) {
+        HStack(alignment: .center, spacing: 8) {
+            HStack(alignment: .top, spacing: 2) {
+                let count = set.items.count
+                HStack(spacing: 0) {
                     Text(set.title ?? "Untitled")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myAccent)
-                    AccessTierBadge(tier: set.accessTier, isSmall: true)
-                        .offset(y: -3)
-                }
-
-                HStack(spacing: 6) {
-                    Text(set.cefrLevel.displayCode)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myBlue)
-                    let count = set.items.count
+                        .font(.body)
                     if count > 0 {
-                        Text("·")
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
-                        Text("\(count) \(count == 1 ? "pair" : "pairs")")
-                            .font(.caption)
+                        Text(" (\(count))")
                             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     }
                 }
+                AccessTierBadge(tier: set.accessTier)
+                    .offset(y: -4)
             }
 
             Spacer()
 
+            CEFRBadgeView(level: set.cefrLevel)
+                .font(.caption.weight(.semibold))
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
+                .foregroundStyle(Color.myColors.myBlue)
         }
+        .foregroundStyle(Color.myColors.myAccent)
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 13)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }
