@@ -46,10 +46,8 @@ struct PairsSetContentView: View {
         ScrollView {
             VStack(spacing: 16) {
 
-                // ── Set description ───────────────────────────
-                if let desc = set.setDescription, !desc.isEmpty {
-                    descriptionCard(desc)
-                }
+                // ── CEFR + description ────────────────────────
+                metadataCard
 
                 // ── Content ───────────────────────────────────
                 if set.items.isEmpty {
@@ -67,18 +65,26 @@ struct PairsSetContentView: View {
         .sheet(isPresented: $showPlans) { PlansView() }
     }
 
-    // MARK: Description card
+    // MARK: Metadata card (CEFR + expandable description)
 
-    private func descriptionCard(_ text: String) -> some View {
-        Text(text)
-            .font(.subheadline)
-            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(Color.myColors.myBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .myShadow()
-            .padding(.horizontal, 16)
+    @ViewBuilder
+    private var metadataCard: some View {
+        let hasDesc = !(set.setDescription ?? "").isEmpty
+        VStack(alignment: .leading, spacing: hasDesc ? 8 : 0) {
+            CEFRBadgeView(level: set.cefrLevel)
+                .font(.caption.weight(.semibold))
+
+            if let desc = set.setDescription, !desc.isEmpty {
+                ExpandableSection(text: desc, font: .subheadline, lineSpacing: 2, linesLimit: 3)
+                    .foregroundStyle(Color.myColors.mySecondary)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.myColors.myBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .myShadow()
+        .padding(.horizontal, 16)
     }
 
     // MARK: Content table
@@ -156,7 +162,7 @@ struct PairsSetContentView: View {
         ForEach(Array(pairs.enumerated()), id: \.element.id) { localIndex, pair in
             let idx = globalIndex[pair.id] ?? 0
             if isPaywalled && idx >= previewPairCount {
-                lockedRow
+                lockedPairRow(pair)
             } else {
                 pairRow(pair)
             }
@@ -195,6 +201,8 @@ struct PairsSetContentView: View {
                     Text(right)
                         .font(.body)
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.85))
+                        .minimumScaleFactor(0.75)
+                        .lineLimit(2)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 12)
                 }
@@ -225,21 +233,37 @@ struct PairsSetContentView: View {
         .padding(.vertical, 12)
     }
 
-    // MARK: Locked row
+    // MARK: Locked pair row
+    //
+    // Левая часть (left) всегда видна — пользователь видит контент.
+    // Правая часть: замок + "Upgrade to unlock" вместо значения.
+    // Описание и пример скрыты.
 
-    private var lockedRow: some View {
+    private func lockedPairRow(_ pair: Pair) -> some View {
         Button { showPlans = true } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "lock.fill")
-                    .font(.caption)
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
-                Text("Upgrade to unlock")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.myColors.myBlue.opacity(0.8))
-                Spacer()
+            HStack(spacing: 0) {
+                Text(pair.left ?? "—")
+                    .font(.body)
+                    .foregroundStyle(Color.myColors.myAccent)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Rectangle()
+                    .fill(Color.myColors.myAccent.opacity(0.12))
+                    .frame(width: 1)
+                    .padding(.vertical, 2)
+
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill")
+                        .font(.caption2)
+                    Text("Upgrade to unlock")
+                        .font(.subheadline)
+                }
+                .foregroundStyle(Color.myColors.myBlue.opacity(0.7))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 12)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
     }
