@@ -13,7 +13,7 @@ struct PairsListView: View {
     let setId:   String
     let setName: String
 
-    @State private var showEditor  = false
+    @State private var showNewPair = false
     @State private var showImport  = false
     @State private var editingPair: FSPair?
 
@@ -40,8 +40,7 @@ struct PairsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    editingPair = nil
-                    showEditor  = true
+                    showNewPair = true
                 } label: {
                     Image(systemName: "plus")
                 }
@@ -63,10 +62,18 @@ struct PairsListView: View {
                 store.update(updated)
             }
         }
-        .sheet(isPresented: $showEditor) {
-            PairEditorSheet(pair: editingPair) { savedPair in
+        // New pair — pair: nil гарантировано
+        .sheet(isPresented: $showNewPair) {
+            PairEditorSheet(pair: nil) { savedPair in
                 savePair(savedPair)
-                showEditor = false
+                showNewPair = false
+            }
+        }
+        // Edit pair — item передаётся напрямую, race condition исключена
+        .sheet(item: $editingPair) { pair in
+            PairEditorSheet(pair: pair) { savedPair in
+                savePair(savedPair)
+                editingPair = nil
             }
         }
     }
@@ -79,8 +86,7 @@ struct PairsListView: View {
                 PairRow(pair: pair)
                     .contextMenu {
                         Button("Edit") {
-                            editingPair = pair
-                            showEditor  = true
+                            editingPair = pair   // sheet(item:) откроется сам
                         }
                         Divider()
                         Button("Delete", role: .destructive) {
@@ -105,8 +111,7 @@ struct PairsListView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Button("New Pair") {
-                editingPair = nil
-                showEditor  = true
+                showNewPair = true
             }
             .buttonStyle(.bordered)
         }

@@ -73,7 +73,7 @@ struct CardSetEditorSheet: View {
                                 Text(s.deployStatus.label)
                             }
                             .font(.subheadline)
-                            Text("Managed automatically — use "Mark as Ready" in the set list to schedule publishing.")
+                            Text("Managed automatically — use 'Mark as Ready' in the set list to schedule publishing.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 2)
