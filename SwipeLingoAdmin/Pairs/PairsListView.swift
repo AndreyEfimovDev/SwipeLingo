@@ -25,6 +25,13 @@ struct PairsListView: View {
         pairsSet?.items ?? []
     }
 
+    /// Тип группы для новых пар — выводится из первой пары сета.
+    /// nil если сет пуст — редактор покажет все поля.
+    private var setGroupType: PairGroupType? {
+        guard let first = items.first else { return nil }
+        return PairGroupType(from: first)
+    }
+
     // MARK: Body
 
     var body: some View {
@@ -62,16 +69,16 @@ struct PairsListView: View {
                 store.update(updated)
             }
         }
-        // New pair — pair: nil гарантировано
+        // New pair — тип группы выводится из первой пары сета
         .sheet(isPresented: $showNewPair) {
-            PairEditorSheet(pair: nil) { savedPair in
+            PairEditorSheet(pair: nil, groupType: setGroupType) { savedPair in
                 savePair(savedPair)
                 showNewPair = false
             }
         }
-        // Edit pair — item передаётся напрямую, race condition исключена
+        // Edit pair — тип группы выводится из самой пары
         .sheet(item: $editingPair) { pair in
-            PairEditorSheet(pair: pair) { savedPair in
+            PairEditorSheet(pair: pair, groupType: nil) { savedPair in
                 savePair(savedPair)
                 editingPair = nil
             }
