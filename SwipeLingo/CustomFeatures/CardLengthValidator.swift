@@ -12,6 +12,8 @@
 //   51–150 chars — warning (can still save / add)
 //   > 150 chars  — tooLong (save / add blocked)
 
+import Foundation
+
 enum CardLengthState: Equatable {
     case ok
     case warning

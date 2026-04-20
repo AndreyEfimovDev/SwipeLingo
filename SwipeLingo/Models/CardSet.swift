@@ -24,6 +24,7 @@ final class CardSet {
     var accessTierRaw: String = AccessTier.free.rawValue
 
     var updatedAt: Date = Date.epoch  // обновляется Admin Tool при публикации
+    var firestoreId: String? = nil   // Firestore document ID for sync deduplication
 
     var cefrLevel: CEFRLevel {
         get { CEFRLevel(rawValue: level) ?? .a1 }

@@ -14,7 +14,8 @@ struct TinderCardsView: View {
     @AppStorage("srsEnabled")           private var srsEnabled: Bool    = true
 
     @State private var viewModel: TinderCardsViewModel
-    @State private var lookupCard: Card?
+    @State private var lookupCard:    Card?
+    @State private var editExamplesCard: Card?
     @State private var audioService  = AudioPlayerService()
     @State private var examplePageIndex: Int = 0
     /// Automatically resets to false when DragGesture ends OR is cancelled (e.g. second finger).
@@ -84,7 +85,8 @@ struct TinderCardsView: View {
                 cardsCaughtUpOverlay
             }
         }
-        .sheet(item: $lookupCard) { DictionaryLookupView(card: $0) }
+        .sheet(item: $lookupCard)       { DictionaryLookupView(card: $0) }
+        .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0) }
         .onDisappear { audioService.stop() }
         .onChange(of: viewModel.currentIndex) { _, _ in
             examplePageIndex = 0
@@ -603,6 +605,7 @@ struct TinderCardsView: View {
                         let count = card.sampleEN.count
                         let page = min(examplePageIndex, count - 1)
                         let hasMany = count > 1
+
                         Divider().padding(.horizontal, 20)
 
                         HStack(spacing: 0) {
@@ -621,6 +624,8 @@ struct TinderCardsView: View {
                             .disabled(!hasMany || page == 0)
 
                             // Example content
+                            // simultaneousGesture: long press открывает редактор,
+                            // короткий тап на аудио-кнопке внутри не блокируется
                             VStack(spacing: 5) {
                                 Text(card.sampleEN[page])
                                     .multilineTextAlignment(.center)
@@ -635,6 +640,11 @@ struct TinderCardsView: View {
                             .font(.subheadline)
                             .padding(.vertical, 4)
                             .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                            .simultaneousGesture(
+                                LongPressGesture(minimumDuration: 0.5)
+                                    .onEnded { _ in editExamplesCard = card }
+                            )
                             .id(page)
                             .transition(.asymmetric(
                                 insertion: .move(edge: .trailing).combined(with: .opacity),
