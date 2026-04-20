@@ -233,7 +233,7 @@ struct PileBuilderView: View {
         }
 
         ToolbarItem(placement: .confirmationAction) {
-            Button("Save") {
+            Button(viewModel.editingPile == nil ? "Create" : "Save") {
                 viewModel.saveAndActivate(context: context, allPiles: allPiles)
                 dismiss()
             }
