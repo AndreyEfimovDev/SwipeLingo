@@ -21,6 +21,7 @@ final class PairsSet {
     var collectionId: UUID?          // nil = локальный/мок; UUID = Firebase-коллекция
     var updatedAt: Date = Date.epoch // обновляется Admin Tool при публикации
     var createdAt: Date
+    var firestoreId: String? = nil   // Firestore document ID for sync deduplication
 
     // MARK: SRS fields (SM-2) — оценка всего сета целиком
     var dueDate:      Date   = Date.farFuture  // новый сет не в Due до первой оценки

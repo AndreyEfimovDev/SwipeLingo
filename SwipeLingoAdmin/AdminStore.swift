@@ -6,13 +6,12 @@ import Observation
 // Data store для SwipeLingoAdmin с JSON-персистентностью.
 // Данные сохраняются в Application Support при каждой мутации,
 // загружаются автоматически при инициализации.
-// Phase 4: методы add/update/delete будут дополнены записью в Firestore.
 //
 // Deploy Status автопереходы:
 //   Создание                 → .new
 //   Редактирование .live/.ready → .draft (автоматически)
 //   "Mark as Ready"          → .ready
-//   Publish (Phase 4)        → .live
+//   Deploy (Firestore write) → .live   (автоматически после успешного деплоя)
 //   Soft delete              → .deleted (остаётся в store, скрывается из списка)
 
 @Observable
@@ -24,6 +23,10 @@ final class AdminStore {
     var cardSets:    [FSCardSet]    = []
     var cards:       [FSCard]       = []
     var pairsSets:   [FSPairsSet]   = []
+
+    // Deploy state (shared — only one deploy runs at a time)
+    var isDeploying    = false
+    var deployError:   String? = nil
 
     // MARK: - Init
 
@@ -179,6 +182,79 @@ final class AdminStore {
         pairsSets[idx].deployStatus = .ready
         pairsSets[idx].updatedAt   = .now
         save()
+    }
+
+    // MARK: - Deploy
+
+    /// Deploys a CardSet (plus its cards and parent collection) to Firestore.
+    /// On success marks the set as .live. On failure stores deployError.
+    func deployCardSet(id: String) async {
+        guard let set = cardSets.first(where: { $0.id == id }),
+              let collection = collections.first(where: { $0.id == set.collectionId })
+        else { return }
+
+        let setCards = cards(for: id)
+
+        isDeploying = true
+        deployError = nil
+
+        do {
+            try await FirestoreService().deployCardSet(
+                collection: collection,
+                set: set,
+                cards: setCards
+            )
+            // Mark set as .live
+            if let idx = cardSets.firstIndex(where: { $0.id == id }) {
+                cardSets[idx].deployStatus = .live
+                cardSets[idx].updatedAt    = .now
+            }
+            // Mark collection as synced
+            if let idx = collections.firstIndex(where: { $0.id == collection.id }) {
+                collections[idx].isSynced  = true
+                collections[idx].updatedAt = .now
+            }
+            save()
+        } catch {
+            deployError = error.localizedDescription
+            log("[Deploy] CardSet deploy failed: \(error)", level: .error)
+        }
+
+        isDeploying = false
+    }
+
+    /// Deploys a PairsSet (plus parent collection) to Firestore.
+    /// On success marks the set as .live. On failure stores deployError.
+    func deployPairsSet(id: String) async {
+        guard let set = pairsSets.first(where: { $0.id == id }),
+              let collection = collections.first(where: { $0.id == set.collectionId })
+        else { return }
+
+        isDeploying = true
+        deployError = nil
+
+        do {
+            try await FirestoreService().deployPairsSet(
+                collection: collection,
+                set: set
+            )
+            // Mark set as .live
+            if let idx = pairsSets.firstIndex(where: { $0.id == id }) {
+                pairsSets[idx].deployStatus = .live
+                pairsSets[idx].updatedAt    = .now
+            }
+            // Mark collection as synced
+            if let idx = collections.firstIndex(where: { $0.id == collection.id }) {
+                collections[idx].isSynced  = true
+                collections[idx].updatedAt = .now
+            }
+            save()
+        } catch {
+            deployError = error.localizedDescription
+            log("[Deploy] PairsSet deploy failed: \(error)", level: .error)
+        }
+
+        isDeploying = false
     }
 
     // MARK: - Persistence

@@ -1,15 +1,30 @@
 import SwiftUI
 import SwiftData
+import FirebaseCore
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+  func application(_ application: UIApplication,
+                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+    FirebaseApp.configure()
+    return true
+  }
+}
+
 
 @main
 struct SwipeLingoApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
+    
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     private let appGroupID  = "group.PELSH.SwipeLingo"
     private let pendingKey  = "pendingInboxWords"
 
     let container: ModelContainer?
+    
+    // register app delegate for Firebase setup
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
         container = Self.makeContainer()
@@ -31,7 +46,10 @@ struct SwipeLingoApp: App {
             PairsPile.self,
             UserProfile.self
         ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let config = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false
+        )
         let storeURL = config.url
 
         do {
@@ -54,8 +72,6 @@ struct SwipeLingoApp: App {
             }
         }
     }
-
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     var body: some Scene {
         WindowGroup {

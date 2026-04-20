@@ -62,6 +62,7 @@ final class Card {
     var updatedAt:  Date  = Date.epoch  // обновляется Admin Tool при публикации
     var importedAt: Date? = nil
     var setId:      UUID  = UUID()
+    var firestoreId: String? = nil      // Firestore document ID for sync deduplication
 
     // MARK: Computed [String] accessors (same public API as before)
 

@@ -47,6 +47,17 @@ struct PairsSetsListView: View {
         .sheet(item: $editingSet) { set in
             PairsSetEditorSheet(collectionId: collectionId, pairsSet: set)
         }
+        .alert(
+            "Deploy Failed",
+            isPresented: Binding(
+                get: { store.deployError != nil },
+                set: { if !$0 { store.deployError = nil } }
+            ),
+            actions: { Button("OK", role: .cancel) { store.deployError = nil } },
+            message: {
+                if let err = store.deployError { Text(err) }
+            }
+        )
     }
 
     // MARK: List
@@ -135,16 +146,22 @@ private struct PairsSetRow: View {
                     .tint(.orange)
                 }
 
-                // Deploy — for .ready only (Phase 4: Firebase write)
+                // Deploy — for .ready only
                 if set.deployStatus == .ready {
                     Button {
-                        // Phase 4: Firebase write
+                        Task { await store.deployPairsSet(id: set.id) }
                     } label: {
-                        Label("Deploy", systemImage: "arrow.up.circle")
-                            .font(.caption)
+                        if store.isDeploying {
+                            Label("Deploying…", systemImage: "arrow.up.circle")
+                                .font(.caption)
+                        } else {
+                            Label("Deploy", systemImage: "arrow.up.circle")
+                                .font(.caption)
+                        }
                     }
                     .buttonStyle(.bordered)
-                    .tint(.red)
+                    .tint(.blue)
+                    .disabled(store.isDeploying)
                 }
             }
         }
