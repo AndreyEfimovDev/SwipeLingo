@@ -192,7 +192,7 @@ struct MockDataSeeder {
             cefrLevel: .b2,
             accessTier: .free,
             items: [
-                Pair(left: "important",   right: "pivotal"),
+                Pair(left: "important",   right: "pivotal",      leftTitle: "B2", rightTitle: "C1"),
                 Pair(left: "use",         right: "utilize"),
                 Pair(left: "show",        right: "demonstrate"),
                 Pair(left: "think about", right: "contemplate"),
@@ -228,7 +228,7 @@ struct MockDataSeeder {
             cefrLevel: .b2,
             accessTier: .pro,
             items: [
-                Pair(left: "get in touch",  right: "contact"),
+                Pair(left: "get in touch",  right: "contact",   leftTitle: "Informal", rightTitle: "Formal"),
                 Pair(left: "find out",      right: "ascertain"),
                 Pair(left: "go up",         right: "increase"),
                 Pair(left: "look into",     right: "investigate"),

@@ -17,6 +17,7 @@ struct PairsSessionView: View {
     let pileName: String
 
     @Environment(\.modelContext) private var context
+    @Environment(\.dismiss)      private var dismiss
     @AppStorage("srsEnabled") private var srsEnabled: Bool = true
 
     @State private var currentIndex  = 0
@@ -75,17 +76,16 @@ struct PairsSessionView: View {
         VStack(spacing: 0) {
             if showRatingPanel {
                 ratingPanel
-            } else {
-                if isLast {
-                    Text("Pile complete")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.55))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 14)
-                        .padding(.bottom, 4)
-                }
-                navButtons
+                Divider().opacity(0.5)
+            } else if isLast {
+                Text("Pile complete")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.55))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 14)
+                    .padding(.bottom, 4)
             }
+            navButtons
         }
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -138,25 +138,20 @@ struct PairsSessionView: View {
 
     private var navButtons: some View {
         HStack(spacing: 0) {
-            // Back
-            if !isFirst {
-                Button {
-                    goingForward = false
-                    nextSet(index: currentIndex - 1)
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.subheadline.weight(.semibold))
-                        Text("Back")
-                            .font(.subheadline.weight(.medium))
-                    }
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
+            // Back — возвращает на стартовый экран (PairsView)
+            Button {
+                dismiss()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Back")
+                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(.plain)
-                .frame(width: 80, alignment: .leading)
-            } else {
-                Spacer().frame(width: 80)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
             }
+            .buttonStyle(.plain)
+            .frame(width: 80, alignment: .leading)
 
             Spacer()
 

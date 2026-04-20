@@ -97,11 +97,31 @@ struct PairsSetPlayerView: View {
                         if !hasStarted {
                             startScreen
                         } else {
-                            // Pairs table
+                            // Pairs table — одна карточка, секции внутри
                             VStack(spacing: 0) {
-                                ForEach(Array(set.items.enumerated()), id: \.offset) { index, pair in
-                                    if isPairVisible(at: index) {
-                                        pairRow(pair: pair, index: index)
+                                ForEach(Array(pairGroups.enumerated()), id: \.offset) { groupIdx, group in
+                                    if let firstIdx = group.indices.first, isPairVisible(at: firstIdx) {
+                                        // Разделитель между группами (не перед первой)
+                                        if groupIdx > 0 {
+                                            Rectangle()
+                                                .fill(Color.myColors.myAccent.opacity(0.08))
+                                                .frame(height: 1)
+                                                .frame(maxWidth: .infinity)
+                                        }
+                                        // Заголовок секции (тег + leftTitle/rightTitle)
+                                        if !group.tag.isEmpty {
+                                            groupSectionHeader(
+                                                tag: group.tag,
+                                                leftTitle: group.leftTitle,
+                                                rightTitle: group.rightTitle
+                                            )
+                                        }
+                                    }
+                                    // Видимые пары секции
+                                    ForEach(group.indices, id: \.self) { idx in
+                                        if isPairVisible(at: idx) {
+                                            pairRow(pair: set.items[idx], index: idx)
+                                        }
                                     }
                                 }
                             }
@@ -260,6 +280,76 @@ struct PairsSetPlayerView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
     }
+    // MARK: - Group Section Header
+    //
+    // Заголовок секции внутри плеера: tag (uppercase) + leftTitle/rightTitle (если заданы).
+    // Появляется вместе с первой парой группы.
+
+    @ViewBuilder
+    private func groupSectionHeader(tag: String, leftTitle: String?, rightTitle: String?) -> some View {
+        VStack(spacing: 0) {
+            Text(tag.uppercased())
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+                .padding(.bottom, (leftTitle != nil || rightTitle != nil) ? 4 : 8)
+
+            if leftTitle != nil || rightTitle != nil {
+                HStack(spacing: 0) {
+                    if let left = leftTitle {
+                        Text(left)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myGreen)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Spacer()
+                    }
+                    if let right = rightTitle {
+                        Rectangle()
+                            .fill(Color.myColors.myAccent.opacity(0.1))
+                            .frame(width: 1, height: 12)
+                        Text(right)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myRed)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 12)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            }
+        }
+        .background(Color.myColors.myAccent.opacity(0.04))
+    }
+
+    // MARK: - Pair Groups
+    //
+    // Группирует элементы сета по tag — для секционного отображения.
+    // Последовательные пары с одинаковым tag образуют группу.
+
+    private var pairGroups: [(tag: String, leftTitle: String?, rightTitle: String?, indices: [Int])] {
+        var result: [(tag: String, leftTitle: String?, rightTitle: String?, indices: [Int])] = []
+        var i = 0
+        while i < set.items.count {
+            let tag = set.items[i].tag
+            let groupStart = i
+            var indices: [Int] = []
+            while i < set.items.count && set.items[i].tag == tag {
+                indices.append(i)
+                i += 1
+            }
+            result.append((
+                tag:        tag,
+                leftTitle:  set.items[groupStart].leftTitle,
+                rightTitle: set.items[groupStart].rightTitle,
+                indices:    indices
+            ))
+        }
+        return result
+    }
+
     // MARK: - Mode Toggle (одна кнопка — показывает текущий режим, тап переключает)
     
     private var modeToggle: some View {
