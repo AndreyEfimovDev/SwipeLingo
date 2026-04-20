@@ -134,6 +134,11 @@ struct AddEditCardView: View {
                selectedSetId != originalSetId
     }
 
+    // MARK: - Length Validation (via CardLengthValidator)
+
+    private var enLengthState:   CardLengthState { CardLengthValidator.state(for: en) }
+    private var itemLengthState: CardLengthState { CardLengthValidator.state(for: item) }
+
     private var isDuplicateEN: Bool {
         guard let setId = selectedSetId, !isCreatingNewSet,
               !en.trimmingCharacters(in: .whitespaces).isEmpty
@@ -148,6 +153,7 @@ struct AddEditCardView: View {
 
     private var canSave: Bool {
         let enOK = !en.trimmingCharacters(in: .whitespaces).isEmpty
+        guard enLengthState != .tooLong, itemLengthState != .tooLong else { return false }
         if isEditMode {
             return enOK && hasChanges          // active only when something changed
         }
@@ -391,25 +397,31 @@ struct AddEditCardView: View {
                     .padding(.horizontal, 20)
                     .transition(.opacity)
             }
+            lengthHint(for: en, state: enLengthState)
         }
         .animation(.easeInOut(duration: 0.2), value: isDuplicateEN)
+        .animation(.easeInOut(duration: 0.2), value: enLengthState == .ok)
     }
 
     private var itemSection: some View {
-        fieldSection(label: "TRANSLATION") {
-            HStack(spacing: 8) {
-                TextField("Native translation", text: $item, axis: .vertical)
-                    .font(.body)
-                    .focused($focused, equals: .item)
-                    .submitLabel(.next)
-                    .onSubmit { focused = .sampleEN(0) }
-                if !item.isEmpty {
-                    clearButton { item = "" }
+        VStack(alignment: .leading, spacing: 4) {
+            fieldSection(label: "TRANSLATION") {
+                HStack(spacing: 8) {
+                    TextField("Native translation", text: $item, axis: .vertical)
+                        .font(.body)
+                        .focused($focused, equals: .item)
+                        .submitLabel(.next)
+                        .onSubmit { focused = .sampleEN(0) }
+                    if !item.isEmpty {
+                        clearButton { item = "" }
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            lengthHint(for: item, state: itemLengthState)
         }
+        .animation(.easeInOut(duration: 0.2), value: itemLengthState == .ok)
     }
 
     // MARK: - Set Picker Section
@@ -605,6 +617,40 @@ struct AddEditCardView: View {
                     .padding(.vertical, 12)
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Length Hint
+
+    @ViewBuilder
+    private func lengthHint(for text: String, state: CardLengthState) -> some View {
+        let count = text.trimmingCharacters(in: .whitespaces).count
+        let warn  = CardLengthValidator.warningLength
+        let max   = CardLengthValidator.maxLength
+        switch state {
+        case .ok:
+            // Появляется только когда пользователь приближается к лимиту (> 30 символов)
+            if count > 30 {
+                Text("\(count) / \(warn)")
+                    .font(.caption)
+                    .foregroundStyle(Color.myColors.mySecondary)
+                    .padding(.horizontal, 20)
+                    .transition(.opacity)
+            }
+        case .warning:
+            Label("Long phrase — cards work best with short words (\(count)/\(max))",
+                  systemImage: "exclamationmark.triangle")
+                .font(.caption)
+                .foregroundStyle(Color.myColors.myOrange)
+                .padding(.horizontal, 20)
+                .transition(.opacity)
+        case .tooLong:
+            Label("Too long for a card — shorten to \(max) characters or less (\(count)/\(max))",
+                  systemImage: "xmark.circle")
+                .font(.caption)
+                .foregroundStyle(Color.myColors.myRed)
+                .padding(.horizontal, 20)
+                .transition(.opacity)
         }
     }
 
