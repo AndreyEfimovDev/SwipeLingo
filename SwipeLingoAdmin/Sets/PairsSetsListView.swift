@@ -11,7 +11,7 @@ struct PairsSetsListView: View {
 
     let collectionId: String
 
-    @State private var showEditor = false
+    @State private var showNewSet  = false
     @State private var editingSet: FSPairsSet?
 
     private var sets: [FSPairsSet] {
@@ -32,16 +32,20 @@ struct PairsSetsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    editingSet = nil
-                    showEditor = true
+                    showNewSet = true
                 } label: {
                     Image(systemName: "plus")
                 }
                 .help("New set")
             }
         }
-        .sheet(isPresented: $showEditor) {
-            PairsSetEditorSheet(collectionId: collectionId, pairsSet: editingSet)
+        // Создание нового сета
+        .sheet(isPresented: $showNewSet) {
+            PairsSetEditorSheet(collectionId: collectionId, pairsSet: nil)
+        }
+        // Редактирование существующего сета — sheet(item:) исключает race condition
+        .sheet(item: $editingSet) { set in
+            PairsSetEditorSheet(collectionId: collectionId, pairsSet: set)
         }
     }
 
@@ -57,7 +61,6 @@ struct PairsSetsListView: View {
             .contextMenu {
                 Button("Edit") {
                     editingSet = set
-                    showEditor = true
                 }
                 Divider()
                 Button("Delete", role: .destructive) {
@@ -78,8 +81,7 @@ struct PairsSetsListView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Button("New Set") {
-                editingSet = nil
-                showEditor = true
+                showNewSet = true
             }
             .buttonStyle(.bordered)
         }
