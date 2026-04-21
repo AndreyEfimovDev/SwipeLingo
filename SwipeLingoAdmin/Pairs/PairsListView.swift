@@ -13,16 +13,26 @@ struct PairsListView: View {
     let setId:   String
     let setName: String
 
-    @State private var showNewPair = false
-    @State private var showImport  = false
+    @State private var showNewPair  = false
+    @State private var showImport   = false
     @State private var editingPair: FSPair?
+    @State private var selectedTag: String? = nil
 
     private var pairsSet: FSPairsSet? {
         store.pairsSets.first { $0.id == setId }
     }
 
-    private var items: [FSPair] {
+    private var allItems: [FSPair] {
         pairsSet?.items ?? []
+    }
+
+    private var items: [FSPair] {
+        guard let tag = selectedTag else { return allItems }
+        return allItems.filter { $0.tag == tag }
+    }
+
+    private var uniqueTags: [String] {
+        Array(Set(allItems.compactMap { $0.tag.isEmpty ? nil : $0.tag })).sorted()
     }
 
     /// Тип группы для новых пар — выводится из первой пары сета.
@@ -35,16 +45,29 @@ struct PairsListView: View {
     // MARK: Body
 
     var body: some View {
-        Group {
-            if items.isEmpty {
-                emptyState
-            } else {
-                list
+        VStack(spacing: 0) {
+            if uniqueTags.count > 1 {
+                tagFilterBar
+            }
+            Group {
+                if items.isEmpty {
+                    emptyState
+                } else {
+                    list
+                }
             }
         }
         .navigationTitle(setName)
-        .navigationSubtitle("\(items.count) pairs")
+        .navigationSubtitle("\(allItems.count) pairs")
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    showImport = true
+                } label: {
+                    Label("Import", systemImage: "square.and.arrow.down")
+                }
+                .help("Import pairs from text")
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showNewPair = true
@@ -52,14 +75,6 @@ struct PairsListView: View {
                     Image(systemName: "plus")
                 }
                 .help("New pair")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showImport = true
-                } label: {
-                    Label("Import", systemImage: "square.and.arrow.down")
-                }
-                .help("Import pairs from text")
             }
         }
         .sheet(isPresented: $showImport) {
@@ -83,6 +98,42 @@ struct PairsListView: View {
                 editingPair = nil
             }
         }
+    }
+
+    // MARK: Tag Filter Bar
+
+    private var tagFilterBar: some View {
+        VStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterChip(title: "All", isSelected: selectedTag == nil) {
+                        selectedTag = nil
+                    }
+                    ForEach(uniqueTags, id: \.self) { tag in
+                        filterChip(title: tag, isSelected: selectedTag == tag) {
+                            selectedTag = (selectedTag == tag) ? nil : tag
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+            .background(.bar)
+            Divider()
+        }
+    }
+
+    private func filterChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.12),
+                            in: Capsule())
+                .foregroundStyle(isSelected ? .white : .primary)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: List

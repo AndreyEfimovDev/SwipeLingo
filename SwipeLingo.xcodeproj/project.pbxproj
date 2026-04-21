@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		474D28BA2F97699100BC11FF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 474D28B92F97699100BC11FF /* GoogleService-Info.plist */; };
 		474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE02F7BB11800128E83 /* ErrorManager.swift */; };
 		474F1FE62F7BE2BA00128E83 /* DatabseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */; };
 		474F1FE82F7D304B00128E83 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE72F7D304B00128E83 /* SearchBar.swift */; };
@@ -101,7 +102,6 @@
 		47D280352F96864A00BBD66B /* CardLengthValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D280342F96864A00BBD66B /* CardLengthValidator.swift */; };
 		47D280362F96864A00BBD66B /* CardLengthValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D280342F96864A00BBD66B /* CardLengthValidator.swift */; };
 		47D280382F968E5600BBD66B /* ExampleEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D280372F968E5600BBD66B /* ExampleEditorSheet.swift */; };
-		47D2803D2F96A7B900BBD66B /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 47D2803B2F96A7B900BBD66B /* GoogleService-Info.plist */; };
 		47DE7EEE2F8000E500F6BCF3 /* AccessTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */; };
 		47DE7F352F82D5EC00F6BCF3 /* PlansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */; };
 		47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */; };
@@ -154,6 +154,7 @@
 		474BFB622F3C8255006E639B /* SwipeLingo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwipeLingo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB6F2F3C825C006E639B /* SwipeLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		474D28B92F97699100BC11FF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		474F1FE02F7BB11800128E83 /* ErrorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorManager.swift; sourceTree = "<group>"; };
 		474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabseErrorView.swift; sourceTree = "<group>"; };
 		474F1FE72F7D304B00128E83 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
@@ -231,7 +232,6 @@
 		47D280322F938D0000BBD66B /* ExpandableSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableSection.swift; sourceTree = "<group>"; };
 		47D280342F96864A00BBD66B /* CardLengthValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardLengthValidator.swift; sourceTree = "<group>"; };
 		47D280372F968E5600BBD66B /* ExampleEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleEditorSheet.swift; sourceTree = "<group>"; };
-		47D2803B2F96A7B900BBD66B /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTier.swift; sourceTree = "<group>"; };
 		47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlansView.swift; sourceTree = "<group>"; };
 		47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
@@ -521,7 +521,7 @@
 				478C78442F794487005FBDFE /* Resources */,
 				478C784C2F794487005FBDFE /* Services */,
 				478C784D2F794487005FBDFE /* SwipeLingo.entitlements */,
-				47D2803B2F96A7B900BBD66B /* GoogleService-Info.plist */,
+				474D28B92F97699100BC11FF /* GoogleService-Info.plist */,
 			);
 			path = SwipeLingo;
 			sourceTree = "<group>";
@@ -750,7 +750,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				478C787D2F794487005FBDFE /* Assets.xcassets in Resources */,
-				47D2803D2F96A7B900BBD66B /* GoogleService-Info.plist in Resources */,
+				474D28BA2F97699100BC11FF /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

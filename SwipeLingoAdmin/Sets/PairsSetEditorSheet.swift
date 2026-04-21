@@ -49,7 +49,9 @@ struct PairsSetEditorSheet: View {
 
                     // ── Description ───────────────────────────────
                     fieldLabel("Description (optional)")
-                    clearableField("Shown in the library below the title", text: $desc)
+                    TextEditor(text: $desc)
+                        .frame(minHeight: 80)
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
 
                     // ── Level & Access ────────────────────────────
                     GroupBox("Level & Access") {

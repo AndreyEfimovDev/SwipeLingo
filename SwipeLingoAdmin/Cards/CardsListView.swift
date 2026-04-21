@@ -70,6 +70,14 @@ struct CardsListView: View {
                 }
                 .padding(.horizontal)
             }
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    showImport = true
+                } label: {
+                    Label("Import", systemImage: "square.and.arrow.down")
+                }
+                .help("Import words from text")
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showNewEditor = true
@@ -77,14 +85,6 @@ struct CardsListView: View {
                     Image(systemName: "plus")
                 }
                 .help("New card")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showImport = true
-                } label: {
-                    Label("Import", systemImage: "square.and.arrow.down")
-                }
-                .help("Import words from text")
             }
         }
         .sheet(isPresented: $showImport) {
@@ -217,15 +217,25 @@ private struct CardRow: View {
                     .lineLimit(1)
             }
 
-            // Строка 3: тег + кол-во переводов
+            // Строка 3: русский перевод + тег + кол-во переводов
             HStack(spacing: 8) {
+                let ruTranslation = card.translation(for: .russian)
+                if !ruTranslation.isEmpty {
+                    Text(ruTranslation)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.primary)
+                }
                 if !card.tag.isEmpty {
+                    Text("·")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                     Text(card.tag)
                         .font(.caption)
                         .foregroundStyle(.blue)
                 }
+                Spacer()
                 let count = card.translations.count
-                Text(count == 0 ? "No translations" : "\(count) language\(count == 1 ? "" : "s")")
+                Text(count == 0 ? "No translations" : "\(count) lang")
                     .font(.caption)
                     .foregroundStyle(count == 0 ? .red : .secondary)
             }
