@@ -73,6 +73,7 @@ struct AdminCardEditView: View {
     @State private var pendingFillLangs:   [NativeLanguage]                   = []
     @State private var currentFillLang:    NativeLanguage?                    = nil
     @State private var filledLangCount:    Int                                = 0
+    @State private var failedFillLangs:    Set<NativeLanguage>                = []
 
     private let dictionaryService = DictionaryService()
 
@@ -139,8 +140,16 @@ struct AdminCardEditView: View {
 
                 ForEach(NativeLanguage.allCases, id: \.self) { lang in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(lang.flag) \(lang.displayName)")
-                            .font(.caption).foregroundStyle(.secondary)
+                        HStack(spacing: 4) {
+                            Text("\(lang.flag) \(lang.displayName)")
+                                .font(.caption).foregroundStyle(.secondary)
+                            if failedFillLangs.contains(lang) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                                    .help("Translation unavailable — language pack may not be installed")
+                            }
+                        }
                         clearableField("Translation", text: binding(for: lang, in: $translations))
                     }
                 }
@@ -257,6 +266,7 @@ struct AdminCardEditView: View {
     private func startAutoFill() {
         isAutoFilling   = true
         filledLangCount = 0
+        failedFillLangs = []
 
         // Транскрипция — если пустая
         let word = en.trimmingCharacters(in: .whitespaces)
@@ -297,7 +307,7 @@ struct AdminCardEditView: View {
         currentFillLang  = first
         translationConfig = TranslationSession.Configuration(
             source: Locale.Language(identifier: "en"),
-            target: Locale.Language(identifier: first.langId)
+            target: Locale.Language(identifier: first.translationLocaleId)
         )
     }
 
@@ -331,6 +341,7 @@ struct AdminCardEditView: View {
             }
         } catch {
             log("Auto-fill translation failed for \(lang.langId): \(error)", level: .warning)
+            await MainActor.run { failedFillLangs.insert(lang) }
         }
 
         await MainActor.run {
@@ -340,7 +351,7 @@ struct AdminCardEditView: View {
                 currentFillLang   = nextLang
                 translationConfig = TranslationSession.Configuration(
                     source: Locale.Language(identifier: "en"),
-                    target: Locale.Language(identifier: nextLang.langId)
+                    target: Locale.Language(identifier: nextLang.translationLocaleId)
                 )
             } else {
                 isAutoFilling     = false

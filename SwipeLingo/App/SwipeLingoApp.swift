@@ -5,7 +5,12 @@ import FirebaseCore
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    FirebaseApp.configure()
+    if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+        FirebaseApp.configure()
+        log("[Firebase] App configured", level: .info)
+    } else {
+        log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
+    }
     return true
   }
 }
@@ -29,10 +34,12 @@ struct SwipeLingoApp: App {
     init() {
         container = Self.makeContainer()
         if let ctx = container?.mainContext {
-            FirestoreImportService().importIfNeeded(into: ctx)
+            // importIfNeeded отключён — реальный контент приходит из Firestore через syncFromFirestore()
+            // FirestoreImportService().importIfNeeded(into: ctx)
             MockDataSeeder.ensureSystemCollections(into: ctx)
-            MockDataSeeder.ensureMockDevCollection(into: ctx)
-            MockDataSeeder.ensureMockPairsSets(into: ctx)
+            // Mock-данные отключены — тестируем реальный Firestore sync
+            // MockDataSeeder.ensureMockDevCollection(into: ctx)
+            // MockDataSeeder.ensureMockPairsSets(into: ctx)
         }
     }
 

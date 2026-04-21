@@ -51,8 +51,8 @@ enum NativeLanguage: String, CaseIterable, Codable {
         }
     }
 
-    /// BCP-47 идентификатор языка — используется как ключ в Firestore (translations/sampleTranslations)
-    /// и как идентификатор для Apple Translation framework.
+    /// BCP-47 идентификатор языка — используется как ключ в Firestore (translations/sampleTranslations).
+    /// Не менять без миграции Firestore-данных.
     var langId: String {
         switch self {
         case .russian:           "ru"
@@ -73,6 +73,15 @@ enum NativeLanguage: String, CaseIterable, Codable {
         case .polish:            "pl"
         case .indonesian:        "id"
         case .vietnamese:        "vi"
+        }
+    }
+
+    /// Locale identifier для Apple Translation framework.
+    /// Может отличаться от langId — Apple Translation иногда требует регион (uk-UA вместо uk).
+    var translationLocaleId: String {
+        switch self {
+        case .ukrainian: "uk-UA"
+        default:         langId
         }
     }
 
