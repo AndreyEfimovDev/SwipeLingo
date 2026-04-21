@@ -5,17 +5,19 @@ import FirebaseFirestore
 //
 // Admin-side Firestore write/read service.
 //
-// Firestore schema:
-//   /collections/{collectionId}
-//       /cardSets/{setId}
-//           /cards/{cardId}
-//       /pairsSets/{setId}          ← items embedded as array
+// Firestore schema (flat):
+//   /collections/{collectionId}      ← name, icon, type  (метаданные коллекции)
+//   /cardSets/{setId}                ← collectionId, name, cefrLevel, accessTier, description
+//       /cards/{cardId}              ← setId, en, translations, sampleEN, sampleTranslations, …
+//   /pairsSets/{setId}               ← collectionId, title, cefrLevel, accessTier, items[] (embedded)
 //
-// Note: Admin-only fields (isSynced, deployStatus) are intentionally NOT
-// written to Firestore — the iOS reader treats all received documents as .live.
+// Плоская схема выбрана намеренно: главный запрос iOS-приложения —
+//   "все сеты до уровня пользователя" — работает в одно обращение:
+//   db.collection("cardSets").whereField("cefrLevel", in: levels)
 //
-// ⚠️  Requires GoogleService-Info.plist in the target and FirebaseApp.configure()
-//     to have been called before first use.
+// Admin-only поля (isSynced, deployStatus) намеренно НЕ пишутся в Firestore.
+//
+// ⚠️  Требует GoogleService-Info.plist в таргете и FirebaseApp.configure().
 
 struct FirestoreService {
 
@@ -23,9 +25,9 @@ struct FirestoreService {
 
     // MARK: - Deploy CardSet
 
-    /// Writes collection metadata, set metadata, and all cards to Firestore.
-    /// Uses a single WriteBatch (max 500 ops). For sets with > 498 cards a
-    /// FirestoreServiceError.tooManyCards error is thrown.
+    /// Записывает метаданные коллекции, сет и все карточки в Firestore.
+    /// Использует один WriteBatch (лимит Firestore: 500 операций).
+    /// Для сетов с > 498 карточками выбрасывает FirestoreServiceError.tooManyCards.
     func deployCardSet(
         collection: FSCollection,
         set: FSCardSet,
@@ -35,14 +37,15 @@ struct FirestoreService {
             throw FirestoreServiceError.tooManyCards(cards.count)
         }
 
-        let batch = db.batch()
+        let batch  = db.batch()
         let collRef = db.collection("collections").document(collection.id)
-        let setRef  = collRef.collection("cardSets").document(set.id)
+        let setRef  = db.collection("cardSets").document(set.id)
 
         batch.setData(collectionDoc(collection), forDocument: collRef, merge: true)
         batch.setData(cardSetDoc(set), forDocument: setRef)
         for card in cards {
-            batch.setData(cardDoc(card), forDocument: setRef.collection("cards").document(card.id))
+            let cardRef = setRef.collection("cards").document(card.id)
+            batch.setData(cardDoc(card), forDocument: cardRef)
         }
 
         try await batch.commit()
@@ -51,14 +54,14 @@ struct FirestoreService {
 
     // MARK: - Deploy PairsSet
 
-    /// Writes collection metadata + pairsSet document (items embedded) to Firestore.
+    /// Записывает метаданные коллекции и сет (items встроены) в Firestore.
     func deployPairsSet(
         collection: FSCollection,
         set: FSPairsSet
     ) async throws {
-        let batch = db.batch()
+        let batch   = db.batch()
         let collRef = db.collection("collections").document(collection.id)
-        let setRef  = collRef.collection("pairsSets").document(set.id)
+        let setRef  = db.collection("pairsSets").document(set.id)
 
         batch.setData(collectionDoc(collection), forDocument: collRef, merge: true)
         batch.setData(pairsSetDoc(set), forDocument: setRef)
@@ -67,41 +70,40 @@ struct FirestoreService {
         log("[Firestore] Deployed PairsSet '\(set.title ?? set.id)' (\(set.items.count) pairs)", level: .info)
     }
 
-    // MARK: - Read (for iOS app sync)
+    // MARK: - Fetch (для iOS sync)
 
-    func fetchCollectionIds() async throws -> [String] {
+    func fetchCollections() async throws -> [[String: Any]] {
         let snap = try await db.collection("collections").getDocuments()
-        return snap.documents.map(\.documentID)
-    }
-
-    func fetchCollection(id: String) async throws -> [String: Any] {
-        let snap = try await db.collection("collections").document(id).getDocument()
-        return snap.data() ?? [:]
-    }
-
-    func fetchCardSets(collectionId: String) async throws -> [[String: Any]] {
-        let snap = try await db
-            .collection("collections").document(collectionId)
-            .collection("cardSets").getDocuments()
         return snap.documents.map { $0.data() }
     }
 
-    func fetchCards(collectionId: String, setId: String) async throws -> [[String: Any]] {
+    /// Загружает все CardSet с cefrLevel из переданного списка.
+    func fetchCardSets(levels: [String]) async throws -> [[String: Any]] {
+        guard !levels.isEmpty else { return [] }
+        let snap = try await db.collection("cardSets")
+            .whereField("cefrLevel", in: levels)
+            .getDocuments()
+        return snap.documents.map { $0.data() }
+    }
+
+    func fetchCards(setId: String) async throws -> [[String: Any]] {
         let snap = try await db
-            .collection("collections").document(collectionId)
             .collection("cardSets").document(setId)
             .collection("cards").getDocuments()
         return snap.documents.map { $0.data() }
     }
 
-    func fetchPairsSets(collectionId: String) async throws -> [[String: Any]] {
-        let snap = try await db
-            .collection("collections").document(collectionId)
-            .collection("pairsSets").getDocuments()
+    /// Загружает все PairsSet с cefrLevel из переданного списка.
+    func fetchPairsSets(levels: [String]) async throws -> [[String: Any]] {
+        guard !levels.isEmpty else { return [] }
+        let snap = try await db.collection("pairsSets")
+            .whereField("cefrLevel", in: levels)
+            .getDocuments()
         return snap.documents.map { $0.data() }
     }
 
     // MARK: - Document builders
+    // Admin-only поля (isSynced, deployStatus) намеренно исключены.
 
     private func collectionDoc(_ c: FSCollection) -> [String: Any] {
         var d: [String: Any] = [
@@ -183,7 +185,7 @@ enum FirestoreServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .tooManyCards(let count):
-            return "Too many cards (\(count)) for a single deploy batch. Max 498 cards per set."
+            return "Too many cards (\(count)) for a single deploy batch. Max 498 per set."
         }
     }
 }

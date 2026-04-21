@@ -75,25 +75,49 @@ struct SwipeLingoApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if let container {
-                if hasCompletedOnboarding {
-                    AppView()
+            Group {
+                if let container {
+                    if hasCompletedOnboarding {
+                        AppView()
+                            .modelContainer(container)
+                    } else {
+                        OnboardingView {
+                            hasCompletedOnboarding = true
+                        }
                         .modelContainer(container)
-                } else {
-                    OnboardingView {
-                        hasCompletedOnboarding = true
                     }
-                    .modelContainer(container)
+                } else {
+                    DatabseErrorView()
                 }
-            } else {
-                DatabseErrorView()
             }
+            // Runs once after AppDelegate has initialised Firebase.
+            // Syncs live Firestore content into SwiftData (idempotent via firestoreId).
+            .task { await firestoreSync() }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 drainInboxQueue()
             }
         }
+    }
+
+    // MARK: - Firestore sync
+
+    private func firestoreSync() async {
+        guard let ctx = container?.mainContext else { return }
+
+        let langRaw  = UserDefaults.standard.string(forKey: "nativeLanguage") ?? ""
+        let language = NativeLanguage(rawValue: langRaw) ?? .russian
+
+        // Уровень пользователя из UserProfile — определяет какие сеты загружать
+        let profiles  = ctx.fetchWithErrorHandling(FetchDescriptor<UserProfile>())
+        let userLevel = profiles.first?.cefrLevel ?? .c2  // c2 = загрузить всё если профиль не задан
+
+        await FirestoreImportService().syncFromFirestore(
+            into: ctx,
+            language: language,
+            upToLevel: userLevel
+        )
     }
 
     // MARK: - Share Extension inbox drain
