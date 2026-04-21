@@ -101,7 +101,6 @@
 		47D280352F96864A00BBD66B /* CardLengthValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D280342F96864A00BBD66B /* CardLengthValidator.swift */; };
 		47D280362F96864A00BBD66B /* CardLengthValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D280342F96864A00BBD66B /* CardLengthValidator.swift */; };
 		47D280382F968E5600BBD66B /* ExampleEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D280372F968E5600BBD66B /* ExampleEditorSheet.swift */; };
-		47D2803C2F96A7B900BBD66B /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 47D2803B2F96A7B900BBD66B /* GoogleService-Info.plist */; };
 		47D2803D2F96A7B900BBD66B /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 47D2803B2F96A7B900BBD66B /* GoogleService-Info.plist */; };
 		47DE7EEE2F8000E500F6BCF3 /* AccessTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */; };
 		47DE7F352F82D5EC00F6BCF3 /* PlansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */; };
@@ -782,7 +781,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				47631B632F86E2BF002F1666 /* Assets.xcassets in Resources */,
-				47D2803C2F96A7B900BBD66B /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
