@@ -32,6 +32,13 @@ enum CEFRLevel: String, CaseIterable, Codable {
         }
     }
 
+    /// Все уровни от A1 до данного включительно — для Firestore-запроса по уровню пользователя.
+    var andBelow: [CEFRLevel] {
+        let all = CEFRLevel.allCases
+        guard let idx = all.firstIndex(of: self) else { return all }
+        return Array(all[...idx])
+    }
+
     var color: Color {
         #if os(iOS)
         switch self {

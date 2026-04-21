@@ -24,27 +24,40 @@ import FirebaseFirestore
 struct FirestoreImportService {
 
     // MARK: - Sync from Firestore (real content)
+    //
+    // Плоская схема Firestore:
+    //   /collections/{id}       ← метаданные (name, icon, type)
+    //   /cardSets/{id}          ← collectionId, cefrLevel, …
+    //       /cards/{id}         ← карточки (вложены в сет)
+    //   /pairsSets/{id}         ← collectionId, cefrLevel, items[]
+    //
+    // Загружаются только сеты уровня ≤ upToLevel (уровень пользователя из UserProfile).
+    // Upsert: сопоставление SwiftData ↔ Firestore по полю firestoreId.
+    // SRS-состояние карточек не перезаписывается при обновлении.
 
-    func syncFromFirestore(into context: ModelContext, language: NativeLanguage) async {
+    func syncFromFirestore(
+        into context: ModelContext,
+        language: NativeLanguage,
+        upToLevel: CEFRLevel = .c2
+    ) async {
         guard FirebaseApp.app() != nil else {
             log("[Firestore] Firebase not configured — skipping content sync", level: .warning)
             return
         }
 
-        let db = Firestore.firestore()
-        log("[Firestore] Starting content sync…", level: .info)
+        let db     = Firestore.firestore()
+        let levels = upToLevel.andBelow.map { $0.rawValue }   // ["a1", "a2", …, upToLevel]
+        log("[Firestore] Sync started (up to \(upToLevel.displayCode), \(levels.count) levels)", level: .info)
 
         do {
-            // Pre-load existing developer content indexed by firestoreId
+            // ── 1. Pre-load SwiftData caches ──────────────────────────────
             let allCollections = context.fetchWithErrorHandling(
                 FetchDescriptor<Collection>(predicate: #Predicate { !$0.isUserCreated })
             )
             let allSets = context.fetchWithErrorHandling(
                 FetchDescriptor<CardSet>(predicate: #Predicate { !$0.isUserCreated })
             )
-            let allPairsSets = context.fetchWithErrorHandling(
-                FetchDescriptor<PairsSet>()
-            )
+            let allPairsSets = context.fetchWithErrorHandling(FetchDescriptor<PairsSet>())
 
             var collectionsByFsId: [String: Collection] = Dictionary(
                 uniqueKeysWithValues: allCollections.compactMap { c in c.firestoreId.map { ($0, c) } }
@@ -56,188 +69,169 @@ struct FirestoreImportService {
                 uniqueKeysWithValues: allPairsSets.compactMap { s in s.firestoreId.map { ($0, s) } }
             )
 
+            // ── 2. Collections (метаданные — все, без фильтра по уровню) ──
             let collSnap = try await db.collection("collections").getDocuments()
-
-            for collDoc in collSnap.documents {
-                let d = collDoc.data()
-                guard
-                    let fsId   = d["id"]   as? String,
-                    let name   = d["name"] as? String,
-                    let typeRaw = d["type"] as? String,
-                    let type   = CollectionType(rawValue: typeRaw)
+            for doc in collSnap.documents {
+                let d = doc.data()
+                guard let fsId    = d["id"]   as? String,
+                      let name    = d["name"] as? String,
+                      let typeRaw = d["type"] as? String,
+                      let type    = CollectionType(rawValue: typeRaw)
                 else { continue }
 
-                let updatedAt = (d["updatedAt"] as? Timestamp)?.dateValue() ?? .now
-                let createdAt = (d["createdAt"] as? Timestamp)?.dateValue() ?? .now
-                let icon      = d["icon"] as? String
-
-                // Upsert Collection
-                let sdCollection: Collection
                 if let existing = collectionsByFsId[fsId] {
                     existing.name      = name
-                    existing.icon      = icon
-                    existing.updatedAt = updatedAt
-                    sdCollection = existing
+                    existing.icon      = d["icon"] as? String
+                    existing.updatedAt = (d["updatedAt"] as? Timestamp)?.dateValue() ?? .now
                 } else {
                     let c = Collection(
-                        name: name, icon: icon,
+                        name: name,
+                        icon: d["icon"] as? String,
                         isOwned: true, isUserCreated: false,
                         type: type,
-                        updatedAt: updatedAt, createdAt: createdAt
+                        updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue() ?? .now,
+                        createdAt: (d["createdAt"] as? Timestamp)?.dateValue() ?? .now
                     )
                     c.firestoreId = fsId
                     context.insert(c)
                     collectionsByFsId[fsId] = c
-                    sdCollection = c
+                }
+            }
+
+            // ── 3. CardSets — фильтр по уровню пользователя ───────────────
+            let setSnap = try await db.collection("cardSets")
+                .whereField("cefrLevel", in: levels)
+                .getDocuments()
+
+            for setDoc in setSnap.documents {
+                let sd = setDoc.data()
+                guard let setFsId      = sd["id"]           as? String,
+                      let setName      = sd["name"]         as? String,
+                      let collFsId     = sd["collectionId"] as? String,
+                      let sdCollection = collectionsByFsId[collFsId]
+                else { continue }
+
+                let cefrLevel  = (sd["cefrLevel"]  as? String).flatMap { CEFRLevel(rawValue: $0)  } ?? .b2
+                let accessTier = (sd["accessTier"] as? String).flatMap { AccessTier(rawValue: $0) } ?? .free
+
+                let sdSet: CardSet
+                if let existing = cardSetsByFsId[setFsId] {
+                    existing.name           = setName
+                    existing.cefrLevel      = cefrLevel
+                    existing.accessTier     = accessTier
+                    existing.setDescription = sd["description"] as? String
+                    existing.updatedAt      = (sd["updatedAt"] as? Timestamp)?.dateValue() ?? .now
+                    sdSet = existing
+                } else {
+                    let s = CardSet(
+                        name: setName,
+                        collectionId: sdCollection.id,
+                        level: cefrLevel,
+                        isUserCreated: false,
+                        accessTier: accessTier,
+                        setDescription: sd["description"] as? String,
+                        updatedAt: (sd["updatedAt"] as? Timestamp)?.dateValue() ?? .now,
+                        createdAt: (sd["createdAt"] as? Timestamp)?.dateValue() ?? .now
+                    )
+                    s.firestoreId = setFsId
+                    context.insert(s)
+                    cardSetsByFsId[setFsId] = s
+                    sdSet = s
                 }
 
-                // Sync CardSets
-                let setSnap = try await db
-                    .collection("collections").document(collDoc.documentID)
-                    .collection("cardSets").getDocuments()
+                // ── 4. Cards (вложены в /cardSets/{id}/cards) ─────────────
+                let sdSetId = sdSet.id
+                let existingCards = context.fetchWithErrorHandling(
+                    FetchDescriptor<Card>(predicate: #Predicate { $0.setId == sdSetId })
+                )
+                var cardsByFsId: [String: Card] = Dictionary(
+                    uniqueKeysWithValues: existingCards.compactMap { c in c.firestoreId.map { ($0, c) } }
+                )
 
-                for setDoc in setSnap.documents {
-                    let sd = setDoc.data()
-                    guard
-                        let setFsId = sd["id"]   as? String,
-                        let setName = sd["name"] as? String
+                let cardSnap = try await db
+                    .collection("cardSets").document(setFsId)
+                    .collection("cards").getDocuments()
+
+                for cardDoc in cardSnap.documents {
+                    let cd = cardDoc.data()
+                    guard let cardFsId = cd["id"] as? String,
+                          let en       = cd["en"] as? String
                     else { continue }
 
-                    let cefrLevel  = (sd["cefrLevel"]  as? String).flatMap { CEFRLevel(rawValue: $0)  } ?? .b2
-                    let accessTier = (sd["accessTier"] as? String).flatMap { AccessTier(rawValue: $0) } ?? .free
-                    let setUpdatedAt = (sd["updatedAt"] as? Timestamp)?.dateValue() ?? .now
-                    let setCreatedAt = (sd["createdAt"] as? Timestamp)?.dateValue() ?? .now
-                    let setDesc = sd["description"] as? String
+                    let translations       = cd["translations"]       as? [String: String]   ?? [:]
+                    let sampleEN           = cd["sampleEN"]           as? [String]           ?? []
+                    let sampleTranslations = cd["sampleTranslations"] as? [String: [String]] ?? [:]
+                    let transcription      = cd["transcription"]      as? String             ?? ""
+                    let item               = translations[language.langId] ?? ""
+                    let sampleItem         = sampleTranslations[language.langId] ?? []
 
-                    // Upsert CardSet
-                    let sdSet: CardSet
-                    if let existing = cardSetsByFsId[setFsId] {
-                        existing.name           = setName
-                        existing.cefrLevel      = cefrLevel
-                        existing.accessTier     = accessTier
-                        existing.setDescription = setDesc
-                        existing.updatedAt      = setUpdatedAt
-                        sdSet = existing
+                    if let existing = cardsByFsId[cardFsId] {
+                        // Обновляем контент, SRS-состояние не трогаем
+                        existing.en                = en
+                        existing.item              = item
+                        existing.sampleEN          = sampleEN
+                        existing.sampleItem        = sampleItem
+                        existing.dictTranscription = transcription
+                        existing.updatedAt         = (cd["updatedAt"] as? Timestamp)?.dateValue() ?? .now
                     } else {
-                        let s = CardSet(
-                            name: setName,
-                            collectionId: sdCollection.id,
-                            level: cefrLevel,
-                            isUserCreated: false,
-                            accessTier: accessTier,
-                            setDescription: setDesc,
-                            updatedAt: setUpdatedAt,
-                            createdAt: setCreatedAt
+                        let c = Card(
+                            en: en, item: item,
+                            sampleEN: sampleEN, sampleItem: sampleItem,
+                            dictTranscription: transcription,
+                            createdAt: (cd["createdAt"] as? Timestamp)?.dateValue() ?? .now,
+                            updatedAt: (cd["updatedAt"] as? Timestamp)?.dateValue() ?? .now,
+                            setId: sdSet.id
                         )
-                        s.firestoreId = setFsId
-                        context.insert(s)
-                        cardSetsByFsId[setFsId] = s
-                        sdSet = s
-                    }
-
-                    // Sync Cards — load existing once per set
-                    let sdSetId = sdSet.id
-                    let existingCards = context.fetchWithErrorHandling(
-                        FetchDescriptor<Card>(predicate: #Predicate { $0.setId == sdSetId })
-                    )
-                    var cardsByFsId: [String: Card] = Dictionary(
-                        uniqueKeysWithValues: existingCards.compactMap { c in c.firestoreId.map { ($0, c) } }
-                    )
-
-                    let cardSnap = try await db
-                        .collection("collections").document(collDoc.documentID)
-                        .collection("cardSets").document(setDoc.documentID)
-                        .collection("cards").getDocuments()
-
-                    for cardDoc in cardSnap.documents {
-                        let cd = cardDoc.data()
-                        guard
-                            let cardFsId = cd["id"] as? String,
-                            let en       = cd["en"] as? String
-                        else { continue }
-
-                        let translations       = cd["translations"]       as? [String: String]     ?? [:]
-                        let sampleEN           = cd["sampleEN"]           as? [String]             ?? []
-                        let sampleTranslations = cd["sampleTranslations"] as? [String: [String]]   ?? [:]
-                        let transcription      = cd["transcription"]      as? String               ?? ""
-                        let tag                = cd["tag"]                as? String               ?? ""
-                        let cardUpdatedAt      = (cd["updatedAt"] as? Timestamp)?.dateValue()      ?? .now
-                        let cardCreatedAt      = (cd["createdAt"] as? Timestamp)?.dateValue()      ?? .now
-
-                        let item        = translations[language.langId] ?? ""
-                        let sampleItem  = sampleTranslations[language.langId] ?? []
-
-                        if let existing = cardsByFsId[cardFsId] {
-                            // Update content fields; preserve SRS state and user edits
-                            existing.en                = en
-                            existing.item              = item
-                            existing.sampleEN          = sampleEN
-                            existing.sampleItem        = sampleItem
-                            existing.dictTranscription = transcription
-                            existing.updatedAt         = cardUpdatedAt
-                        } else {
-                            let c = Card(
-                                en: en, item: item,
-                                sampleEN: sampleEN, sampleItem: sampleItem,
-                                dictTranscription: transcription,
-                                createdAt: cardCreatedAt,
-                                updatedAt: cardUpdatedAt,
-                                setId: sdSet.id
-                            )
-                            c.firestoreId = cardFsId
-                            context.insert(c)
-                            cardsByFsId[cardFsId] = c
-                        }
-                    }
-                }
-
-                // Sync PairsSets
-                let pairsSnap = try await db
-                    .collection("collections").document(collDoc.documentID)
-                    .collection("pairsSets").getDocuments()
-
-                for pairsDoc in pairsSnap.documents {
-                    let pd = pairsDoc.data()
-                    guard let pairsFsId = pd["id"] as? String else { continue }
-
-                    let cefrLevel  = (pd["cefrLevel"]  as? String).flatMap { CEFRLevel(rawValue: $0)  } ?? .b2
-                    let accessTier = (pd["accessTier"] as? String).flatMap { AccessTier(rawValue: $0) } ?? .free
-                    let title      = pd["title"]       as? String
-                    let desc       = pd["description"] as? String
-                    let rawItems   = pd["items"]        as? [[String: Any]] ?? []
-                    let pairs      = rawItems.compactMap { parsePair(from: $0) }
-                    let psUpdatedAt = (pd["updatedAt"] as? Timestamp)?.dateValue() ?? .now
-                    let psCreatedAt = (pd["createdAt"] as? Timestamp)?.dateValue() ?? .now
-
-                    if let existing = pairsSetsByFsId[pairsFsId] {
-                        existing.title          = title
-                        existing.setDescription = desc
-                        existing.cefrLevel      = cefrLevel
-                        existing.accessTier     = accessTier
-                        existing.items          = pairs
-                        existing.updatedAt      = psUpdatedAt
-                        existing.collectionId   = sdCollection.id
-                    } else {
-                        let ps = PairsSet(
-                            title: title,
-                            setDescription: desc,
-                            cefrLevel: cefrLevel,
-                            accessTier: accessTier,
-                            deployStatus: .live,
-                            items: pairs,
-                            collectionId: sdCollection.id,
-                            updatedAt: psUpdatedAt,
-                            createdAt: psCreatedAt
-                        )
-                        ps.firestoreId = pairsFsId
-                        context.insert(ps)
-                        pairsSetsByFsId[pairsFsId] = ps
+                        c.firestoreId = cardFsId
+                        context.insert(c)
+                        cardsByFsId[cardFsId] = c
                     }
                 }
             }
 
+            // ── 5. PairsSets — фильтр по уровню пользователя ─────────────
+            let pairsSnap = try await db.collection("pairsSets")
+                .whereField("cefrLevel", in: levels)
+                .getDocuments()
+
+            for pairsDoc in pairsSnap.documents {
+                let pd = pairsDoc.data()
+                guard let pairsFsId  = pd["id"]           as? String,
+                      let collFsId   = pd["collectionId"] as? String,
+                      let sdColl     = collectionsByFsId[collFsId]
+                else { continue }
+
+                let cefrLevel  = (pd["cefrLevel"]  as? String).flatMap { CEFRLevel(rawValue: $0)  } ?? .b2
+                let accessTier = (pd["accessTier"] as? String).flatMap { AccessTier(rawValue: $0) } ?? .free
+                let pairs      = (pd["items"] as? [[String: Any]] ?? []).compactMap { parsePair(from: $0) }
+
+                if let existing = pairsSetsByFsId[pairsFsId] {
+                    existing.title          = pd["title"]       as? String
+                    existing.setDescription = pd["description"] as? String
+                    existing.cefrLevel      = cefrLevel
+                    existing.accessTier     = accessTier
+                    existing.items          = pairs
+                    existing.updatedAt      = (pd["updatedAt"] as? Timestamp)?.dateValue() ?? .now
+                    existing.collectionId   = sdColl.id
+                } else {
+                    let ps = PairsSet(
+                        title:          pd["title"]       as? String,
+                        setDescription: pd["description"] as? String,
+                        cefrLevel: cefrLevel, accessTier: accessTier,
+                        deployStatus: .live,
+                        items: pairs,
+                        collectionId: sdColl.id,
+                        updatedAt: (pd["updatedAt"] as? Timestamp)?.dateValue() ?? .now,
+                        createdAt: (pd["createdAt"] as? Timestamp)?.dateValue() ?? .now
+                    )
+                    ps.firestoreId = pairsFsId
+                    context.insert(ps)
+                    pairsSetsByFsId[pairsFsId] = ps
+                }
+            }
+
             context.saveWithErrorHandling()
-            log("[Firestore] Content sync complete", level: .info)
+            log("[Firestore] Sync complete", level: .info)
 
         } catch {
             log("[Firestore] Sync failed: \(error)", level: .error)
