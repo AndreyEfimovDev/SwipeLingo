@@ -34,12 +34,7 @@ struct SwipeLingoApp: App {
     init() {
         container = Self.makeContainer()
         if let ctx = container?.mainContext {
-            // importIfNeeded отключён — реальный контент приходит из Firestore через syncFromFirestore()
-            // FirestoreImportService().importIfNeeded(into: ctx)
-            MockDataSeeder.ensureSystemCollections(into: ctx)
-            // Mock-данные отключены — тестируем реальный Firestore sync
-            // MockDataSeeder.ensureMockDevCollection(into: ctx)
-            // MockDataSeeder.ensureMockPairsSets(into: ctx)
+            SystemSeeder.ensureSystemCollections(into: ctx)
         }
     }
 
@@ -97,9 +92,18 @@ struct SwipeLingoApp: App {
                     DatabseErrorView()
                 }
             }
-            // Runs once after AppDelegate has initialised Firebase.
             // Syncs live Firestore content into SwiftData (idempotent via firestoreId).
-            .task { await firestoreSync() }
+            // Skip on first launch (onboarding not done yet — no UserProfile, level unknown).
+            // On first launch the sync is triggered by .onChange below after onboarding.
+            .task {
+                if hasCompletedOnboarding { await firestoreSync() }
+            }
+            // After onboarding: UserProfile exists with correct cefrLevel → sync with right level.
+            .onChange(of: hasCompletedOnboarding) { _, completed in
+                if completed {
+                    Task { await firestoreSync() }
+                }
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {

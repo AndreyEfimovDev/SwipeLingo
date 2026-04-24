@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		474D28BA2F97699100BC11FF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 474D28B92F97699100BC11FF /* GoogleService-Info.plist */; };
+		474D28BC2F9B734400BC11FF /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474D28BB2F9B734400BC11FF /* AppView.swift */; };
 		474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE02F7BB11800128E83 /* ErrorManager.swift */; };
 		474F1FE62F7BE2BA00128E83 /* DatabseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */; };
 		474F1FE82F7D304B00128E83 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE72F7D304B00128E83 /* SearchBar.swift */; };
@@ -25,7 +26,7 @@
 		47631B662F86E460002F1666 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783F2F794487005FBDFE /* Secrets.swift */; };
 		47631B7B2F86F048002F1666 /* Translation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47631B7A2F86F048002F1666 /* Translation.framework */; };
 		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		478C784F2F794487005FBDFE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppFeature.swift */; };
+		478C784F2F794487005FBDFE /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppViewModel.swift */; };
 		478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78122F794487005FBDFE /* SwipeLingoApp.swift */; };
 		478C78512F794487005FBDFE /* CEFRBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78142F794487005FBDFE /* CEFRBadgeView.swift */; };
 		478C78522F794487005FBDFE /* UnderlineSermentedPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78162F794487005FBDFE /* UnderlineSermentedPicker.swift */; };
@@ -67,7 +68,7 @@
 		478C78772F794487005FBDFE /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78462F794487005FBDFE /* DictionaryService.swift */; };
 		478C78782F794487005FBDFE /* FirestoreImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78472F794487005FBDFE /* FirestoreImportService.swift */; };
 		478C78792F794487005FBDFE /* KeyboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78482F794487005FBDFE /* KeyboardManager.swift */; };
-		478C787A2F794487005FBDFE /* MockDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78492F794487005FBDFE /* MockDataSeeder.swift */; };
+		478C787A2F794487005FBDFE /* SystemSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78492F794487005FBDFE /* SystemSeeder.swift */; };
 		478C787B2F794487005FBDFE /* PileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C784A2F794487005FBDFE /* PileService.swift */; };
 		478C787C2F794487005FBDFE /* SRSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C784B2F794487005FBDFE /* SRSService.swift */; };
 		478C787D2F794487005FBDFE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 478C78432F794487005FBDFE /* Assets.xcassets */; };
@@ -155,6 +156,7 @@
 		474BFB6F2F3C825C006E639B /* SwipeLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		474D28B92F97699100BC11FF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		474D28BB2F9B734400BC11FF /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		474F1FE02F7BB11800128E83 /* ErrorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorManager.swift; sourceTree = "<group>"; };
 		474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabseErrorView.swift; sourceTree = "<group>"; };
 		474F1FE72F7D304B00128E83 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
@@ -164,7 +166,7 @@
 		47631B582F86B82F002F1666 /* NativeLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLanguage.swift; sourceTree = "<group>"; };
 		47631B7A2F86F048002F1666 /* Translation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Translation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk/System/Library/Frameworks/Translation.framework; sourceTree = DEVELOPER_DIR; };
 		478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwipeLingoShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		478C78112F794487005FBDFE /* AppFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
+		478C78112F794487005FBDFE /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		478C78122F794487005FBDFE /* SwipeLingoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoApp.swift; sourceTree = "<group>"; };
 		478C78142F794487005FBDFE /* CEFRBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CEFRBadgeView.swift; sourceTree = "<group>"; };
 		478C78162F794487005FBDFE /* UnderlineSermentedPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnderlineSermentedPicker.swift; sourceTree = "<group>"; };
@@ -207,7 +209,7 @@
 		478C78462F794487005FBDFE /* DictionaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryService.swift; sourceTree = "<group>"; };
 		478C78472F794487005FBDFE /* FirestoreImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreImportService.swift; sourceTree = "<group>"; };
 		478C78482F794487005FBDFE /* KeyboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardManager.swift; sourceTree = "<group>"; };
-		478C78492F794487005FBDFE /* MockDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDataSeeder.swift; sourceTree = "<group>"; };
+		478C78492F794487005FBDFE /* SystemSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSeeder.swift; sourceTree = "<group>"; };
 		478C784A2F794487005FBDFE /* PileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PileService.swift; sourceTree = "<group>"; };
 		478C784B2F794487005FBDFE /* SRSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRSService.swift; sourceTree = "<group>"; };
 		478C784D2F794487005FBDFE /* SwipeLingo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwipeLingo.entitlements; sourceTree = "<group>"; };
@@ -349,8 +351,9 @@
 		478C78132F794487005FBDFE /* App */ = {
 			isa = PBXGroup;
 			children = (
-				478C78112F794487005FBDFE /* AppFeature.swift */,
 				478C78122F794487005FBDFE /* SwipeLingoApp.swift */,
+				474D28BB2F9B734400BC11FF /* AppView.swift */,
+				478C78112F794487005FBDFE /* AppViewModel.swift */,
 				474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */,
 			);
 			path = App;
@@ -503,7 +506,7 @@
 				478C78452F794487005FBDFE /* AudioPlayerService.swift */,
 				478C78462F794487005FBDFE /* DictionaryService.swift */,
 				478C78482F794487005FBDFE /* KeyboardManager.swift */,
-				478C78492F794487005FBDFE /* MockDataSeeder.swift */,
+				478C78492F794487005FBDFE /* SystemSeeder.swift */,
 				478C784A2F794487005FBDFE /* PileService.swift */,
 				478C784B2F794487005FBDFE /* SRSService.swift */,
 			);
@@ -802,7 +805,7 @@
 				47C09A592F8531C20049858B /* PairsPileBuilderViewModel.swift in Sources */,
 				474F1FEA2F7DAA9F00128E83 /* OnTopButton.swift in Sources */,
 				474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */,
-				478C784F2F794487005FBDFE /* AppFeature.swift in Sources */,
+				478C784F2F794487005FBDFE /* AppViewModel.swift in Sources */,
 				478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */,
 				478C78512F794487005FBDFE /* CEFRBadgeView.swift in Sources */,
 				478C78522F794487005FBDFE /* UnderlineSermentedPicker.swift in Sources */,
@@ -838,6 +841,7 @@
 				478C78672F794487005FBDFE /* TinderCardsView.swift in Sources */,
 				47C09A862F853B940049858B /* FirestoreModels.swift in Sources */,
 				47C099F62F84F0B80049858B /* OnboardingLevelView.swift in Sources */,
+				474D28BC2F9B734400BC11FF /* AppView.swift in Sources */,
 				47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */,
 				47C099F82F84F0B80049858B /* OnboardingWelcomeView.swift in Sources */,
 				47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */,
@@ -867,7 +871,7 @@
 				478C78782F794487005FBDFE /* FirestoreImportService.swift in Sources */,
 				47DE7F352F82D5EC00F6BCF3 /* PlansView.swift in Sources */,
 				478C78792F794487005FBDFE /* KeyboardManager.swift in Sources */,
-				478C787A2F794487005FBDFE /* MockDataSeeder.swift in Sources */,
+				478C787A2F794487005FBDFE /* SystemSeeder.swift in Sources */,
 				478C787B2F794487005FBDFE /* PileService.swift in Sources */,
 				478C787C2F794487005FBDFE /* SRSService.swift in Sources */,
 				47D280382F968E5600BBD66B /* ExampleEditorSheet.swift in Sources */,
