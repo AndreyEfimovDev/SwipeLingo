@@ -268,6 +268,13 @@ struct FirestoreImportService {
 
         } catch {
             log("[Firestore] Sync failed: \(error)", level: .error)
+            let nsError = error as NSError
+            let isOffline = nsError.domain == NSURLErrorDomain
+                         && nsError.code   == NSURLErrorNotConnectedToInternet
+            let message = isOffline
+                ? AppNetworkError.noConnection.message
+                : AppNetworkError.serverError.message
+            await MainActor.run { ErrorManager.shared.showToast(message) }
         }
     }
 

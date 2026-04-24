@@ -24,6 +24,7 @@ struct AppView: View {
             .preferredColorScheme(theme.colorScheme)
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
+            .errorToast()
             // Re-sync when user changes CEFR level in Settings.
             // cefrLevelRaw is the stored String property — SwiftData observes it directly.
             .onChange(of: profiles.first?.cefrLevelRaw) { _, _ in
