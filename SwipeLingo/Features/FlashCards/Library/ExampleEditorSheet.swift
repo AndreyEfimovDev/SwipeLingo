@@ -3,8 +3,9 @@ import SwiftData
 
 // MARK: - ExampleEditorSheet
 //
-// Шит управления примерами карточки — открывается с оборота карточки в TinderCards.
-// Показывает все примеры (EN + перевод), позволяет удалять ненужные.
+// Шит управления пользовательскими примерами карточки — открывается с оборота карточки в TinderCards.
+// Показывает только примеры, добавленные пользователем (userSampleEN/userSampleItem).
+// Примеры из Firestore (sampleEN/sampleItem) не редактируются здесь — они управляются через Admin.
 // Работает с локальными копиями массивов — изменения применяются только по нажатию Save.
 
 struct ExampleEditorSheet: View {
@@ -19,12 +20,12 @@ struct ExampleEditorSheet: View {
 
     init(card: Card) {
         self.card    = card
-        _samplesEN   = State(initialValue: card.sampleEN)
-        _samplesItem = State(initialValue: card.sampleItem)
+        _samplesEN   = State(initialValue: card.userSampleEN)
+        _samplesItem = State(initialValue: card.userSampleItem)
     }
 
     private var hasChanges: Bool {
-        samplesEN != card.sampleEN || samplesItem != card.sampleItem
+        samplesEN != card.userSampleEN || samplesItem != card.userSampleItem
     }
 
     // MARK: Body
@@ -122,10 +123,10 @@ struct ExampleEditorSheet: View {
             Image(systemName: "text.badge.minus")
                 .font(.system(size: 40))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
-            Text("No examples left")
+            Text("No user examples")
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.mySecondary)
-            Text("Tap Save to remove all, or Cancel to keep them.")
+            Text("Add examples from the Dictionary view.")
                 .font(.caption)
                 .foregroundStyle(Color.myColors.mySecondary)
                 .multilineTextAlignment(.center)
@@ -144,8 +145,8 @@ struct ExampleEditorSheet: View {
     }
 
     private func save() {
-        card.sampleEN   = samplesEN
-        card.sampleItem = samplesItem
+        card.userSampleEN   = samplesEN
+        card.userSampleItem = samplesItem
         context.saveWithErrorHandling()
         dismiss()
     }
