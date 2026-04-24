@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import FirebaseCore
 
 // MARK: - PairsLibraryView
 // Управление PairsPiles и просмотр всех PairsSets.
@@ -22,8 +23,12 @@ struct PairsLibraryView: View {
     @Query(filter: #Predicate<Collection> { $0.typeRaw == "pairs" },
            sort: \Collection.createdAt)                   private var pairsCollections: [Collection]
 
+    @AppStorage("nativeLanguage") private var nativeLangRaw: String = ""
+    @Query private var profiles: [UserProfile]
+
     @State private var showAllPiles = false
     @State private var pileSheet: PairsPileSheet?
+    @State private var isSyncing = false
 
     // MARK: - Grouping helpers
 
@@ -57,6 +62,20 @@ struct PairsLibraryView: View {
                     Image(systemName: "chevron.left")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.myColors.myBlue)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if isSyncing {
+                    ProgressView()
+                        .tint(Color.myColors.myBlue)
+                } else {
+                    Button {
+                        Task { await syncContent() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.myColors.myBlue)
+                    }
                 }
             }
         }
@@ -304,6 +323,14 @@ struct PairsLibraryView: View {
     }
 
     // MARK: - Actions
+
+    private func syncContent() async {
+        isSyncing = true
+        let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
+        let level    = profiles.first?.cefrLevel ?? .c2
+        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level)
+        isSyncing = false
+    }
 
     private func activatePile(_ pile: PairsPile) {
         for p in allPiles { p.isActive = false }
