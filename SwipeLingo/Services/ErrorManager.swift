@@ -8,8 +8,13 @@ import Combine
 final class ErrorManager: ObservableObject {
     static let shared = ErrorManager()
 
+    // Blocking alert
     @Published var errorMessage: String?
     @Published var showAlert: Bool = false
+
+    // Non-blocking toast
+    @Published var toastMessage: String?
+    private var toastTask: Task<Void, Never>?
 
     private init() {}
 
@@ -20,6 +25,17 @@ final class ErrorManager: ObservableObject {
             log("❌ \(message): \(error.localizedDescription)", level: .error)
         } else {
             log("❌ \(message)", level: .error)
+        }
+    }
+
+    /// Shows a non-blocking toast banner that auto-dismisses after 3 seconds.
+    func showToast(_ message: String) {
+        toastTask?.cancel()
+        toastMessage = message
+        toastTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            toastMessage = nil
         }
     }
 
@@ -121,6 +137,11 @@ extension View {
     func errorAlert() -> some View {
         modifier(ErrorAlertModifier())
     }
+
+    /// Attaches a global toast banner driven by ErrorManager.shared.
+    func errorToast() -> some View {
+        modifier(ToastModifier())
+    }
 }
 
 // MARK: - ErrorAlertModifier
@@ -135,5 +156,32 @@ private struct ErrorAlertModifier: ViewModifier {
             } message: {
                 Text(errorManager.errorMessage ?? "An unknown error occurred.")
             }
+    }
+}
+
+// MARK: - ToastModifier
+
+private struct ToastModifier: ViewModifier {
+    @ObservedObject private var errorManager = ErrorManager.shared
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .top) {
+            if let message = errorManager.toastMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "wifi.slash")
+                        .font(.subheadline)
+                    Text(message)
+                        .font(.subheadline)
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.black.opacity(0.75), in: Capsule())
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.spring(duration: 0.3), value: errorManager.toastMessage)
+            }
+        }
+        .animation(.spring(duration: 0.3), value: errorManager.toastMessage)
     }
 }
