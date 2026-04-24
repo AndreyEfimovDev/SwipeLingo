@@ -13,6 +13,10 @@ struct LibraryView: View {
     @Query                              private var allCards:    [Card]
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
 
+    @AppStorage("nativeLanguage") private var nativeLangRaw: String = ""
+    @Query private var profiles: [UserProfile]
+    @State private var isSyncing = false
+
     @State private var isShowingAddCollection = false
     @State private var pileSheet:             PileSheet?
     @State private var collectionToDelete:    Collection?
@@ -25,6 +29,14 @@ struct LibraryView: View {
 
     private var deletedCardsCount: Int {
         allCards.filter { $0.status == .deleted }.count
+    }
+
+    private func syncContent() async {
+        isSyncing = true
+        let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
+        let level    = profiles.first?.cefrLevel ?? .c2
+        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level)
+        isSyncing = false
     }
 
     private func setCount(for collection: Collection) -> Int {
@@ -96,6 +108,19 @@ struct LibraryView: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color.myColors.myBlue)
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await syncContent() }
+                    } label: {
+                        if isSyncing {
+                            ProgressView().tint(Color.myColors.myBlue)
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                                .foregroundStyle(Color.myColors.myBlue)
+                        }
+                    }
+                    .disabled(isSyncing)
                 }
             }
             .sheet(isPresented: $isShowingAddCollection) {
