@@ -7,11 +7,14 @@ import FirebaseFirestore
 //
 // Syncs developer-curated content from Firestore into SwiftData.
 //
-// syncFromFirestore(into:language:upToLevel:) — async, fetches content from Firestore.
+// syncFromFirestore(into:language:upToLevel:forceFullSync:) — async, fetches content from Firestore.
 //   • Idempotent: uses firestoreId for upsert matching.
 //   • Preserves user SRS state on card updates.
 //   • Filters by CEFR level — only loads sets ≤ upToLevel.
 //   • Cleans up local sets above the user's level and empty collections.
+//   • Delta sync: queries only sets with updatedAt > lastSyncAt (stored in UserDefaults).
+//     Pass forceFullSync: true (e.g., on level change) to ignore lastSyncAt and re-download everything.
+//   • Requires composite Firestore indexes on (cefrLevel, updatedAt) for cardSets & pairsSets collections.
 //
 // ⚠️  Requires FirebaseApp.configure() and GoogleService-Info.plist. Skips gracefully if absent.
 
@@ -29,10 +32,14 @@ struct FirestoreImportService {
     // Upsert: сопоставление SwiftData ↔ Firestore по полю firestoreId.
     // SRS-состояние карточек не перезаписывается при обновлении.
 
+    // UserDefaults key where the last successful sync timestamp is stored.
+    private static let lastSyncAtKey = "firestoreLastSyncAt"
+
     func syncFromFirestore(
         into context: ModelContext,
         language: NativeLanguage,
-        upToLevel: CEFRLevel = .c2
+        upToLevel: CEFRLevel = .c2,
+        forceFullSync: Bool = false
     ) async {
         guard FirebaseApp.app() != nil else {
             log("[Firestore] Firebase not configured — skipping content sync", level: .warning)
@@ -41,7 +48,15 @@ struct FirestoreImportService {
 
         let db     = Firestore.firestore()
         let levels = upToLevel.andBelow.map { $0.rawValue }   // ["a1", "a2", …, upToLevel]
-        log("[Firestore] Sync started (up to \(upToLevel.displayCode), \(levels.count) levels)", level: .info)
+
+        // Delta sync: only fetch sets updated after the last successful sync.
+        // forceFullSync = true resets the baseline (used when CEFR level changes — need all content).
+        let lastSyncAt: Date = forceFullSync
+            ? .distantPast
+            : (UserDefaults.standard.object(forKey: Self.lastSyncAtKey) as? Date ?? .distantPast)
+        let isDelta = lastSyncAt > .distantPast
+
+        log("[Firestore] Sync started (up to \(upToLevel.displayCode), \(levels.count) levels, \(isDelta ? "delta since \(lastSyncAt)" : "full"))", level: .info)
 
         do {
             // ── 1. Pre-load SwiftData caches ──────────────────────────────
@@ -95,11 +110,39 @@ struct FirestoreImportService {
             // UUID коллекций, у которых есть хотя бы один загруженный сет
             var loadedCollectionIds = Set<UUID>()
 
-            // ── 3. CardSets — фильтр по уровню пользователя ───────────────
-            let setSnap = try await db.collection("cardSets")
-                .whereField("cefrLevel", in: levels)
-                .getDocuments()
+            // ── 3. CardSets — фильтр по уровню пользователя + delta по updatedAt ─
+            // Delta: whereField("updatedAt", isGreaterThan:) + whereField("cefrLevel", in:)
+            // требует composite index в Firestore Console:
+            //   Collection: cardSets  Fields: updatedAt ASC, cefrLevel ASC
+            let cardSetsBaseQuery = db.collection("cardSets").whereField("cefrLevel", in: levels)
+            let cardSetsQuery: Query = isDelta
+                ? cardSetsBaseQuery.whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
+                : cardSetsBaseQuery
+            let setSnap = try await cardSetsQuery.getDocuments()
+            log("[Firestore] CardSets fetched: \(setSnap.documents.count)\(isDelta ? " (delta)" : " (full)")", level: .info)
 
+            // ── 4. Cards — параллельная загрузка всех subcollections ───────
+            // Раньше каждый сет загружался последовательно: N сетов = N сетевых вызовов.
+            // Теперь все /cardSets/{id}/cards запросы выполняются параллельно → O(1) по времени.
+            let setFsIds = setSnap.documents.compactMap { $0.data()["id"] as? String }
+            let cardSnapsBySetId: [String: QuerySnapshot] = try await withThrowingTaskGroup(
+                of: (String, QuerySnapshot).self
+            ) { group in
+                for setFsId in setFsIds {
+                    group.addTask {
+                        let snap = try await db
+                            .collection("cardSets").document(setFsId)
+                            .collection("cards").getDocuments()
+                        return (setFsId, snap)
+                    }
+                }
+                var result: [String: QuerySnapshot] = [:]
+                for try await (id, snap) in group { result[id] = snap }
+                return result
+            }
+            log("[Firestore] Card subcollections fetched: \(cardSnapsBySetId.count)", level: .info)
+
+            // Upsert CardSets + Cards в SwiftData (последовательно — ModelContext не thread-safe)
             for setDoc in setSnap.documents {
                 let sd = setDoc.data()
                 guard let setFsId      = sd["id"]           as? String,
@@ -137,7 +180,9 @@ struct FirestoreImportService {
                 }
                 loadedCollectionIds.insert(sdCollection.id)
 
-                // ── 4. Cards (вложены в /cardSets/{id}/cards) ─────────────
+                // Cards — используем уже загруженный snapshot
+                guard let cardSnap = cardSnapsBySetId[setFsId] else { continue }
+
                 let sdSetId = sdSet.id
                 let existingCards = context.fetchWithErrorHandling(
                     FetchDescriptor<Card>(predicate: #Predicate { $0.setId == sdSetId })
@@ -145,10 +190,6 @@ struct FirestoreImportService {
                 var cardsByFsId: [String: Card] = Dictionary(
                     uniqueKeysWithValues: existingCards.compactMap { c in c.firestoreId.map { ($0, c) } }
                 )
-
-                let cardSnap = try await db
-                    .collection("cardSets").document(setFsId)
-                    .collection("cards").getDocuments()
 
                 for cardDoc in cardSnap.documents {
                     let cd = cardDoc.data()
@@ -187,10 +228,15 @@ struct FirestoreImportService {
                 }
             }
 
-            // ── 5. PairsSets — фильтр по уровню пользователя ─────────────
-            let pairsSnap = try await db.collection("pairsSets")
-                .whereField("cefrLevel", in: levels)
-                .getDocuments()
+            // ── 5. PairsSets — фильтр по уровню пользователя + delta по updatedAt ─
+            // Delta: composite index в Firestore Console:
+            //   Collection: pairsSets  Fields: updatedAt ASC, cefrLevel ASC
+            let pairsSetsBaseQuery = db.collection("pairsSets").whereField("cefrLevel", in: levels)
+            let pairsSetsQuery: Query = isDelta
+                ? pairsSetsBaseQuery.whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
+                : pairsSetsBaseQuery
+            let pairsSnap = try await pairsSetsQuery.getDocuments()
+            log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count)\(isDelta ? " (delta)" : " (full)")", level: .info)
 
             for pairsDoc in pairsSnap.documents {
                 let pd = pairsDoc.data()
@@ -229,33 +275,27 @@ struct FirestoreImportService {
                 loadedCollectionIds.insert(sdColl.id)
             }
 
-            // ── 6. Cleanup: удаляем Firestore-сеты выше уровня пользователя ──
-            // Актуально после смены уровня или первого запуска до онбординга.
-            let validLevels = Set(levels)
-            for s in allSets {
-                guard s.firestoreId != nil else { continue }
-                if !validLevels.contains(s.cefrLevel.rawValue) {
-                    let setId = s.id
-                    let cards = context.fetchWithErrorHandling(
-                        FetchDescriptor<Card>(predicate: #Predicate { $0.setId == setId })
-                    )
-                    cards.forEach { context.delete($0) }
-                    context.delete(s)
-                    log("[Firestore] Removed CardSet '\(s.name)' (above \(upToLevel.displayCode))", level: .info)
-                }
-            }
-            for ps in allPairsSets {
-                guard ps.firestoreId != nil else { continue }
-                if !validLevels.contains(ps.cefrLevel.rawValue) {
-                    context.delete(ps)
-                    log("[Firestore] Removed PairsSet '\(ps.title ?? "?")' (above \(upToLevel.displayCode))", level: .info)
-                }
-            }
+            // ── 6. (удалено) Раньше здесь удалялись Firestore-сеты выше уровня пользователя.
+            // Теперь используется фильтрация на стороне UI: сеты хранятся локально для всех
+            // загруженных уровней, показываются только те что ≤ userLevel.
+            // Плюсы: смена уровня мгновенная (без sync), при повышении уровня данные уже есть.
 
-            // ── 7. Cleanup: удаляем коллекции без сетов ──────────────────────
-            // Используем loadedCollectionIds — UUID коллекций, у которых есть
-            // хотя бы один загруженный сет в этом цикле синхронизации.
-            for c in allCollections {
+            // ── 7. Cleanup: удаляем коллекции без единого сета в SwiftData ──────
+            // loadedCollectionIds содержит только коллекции из текущего sync-запроса.
+            // Дополняем коллекциями у которых в SwiftData уже есть сеты любого уровня
+            // (сеты теперь не удаляются при смене уровня — хранятся и фильтруются в UI).
+            let freshSets  = context.fetchWithErrorHandling(FetchDescriptor<CardSet>(predicate: #Predicate { !$0.isUserCreated }))
+            let freshPairs = context.fetchWithErrorHandling(FetchDescriptor<PairsSet>())
+            freshSets.forEach  { loadedCollectionIds.insert($0.collectionId) }
+            freshPairs.forEach { if let id = $0.collectionId { loadedCollectionIds.insert(id) } }
+
+            // Используем СВЕЖИЙ fetch (не allCollections — снапшот до синка):
+            // шаг 2 мог добавить новые коллекции в этом же цикле синка,
+            // которых нет в allCollections.
+            let currentCollections = context.fetchWithErrorHandling(
+                FetchDescriptor<Collection>(predicate: #Predicate { !$0.isUserCreated })
+            )
+            for c in currentCollections {
                 guard c.firestoreId != nil else { continue }
                 if !loadedCollectionIds.contains(c.id) {
                     context.delete(c)
@@ -264,6 +304,9 @@ struct FirestoreImportService {
             }
 
             context.saveWithErrorHandling()
+
+            // Сохраняем метку времени успешного синка — следующий запрос будет delta.
+            UserDefaults.standard.set(Date.now, forKey: Self.lastSyncAtKey)
             log("[Firestore] Sync complete", level: .info)
 
         } catch {

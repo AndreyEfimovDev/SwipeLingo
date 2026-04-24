@@ -32,13 +32,21 @@ struct PairsLibraryView: View {
 
     // MARK: - Grouping helpers
 
+    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+
     private func sets(for collection: Collection) -> [PairsSet] {
-        allSets.filter { $0.collectionId == collection.id }
+        allSets.filter { $0.collectionId == collection.id && $0.cefrLevel <= userLevel }
+    }
+
+    /// Только коллекции с хотя бы одним сетом — скрываем пустые (кратковременно
+    /// появляются во время sync пока cleanup ещё не удалил их).
+    private var visiblePairsCollections: [Collection] {
+        pairsCollections.filter { !sets(for: $0).isEmpty }
     }
 
     /// Сеты без коллекции или с неизвестным collectionId
     private var orphanedSets: [PairsSet] {
-        let knownIds = Set(pairsCollections.map(\.id))
+        let knownIds = Set(visiblePairsCollections.map(\.id))
         return allSets.filter { set in
             guard let colId = set.collectionId else { return true }
             return !knownIds.contains(colId)
@@ -241,12 +249,12 @@ struct PairsLibraryView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .myShadow()
                     .padding(.horizontal, 16)
-            } else if pairsCollections.isEmpty {
-                // Нет коллекций — плоский список (резервный вариант)
+            } else if visiblePairsCollections.isEmpty {
+                // Нет коллекций с сетами — плоский список (резервный вариант)
                 flatSetsBlock(allSets)
             } else {
                 // Сгруппировано по коллекциям
-                ForEach(pairsCollections) { collection in
+                ForEach(visiblePairsCollections) { collection in
                     collectionSetBlock(collection)
                 }
                 // Сеты без коллекции
@@ -326,10 +334,10 @@ struct PairsLibraryView: View {
 
     private func syncContent() async {
         isSyncing = true
+        defer { isSyncing = false }
         let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
         let level    = profiles.first?.cefrLevel ?? .c2
         await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level)
-        isSyncing = false
     }
 
     private func activatePile(_ pile: PairsPile) {

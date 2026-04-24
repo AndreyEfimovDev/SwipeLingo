@@ -25,16 +25,22 @@ struct AppView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorToast()
-            // Re-sync when user changes CEFR level in Settings.
-            // cefrLevelRaw is the stored String property — SwiftData observes it directly.
-            .onChange(of: profiles.first?.cefrLevelRaw) { _, _ in
+            // Re-sync when user raises their CEFR level.
+            // При ПОНИЖЕНИИ уровня данные уже есть локально — UI фильтрует по уровню мгновенно,
+            // sync не нужен.
+            // При ПОВЫШЕНИИ — нужен forceFullSync: true чтобы скачать контент нового уровня.
+            // (delta-запрос не подойдёт: новые сеты могут иметь updatedAt < lastSyncAt и не попадут в delta.)
+            .onChange(of: profiles.first?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
+                let oldLevel = CEFRLevel(rawValue: oldLevelRaw ?? "") ?? .c2
+                let newLevel = CEFRLevel(rawValue: newLevelRaw ?? "") ?? .c2
+                guard newLevel > oldLevel else { return }   // понижение — sync не нужен
                 let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
-                let level    = profiles.first?.cefrLevel ?? .c2
                 Task {
                     await FirestoreImportService().syncFromFirestore(
                         into: context,
                         language: language,
-                        upToLevel: level
+                        upToLevel: newLevel,
+                        forceFullSync: true
                     )
                 }
             }

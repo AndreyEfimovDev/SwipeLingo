@@ -38,6 +38,19 @@ enum CEFRLevel: String, CaseIterable, Codable {
         guard let idx = all.firstIndex(of: self) else { return all }
         return Array(all[...idx])
     }
+}
+
+// MARK: - Comparable
+// allCases порядок: A1 < A2 < B1 < B2 < C1 < C2 — используется для фильтрации контента по уровню.
+extension CEFRLevel: Comparable {
+    public static func < (lhs: CEFRLevel, rhs: CEFRLevel) -> Bool {
+        let all = CEFRLevel.allCases
+        guard let l = all.firstIndex(of: lhs), let r = all.firstIndex(of: rhs) else { return false }
+        return l < r
+    }
+}
+
+extension CEFRLevel {
 
     var color: Color {
         #if os(iOS)

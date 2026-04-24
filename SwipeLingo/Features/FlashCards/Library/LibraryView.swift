@@ -33,10 +33,10 @@ struct LibraryView: View {
 
     private func syncContent() async {
         isSyncing = true
+        defer { isSyncing = false }
         let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
         let level    = profiles.first?.cefrLevel ?? .c2
         await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level)
-        isSyncing = false
     }
 
     private func setCount(for collection: Collection) -> Int {
@@ -52,9 +52,11 @@ struct LibraryView: View {
         allCards.filter { $0.setId == cardSet.id && $0.status != .deleted }.count
     }
 
+    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+
     private func setsForCollection(_ collection: Collection) -> [CardSet] {
         cardSets
-            .filter { $0.collectionId == collection.id }
+            .filter { $0.collectionId == collection.id && $0.cefrLevel <= userLevel }
             .filter { set in
                 let cards = allCards.filter { $0.setId == set.id }
                 return cards.isEmpty || cards.contains { $0.status != .deleted }
@@ -135,6 +137,19 @@ struct LibraryView: View {
                 case .edit(let p):  PileBuilderView(editingPile: p)
                 }
             }
+//            .overlay {
+//                // Перекрываем контент во время синхронизации — SwiftData @Query обновляется
+//                // после каждого context.insert(), что вызывает мигание пустых коллекций
+//                // пока cleanup ещё не удалил их. Overlay скрывает промежуточные состояния.
+//                if isSyncing {
+//                    ZStack {
+//                        Color.myColors.myBackground.ignoresSafeArea()
+//                        ProgressView("Syncing…")
+//                            .tint(Color.myColors.myBlue)
+//                            .foregroundStyle(Color.myColors.myAccent)
+//                    }
+//                }
+//            }
             .overlay {
                 if myCollections.isEmpty && piles.isEmpty { emptyState }
             }
@@ -618,9 +633,11 @@ struct LibraryView: View {
         return inbox + mySets + userRest
     }
 
-    // Developer / imported / curated collections (non-user-created) — always visible
+    // Curated (Firestore) collections — показываем только если есть хотя бы один сет.
+    // Скрываем пустые: они появляются кратковременно пока sync ещё не выполнил cleanup,
+    // и могут оставаться если у пользователя нет контента на его уровне CEFR.
     private var curatedCollections: [Collection] {
-        collections.filter { !$0.isUserCreated }
+        collections.filter { !$0.isUserCreated && !setsForCollection($0).isEmpty }
     }
 
     /// Коллекция видима если: нет сетов (только что создана), или хотя бы один сет имеет
