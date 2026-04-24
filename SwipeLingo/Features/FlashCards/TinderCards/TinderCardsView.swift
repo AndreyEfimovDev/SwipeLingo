@@ -601,8 +601,9 @@ struct TinderCardsView: View {
                     }
 
                     // 3. Examples — paged with arrow navigation
-                    if !card.sampleEN.isEmpty {
-                        let count = card.sampleEN.count
+                    // allSampleEN = Firestore examples + user-added examples combined
+                    if !card.allSampleEN.isEmpty {
+                        let count = card.allSampleEN.count
                         let page = min(examplePageIndex, count - 1)
                         let hasMany = count > 1
 
@@ -627,12 +628,12 @@ struct TinderCardsView: View {
                             // simultaneousGesture: long press открывает редактор,
                             // короткий тап на аудио-кнопке внутри не блокируется
                             VStack(spacing: 5) {
-                                Text(card.sampleEN[page])
+                                Text(card.allSampleEN[page])
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
-                                audioButton(for: card.sampleEN[page], isTTS: true)
-                                if page < card.sampleItem.count {
-                                    Text(card.sampleItem[page])
+                                audioButton(for: card.allSampleEN[page], isTTS: true)
+                                if page < card.allSampleItem.count {
+                                    Text(card.allSampleItem[page])
                                         .multilineTextAlignment(.center)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
