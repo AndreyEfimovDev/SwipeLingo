@@ -9,8 +9,16 @@ struct PairsView: View {
 
     @Environment(AppViewModel.self) private var appViewModel
 
-    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets: [PairsSet]
-    @Query private var allPiles: [PairsPile]
+    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets:  [PairsSet]
+    @Query private var allPiles:   [PairsPile]
+    @Query private var profiles:   [UserProfile]
+
+    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+
+    /// Сеты ≤ уровня пользователя. Сеты выше уровня хранятся локально, но не показываются.
+    private var levelFilteredSets: [PairsSet] {
+        allSets.filter { $0.cefrLevel <= userLevel }
+    }
 
     @AppStorage("srsEnabled")           private var srsEnabled: Bool = true
     @AppStorage("pairsAnimationMode") private var animationMode: AnimationMode = .manual
@@ -22,8 +30,8 @@ struct PairsView: View {
     private var activePile: PairsPile? { allPiles.first { $0.isActive } }
 
     private var candidateSets: [PairsSet] {
-        if let pile = activePile { return service.sets(for: pile, from: allSets) }
-        return allSets
+        if let pile = activePile { return service.sets(for: pile, from: levelFilteredSets) }
+        return levelFilteredSets
     }
 
     private var dueSets: [PairsSet] {
@@ -40,7 +48,9 @@ struct PairsView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            VStack(spacing: 0) {
+                pileBadge
+                    .padding(.top, 8)
                 if candidateSets.isEmpty { emptyState } else { playScreen }
             }
             .navigationTitle("Pairs")
@@ -97,13 +107,9 @@ struct PairsView: View {
     private var playScreen: some View {
         VStack(spacing: 0) {
 
-            // Pile badge — кнопка, открывает библиотеку для смены pile
-            pileBadge
-                .padding(.top, 8)
-                .padding(.bottom, 12)
-
-            // Preview: левая часть пар из активного pile/all sets
+            // Preview: левая часть пар из активного pile/all sets (отступ сверху — за pileBadge)
             previewContent
+                .padding(.top, 12)
 
             // [Auto/Manual] · [Play / Caught up] · [Due/All]
             mainRow
@@ -363,9 +369,6 @@ struct PairsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            pileBadge
-                .padding(.bottom, 8)
-
             Image(systemName: "square.stack")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.4))

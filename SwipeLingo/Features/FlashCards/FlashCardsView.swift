@@ -8,10 +8,18 @@ struct FlashCardsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(AppViewModel.self) private var appViewModel
-    @Query private var piles: [Pile]
-    @Query private var allCards: [Card]
-    @Query private var cardSets: [CardSet]
+    @Query private var piles:       [Pile]
+    @Query private var allCards:    [Card]
+    @Query private var cardSets:    [CardSet]
     @Query private var collections: [Collection]
+    @Query private var profiles:    [UserProfile]
+
+    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+
+    /// Сеты ≤ уровня пользователя. Сеты выше уровня хранятся локально, но не показываются.
+    private var levelFilteredCardSets: [CardSet] {
+        cardSets.filter { $0.cefrLevel <= userLevel }
+    }
 
     @State private var viewModel = FlashCardsViewModel()
     @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
@@ -20,10 +28,20 @@ struct FlashCardsView: View {
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
+    /// ID сетов ≤ уровня пользователя — для быстрой проверки принадлежности карточки.
+    private var levelFilteredSetIds: Set<UUID> {
+        Set(levelFilteredCardSets.map(\.id))
+    }
+
+    /// true если есть хотя бы одна активная карточка на уровне пользователя.
+    private var hasActiveLevelCards: Bool {
+        allCards.contains { $0.status == .active && levelFilteredSetIds.contains($0.setId) }
+    }
+
     /// true если есть хотя бы одна активная карточка с подошедшим dueDate
     private var hasDueCards: Bool {
         let now = Date.now
-        return allCards.contains { $0.status == .active && $0.dueDate <= now }
+        return allCards.contains { $0.status == .active && $0.dueDate <= now && levelFilteredSetIds.contains($0.setId) }
     }
 
 
@@ -42,7 +60,7 @@ struct FlashCardsView: View {
         .onAppear {
             viewModel.startSessionIfNeeded(
                 piles: piles, allCards: allCards,
-                cardSets: cardSets, collections: collections,
+                cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
                 userPlan: userPlan
             )
@@ -50,7 +68,7 @@ struct FlashCardsView: View {
         .onChange(of: activePileSnapshot) {
             viewModel.startNewSession(
                 piles: piles, allCards: allCards,
-                cardSets: cardSets, collections: collections,
+                cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
                 userPlan: userPlan
             )
@@ -58,7 +76,7 @@ struct FlashCardsView: View {
         .onChange(of: srsEnabled) {
             viewModel.startNewSession(
                 piles: piles, allCards: allCards,
-                cardSets: cardSets, collections: collections,
+                cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
                 userPlan: userPlan
             )
@@ -66,10 +84,36 @@ struct FlashCardsView: View {
         .onChange(of: userPlan) {
             viewModel.startNewSession(
                 piles: piles, allCards: allCards,
-                cardSets: cardSets, collections: collections,
+                cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
                 userPlan: userPlan
             )
+        }
+        // Перезапускаем сессию когда Firestore sync добавляет или удаляет карточки.
+        // Используем allCards.count (не cardSets.count): @Query обновляет свои свойства
+        // независимо, и onChange(cardSets) мог срабатывать до того как allCards обновился —
+        // тогда startNewSession строил сессию с пустым allCards и studyCards оставался пустым.
+        // onChange(allCards.count) гарантирует что allCards уже актуален в момент вызова.
+        //
+        // count уменьшился → карточки удалены (смена уровня вниз) → startNewSession принудительно,
+        // иначе viewModel держит в studyCards уже удалённые объекты до смены экрана.
+        // count увеличился → добавлены новые карточки → startSessionIfNeeded (no-op если сессия идёт).
+        .onChange(of: allCards.count) { oldCount, newCount in
+            if newCount < oldCount {
+                viewModel.startNewSession(
+                    piles: piles, allCards: allCards,
+                    cardSets: levelFilteredCardSets, collections: collections,
+                    dueHour: studyStartHour, srsEnabled: srsEnabled,
+                    userPlan: userPlan
+                )
+            } else {
+                viewModel.startSessionIfNeeded(
+                    piles: piles, allCards: allCards,
+                    cardSets: levelFilteredCardSets, collections: collections,
+                    dueHour: studyStartHour, srsEnabled: srsEnabled,
+                    userPlan: userPlan
+                )
+            }
         }
     }
 
@@ -77,7 +121,7 @@ struct FlashCardsView: View {
 
     @ViewBuilder
     private var content: some View {
-        if allCards.filter({ $0.status == .active }).isEmpty {
+        if !hasActiveLevelCards {
             emptyStateView
         } else if viewModel.isCaughtUp {
             caughtUpView
@@ -85,6 +129,7 @@ struct FlashCardsView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
         } else if viewModel.studyCards.isEmpty {
             ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             TinderCardsView(
                 cards: viewModel.studyCards,
@@ -99,13 +144,13 @@ struct FlashCardsView: View {
                         // Due → All: перезагружаем сессию со всеми карточками
                         viewModel.studyAll(
                             piles: piles, allCards: allCards,
-                            cardSets: cardSets, collections: collections
+                            cardSets: levelFilteredCardSets, collections: collections
                         )
                     } else if hasDueCards {
                         // All → Due: есть due карточки — загружаем их
                         viewModel.startNewSession(
                             piles: piles, allCards: allCards,
-                            cardSets: cardSets, collections: collections,
+                            cardSets: levelFilteredCardSets, collections: collections,
                             dueHour: studyStartHour, srsEnabled: srsEnabled
                         )
                     } else {
@@ -118,7 +163,7 @@ struct FlashCardsView: View {
                 onDone: {
                     viewModel.onSessionComplete(
                         piles: piles, allCards: allCards,
-                        cardSets: cardSets, collections: collections,
+                        cardSets: levelFilteredCardSets, collections: collections,
                         dueHour: studyStartHour
                     )
                 }
@@ -185,7 +230,7 @@ struct FlashCardsView: View {
                 Button {
                     viewModel.studyAll(
                         piles: piles, allCards: allCards,
-                        cardSets: cardSets, collections: collections,
+                        cardSets: levelFilteredCardSets, collections: collections,
                         userPlan: userPlan
                     )
                 } label: {
@@ -255,13 +300,18 @@ struct FlashCardsView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Helpers
 
+    // Включает userLevel чтобы смена уровня CEFR гарантированно перестраивала сессию
+    // через уже проверенный onChange(of: activePileSnapshot) — надёжнее отдельного
+    // onChange на profiles, который может не срабатывать пока view перекрыт fullScreenCover.
     private var activePileSnapshot: String {
-        guard let pile = piles.first(where: { $0.isActive }) else { return "" }
+        let levelPart = userLevel.rawValue
+        guard let pile = piles.first(where: { $0.isActive }) else { return levelPart }
         let sets = pile.setIds.map(\.uuidString).sorted().joined()
-        return pile.id.uuidString + sets + pile.shuffleMethod.rawValue
+        return levelPart + pile.id.uuidString + sets + pile.shuffleMethod.rawValue
     }
 }
