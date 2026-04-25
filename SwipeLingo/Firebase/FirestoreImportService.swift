@@ -133,30 +133,53 @@ struct FirestoreImportService {
             // UUID коллекций, у которых есть хотя бы один загруженный сет
             var loadedCollectionIds = Set<UUID>()
 
-            // ── 3. CardSets — фильтр по уровню пользователя + delta по updatedAt ─
-            // Delta: whereField("updatedAt", isGreaterThan:) + whereField("cefrLevel", in:)
-            // требует composite index в Firestore Console:
-            //   Collection: cardSets  Fields: cefrLevel ASC, updatedAt ASC
-            // try? — если delta query падает (индекс не создан), возвращает nil → full fallback.
-            // try в catch пробрасывается во внешний do-catch, поэтому используем try? здесь.
+            // ── 3. CardSets — delta или full ──────────────────────────────────────────────
+            // Full sync: фильтрует по уровню пользователя — скачиваем только нужный контент.
+            // Delta sync: запрос БЕЗ фильтра по уровню, чтобы поймать сеты, которые изменили
+            //   cefrLevel (вышли за пределы диапазона или вошли в него).
+            //   Одиночный range-запрос по updatedAt не требует composite index.
             let cardSetsBaseQuery = db.collection("cardSets").whereField("cefrLevel", in: levels)
             let setSnap: QuerySnapshot
             if isDelta,
-               let deltaSnap = try? await cardSetsBaseQuery
+               let deltaSnap = try? await db.collection("cardSets")
                    .whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
                    .getDocuments() {
                 setSnap = deltaSnap
-                log("[Firestore] CardSets fetched: \(setSnap.documents.count) (delta)", level: .info)
+                log("[Firestore] CardSets fetched: \(setSnap.documents.count) (delta, all levels)", level: .info)
+
+                // Сеты, которые вышли за пределы диапазона пользователя → удалить локально
+                for doc in setSnap.documents {
+                    let d = doc.data()
+                    guard let fsId     = d["id"]       as? String,
+                          let levelRaw = d["cefrLevel"] as? String,
+                          !levels.contains(levelRaw),
+                          let localSet = cardSetsByFsId[fsId]
+                    else { continue }
+                    let localSetId = localSet.id
+                    let localCards = context.fetchWithErrorHandling(
+                        FetchDescriptor<Card>(predicate: #Predicate { $0.setId == localSetId })
+                    )
+                    localCards.forEach { context.delete($0) }
+                    context.delete(localSet)
+                    cardSetsByFsId.removeValue(forKey: fsId)
+                    log("[Firestore] Set '\(localSet.name)' moved out of user range — removed locally", level: .info)
+                }
             } else {
-                if isDelta { log("[Firestore] CardSets delta failed (index missing?), using full", level: .warning) }
+                if isDelta { log("[Firestore] CardSets delta failed, using full", level: .warning) }
                 setSnap = try await cardSetsBaseQuery.getDocuments()
                 log("[Firestore] CardSets fetched: \(setSnap.documents.count) (full\(isDelta ? " fallback" : ""))", level: .info)
             }
 
             // ── 4. Cards — параллельная загрузка всех subcollections ───────
-            // Раньше каждый сет загружался последовательно: N сетов = N сетевых вызовов.
-            // Теперь все /cardSets/{id}/cards запросы выполняются параллельно → O(1) по времени.
-            let setFsIds = setSnap.documents.compactMap { $0.data()["id"] as? String }
+            // В delta-режиме fetching только in-range сетов (выше диапазона уже обработаны).
+            let setFsIds = setSnap.documents.compactMap { doc -> String? in
+                let d = doc.data()
+                guard let fsId     = d["id"]       as? String,
+                      let levelRaw = d["cefrLevel"] as? String,
+                      levels.contains(levelRaw)
+                else { return nil }
+                return fsId
+            }
             let cardSnapsBySetId: [String: QuerySnapshot] = try await withThrowingTaskGroup(
                 of: (String, QuerySnapshot).self
             ) { group in
@@ -180,7 +203,10 @@ struct FirestoreImportService {
                 guard let setFsId      = sd["id"]           as? String,
                       let setName      = sd["name"]         as? String,
                       let collFsId     = sd["collectionId"] as? String,
-                      let sdCollection = collectionsByFsId[collFsId]
+                      let sdCollection = collectionsByFsId[collFsId],
+                      // В delta-режиме snap содержит сеты всех уровней — обрабатываем только in-range.
+                      // (out-of-range уже удалены выше; здесь guard на случай edge-case)
+                      levels.contains(sd["cefrLevel"] as? String ?? "")
                 else { continue }
 
                 let cefrLevel  = (sd["cefrLevel"]  as? String).flatMap { CEFRLevel(rawValue: $0)  } ?? .b2
@@ -258,21 +284,40 @@ struct FirestoreImportService {
                         cardsByFsId[cardFsId] = c
                     }
                 }
+
+                // Удаляем локальные карточки, которых больше нет в Firestore
+                // (Admin удалил карточку и задеплоил сет — subcollection обновилась).
+                let firestoreCardFsIds = Set(cardSnap.documents.compactMap { $0.data()["id"] as? String })
+                for (fsId, localCard) in cardsByFsId where !firestoreCardFsIds.contains(fsId) {
+                    context.delete(localCard)
+                    log("[Firestore] Removed deleted card '\(localCard.en)' from '\(sdSet.name)'", level: .info)
+                }
             }
 
-            // ── 5. PairsSets — фильтр по уровню пользователя + delta по updatedAt ─
-            // Delta: composite index в Firestore Console:
-            //   Collection: pairsSets  Fields: cefrLevel ASC, updatedAt ASC
+            // ── 5. PairsSets — delta или full (та же логика что cardSets) ──────────────
             let pairsSetsBaseQuery = db.collection("pairsSets").whereField("cefrLevel", in: levels)
             let pairsSnap: QuerySnapshot
             if isDelta,
-               let deltaSnap = try? await pairsSetsBaseQuery
+               let deltaSnap = try? await db.collection("pairsSets")
                    .whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
                    .getDocuments() {
                 pairsSnap = deltaSnap
-                log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count) (delta)", level: .info)
+                log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count) (delta, all levels)", level: .info)
+
+                // Сеты, которые вышли за пределы диапазона пользователя → удалить локально
+                for doc in pairsSnap.documents {
+                    let d = doc.data()
+                    guard let fsId     = d["id"]       as? String,
+                          let levelRaw = d["cefrLevel"] as? String,
+                          !levels.contains(levelRaw),
+                          let localSet = pairsSetsByFsId[fsId]
+                    else { continue }
+                    context.delete(localSet)
+                    pairsSetsByFsId.removeValue(forKey: fsId)
+                    log("[Firestore] PairsSet '\(localSet.title ?? fsId)' moved out of user range — removed locally", level: .info)
+                }
             } else {
-                if isDelta { log("[Firestore] PairsSets delta failed (index missing?), using full", level: .warning) }
+                if isDelta { log("[Firestore] PairsSets delta failed, using full", level: .warning) }
                 pairsSnap = try await pairsSetsBaseQuery.getDocuments()
                 log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count) (full\(isDelta ? " fallback" : ""))", level: .info)
             }
@@ -281,7 +326,9 @@ struct FirestoreImportService {
                 let pd = pairsDoc.data()
                 guard let pairsFsId  = pd["id"]           as? String,
                       let collFsId   = pd["collectionId"] as? String,
-                      let sdColl     = collectionsByFsId[collFsId]
+                      let sdColl     = collectionsByFsId[collFsId],
+                      // В delta-режиме snap содержит сеты всех уровней
+                      levels.contains(pd["cefrLevel"] as? String ?? "")
                 else { continue }
 
                 let cefrLevel  = (pd["cefrLevel"]  as? String).flatMap { CEFRLevel(rawValue: $0)  } ?? .b2

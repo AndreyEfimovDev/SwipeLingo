@@ -37,9 +37,19 @@ struct FirestoreService {
             throw FirestoreServiceError.tooManyCards(cards.count)
         }
 
-        let batch  = db.batch()
+        let batch   = db.batch()
         let collRef = db.collection("collections").document(collection.id)
         let setRef  = db.collection("cardSets").document(set.id)
+
+        // Удаляем из Firestore карточки, которых больше нет в локальном сете.
+        // Это необходимо, т.к. batch.setData записывает только текущие карточки,
+        // а удалённые из Admin остаются в Firestore subcollection.
+        let existingSnap = try await setRef.collection("cards").getDocuments()
+        let localCardIds = Set(cards.map { $0.id })
+        for doc in existingSnap.documents where !localCardIds.contains(doc.documentID) {
+            batch.deleteDocument(doc.reference)
+        }
+        let deletedCount = existingSnap.documents.filter { !localCardIds.contains($0.documentID) }.count
 
         batch.setData(collectionDoc(collection), forDocument: collRef, merge: true)
         batch.setData(cardSetDoc(set), forDocument: setRef)
@@ -49,7 +59,7 @@ struct FirestoreService {
         }
 
         try await batch.commit()
-        log("[Firestore] Deployed CardSet '\(set.name)' (\(cards.count) cards)", level: .info)
+        log("[Firestore] Deployed CardSet '\(set.name)' (\(cards.count) cards, \(deletedCount) deleted)", level: .info)
     }
 
     // MARK: - Deploy PairsSet

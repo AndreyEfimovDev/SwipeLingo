@@ -95,25 +95,17 @@ struct FlashCardsView: View {
         // тогда startNewSession строил сессию с пустым allCards и studyCards оставался пустым.
         // onChange(allCards.count) гарантирует что allCards уже актуален в момент вызова.
         //
-        // count уменьшился → карточки удалены (смена уровня вниз) → startNewSession принудительно,
-        // иначе viewModel держит в studyCards уже удалённые объекты до смены экрана.
-        // count увеличился → добавлены новые карточки → startSessionIfNeeded (no-op если сессия идёт).
-        .onChange(of: allCards.count) { oldCount, newCount in
-            if newCount < oldCount {
-                viewModel.startNewSession(
-                    piles: piles, allCards: allCards,
-                    cardSets: levelFilteredCardSets, collections: collections,
-                    dueHour: studyStartHour, srsEnabled: srsEnabled,
-                    userPlan: userPlan
-                )
-            } else {
-                viewModel.startSessionIfNeeded(
-                    piles: piles, allCards: allCards,
-                    cardSets: levelFilteredCardSets, collections: collections,
-                    dueHour: studyStartHour, srsEnabled: srsEnabled,
-                    userPlan: userPlan
-                )
-            }
+        // Любое изменение числа карточек (sync добавил новый сет или удалил карточки) →
+        // startNewSession: нужно перестроить сессию чтобы включить новый контент / убрать удалённый.
+        // Sync запускается только из библиотеки, пока пользователь не изучает карточки,
+        // поэтому прерывания активной сессии не происходит.
+        .onChange(of: allCards.count) {
+            viewModel.startNewSession(
+                piles: piles, allCards: allCards,
+                cardSets: levelFilteredCardSets, collections: collections,
+                dueHour: studyStartHour, srsEnabled: srsEnabled,
+                userPlan: userPlan
+            )
         }
     }
 
