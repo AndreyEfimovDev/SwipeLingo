@@ -24,7 +24,7 @@ struct AppView: View {
             .preferredColorScheme(theme.colorScheme)
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
-            .errorToast()
+            .errorBanner()
             // Re-sync when user raises their CEFR level.
             // При ПОНИЖЕНИИ уровня данные уже есть локально — UI фильтрует по уровню мгновенно,
             // sync не нужен.
@@ -61,8 +61,8 @@ struct AppView: View {
     @ViewBuilder
     private func sheetView(for sheet: AppViewModel.AppSheet) -> some View {
         switch sheet {
-        case .cardsLibrary: LibraryView()
-        case .pairsLibrary: NavigationStack { PairsLibraryView() }
+        case .cardsLibrary: LibraryView()                          .errorBanner()
+        case .pairsLibrary: NavigationStack { PairsLibraryView() } .errorBanner()
         case .statistics:   StatisticsView()
         case .settings:     SettingsView()
         }

@@ -12,9 +12,9 @@ final class ErrorManager: ObservableObject {
     @Published var errorMessage: String?
     @Published var showAlert: Bool = false
 
-    // Non-blocking toast
-    @Published var toastMessage: String?
-    private var toastTask: Task<Void, Never>?
+    // Non-blocking banner
+    @Published var bannerMessage: String?
+    private var bannerTask: Task<Void, Never>?
 
     private init() {}
 
@@ -28,14 +28,14 @@ final class ErrorManager: ObservableObject {
         }
     }
 
-    /// Shows a non-blocking toast banner that auto-dismisses after 3 seconds.
-    func showToast(_ message: String) {
-        toastTask?.cancel()
-        toastMessage = message
-        toastTask = Task {
+    /// Shows a non-blocking banner that auto-dismisses after 3 seconds.
+    func showBanner(_ message: String) {
+        bannerTask?.cancel()
+        bannerMessage = message
+        bannerTask = Task {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled else { return }
-            toastMessage = nil
+            bannerMessage = nil
         }
     }
 
@@ -138,9 +138,9 @@ extension View {
         modifier(ErrorAlertModifier())
     }
 
-    /// Attaches a global toast banner driven by ErrorManager.shared.
-    func errorToast() -> some View {
-        modifier(ToastModifier())
+    /// Attaches a global error banner driven by ErrorManager.shared.
+    func errorBanner() -> some View {
+        modifier(BannerModifier())
     }
 }
 
@@ -159,14 +159,14 @@ private struct ErrorAlertModifier: ViewModifier {
     }
 }
 
-// MARK: - ToastModifier
+// MARK: - BannerModifier
 
-private struct ToastModifier: ViewModifier {
+private struct BannerModifier: ViewModifier {
     @ObservedObject private var errorManager = ErrorManager.shared
 
     func body(content: Content) -> some View {
         content.overlay(alignment: .top) {
-            if let message = errorManager.toastMessage {
+            if let message = errorManager.bannerMessage {
                 HStack(spacing: 8) {
                     Image(systemName: "wifi.slash")
                         .font(.subheadline)
@@ -179,9 +179,9 @@ private struct ToastModifier: ViewModifier {
                 .background(Color.black.opacity(0.75), in: Capsule())
                 .padding(.top, 8)
                 .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.spring(duration: 0.3), value: errorManager.toastMessage)
+                .animation(.spring(duration: 0.3), value: errorManager.bannerMessage)
             }
         }
-        .animation(.spring(duration: 0.3), value: errorManager.toastMessage)
+        .animation(.spring(duration: 0.3), value: errorManager.bannerMessage)
     }
 }
