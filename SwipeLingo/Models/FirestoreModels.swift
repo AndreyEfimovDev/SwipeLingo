@@ -27,22 +27,6 @@ enum SetDeployStatus: String, Codable, CaseIterable {
         }
     }
 
-    // Backward-compatible decoder: старый store.json может содержать "outdated" → .draft
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let raw = try container.decode(String.self)
-        switch raw {
-        case "outdated": self = .draft
-        default:
-            guard let v = SetDeployStatus(rawValue: raw) else {
-                throw DecodingError.dataCorruptedError(
-                    in: container,
-                    debugDescription: "Unknown SetDeployStatus: \(raw)"
-                )
-            }
-            self = v
-        }
-    }
 }
 
 // MARK: - FSCollection
@@ -222,20 +206,6 @@ struct FSPair: Codable, Identifiable {
         self.displayMode = displayMode
     }
 
-    // Backward-compatible decoder: новые поля (leftTitle, rightTitle, displayMode)
-    // отсутствуют в старых store.json — декодируем с дефолтами.
-    init(from decoder: Decoder) throws {
-        let c       = try decoder.container(keyedBy: CodingKeys.self)
-        id          = try c.decode(String.self,      forKey: .id)
-        left        = try c.decodeIfPresent(String.self,      forKey: .left)
-        right       = try c.decodeIfPresent(String.self,      forKey: .right)
-        description = try c.decodeIfPresent(String.self,      forKey: .description)
-        sample      = try c.decodeIfPresent(String.self,      forKey: .sample)
-        tag         = try c.decodeIfPresent(String.self,      forKey: .tag)         ?? ""
-        leftTitle   = try c.decodeIfPresent(String.self,      forKey: .leftTitle)
-        rightTitle  = try c.decodeIfPresent(String.self,      forKey: .rightTitle)
-        displayMode = try c.decodeIfPresent(DisplayMode.self, forKey: .displayMode) ?? .parallel
-    }
 }
 
 // MARK: - FirestoreID
