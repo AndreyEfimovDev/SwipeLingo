@@ -114,20 +114,14 @@ private struct PairsSetRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(set.title ?? "Untitled")
+                let count = set.items.count
+                Text(count > 0 ? "\(set.title ?? "Untitled") (\(count))" : (set.title ?? "Untitled"))
                     .font(.body.weight(.medium))
                     .lineLimit(1)
 
-                HStack(spacing: 6) {
-                    Text(set.cefrLevel.displayCode)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Text("·")
-                        .foregroundStyle(.tertiary)
-                    Text("\(set.items.count) pairs")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(set.cefrLevel.displayCode)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()

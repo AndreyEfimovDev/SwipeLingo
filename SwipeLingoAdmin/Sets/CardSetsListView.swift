@@ -120,7 +120,8 @@ private struct CardSetRow: View {
                 .background(set.cefrLevel.color, in: RoundedRectangle(cornerRadius: 5))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(set.name)
+                let count = store.cards(for: set.id).count
+                Text(count > 0 ? "\(set.name) (\(count))" : set.name)
                     .font(.body.weight(.medium))
                     .lineLimit(1)
                 Text(set.accessTier.displayName)
