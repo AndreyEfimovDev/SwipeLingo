@@ -505,7 +505,7 @@ struct AdminCardEditView: View {
                 }
             } catch {
                 log("Auto-fill translation failed for \(lang.langId): \(error)", level: .warning)
-                await MainActor.run { failedFillLangs.insert(lang) }
+                _ = await MainActor.run { failedFillLangs.insert(lang) }
             }
         }
 

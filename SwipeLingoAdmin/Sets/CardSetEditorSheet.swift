@@ -12,10 +12,26 @@ struct CardSetEditorSheet: View {
 
     // MARK: State
 
-    @State private var name:       String      = ""
-    @State private var desc:       String      = ""
-    @State private var level:      CEFRLevel   = .b1
-    @State private var accessTier: AccessTier  = .go
+    @State private var name:       String
+    @State private var desc:       String
+    @State private var level:      CEFRLevel
+    @State private var accessTier: AccessTier
+
+    init(collectionId: String, cardSet: FSCardSet?) {
+        self.collectionId = collectionId
+        self.cardSet = cardSet
+        if let s = cardSet {
+            _name       = State(initialValue: s.name)
+            _desc       = State(initialValue: s.description ?? "")
+            _level      = State(initialValue: s.cefrLevel)
+            _accessTier = State(initialValue: s.accessTier)
+        } else {
+            _name       = State(initialValue: "")
+            _desc       = State(initialValue: "")
+            _level      = State(initialValue: .b1)
+            _accessTier = State(initialValue: .go)
+        }
+    }
 
     private var isEditing: Bool { cardSet != nil }
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -96,14 +112,6 @@ struct CardSetEditorSheet: View {
                     Button("Save", action: save)
                         .disabled(!canSave)
                 }
-            }
-        }
-        .onAppear {
-            if let s = cardSet {
-                name       = s.name
-                desc       = s.description ?? ""
-                level      = s.cefrLevel
-                accessTier = s.accessTier
             }
         }
     }

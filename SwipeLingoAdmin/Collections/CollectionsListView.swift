@@ -64,6 +64,17 @@ struct CollectionsListView: View {
         .sheet(item: $editingCollection) { collection in
             CollectionEditorSheet(type: type, collection: collection)
         }
+        .alert(
+            "Delete Failed",
+            isPresented: Binding(
+                get: { store.deleteError != nil },
+                set: { if !$0 { store.deleteError = nil } }
+            ),
+            actions: { Button("OK", role: .cancel) { store.deleteError = nil } },
+            message: {
+                if let err = store.deleteError { Text(err) }
+            }
+        )
     }
 
     // MARK: List
@@ -77,10 +88,19 @@ struct CollectionsListView: View {
                         editingCollection = collection
                     }
                     Divider()
-                    Button("Delete", role: .destructive) {
-                        store.delete(collectionId: collection.id)
-                        if selectedCollectionId == collection.id {
-                            selectedCollectionId = nil
+                    if collection.isSynced {
+                        Button("Delete from Firestore", role: .destructive) {
+                            Task { await store.deleteFromFirestore(collectionId: collection.id) }
+                            if selectedCollectionId == collection.id {
+                                selectedCollectionId = nil
+                            }
+                        }
+                    } else {
+                        Button("Delete", role: .destructive) {
+                            store.delete(collectionId: collection.id)
+                            if selectedCollectionId == collection.id {
+                                selectedCollectionId = nil
+                            }
                         }
                     }
                 }
