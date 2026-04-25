@@ -62,6 +62,7 @@ struct ContentView: View {
                     ContentUnavailableView("Select a collection", systemImage: "rectangle.stack")
                 }
             }
+            .navigationTitle("Sets")
         }
     }
 
