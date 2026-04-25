@@ -30,6 +30,11 @@ struct CardSetsListView: View {
         }
         .navigationTitle(collectionName)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Card sets")
+                    .font(.headline)
+                    .padding(.horizontal)
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showNewEditor = true

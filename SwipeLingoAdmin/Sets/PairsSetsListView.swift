@@ -30,6 +30,11 @@ struct PairsSetsListView: View {
         }
         .navigationTitle(collectionName)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Pairs Sets")
+                    .font(.headline)
+                    .padding(.horizontal)
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showNewSet = true
