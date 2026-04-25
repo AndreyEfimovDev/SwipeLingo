@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import Network
 import FirebaseCore
 import FirebaseFirestore
 
@@ -35,6 +36,22 @@ struct FirestoreImportService {
     // UserDefaults key where the last successful sync timestamp is stored.
     private static let lastSyncAtKey = "firestoreLastSyncAt"
 
+    // MARK: - Network check
+
+    /// Быстрая проверка наличия сетевого соединения через NWPathMonitor.
+    /// Firestore offline-режим молча возвращает пустые результаты из кеша —
+    /// без этой проверки sync выглядит успешным даже без интернета.
+    private func isNetworkReachable() async -> Bool {
+        await withCheckedContinuation { continuation in
+            let monitor = NWPathMonitor()
+            monitor.pathUpdateHandler = { path in
+                monitor.cancel()
+                continuation.resume(returning: path.status == .satisfied)
+            }
+            monitor.start(queue: .global(qos: .utility))
+        }
+    }
+
     func syncFromFirestore(
         into context: ModelContext,
         language: NativeLanguage,
@@ -43,6 +60,12 @@ struct FirestoreImportService {
     ) async {
         guard FirebaseApp.app() != nil else {
             log("[Firestore] Firebase not configured — skipping content sync", level: .warning)
+            return
+        }
+
+        guard await isNetworkReachable() else {
+            log("[Firestore] No network — skipping sync", level: .warning)
+            await MainActor.run { ErrorManager.shared.showBanner(AppNetworkError.noConnection.message) }
             return
         }
 
@@ -113,13 +136,22 @@ struct FirestoreImportService {
             // ── 3. CardSets — фильтр по уровню пользователя + delta по updatedAt ─
             // Delta: whereField("updatedAt", isGreaterThan:) + whereField("cefrLevel", in:)
             // требует composite index в Firestore Console:
-            //   Collection: cardSets  Fields: updatedAt ASC, cefrLevel ASC
+            //   Collection: cardSets  Fields: cefrLevel ASC, updatedAt ASC
+            // try? — если delta query падает (индекс не создан), возвращает nil → full fallback.
+            // try в catch пробрасывается во внешний do-catch, поэтому используем try? здесь.
             let cardSetsBaseQuery = db.collection("cardSets").whereField("cefrLevel", in: levels)
-            let cardSetsQuery: Query = isDelta
-                ? cardSetsBaseQuery.whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
-                : cardSetsBaseQuery
-            let setSnap = try await cardSetsQuery.getDocuments()
-            log("[Firestore] CardSets fetched: \(setSnap.documents.count)\(isDelta ? " (delta)" : " (full)")", level: .info)
+            let setSnap: QuerySnapshot
+            if isDelta,
+               let deltaSnap = try? await cardSetsBaseQuery
+                   .whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
+                   .getDocuments() {
+                setSnap = deltaSnap
+                log("[Firestore] CardSets fetched: \(setSnap.documents.count) (delta)", level: .info)
+            } else {
+                if isDelta { log("[Firestore] CardSets delta failed (index missing?), using full", level: .warning) }
+                setSnap = try await cardSetsBaseQuery.getDocuments()
+                log("[Firestore] CardSets fetched: \(setSnap.documents.count) (full\(isDelta ? " fallback" : ""))", level: .info)
+            }
 
             // ── 4. Cards — параллельная загрузка всех subcollections ───────
             // Раньше каждый сет загружался последовательно: N сетов = N сетевых вызовов.
@@ -230,13 +262,20 @@ struct FirestoreImportService {
 
             // ── 5. PairsSets — фильтр по уровню пользователя + delta по updatedAt ─
             // Delta: composite index в Firestore Console:
-            //   Collection: pairsSets  Fields: updatedAt ASC, cefrLevel ASC
+            //   Collection: pairsSets  Fields: cefrLevel ASC, updatedAt ASC
             let pairsSetsBaseQuery = db.collection("pairsSets").whereField("cefrLevel", in: levels)
-            let pairsSetsQuery: Query = isDelta
-                ? pairsSetsBaseQuery.whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
-                : pairsSetsBaseQuery
-            let pairsSnap = try await pairsSetsQuery.getDocuments()
-            log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count)\(isDelta ? " (delta)" : " (full)")", level: .info)
+            let pairsSnap: QuerySnapshot
+            if isDelta,
+               let deltaSnap = try? await pairsSetsBaseQuery
+                   .whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
+                   .getDocuments() {
+                pairsSnap = deltaSnap
+                log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count) (delta)", level: .info)
+            } else {
+                if isDelta { log("[Firestore] PairsSets delta failed (index missing?), using full", level: .warning) }
+                pairsSnap = try await pairsSetsBaseQuery.getDocuments()
+                log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count) (full\(isDelta ? " fallback" : ""))", level: .info)
+            }
 
             for pairsDoc in pairsSnap.documents {
                 let pd = pairsDoc.data()
@@ -317,7 +356,7 @@ struct FirestoreImportService {
             let message = isOffline
                 ? AppNetworkError.noConnection.message
                 : AppNetworkError.serverError.message
-            await MainActor.run { ErrorManager.shared.showToast(message) }
+            await MainActor.run { ErrorManager.shared.showBanner(message) }
         }
     }
 
