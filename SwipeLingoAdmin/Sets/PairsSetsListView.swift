@@ -11,11 +11,18 @@ struct PairsSetsListView: View {
 
     let collectionId: String
 
-    @State private var showNewSet  = false
-    @State private var editingSet: FSPairsSet?
+    @State private var showNewSet   = false
+    @State private var editingSet:  FSPairsSet?
+    @State private var showDeleted  = false
 
     private var sets: [FSPairsSet] {
-        store.pairsSets(for: collectionId)
+        showDeleted
+            ? store.pairsSets.filter { $0.collectionId == collectionId && $0.deployStatus == .deleted }
+            : store.pairsSets(for: collectionId)
+    }
+
+    private var deletedCount: Int {
+        store.pairsSets.filter { $0.collectionId == collectionId && $0.deployStatus == .deleted }.count
     }
 
     // MARK: Body
@@ -23,7 +30,7 @@ struct PairsSetsListView: View {
     var body: some View {
         Group {
             if sets.isEmpty {
-                emptyState
+                if showDeleted { deletedEmptyState } else { emptyState }
             } else {
                 list
             }
@@ -36,14 +43,27 @@ struct PairsSetsListView: View {
                     .padding(.horizontal)
             }
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showNewSet = true
-                } label: {
-                    Image(systemName: "plus")
+                HStack {
+                    if deletedCount > 0 {
+                        Button {
+                            showDeleted.toggle()
+                        } label: {
+                            Image(systemName: showDeleted ? "trash.slash" : "trash")
+                                .foregroundStyle(showDeleted ? .red : .secondary)
+                        }
+                        .help(showDeleted ? "Hide deleted sets" : "Show deleted sets (\(deletedCount))")
+                    }
+                    Button {
+                        showNewSet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .help("New set")
+                    .disabled(showDeleted)
                 }
-                .help("New set")
             }
         }
+        .onChange(of: collectionId) { showDeleted = false }
         // Создание нового сета
         .sheet(isPresented: $showNewSet) {
             PairsSetEditorSheet(collectionId: collectionId, pairsSet: nil)
@@ -63,6 +83,17 @@ struct PairsSetsListView: View {
                 if let err = store.deployError { Text(err) }
             }
         )
+        .alert(
+            "Delete Failed",
+            isPresented: Binding(
+                get: { store.deleteError != nil },
+                set: { if !$0 { store.deleteError = nil } }
+            ),
+            actions: { Button("OK", role: .cancel) { store.deleteError = nil } },
+            message: {
+                if let err = store.deleteError { Text(err) }
+            }
+        )
     }
 
     // MARK: List
@@ -73,20 +104,42 @@ struct PairsSetsListView: View {
                 PairsListView(setId: set.id, setName: set.title ?? "Untitled")
             } label: {
                 PairsSetRow(set: set)
+                    .opacity(showDeleted ? 0.5 : 1)
             }
             .contextMenu {
-                Button("Edit") {
-                    editingSet = set
-                }
-                Divider()
-                Button("Delete", role: .destructive) {
-                    store.delete(pairsSetId: set.id)
+                if showDeleted {
+                    Button("Restore") {
+                        store.restore(pairsSetId: set.id)
+                        showDeleted = false
+                    }
+                    Divider()
+                    Button("Delete Forever", role: .destructive) {
+                        Task { await store.deleteForever(pairsSetId: set.id) }
+                    }
+                } else {
+                    Button("Edit") { editingSet = set }
+                    Divider()
+                    Button("Delete", role: .destructive) {
+                        store.delete(pairsSetId: set.id)
+                    }
                 }
             }
         }
     }
 
-    // MARK: Empty state
+    // MARK: Empty states
+
+    private var deletedEmptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "trash.slash")
+                .font(.system(size: 40))
+                .foregroundStyle(.tertiary)
+            Text("No deleted sets")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
     private var emptyState: some View {
         VStack(spacing: 12) {

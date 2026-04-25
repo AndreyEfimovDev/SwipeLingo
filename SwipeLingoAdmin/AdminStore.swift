@@ -27,6 +27,8 @@ final class AdminStore {
     // Deploy state (shared — only one deploy runs at a time)
     var isDeploying    = false
     var deployError:   String? = nil
+    var isDeleting     = false
+    var deleteError:   String? = nil
 
     // MARK: - Init
 
@@ -54,12 +56,31 @@ final class AdminStore {
     func delete(collectionId: String) {
         collections.removeAll { $0.id == collectionId }
         let removedSetIds = cardSets.filter { $0.collectionId == collectionId }.map(\.id)
-        // Soft-delete sets and their cards
         for id in removedSetIds { softDeleteCardSet(id: id) }
         pairsSets.indices
             .filter { pairsSets[$0].collectionId == collectionId }
             .forEach { pairsSets[$0].deployStatus = .deleted }
         save()
+    }
+
+    /// Удаляет коллекцию из Firestore (все live-сеты + документ коллекции), затем локально.
+    func deleteFromFirestore(collectionId: String) async {
+        isDeleting  = true
+        deleteError = nil
+        do {
+            let liveCardSetIds  = cardSets.filter  { $0.collectionId == collectionId && $0.deployStatus == .live }.map(\.id)
+            let livePairsSetIds = pairsSets.filter { $0.collectionId == collectionId && $0.deployStatus == .live }.map(\.id)
+            try await FirestoreService().deleteCollection(
+                id: collectionId,
+                cardSetIds: liveCardSetIds,
+                pairsSetIds: livePairsSetIds
+            )
+            delete(collectionId: collectionId)
+        } catch {
+            deleteError = error.localizedDescription
+            log("[Delete] Collection delete from Firestore failed: \(error)", level: .error)
+        }
+        isDeleting = false
     }
 
     // MARK: - CardSets
@@ -91,6 +112,14 @@ final class AdminStore {
         save()
     }
 
+    /// Восстанавливает мягко удалённый сет → .draft.
+    func restore(cardSetId: String) {
+        guard let idx = cardSets.firstIndex(where: { $0.id == cardSetId }) else { return }
+        cardSets[idx].deployStatus = .draft
+        cardSets[idx].updatedAt   = .now
+        save()
+    }
+
     /// Переводит сет в .ready (ручное действие из UI).
     func markReady(cardSetId: String) {
         guard let idx = cardSets.firstIndex(where: { $0.id == cardSetId }),
@@ -99,6 +128,23 @@ final class AdminStore {
         cardSets[idx].deployStatus = .ready
         cardSets[idx].updatedAt   = .now
         save()
+    }
+
+    /// Удаляет CardSet из FB (если был .live) и полностью убирает из store.json.
+    func deleteForever(cardSetId: String) async {
+        isDeleting  = true
+        deleteError = nil
+        let wasLive = cardSets.first(where: { $0.id == cardSetId })?.deployStatus == .live
+        do {
+            if wasLive { try await FirestoreService().deleteCardSet(id: cardSetId) }
+            cardSets.removeAll { $0.id == cardSetId }
+            cards.removeAll    { $0.setId == cardSetId }
+            save()
+        } catch {
+            deleteError = error.localizedDescription
+            log("[Delete] CardSet deleteForever failed: \(error)", level: .error)
+        }
+        isDeleting = false
     }
 
     private func softDeleteCardSet(id: String) {
@@ -172,6 +218,30 @@ final class AdminStore {
         pairsSets[idx].deployStatus = .deleted
         pairsSets[idx].updatedAt   = .now
         save()
+    }
+
+    /// Восстанавливает мягко удалённый сет → .draft.
+    func restore(pairsSetId: String) {
+        guard let idx = pairsSets.firstIndex(where: { $0.id == pairsSetId }) else { return }
+        pairsSets[idx].deployStatus = .draft
+        pairsSets[idx].updatedAt   = .now
+        save()
+    }
+
+    /// Удаляет PairsSet из FB (если был .live) и полностью убирает из store.json.
+    func deleteForever(pairsSetId: String) async {
+        isDeleting  = true
+        deleteError = nil
+        let wasLive = pairsSets.first(where: { $0.id == pairsSetId })?.deployStatus == .live
+        do {
+            if wasLive { try await FirestoreService().deletePairsSet(id: pairsSetId) }
+            pairsSets.removeAll { $0.id == pairsSetId }
+            save()
+        } catch {
+            deleteError = error.localizedDescription
+            log("[Delete] PairsSet deleteForever failed: \(error)", level: .error)
+        }
+        isDeleting = false
     }
 
     /// Переводит сет в .ready (ручное действие из UI).

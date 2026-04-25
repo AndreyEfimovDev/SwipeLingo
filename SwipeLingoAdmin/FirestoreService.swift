@@ -80,6 +80,34 @@ struct FirestoreService {
         log("[Firestore] Deployed PairsSet '\(set.title ?? set.id)' (\(set.items.count) pairs)", level: .info)
     }
 
+    // MARK: - Delete from Firestore
+
+    /// Удаляет CardSet и все его карточки из Firestore (batch).
+    func deleteCardSet(id: String) async throws {
+        let setRef   = db.collection("cardSets").document(id)
+        let cardsSnap = try await setRef.collection("cards").getDocuments()
+        let batch    = db.batch()
+        for doc in cardsSnap.documents { batch.deleteDocument(doc.reference) }
+        batch.deleteDocument(setRef)
+        try await batch.commit()
+        log("[Firestore] Deleted CardSet '\(id)' + \(cardsSnap.documents.count) cards", level: .info)
+    }
+
+    /// Удаляет PairsSet из Firestore (items встроены — один документ).
+    func deletePairsSet(id: String) async throws {
+        try await db.collection("pairsSets").document(id).delete()
+        log("[Firestore] Deleted PairsSet '\(id)'", level: .info)
+    }
+
+    /// Удаляет коллекцию из Firestore вместе со всеми её сетами и карточками.
+    /// cardSetIds / pairsSetIds — ID сетов, которые нужно удалить из Firestore.
+    func deleteCollection(id: String, cardSetIds: [String], pairsSetIds: [String]) async throws {
+        for setId in cardSetIds { try await deleteCardSet(id: setId) }
+        for setId in pairsSetIds { try await deletePairsSet(id: setId) }
+        try await db.collection("collections").document(id).delete()
+        log("[Firestore] Deleted collection '\(id)' + \(cardSetIds.count + pairsSetIds.count) sets", level: .info)
+    }
+
     // MARK: - Fetch (для iOS sync)
 
     func fetchCollections() async throws -> [[String: Any]] {

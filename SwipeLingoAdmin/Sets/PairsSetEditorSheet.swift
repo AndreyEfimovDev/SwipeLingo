@@ -12,10 +12,26 @@ struct PairsSetEditorSheet: View {
 
     // MARK: State
 
-    @State private var title:      String      = ""
-    @State private var desc:       String      = ""
-    @State private var cefrLevel:  CEFRLevel   = .b2
-    @State private var accessTier: AccessTier  = .free
+    @State private var title:      String
+    @State private var desc:       String
+    @State private var cefrLevel:  CEFRLevel
+    @State private var accessTier: AccessTier
+
+    init(collectionId: String, pairsSet: FSPairsSet?) {
+        self.collectionId = collectionId
+        self.pairsSet = pairsSet
+        if let s = pairsSet {
+            _title      = State(initialValue: s.title ?? "")
+            _desc       = State(initialValue: s.description ?? "")
+            _cefrLevel  = State(initialValue: s.cefrLevel)
+            _accessTier = State(initialValue: s.accessTier)
+        } else {
+            _title      = State(initialValue: "")
+            _desc       = State(initialValue: "")
+            _cefrLevel  = State(initialValue: .b2)
+            _accessTier = State(initialValue: .free)
+        }
+    }
 
     private var isEditing: Bool { pairsSet != nil }
     private var canSave: Bool { !title.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -101,14 +117,6 @@ struct PairsSetEditorSheet: View {
                     Button("Save", action: save)
                         .disabled(!canSave)
                 }
-            }
-        }
-        .onAppear {
-            if let s = pairsSet {
-                title      = s.title ?? ""
-                desc       = s.description ?? ""
-                cefrLevel  = s.cefrLevel
-                accessTier = s.accessTier
             }
         }
     }
