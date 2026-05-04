@@ -22,6 +22,7 @@ final class PairsSet {
     var updatedAt: Date = Date.epoch // обновляется Admin Tool при публикации
     var createdAt: Date
     var firestoreId: String? = nil   // Firestore document ID for sync deduplication
+    var isSoftDeleted: Bool  = false // soft-delete: скрыт в UI, не удаляется из SwiftData
 
     // MARK: SRS fields (SM-2) — оценка всего сета целиком
     var dueDate:      Date   = Date.farFuture  // новый сет не в Due до первой оценки

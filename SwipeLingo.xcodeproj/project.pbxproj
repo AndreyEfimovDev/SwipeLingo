@@ -25,6 +25,8 @@
 		47631B652F86E41E002F1666 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C781D2F794487005FBDFE /* Logger.swift */; };
 		47631B662F86E460002F1666 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783F2F794487005FBDFE /* Secrets.swift */; };
 		47631B7B2F86F048002F1666 /* Translation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47631B7A2F86F048002F1666 /* Translation.framework */; };
+		478728102FA8A8EC001282EF /* CEFRBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78142F794487005FBDFE /* CEFRBadgeView.swift */; };
+		478728112FA8A8F8001282EF /* AccessTierBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DE7F8F2F83D2EB00F6BCF3 /* AccessTierBadge.swift */; };
 		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		478C784F2F794487005FBDFE /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppViewModel.swift */; };
 		478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78122F794487005FBDFE /* SwipeLingoApp.swift */; };
@@ -911,12 +913,14 @@
 				47631B032F86949F002F1666 /* DictionaryService.swift in Sources */,
 				47631B022F86941C002F1666 /* CEFRLevel.swift in Sources */,
 				47631B662F86E460002F1666 /* Secrets.swift in Sources */,
+				478728102FA8A8EC001282EF /* CEFRBadgeView.swift in Sources */,
 				47C09A872F853B940049858B /* FirestoreModels.swift in Sources */,
 				47C09A882F853D360049858B /* AccessTier.swift in Sources */,
 				47631B652F86E41E002F1666 /* Logger.swift in Sources */,
 				47631B622F86E295002F1666 /* NativeLanguage.swift in Sources */,
 				47631B612F86E21F002F1666 /* Colors.swift in Sources */,
 				47C09A8D2F853D8B0049858B /* DisplayMode.swift in Sources */,
+				478728112FA8A8F8001282EF /* AccessTierBadge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
