@@ -21,6 +21,21 @@ struct CollectionsListView: View {
         store.collections(of: type)
     }
 
+    private var totalWordCount: Int {
+        if type == .cards {
+            return collections.flatMap { store.cardSets(for: $0.id) }
+                              .reduce(0) { $0 + store.cards(for: $1.id).count }
+        } else {
+            return collections.flatMap { store.pairsSets(for: $0.id) }
+                              .reduce(0) { $0 + $1.items.count }
+        }
+    }
+
+    private var navTitle: String {
+        let base = type == .cards ? "Cards" : "Pairs"
+        return totalWordCount > 0 ? "\(base) (\(totalWordCount))" : base
+    }
+
     // MARK: Body
 
     var body: some View {
@@ -32,7 +47,7 @@ struct CollectionsListView: View {
             }
         }
         .navigationSplitViewColumnWidth(min: 220, ideal: 260)
-        .navigationTitle(type == .cards ? "Cards" : "Pairs")
+        .navigationTitle(navTitle)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -49,6 +64,17 @@ struct CollectionsListView: View {
         .sheet(item: $editingCollection) { collection in
             CollectionEditorSheet(type: type, collection: collection)
         }
+        .alert(
+            "Delete Failed",
+            isPresented: Binding(
+                get: { store.deleteError != nil },
+                set: { if !$0 { store.deleteError = nil } }
+            ),
+            actions: { Button("OK", role: .cancel) { store.deleteError = nil } },
+            message: {
+                if let err = store.deleteError { Text(err) }
+            }
+        )
     }
 
     // MARK: List
@@ -62,10 +88,19 @@ struct CollectionsListView: View {
                         editingCollection = collection
                     }
                     Divider()
-                    Button("Delete", role: .destructive) {
-                        store.delete(collectionId: collection.id)
-                        if selectedCollectionId == collection.id {
-                            selectedCollectionId = nil
+                    if collection.isSynced {
+                        Button("Delete from Firestore", role: .destructive) {
+                            Task { await store.deleteFromFirestore(collectionId: collection.id) }
+                            if selectedCollectionId == collection.id {
+                                selectedCollectionId = nil
+                            }
+                        }
+                    } else {
+                        Button("Delete", role: .destructive) {
+                            store.delete(collectionId: collection.id)
+                            if selectedCollectionId == collection.id {
+                                selectedCollectionId = nil
+                            }
                         }
                     }
                 }
@@ -95,7 +130,18 @@ struct CollectionsListView: View {
 
 private struct CollectionRow: View {
 
+    @Environment(AdminStore.self) private var store
     let collection: FSCollection
+
+    private var wordCount: Int {
+        if collection.type == .cards {
+            return store.cardSets(for: collection.id)
+                        .reduce(0) { $0 + store.cards(for: $1.id).count }
+        } else {
+            return store.pairsSets(for: collection.id)
+                        .reduce(0) { $0 + $1.items.count }
+        }
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -117,6 +163,11 @@ private struct CollectionRow: View {
                             .padding(.vertical, 2)
                             .background(.green, in: Capsule())
                     }
+                }
+                if wordCount > 0 {
+                    Text("\(wordCount) words")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }

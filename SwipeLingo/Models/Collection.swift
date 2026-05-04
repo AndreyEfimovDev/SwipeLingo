@@ -15,6 +15,7 @@ final class Collection {
     var typeRaw: String     = CollectionType.cards.rawValue  // "cards" | "pairs" — CloudKit-safe
     var updatedAt: Date     = Date.epoch                // обновляется Admin Tool при публикации
     var createdAt: Date
+    var firestoreId: String? = nil                      // Firestore document ID for sync deduplication
 
     var collectionType: CollectionType {
         get { CollectionType(rawValue: typeRaw) ?? .cards }

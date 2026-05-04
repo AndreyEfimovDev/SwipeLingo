@@ -14,6 +14,9 @@ final class CardSet {
     // true  = user-created content (sets inside My Sets)
     var isUserCreated: Bool = true
 
+    // optional longer description shown in the set detail view
+    var setDescription: String? = nil
+
     // CEFR level — stored as String for CloudKit/SwiftData compatibility
     var level: String = CEFRLevel.a1.rawValue
 
@@ -21,6 +24,7 @@ final class CardSet {
     var accessTierRaw: String = AccessTier.free.rawValue
 
     var updatedAt: Date = Date.epoch  // обновляется Admin Tool при публикации
+    var firestoreId: String? = nil   // Firestore document ID for sync deduplication
 
     var cefrLevel: CEFRLevel {
         get { CEFRLevel(rawValue: level) ?? .a1 }
@@ -39,6 +43,7 @@ final class CardSet {
         level: CEFRLevel = .a1,
         isUserCreated: Bool = true,
         accessTier: AccessTier = .free,
+        setDescription: String? = nil,
         updatedAt: Date = .epoch,
         createdAt: Date = .now
     ) {
@@ -48,6 +53,7 @@ final class CardSet {
         self.level = level.rawValue
         self.isUserCreated = isUserCreated
         self.accessTierRaw = accessTier.rawValue
+        self.setDescription = setDescription
         self.updatedAt = updatedAt
         self.createdAt = createdAt
     }

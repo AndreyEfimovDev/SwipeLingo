@@ -12,15 +12,33 @@ struct PairsSetEditorSheet: View {
 
     // MARK: State
 
-    @State private var title:       String      = ""
-    @State private var subtitle:    String      = ""
-    @State private var leftTitle:   String      = ""
-    @State private var rightTitle:  String      = ""
-    @State private var displayMode: DisplayMode = .parallel
-    @State private var accessTier:  AccessTier  = .free
+    @State private var title:      String
+    @State private var desc:       String
+    @State private var cefrLevel:  CEFRLevel
+    @State private var accessTier: AccessTier
+
+    init(collectionId: String, pairsSet: FSPairsSet?) {
+        self.collectionId = collectionId
+        self.pairsSet = pairsSet
+        if let s = pairsSet {
+            _title      = State(initialValue: s.title ?? "")
+            _desc       = State(initialValue: s.description ?? "")
+            _cefrLevel  = State(initialValue: s.cefrLevel)
+            _accessTier = State(initialValue: s.accessTier)
+        } else {
+            _title      = State(initialValue: "")
+            _desc       = State(initialValue: "")
+            _cefrLevel  = State(initialValue: .b2)
+            _accessTier = State(initialValue: .free)
+        }
+    }
 
     private var isEditing: Bool { pairsSet != nil }
     private var canSave: Bool { !title.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    private var collectionName: String {
+        store.collections.first { $0.id == collectionId }?.name ?? "—"
+    }
 
     // MARK: Body
 
@@ -29,24 +47,34 @@ struct PairsSetEditorSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
 
+                    // ── Collection (read-only) ─────────────────────
+                    GroupBox {
+                        HStack {
+                            Text("Collection")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(collectionName)
+                                .foregroundStyle(.primary)
+                        }
+                        .font(.subheadline)
+                    }
+
                     // ── Title ─────────────────────────────────────
                     fieldLabel("Title")
                     clearableField("Set title", text: $title)
 
-                    // ── Subtitle ──────────────────────────────────
-                    fieldLabel("Subtitle (optional)")
-                    clearableField("Subtitle", text: $subtitle)
+                    // ── Description ───────────────────────────────
+                    fieldLabel("Description (optional)")
+                    TextEditor(text: $desc)
+                        .frame(minHeight: 80)
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(NSColor.separatorColor).opacity(0.5)))
 
-                    // ── Columns ───────────────────────────────────
-                    fieldLabel("Columns")
-                    clearableField("Left column (e.g. B2, Basic)", text: $leftTitle)
-                    clearableField("Right column (e.g. C1, Advanced)", text: $rightTitle)
-
-                    // ── Display & Access ──────────────────────────
-                    GroupBox("Display & Access") {
-                        Picker("Display Mode", selection: $displayMode) {
-                            Text("Parallel").tag(DisplayMode.parallel)
-                            Text("Sequential").tag(DisplayMode.sequential)
+                    // ── Level & Access ────────────────────────────
+                    GroupBox("Level & Access") {
+                        Picker("CEFR Level", selection: $cefrLevel) {
+                            ForEach(CEFRLevel.allCases, id: \.self) { l in
+                                Text(l.displayCode).tag(l)
+                            }
                         }
 
                         Divider()
@@ -58,11 +86,28 @@ struct PairsSetEditorSheet: View {
                         }
                     }
 
+                    // ── Status (read-only when editing) ──────────
+                    if isEditing, let s = pairsSet {
+                        GroupBox("Status") {
+                            HStack {
+                                Text("Deploy Status")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(s.deployStatus.label)
+                            }
+                            .font(.subheadline)
+                            Text("Managed automatically — use 'Mark as Ready' in the set list to schedule publishing.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 2)
+                        }
+                    }
+
                     Spacer()
                 }
                 .padding(20)
             }
-            .frame(minWidth: 420, minHeight: 360)
+            .frame(minWidth: 400, minHeight: 320)
             .navigationTitle(isEditing ? "Edit Set" : "New Set")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -74,17 +119,9 @@ struct PairsSetEditorSheet: View {
                 }
             }
         }
-        .onAppear {
-            if let s = pairsSet {
-                title       = s.title ?? ""
-                subtitle    = s.subtitle ?? ""
-                leftTitle   = s.leftTitle ?? ""
-                rightTitle  = s.rightTitle ?? ""
-                displayMode = s.displayMode
-                accessTier  = s.accessTier
-            }
-        }
     }
+
+    // MARK: Helpers
 
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
@@ -114,34 +151,28 @@ struct PairsSetEditorSheet: View {
     // MARK: Save
 
     private func save() {
-        let trimmedTitle    = title.trimmingCharacters(in: .whitespaces)
-        let trimmedSubtitle = subtitle.trimmingCharacters(in: .whitespaces)
-        let trimmedLeft     = leftTitle.trimmingCharacters(in: .whitespaces)
-        let trimmedRight    = rightTitle.trimmingCharacters(in: .whitespaces)
+        let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
+        let trimmedDesc  = desc.trimmingCharacters(in: .whitespaces)
 
         if let existing = pairsSet {
             var updated = existing
-            updated.title          = trimmedTitle
-            updated.subtitle       = trimmedSubtitle.isEmpty ? nil : trimmedSubtitle
-            updated.leftTitle      = trimmedLeft.isEmpty ? nil : trimmedLeft
-            updated.rightTitle     = trimmedRight.isEmpty ? nil : trimmedRight
-            updated.displayMode = displayMode
+            updated.title       = trimmedTitle
+            updated.description = trimmedDesc.isEmpty ? nil : trimmedDesc
+            updated.cefrLevel   = cefrLevel
             updated.accessTier  = accessTier
-            updated.updatedAt      = .now
+            // deployStatus intentionally NOT set here — AdminStore.update() handles auto-transition
             store.update(updated)
         } else {
             let new = FSPairsSet(
-                id:             FirestoreID.make(name: trimmedTitle),
-                collectionId:   collectionId,
-                title:          trimmedTitle,
-                subtitle:       trimmedSubtitle.isEmpty ? nil : trimmedSubtitle,
-                leftTitle:      trimmedLeft.isEmpty ? nil : trimmedLeft,
-                rightTitle:     trimmedRight.isEmpty ? nil : trimmedRight,
-                displayMode: displayMode,
-                accessTier:  accessTier,
-                items:          [],
-                updatedAt:      .now,
-                createdAt:      .now
+                id:           FirestoreID.make(name: trimmedTitle),
+                collectionId: collectionId,
+                title:        trimmedTitle,
+                description:  trimmedDesc.isEmpty ? nil : trimmedDesc,
+                cefrLevel:    cefrLevel,
+                accessTier:   accessTier,
+                deployStatus: .new,
+                updatedAt:    .now,
+                createdAt:    .now
             )
             store.add(new)
         }
