@@ -14,6 +14,7 @@ struct CardsListView: View {
 
     let setId:   String
     let setName: String
+    let onBack:  () -> Void
 
     @State private var showNewEditor: Bool    = false
     @State private var showImport:    Bool    = false
@@ -55,6 +56,12 @@ struct CardsListView: View {
         }
         .navigationTitle(setName)
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button { onBack() } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .help("Back to sets")
+            }
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 8) {
                     if let level = cardSet?.cefrLevel {
@@ -70,13 +77,13 @@ struct CardsListView: View {
                 }
                 .padding(.horizontal)
             }
-            ToolbarItem(placement: .navigation) {
+            ToolbarItem(placement: .primaryAction) {
                 Button {
                     showImport = true
                 } label: {
                     Label("Import", systemImage: "square.and.arrow.down")
                 }
-                .help("Import words from text")
+                .help("Batch import cards from text")
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -84,7 +91,7 @@ struct CardsListView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .help("New card")
+                .help("Add card")
             }
         }
         .sheet(isPresented: $showImport) {

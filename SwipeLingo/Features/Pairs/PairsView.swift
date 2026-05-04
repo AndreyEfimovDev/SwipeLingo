@@ -17,7 +17,7 @@ struct PairsView: View {
 
     /// Сеты ≤ уровня пользователя. Сеты выше уровня хранятся локально, но не показываются.
     private var levelFilteredSets: [PairsSet] {
-        allSets.filter { $0.cefrLevel <= userLevel }
+        allSets.filter { $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
     }
 
     @AppStorage("srsEnabled")           private var srsEnabled: Bool = true
@@ -64,6 +64,12 @@ struct PairsView: View {
 
     @ToolbarContentBuilder
     private var pairsToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button { appViewModel.activeSheet = .settings } label: {
+                Image(systemName: "gear")
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            }
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button { appViewModel.studyMode = .cards } label: {
@@ -77,12 +83,6 @@ struct PairsView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
                         Text("Statistics")
-                    }
-                }
-                Button { appViewModel.activeSheet = .settings } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "gear").frame(width: 20)
-                        Text("Settings")
                     }
                 }
             } label: {

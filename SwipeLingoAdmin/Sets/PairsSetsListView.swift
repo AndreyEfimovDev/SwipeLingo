@@ -10,6 +10,7 @@ struct PairsSetsListView: View {
     @Environment(AdminStore.self) private var store
 
     let collectionId: String
+    @Binding var selectedSetId: String?
 
     @State private var showNewSet   = false
     @State private var editingSet:  FSPairsSet?
@@ -58,7 +59,7 @@ struct PairsSetsListView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .help("New set")
+                    .help("Add pairs set")
                     .disabled(showDeleted)
                 }
             }
@@ -99,30 +100,29 @@ struct PairsSetsListView: View {
     // MARK: List
 
     private var list: some View {
-        List(sets, id: \.id) { set in
-            NavigationLink {
-                PairsListView(setId: set.id, setName: set.title ?? "Untitled")
-            } label: {
+        List(selection: showDeleted ? .constant(nil) : $selectedSetId) {
+            ForEach(sets, id: \.id) { set in
                 PairsSetRow(set: set)
                     .opacity(showDeleted ? 0.5 : 1)
-            }
-            .contextMenu {
-                if showDeleted {
-                    Button("Restore") {
-                        store.restore(pairsSetId: set.id)
-                        showDeleted = false
+                    .tag(set.id)
+                    .contextMenu {
+                        if showDeleted {
+                            Button("Restore") {
+                                store.restore(pairsSetId: set.id)
+                                showDeleted = false
+                            }
+                            Divider()
+                            Button("Delete Forever", role: .destructive) {
+                                Task { await store.deleteForever(pairsSetId: set.id) }
+                            }
+                        } else {
+                            Button("Edit") { editingSet = set }
+                            Divider()
+                            Button("Delete", role: .destructive) {
+                                store.delete(pairsSetId: set.id)
+                            }
+                        }
                     }
-                    Divider()
-                    Button("Delete Forever", role: .destructive) {
-                        Task { await store.deleteForever(pairsSetId: set.id) }
-                    }
-                } else {
-                    Button("Edit") { editingSet = set }
-                    Divider()
-                    Button("Delete", role: .destructive) {
-                        store.delete(pairsSetId: set.id)
-                    }
-                }
             }
         }
     }
@@ -170,19 +170,20 @@ private struct PairsSetRow: View {
     let set: FSPairsSet
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
+        HStack(spacing: 8) {
+            // Name + CEFR + Tier — все вместе слева, имя не смещается
+            HStack(alignment: .center, spacing: 5) {
                 let count = set.items.count
                 Text(count > 0 ? "\(set.title ?? "Untitled") (\(count))" : (set.title ?? "Untitled"))
                     .font(.body.weight(.medium))
                     .lineLimit(1)
-
-                Text(set.cefrLevel.displayCode)
+                    .layoutPriority(1)
+                CEFRBadgeView(level: set.cefrLevel)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                AdminTierBadge(tier: set.accessTier)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
             VStack(alignment: .trailing, spacing: 4) {
                 // Status badge

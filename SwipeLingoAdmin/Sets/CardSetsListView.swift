@@ -10,6 +10,7 @@ struct CardSetsListView: View {
     @Environment(AdminStore.self) private var store
 
     let collectionId: String
+    @Binding var selectedSetId: String?
 
     @State private var showNewEditor  = false
     @State private var editingSet:    FSCardSet?
@@ -58,7 +59,7 @@ struct CardSetsListView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .help("New set")
+                    .help("Add card set")
                     .disabled(showDeleted)
                 }
             }
@@ -97,30 +98,29 @@ struct CardSetsListView: View {
     // MARK: List
 
     private var list: some View {
-        List(sets, id: \.id) { set in
-            NavigationLink {
-                CardsListView(setId: set.id, setName: set.name)
-            } label: {
+        List(selection: showDeleted ? .constant(nil) : $selectedSetId) {
+            ForEach(sets, id: \.id) { set in
                 CardSetRow(set: set)
                     .opacity(showDeleted ? 0.5 : 1)
-            }
-            .contextMenu {
-                if showDeleted {
-                    Button("Restore") {
-                        store.restore(cardSetId: set.id)
-                        showDeleted = false
+                    .tag(set.id)
+                    .contextMenu {
+                        if showDeleted {
+                            Button("Restore") {
+                                store.restore(cardSetId: set.id)
+                                showDeleted = false
+                            }
+                            Divider()
+                            Button("Delete Forever", role: .destructive) {
+                                Task { await store.deleteForever(cardSetId: set.id) }
+                            }
+                        } else {
+                            Button("Edit") { editingSet = set }
+                            Divider()
+                            Button("Delete", role: .destructive) {
+                                store.delete(cardSetId: set.id)
+                            }
+                        }
                     }
-                    Divider()
-                    Button("Delete Forever", role: .destructive) {
-                        Task { await store.deleteForever(cardSetId: set.id) }
-                    }
-                } else {
-                    Button("Edit") { editingSet = set }
-                    Divider()
-                    Button("Delete", role: .destructive) {
-                        store.delete(cardSetId: set.id)
-                    }
-                }
             }
         }
     }
@@ -168,26 +168,20 @@ private struct CardSetRow: View {
     let set: FSCardSet
 
     var body: some View {
-        HStack(spacing: 12) {
-            // CEFR badge
-            Text(set.cefrLevel.displayCode)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(set.cefrLevel.color, in: RoundedRectangle(cornerRadius: 5))
-
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 8) {
+            // Name + CEFR + Tier — все вместе слева, имя не смещается
+            HStack(alignment: .center, spacing: 5) {
                 let count = store.cards(for: set.id).count
                 Text(count > 0 ? "\(set.name) (\(count))" : set.name)
                     .font(.body.weight(.medium))
                     .lineLimit(1)
-                Text(set.accessTier.displayName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .layoutPriority(1)
+                CEFRBadgeView(level: set.cefrLevel)
+                    .font(.caption.weight(.semibold))
+                AdminTierBadge(tier: set.accessTier)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
             VStack(alignment: .trailing, spacing: 4) {
                 // Status badge
@@ -237,6 +231,30 @@ private struct CardSetRow: View {
         Text(status.label)
             .font(.caption.weight(.medium))
             .foregroundStyle(color)
+    }
+}
+
+// MARK: - AdminTierBadge
+// Показывает тир для всех уровней включая Free — используется только в Admin.
+
+struct AdminTierBadge: View {
+    let tier: AccessTier
+    var body: some View {
+        let (label, fg, bg): (String, Color, Color) = switch tier {
+        case .free: ("Free",  .secondary,    Color.secondary.opacity(0.12))
+        case .go:   ("GO",    Color.purple,   Color.purple.opacity(0.12))
+        case .pro:  ("PRO",   Color.orange,   Color.orange.opacity(0.12))
+        }
+        Text(label)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(fg)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(bg, in: RoundedRectangle(cornerRadius: 4))
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .strokeBorder(fg.opacity(0.3), lineWidth: 1)
+            )
     }
 }
 
