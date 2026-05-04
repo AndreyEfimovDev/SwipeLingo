@@ -55,15 +55,16 @@ struct FSCollection: Codable, Identifiable, Hashable {
 // MARK: - FSCardSet
 
 struct FSCardSet: Codable, Identifiable, Hashable {
-    var id:           String
-    var collectionId: String
-    var name:         String
-    var description:  String?        // optional set description shown in library
-    var cefrLevel:    CEFRLevel
-    var accessTier:   AccessTier
-    var deployStatus: SetDeployStatus
-    var updatedAt:    Date
-    var createdAt:    Date
+    var id:                   String
+    var collectionId:         String
+    var name:                 String
+    var description:          String?        // optional set description shown in library
+    var cefrLevel:            CEFRLevel
+    var accessTier:           AccessTier
+    var deployStatus:         SetDeployStatus
+    var previousDeployStatus: SetDeployStatus?  // сохраняется при soft-delete, используется для Restore
+    var updatedAt:            Date
+    var createdAt:            Date
 
     init(id: String, collectionId: String, name: String,
          description: String? = nil,
@@ -124,16 +125,17 @@ struct FSCard: Codable, Identifiable, Hashable {
 // MARK: - FSPairsSet
 
 struct FSPairsSet: Codable, Identifiable {
-    var id:           String
-    var collectionId: String
-    var title:        String?
-    var description:  String?        // optional set description shown in library
-    var cefrLevel:    CEFRLevel
-    var accessTier:   AccessTier
-    var deployStatus: SetDeployStatus
-    var items:        [FSPair]
-    var updatedAt:    Date
-    var createdAt:    Date
+    var id:                   String
+    var collectionId:         String
+    var title:                String?
+    var description:          String?        // optional set description shown in library
+    var cefrLevel:            CEFRLevel
+    var accessTier:           AccessTier
+    var deployStatus:         SetDeployStatus
+    var previousDeployStatus: SetDeployStatus?  // сохраняется при soft-delete, используется для Restore
+    var items:                [FSPair]
+    var updatedAt:            Date
+    var createdAt:            Date
 
     init(id: String, collectionId: String, title: String? = nil,
          description: String? = nil,

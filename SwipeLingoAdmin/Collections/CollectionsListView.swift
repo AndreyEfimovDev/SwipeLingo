@@ -55,7 +55,7 @@ struct CollectionsListView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .help("New collection")
+                .help(type == .cards ? "Add card collection" : "Add pairs collection")
             }
         }
         .sheet(isPresented: $showNewEditor) {

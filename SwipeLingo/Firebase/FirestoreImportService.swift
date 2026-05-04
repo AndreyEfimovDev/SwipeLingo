@@ -214,6 +214,12 @@ struct FirestoreImportService {
 
                 let sdSet: CardSet
                 if let existing = cardSetsByFsId[setFsId] {
+                    // Пользователь мягко удалил этот сет — не перезаписываем и не загружаем карточки.
+                    // Tombstone сохраняется до явного восстановления через Deleted Cards.
+                    if existing.isSoftDeleted {
+                        loadedCollectionIds.insert(sdCollection.id)
+                        continue
+                    }
                     existing.name           = setName
                     existing.cefrLevel      = cefrLevel
                     existing.accessTier     = accessTier
@@ -294,6 +300,28 @@ struct FirestoreImportService {
                 }
             }
 
+            // ── 4b. Orphan removal для CardSets (только full sync) ────────────────────
+            // Если сет был удалён из Firestore напрямую, при delta-sync он не появится
+            // в snapshots и без этого шага останется в SwiftData вечно.
+            // Full sync: ищем локальные (Firestore) сеты, которые должны быть в диапазоне
+            // пользователя, но отсутствуют в FB-снапшоте → удаляем вместе с карточками.
+            if !isDelta {
+                let fetchedCardSetFsIds = Set(setSnap.documents.compactMap { $0.data()["id"] as? String })
+                for (fsId, localSet) in cardSetsByFsId {
+                    guard levels.contains(localSet.cefrLevel.rawValue) else { continue }
+                    guard !fetchedCardSetFsIds.contains(fsId) else { continue }
+                    // Tombstone (user soft-deleted) — оставляем как есть, даже если сет удалён из FB
+                    guard !localSet.isSoftDeleted else { continue }
+                    let setId      = localSet.id
+                    let orphanCards = context.fetchWithErrorHandling(
+                        FetchDescriptor<Card>(predicate: #Predicate { $0.setId == setId })
+                    )
+                    orphanCards.forEach { context.delete($0) }
+                    context.delete(localSet)
+                    log("[Firestore] Removed orphaned CardSet '\(localSet.name)' (deleted from FB)", level: .info)
+                }
+            }
+
             // ── 5. PairsSets — delta или full (та же логика что cardSets) ──────────────
             let pairsSetsBaseQuery = db.collection("pairsSets").whereField("cefrLevel", in: levels)
             let pairsSnap: QuerySnapshot
@@ -336,6 +364,11 @@ struct FirestoreImportService {
                 let pairs      = (pd["items"] as? [[String: Any]] ?? []).compactMap { parsePair(from: $0) }
 
                 if let existing = pairsSetsByFsId[pairsFsId] {
+                    // Пользователь мягко удалил этот сет — не перезаписываем
+                    if existing.isSoftDeleted {
+                        loadedCollectionIds.insert(sdColl.id)
+                        continue
+                    }
                     existing.title          = pd["title"]       as? String
                     existing.setDescription = pd["description"] as? String
                     existing.cefrLevel      = cefrLevel
@@ -359,6 +392,19 @@ struct FirestoreImportService {
                     pairsSetsByFsId[pairsFsId] = ps
                 }
                 loadedCollectionIds.insert(sdColl.id)
+            }
+
+            // ── 5b. Orphan removal для PairsSets (только full sync) ───────────────────
+            if !isDelta {
+                let fetchedPairsSetFsIds = Set(pairsSnap.documents.compactMap { $0.data()["id"] as? String })
+                for (fsId, localSet) in pairsSetsByFsId {
+                    guard levels.contains(localSet.cefrLevel.rawValue) else { continue }
+                    guard !fetchedPairsSetFsIds.contains(fsId) else { continue }
+                    // Tombstone (user soft-deleted) — оставляем как есть
+                    guard !localSet.isSoftDeleted else { continue }
+                    context.delete(localSet)
+                    log("[Firestore] Removed orphaned PairsSet '\(localSet.title ?? fsId)' (deleted from FB)", level: .info)
+                }
             }
 
             // ── 6. (удалено) Раньше здесь удалялись Firestore-сеты выше уровня пользователя.

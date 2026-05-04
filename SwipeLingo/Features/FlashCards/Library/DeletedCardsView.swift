@@ -64,6 +64,18 @@ struct DeletedCardsView: View {
     private var isAllSelected: Bool {
         !filteredCards.isEmpty && selectedCardIds.count == filteredCards.count
     }
+
+    /// Карточки из user-created сетов среди выбранных — только их можно стереть навсегда.
+    private var selectedErasableCards: [Card] {
+        filteredCards.filter { card in
+            guard selectedCardIds.contains(card.id) else { return false }
+            return allCardSets.first(where: { $0.id == card.setId })?.isUserCreated ?? true
+        }
+    }
+
+    private func isCurated(_ card: Card) -> Bool {
+        !(allCardSets.first(where: { $0.id == card.setId })?.isUserCreated ?? true)
+    }
     
     private func toggleSelectAll() {
         if isAllSelected {
@@ -101,18 +113,22 @@ struct DeletedCardsView: View {
                 List(selection: $selectedCardIds) {
                     ForEach(filteredCards) { card in
                         let cardSet        = allCardSets.first(where: { $0.id == card.setId })
+                        let curated        = !(cardSet?.isUserCreated ?? true)
                         let setName        = cardSet?.name
                         let collectionName = cardSet.flatMap { set in
                             allCollections.first(where: { $0.id == set.collectionId })?.name
                         }
-                        DeletedCardRow(card: card, setName: setName, collectionName: collectionName)
+                        DeletedCardRow(card: card, setName: setName, collectionName: collectionName, isCurated: curated)
                             .id(card.id)
                             .listRowBackground(Color.myColors.myBackground)
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    cardToErase = card
-                                } label: {
-                                    Label("Erase Forever", systemImage: "trash")
+                                // Curated карточки нельзя стереть навсегда — только Restore
+                                if !curated {
+                                    Button(role: .destructive) {
+                                        cardToErase = card
+                                    } label: {
+                                        Label("Erase Forever", systemImage: "trash")
+                                    }
                                 }
                                 Button {
                                     restoreCard(card)
@@ -223,7 +239,7 @@ struct DeletedCardsView: View {
             }
         }
         .confirmationDialog(
-            "Erase \(selectedCardIds.count) card\(selectedCardIds.count == 1 ? "" : "s") forever?",
+            "Erase \(selectedErasableCards.count) card\(selectedErasableCards.count == 1 ? "" : "s") forever?",
             isPresented: $showEraseSelectedConfirm,
             titleVisibility: .visible
         ) {
@@ -407,8 +423,8 @@ struct DeletedCardsView: View {
                 Image(systemName: "trash")
                     .font(.subheadline.weight(.medium))
             }
-            .foregroundStyle(selectedCardIds.isEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myRed)
-            .disabled(selectedCardIds.isEmpty)
+            .foregroundStyle(selectedErasableCards.isEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myRed)
+            .disabled(selectedErasableCards.isEmpty)
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 14)
@@ -456,19 +472,31 @@ struct DeletedCardsView: View {
     
     private func restoreCard(_ card: Card) {
         card.status = .active
+        // Curated set: снимаем tombstone чтобы сет снова появился в библиотеке
+        if let cardSet = allCardSets.first(where: { $0.id == card.setId }),
+           !cardSet.isUserCreated, cardSet.isSoftDeleted {
+            cardSet.isSoftDeleted = false
+        }
         context.saveWithErrorHandling()
     }
-    
+
     private func restoreSelected() {
-        filteredCards
-            .filter { selectedCardIds.contains($0.id) }
-            .forEach { restoreCard($0) }
+        let cards = filteredCards.filter { selectedCardIds.contains($0.id) }
+        cards.forEach { card in
+            card.status = .active
+            if let cardSet = allCardSets.first(where: { $0.id == card.setId }),
+               !cardSet.isUserCreated, cardSet.isSoftDeleted {
+                cardSet.isSoftDeleted = false
+            }
+        }
+        context.saveWithErrorHandling()
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }
-    
+
     private func eraseSelected() {
-        let toErase = filteredCards.filter { selectedCardIds.contains($0.id) }
+        // Только карточки из user-created сетов — curated нельзя стереть навсегда
+        let toErase = selectedErasableCards
         let ids = Set(toErase.map { $0.id })
         cleanupAfterErase(erasingIds: ids)
         toErase.forEach { context.delete($0) }
@@ -487,6 +515,7 @@ struct DeletedCardsView: View {
             let remaining = allCards.filter { $0.setId == setId && !erasingIds.contains($0.id) }
             guard remaining.isEmpty,
                   let set = allCardSets.first(where: { $0.id == setId }),
+                  set.isUserCreated,                              // curated sets остаются как tombstone
                   let collection = allCollections.first(where: { $0.id == set.collectionId }),
                   collection.name != "Inbox" else { continue }  // Inbox set никогда не удаляем
             
@@ -541,7 +570,8 @@ private struct DeletedCardRow: View {
     let card:           Card
     let setName:        String?
     let collectionName: String?
-    
+    var isCurated:      Bool = false
+
     private var locationLabel: String? {
         switch (collectionName, setName) {
         case (let col?, let set?): return "\(col) › \(set)"
@@ -550,19 +580,27 @@ private struct DeletedCardRow: View {
         case (nil, nil): return nil
         }
     }
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(card.en)
-                .font(.headline)
-                .foregroundStyle(Color.myColors.myAccent)
-            Text(card.item)
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            if let locationLabel {
-                Text(locationLabel)
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(card.en)
+                    .font(.headline)
+                    .foregroundStyle(Color.myColors.myAccent)
+                Text(card.item)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                if let locationLabel {
+                    Text(locationLabel)
+                        .font(.caption)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                }
+            }
+            if isCurated {
+                Spacer()
+                Image(systemName: "arrow.uturn.left.circle")
                     .font(.caption)
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
             }
         }
         .padding(.vertical, 2)
