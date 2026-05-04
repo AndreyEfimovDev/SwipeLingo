@@ -16,9 +16,9 @@ struct FlashCardsView: View {
 
     private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
 
-    /// Сеты ≤ уровня пользователя. Сеты выше уровня хранятся локально, но не показываются.
+    /// Сеты ≤ уровня пользователя, не мягко удалённые.
     private var levelFilteredCardSets: [CardSet] {
-        cardSets.filter { $0.cefrLevel <= userLevel }
+        cardSets.filter { $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
     }
 
     @State private var viewModel = FlashCardsViewModel()
@@ -33,15 +33,24 @@ struct FlashCardsView: View {
         Set(levelFilteredCardSets.map(\.id))
     }
 
-    /// true если есть хотя бы одна активная карточка на уровне пользователя.
+    /// Сеты, доступные для текущей сессии: с учётом активной стопки (если есть).
+    private var sessionSetIds: Set<UUID> {
+        if let pile = piles.first(where: { $0.isActive }) {
+            // Только сеты стопки, которые попадают в уровень пользователя
+            return levelFilteredSetIds.intersection(pile.setIds)
+        }
+        return levelFilteredSetIds
+    }
+
+    /// true если есть хотя бы одна активная карточка в текущей сессии (с учётом стопки).
     private var hasActiveLevelCards: Bool {
-        allCards.contains { $0.status == .active && levelFilteredSetIds.contains($0.setId) }
+        allCards.contains { $0.status == .active && sessionSetIds.contains($0.setId) }
     }
 
     /// true если есть хотя бы одна активная карточка с подошедшим dueDate
     private var hasDueCards: Bool {
         let now = Date.now
-        return allCards.contains { $0.status == .active && $0.dueDate <= now && levelFilteredSetIds.contains($0.setId) }
+        return allCards.contains { $0.status == .active && $0.dueDate <= now && sessionSetIds.contains($0.setId) }
     }
 
 
@@ -250,6 +259,12 @@ struct FlashCardsView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button { appViewModel.activeSheet = .settings } label: {
+                Image(systemName: "gear")
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            }
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button { appViewModel.studyMode = .pairs } label: {
@@ -265,12 +280,6 @@ struct FlashCardsView: View {
                         Text("Statistics")
                     }
                 }
-                Button { appViewModel.activeSheet = .settings } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "gear").frame(width: 20)
-                        Text("Settings")
-                    }
-                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 13, weight: .semibold))
@@ -282,17 +291,24 @@ struct FlashCardsView: View {
     }
 
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
+        let activePile = piles.first(where: { $0.isActive })
+        return VStack(spacing: 16) {
             Image(systemName: "rectangle.stack")
                 .font(.system(size: 52))
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
             Text("No cards to study")
                 .font(.title3.bold())
-            Text("Add cards in Library or create a Pile")
+                .foregroundStyle(Color.myColors.myAccent)
+            Text(activePile != nil
+                 ? "Pile \"\(activePile!.name)\" has no active cards.\nAdd sets in Library."
+                 : "Add cards in Library or create a Pile")
                 .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.myColors.myBackground.ignoresSafeArea())
     }
 
     // MARK: - Helpers

@@ -34,8 +34,12 @@ enum AdminSection: String, CaseIterable, Identifiable {
 
 struct ContentView: View {
 
-    @State private var selectedSection: AdminSection? = .cardsCollections
+    @Environment(AdminStore.self) private var store
+
+    @State private var selectedSection:     AdminSection? = .cardsCollections
     @State private var selectedCollectionId: String?
+    @State private var selectedCardSetId:    String?
+    @State private var selectedPairsSetId:   String?
 
     var body: some View {
         NavigationSplitView {
@@ -50,19 +54,48 @@ struct ContentView: View {
                 ContentUnavailableView("Select a section", systemImage: "sidebar.left")
             }
         } detail: {
-            NavigationStack {
-                if let collectionId = selectedCollectionId, let section = selectedSection {
-                    switch section.collectionType {
-                    case .cards:
-                        CardSetsListView(collectionId: collectionId)
-                    case .pairs:
-                        PairsSetsListView(collectionId: collectionId)
+            detailView
+        }
+        // Сброс выбранного сета при смене коллекции или раздела
+        .onChange(of: selectedCollectionId) { _, _ in
+            selectedCardSetId  = nil
+            selectedPairsSetId = nil
+        }
+        .onChange(of: selectedSection) { _, _ in
+            selectedCardSetId  = nil
+            selectedPairsSetId = nil
+        }
+    }
+
+    // MARK: Detail
+
+    @ViewBuilder
+    private var detailView: some View {
+        if let collectionId = selectedCollectionId, let section = selectedSection {
+            switch section.collectionType {
+            case .cards:
+                if let setId = selectedCardSetId {
+                    let setName = store.cardSets.first { $0.id == setId }?.name ?? ""
+                    CardsListView(setId: setId, setName: setName) {
+                        selectedCardSetId = nil
                     }
                 } else {
-                    ContentUnavailableView("Select a collection", systemImage: "rectangle.stack")
+                    CardSetsListView(collectionId: collectionId,
+                                     selectedSetId: $selectedCardSetId)
+                }
+            case .pairs:
+                if let setId = selectedPairsSetId {
+                    let setName = store.pairsSets.first { $0.id == setId }?.title ?? "Untitled"
+                    PairsListView(setId: setId, setName: setName) {
+                        selectedPairsSetId = nil
+                    }
+                } else {
+                    PairsSetsListView(collectionId: collectionId,
+                                      selectedSetId: $selectedPairsSetId)
                 }
             }
-            .navigationTitle("Sets")
+        } else {
+            ContentUnavailableView("Select a collection", systemImage: "rectangle.stack")
         }
     }
 

@@ -25,6 +25,7 @@ final class CardSet {
 
     var updatedAt: Date = Date.epoch  // обновляется Admin Tool при публикации
     var firestoreId: String? = nil   // Firestore document ID for sync deduplication
+    var isSoftDeleted: Bool = false  // soft-delete: скрыт в UI, не удаляется из SwiftData; блокирует sync
 
     var cefrLevel: CEFRLevel {
         get { CEFRLevel(rawValue: level) ?? .a1 }
