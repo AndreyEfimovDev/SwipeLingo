@@ -13,44 +13,54 @@ struct PairsListView: View {
     let setId:   String
     let setName: String
 
-    @State private var showEditor  = false
-    @State private var showImport  = false
+    @State private var showNewPair  = false
+    @State private var showImport   = false
     @State private var editingPair: FSPair?
+    @State private var selectedTag: String? = nil
 
     private var pairsSet: FSPairsSet? {
         store.pairsSets.first { $0.id == setId }
     }
 
-    private var items: [FSPair] {
+    private var allItems: [FSPair] {
         pairsSet?.items ?? []
     }
 
-    private var leftTitle:  String { pairsSet?.leftTitle  ?? "Left"  }
-    private var rightTitle: String { pairsSet?.rightTitle ?? "Right" }
+    private var items: [FSPair] {
+        guard let tag = selectedTag else { return allItems }
+        return allItems.filter { $0.tag == tag }
+    }
+
+    private var uniqueTags: [String] {
+        Array(Set(allItems.compactMap { $0.tag.isEmpty ? nil : $0.tag })).sorted()
+    }
+
+    /// Тип группы для новых пар — выводится из первой пары сета.
+    /// nil если сет пуст — редактор покажет все поля.
+    private var setGroupType: PairGroupType? {
+        guard let first = items.first else { return nil }
+        return PairGroupType(from: first)
+    }
 
     // MARK: Body
 
     var body: some View {
-        Group {
-            if items.isEmpty {
-                emptyState
-            } else {
-                list
+        VStack(spacing: 0) {
+            if uniqueTags.count > 1 {
+                tagFilterBar
+            }
+            Group {
+                if items.isEmpty {
+                    emptyState
+                } else {
+                    list
+                }
             }
         }
         .navigationTitle(setName)
-        .navigationSubtitle("\(leftTitle) → \(rightTitle)")
+        .navigationSubtitle("\(allItems.count) pairs")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    editingPair = nil
-                    showEditor  = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .help("New pair")
-            }
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .navigation) {
                 Button {
                     showImport = true
                 } label: {
@@ -58,27 +68,72 @@ struct PairsListView: View {
                 }
                 .help("Import pairs from text")
             }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showNewPair = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .help("New pair")
+            }
         }
         .sheet(isPresented: $showImport) {
-            ImportPairsSheet(
-                leftTitle:  leftTitle,
-                rightTitle: rightTitle
-            ) { newPairs in
+            ImportPairsSheet { newPairs in
                 guard var updated = pairsSet else { return }
                 updated.items.append(contentsOf: newPairs)
                 store.update(updated)
             }
         }
-        .sheet(isPresented: $showEditor) {
-            PairEditorSheet(
-                pair:       editingPair,
-                leftTitle:  leftTitle,
-                rightTitle: rightTitle
-            ) { savedPair in
+        // New pair — тип группы выводится из первой пары сета
+        .sheet(isPresented: $showNewPair) {
+            PairEditorSheet(pair: nil, groupType: setGroupType) { savedPair in
                 savePair(savedPair)
-                showEditor = false
+                showNewPair = false
             }
         }
+        // Edit pair — тип группы выводится из самой пары
+        .sheet(item: $editingPair) { pair in
+            PairEditorSheet(pair: pair, groupType: nil) { savedPair in
+                savePair(savedPair)
+                editingPair = nil
+            }
+        }
+    }
+
+    // MARK: Tag Filter Bar
+
+    private var tagFilterBar: some View {
+        VStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterChip(title: "All", isSelected: selectedTag == nil) {
+                        selectedTag = nil
+                    }
+                    ForEach(uniqueTags, id: \.self) { tag in
+                        filterChip(title: tag, isSelected: selectedTag == tag) {
+                            selectedTag = (selectedTag == tag) ? nil : tag
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+            .background(.bar)
+            Divider()
+        }
+    }
+
+    private func filterChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.12),
+                            in: Capsule())
+                .foregroundStyle(isSelected ? .white : .primary)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: List
@@ -86,11 +141,10 @@ struct PairsListView: View {
     private var list: some View {
         List {
             ForEach(items) { pair in
-                PairRow(pair: pair, leftTitle: leftTitle, rightTitle: rightTitle)
+                PairRow(pair: pair)
                     .contextMenu {
                         Button("Edit") {
-                            editingPair = pair
-                            showEditor  = true
+                            editingPair = pair   // sheet(item:) откроется сам
                         }
                         Divider()
                         Button("Delete", role: .destructive) {
@@ -115,8 +169,7 @@ struct PairsListView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Button("New Pair") {
-                editingPair = nil
-                showEditor  = true
+                showNewPair = true
             }
             .buttonStyle(.bordered)
         }
@@ -152,33 +205,53 @@ struct PairsListView: View {
 
 private struct PairRow: View {
 
-    let pair:       FSPair
-    let leftTitle:  String
-    let rightTitle: String
+    let pair: FSPair
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(leftTitle)
-                    .font(.caption2).foregroundStyle(.tertiary)
-                Text(pair.left?.text ?? "—")
+        VStack(alignment: .leading, spacing: 4) {
+
+            // Line 1: left → right
+            HStack(spacing: 0) {
+                Text(pair.left ?? "—")
                     .font(.body.weight(.medium))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            Image(systemName: "arrow.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .padding(.horizontal, 12)
+                Image(systemName: "arrow.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 12)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(rightTitle)
-                    .font(.caption2).foregroundStyle(.tertiary)
-                Text(pair.right?.text ?? "—")
+                Text(pair.right ?? "—")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(pair.right != nil ? .primary : .tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Line 2: description (optional)
+            if let desc = pair.description, !desc.isEmpty {
+                Text(desc)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Line 3: sample (optional, italic)
+            if let sample = pair.sample, !sample.isEmpty {
+                Text(sample)
+                    .font(.subheadline.italic())
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Tag badge (optional)
+            if !pair.tag.isEmpty {
+                Text(pair.tag)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.12), in: Capsule())
+            }
         }
         .padding(.vertical, 2)
     }

@@ -11,19 +11,22 @@ import Foundation
 // MARK: - SetDeployStatus
 
 enum SetDeployStatus: String, Codable, CaseIterable {
-    case new        // создан локально, в Firebase нет
-    case ready      // помечен к деплою
-    case live       // синхронизирован с Firebase
-    case outdated   // был Live, внесены локальные изменения
+    case new      // создан локально, в Firebase нет
+    case draft    // изменён после публикации (автоматически)
+    case ready    // помечен к публикации вручную
+    case live     // синхронизирован с Firebase (автоматически после публикации)
+    case deleted  // мягкое удаление — только в Admin, в Firebase удалён
 
     var label: String {
         switch self {
-        case .new:      "New"
-        case .ready:    "Ready"
-        case .live:     "Live"
-        case .outdated: "Outdated"
+        case .new:     "New"
+        case .draft:   "Draft"
+        case .ready:   "Ready"
+        case .live:    "Live"
+        case .deleted: "Deleted"
         }
     }
+
 }
 
 // MARK: - FSCollection
@@ -55,6 +58,7 @@ struct FSCardSet: Codable, Identifiable, Hashable {
     var id:           String
     var collectionId: String
     var name:         String
+    var description:  String?        // optional set description shown in library
     var cefrLevel:    CEFRLevel
     var accessTier:   AccessTier
     var deployStatus: SetDeployStatus
@@ -62,12 +66,14 @@ struct FSCardSet: Codable, Identifiable, Hashable {
     var createdAt:    Date
 
     init(id: String, collectionId: String, name: String,
+         description: String? = nil,
          cefrLevel: CEFRLevel, accessTier: AccessTier,
          deployStatus: SetDeployStatus = .new,
          updatedAt: Date, createdAt: Date) {
         self.id           = id
         self.collectionId = collectionId
         self.name         = name
+        self.description  = description
         self.cefrLevel    = cefrLevel
         self.accessTier   = accessTier
         self.deployStatus = deployStatus
@@ -121,27 +127,26 @@ struct FSPairsSet: Codable, Identifiable {
     var id:           String
     var collectionId: String
     var title:        String?
-    var subtitle:     String?
-    var leftTitle:    String?
-    var rightTitle:   String?
-    var displayMode:  DisplayMode
+    var description:  String?        // optional set description shown in library
+    var cefrLevel:    CEFRLevel
     var accessTier:   AccessTier
+    var deployStatus: SetDeployStatus
     var items:        [FSPair]
     var updatedAt:    Date
     var createdAt:    Date
 
-    init(id: String, collectionId: String, title: String? = nil, subtitle: String? = nil,
-         leftTitle: String? = nil, rightTitle: String? = nil,
-         displayMode: DisplayMode, accessTier: AccessTier,
-         items: [FSPair], updatedAt: Date, createdAt: Date) {
+    init(id: String, collectionId: String, title: String? = nil,
+         description: String? = nil,
+         cefrLevel: CEFRLevel = .b2, accessTier: AccessTier = .free,
+         deployStatus: SetDeployStatus = .new,
+         items: [FSPair] = [], updatedAt: Date, createdAt: Date) {
         self.id           = id
         self.collectionId = collectionId
         self.title        = title
-        self.subtitle     = subtitle
-        self.leftTitle    = leftTitle
-        self.rightTitle   = rightTitle
-        self.displayMode  = displayMode
+        self.description  = description
+        self.cefrLevel    = cefrLevel
         self.accessTier   = accessTier
+        self.deployStatus = deployStatus
         self.items        = items
         self.updatedAt    = updatedAt
         self.createdAt    = createdAt
@@ -149,17 +154,58 @@ struct FSPairsSet: Codable, Identifiable {
 }
 
 // MARK: - FSPair
+//
+// Единица контента в PairsSet. Поля и правила отображения:
+//
+//   left        — основной термин/фраза (короткий, всегда видим)
+//   right       — контрпара/синоним   (короткий, в одну строку с left)
+//   description — определение/объяснение (полная ширина, новая строка)
+//   sample      — пример предложения    (полная ширина, новая строка)
+//   tag         — группа внутри сета (аналог Cards.tag, "" = без группы)
+//   leftTitle   — заголовок левой колонки для группы (только classic / pairs+sample)
+//   rightTitle  — заголовок правой колонки для группы (только classic / pairs+sample)
+//
+// Типы контента:
+//   classic:                 left – right – nil  – nil
+//   pairs + sample:          left – right – nil  – sample
+//   left-sample:             left – nil   – nil  – sample
+//   left-description-sample: left – nil   – desc – sample
+//
+// Заголовки колонок хранятся на уровне пары, а не сета:
+// разные группы внутри одного сета могут иметь разные заголовки.
+// В отображении берётся leftTitle/rightTitle первой пары группы.
 
 struct FSPair: Codable, Identifiable {
-    var id:    String
-    var left:  FSPairSide?
-    var right: FSPairSide?
-}
+    var id:          String
+    var left:        String?
+    var right:       String?
+    var description: String?
+    var sample:      String?
+    var tag:         String
+    var leftTitle:   String?      // заголовок левой колонки (на уровне группы)
+    var rightTitle:  String?      // заголовок правой колонки (на уровне группы)
+    var displayMode: DisplayMode  // parallel / sequential (на уровне группы)
 
-// MARK: - FSPairSide
+    init(id: String = UUID().uuidString,
+         left: String? = nil,
+         right: String? = nil,
+         description: String? = nil,
+         sample: String? = nil,
+         tag: String = "",
+         leftTitle: String? = nil,
+         rightTitle: String? = nil,
+         displayMode: DisplayMode = .parallel) {
+        self.id          = id
+        self.left        = left
+        self.right       = right
+        self.description = description
+        self.sample      = sample
+        self.tag         = tag
+        self.leftTitle   = leftTitle
+        self.rightTitle  = rightTitle
+        self.displayMode = displayMode
+    }
 
-struct FSPairSide: Codable {
-    var text: String?
 }
 
 // MARK: - FirestoreID

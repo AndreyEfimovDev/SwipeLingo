@@ -137,19 +137,25 @@ final class FlashCardsViewModel {
             cardSets.filter { !$0.isUserCreated }.map { ($0.id, $0.cefrLevel) }
         )
 
+        // cardSets — уже отфильтрованы по уровню пользователя (levelFilteredCardSets из View).
+        // Ограничиваем activeCards только карточками из этих сетов — иначе при понижении уровня
+        // в сессию попадали бы карточки выше текущего уровня пользователя.
+        let allowedSetIds = Set(cardSets.map(\.id))
+
         // Resolve active cards and shuffle method for the current pile.
         let activeCards: [Card]
         let shuffleMethod: ShuffleMethod
 
         if let activePile = piles.first(where: { $0.isActive }) {
             activePileName = activePile.name
-            activeCards    = pileService.activeCards(for: activePile, from: allCards)
+            let pileCards  = pileService.activeCards(for: activePile, from: allCards)
+            activeCards    = pileCards.filter { allowedSetIds.contains($0.setId) }
             shuffleMethod  = activePile.shuffleMethod
             pileTagsLine   = makePileTagsLine(pile: activePile, cardSets: cardSets,
                                               allCards: allCards, collections: collections)
         } else {
             activePileName = "All Cards"
-            activeCards    = allCards.filter { $0.status == .active }
+            activeCards    = allCards.filter { $0.status == .active && allowedSetIds.contains($0.setId) }
             shuffleMethod  = .random
             pileTagsLine   = ""
         }

@@ -9,8 +9,16 @@ struct PairsView: View {
 
     @Environment(AppViewModel.self) private var appViewModel
 
-    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets: [PairsSet]
-    @Query private var allPiles: [PairsPile]
+    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets:  [PairsSet]
+    @Query private var allPiles:   [PairsPile]
+    @Query private var profiles:   [UserProfile]
+
+    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+
+    /// Сеты ≤ уровня пользователя. Сеты выше уровня хранятся локально, но не показываются.
+    private var levelFilteredSets: [PairsSet] {
+        allSets.filter { $0.cefrLevel <= userLevel }
+    }
 
     @AppStorage("srsEnabled")           private var srsEnabled: Bool = true
     @AppStorage("pairsAnimationMode") private var animationMode: AnimationMode = .manual
@@ -22,8 +30,8 @@ struct PairsView: View {
     private var activePile: PairsPile? { allPiles.first { $0.isActive } }
 
     private var candidateSets: [PairsSet] {
-        if let pile = activePile { return service.sets(for: pile, from: allSets) }
-        return allSets
+        if let pile = activePile { return service.sets(for: pile, from: levelFilteredSets) }
+        return levelFilteredSets
     }
 
     private var dueSets: [PairsSet] {
@@ -40,7 +48,9 @@ struct PairsView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            VStack(spacing: 0) {
+                pileBadge
+                    .padding(.top, 8)
                 if candidateSets.isEmpty { emptyState } else { playScreen }
             }
             .navigationTitle("Pairs")
@@ -97,19 +107,141 @@ struct PairsView: View {
     private var playScreen: some View {
         VStack(spacing: 0) {
 
-            // Pile badge — кнопка, открывает библиотеку для смены pile
-            pileBadge
-                .padding(.top, 8)
-
-            Spacer()
+            // Preview: левая часть пар из активного pile/all sets (отступ сверху — за pileBadge)
+            previewContent
+                .padding(.top, 12)
 
             // [Auto/Manual] · [Play / Caught up] · [Due/All]
             mainRow
-
-            Spacer()
+                .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.myColors.myBackground.ignoresSafeArea())
+    }
+
+    // MARK: - Preview Content
+
+    /// Первые 12 пар из displayedSets: left виден, right — размытый.
+    /// Создаёт эффект «вижу структуру, но не могу прочитать ответы».
+    /// Первые 12 пар из displayedSets, сгруппированных по tag.
+    private var previewContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(previewGroups.enumerated()), id: \.offset) { groupIdx, group in
+                    // Разделитель между группами
+                    if groupIdx > 0 {
+                        Rectangle()
+                            .fill(Color.myColors.myAccent.opacity(0.08))
+                            .frame(height: 1)
+                            .frame(maxWidth: .infinity)
+                    }
+                    // Заголовок группы с серым фоном
+                    if !group.tag.isEmpty {
+                        Text(group.tag.uppercased())
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                            .padding(.bottom, 8)
+                            .background(Color.myColors.myAccent.opacity(0.04))
+                    }
+                    // Пары группы
+                    ForEach(Array(group.pairs.enumerated()), id: \.offset) { i, pair in
+                        previewRow(pair)
+                        if i < group.pairs.count - 1 {
+                            Divider()
+                                .padding(.horizontal, 16)
+                                .opacity(0.35)
+                        }
+                    }
+                }
+            }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+            .padding(.top, 30)
+        }
+        .scrollDisabled(true)
+        .mask(
+            LinearGradient(
+                stops: [
+                    .init(color: .black, location: 0.0),
+                    .init(color: .black, location: 0.5),
+                    .init(color: .clear, location: 1.0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func previewRow(_ pair: Pair) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            // Line 1: left [+ right]
+            HStack(spacing: 0) {
+                Text(pair.left ?? "—")
+                    .font(.body)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let right = pair.right {
+                    Rectangle()
+                        .fill(Color.myColors.myAccent.opacity(0.1))
+                        .frame(width: 1)
+                        .padding(.vertical, 2)
+
+                    Text(right)
+                        .font(.body)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 12)
+                }
+            }
+
+            // Line 2: description
+            if let desc = pair.description, !desc.isEmpty {
+                Text(desc)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.28))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Line 3: sample
+            if let sample = pair.sample, !sample.isEmpty {
+                Text(sample)
+                    .font(.subheadline.italic())
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.22))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+    }
+
+    private var previewGroups: [(tag: String, pairs: [Pair])] {
+        var result: [(tag: String, pairs: [Pair])] = []
+        var remaining = 12
+        for set in displayedSets {
+            var i = 0
+            while i < set.items.count && remaining > 0 {
+                let tag = set.items[i].tag
+                var groupPairs: [Pair] = []
+                while i < set.items.count && set.items[i].tag == tag && remaining > 0 {
+                    groupPairs.append(set.items[i])
+                    remaining -= 1
+                    i += 1
+                }
+                if !groupPairs.isEmpty {
+                    result.append((tag: tag, pairs: groupPairs))
+                }
+            }
+            if remaining <= 0 { break }
+        }
+        return result
     }
 
     // MARK: - Main Row
@@ -237,9 +369,6 @@ struct PairsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            pileBadge
-                .padding(.bottom, 8)
-
             Image(systemName: "square.stack")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.4))

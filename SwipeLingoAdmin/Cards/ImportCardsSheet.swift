@@ -281,9 +281,18 @@ struct ImportCardsSheet: View {
                 let end = min(idx + batchSize, drafts.count)
                 for i in idx..<end {
                     guard !Task.isCancelled else { break }
+                    let word = drafts[i].word
+                    let isPhrase = word.contains(" ")
+
+                    // Фразы: словарный lookup не имеет смысла — сразу done
+                    if isPhrase {
+                        await MainActor.run { drafts[i].enrichStatus = .done }
+                        continue
+                    }
+
                     await MainActor.run { drafts[i].enrichStatus = .enriching }
                     do {
-                        let entry = try await dictionaryService.lookup(word: drafts[i].word)
+                        let entry = try await dictionaryService.lookup(word: word)
                         await MainActor.run {
                             drafts[i].transcription = entry.transcription
                             if let example = entry.meanings.first?.definitions.first?.example {
@@ -323,7 +332,7 @@ struct ImportCardsSheet: View {
         currentLang   = first
         translationConfig = TranslationSession.Configuration(
             source: Locale.Language(identifier: "en"),
-            target: Locale.Language(identifier: first.langId)
+            target: Locale.Language(identifier: first.translationLocaleId)
         )
     }
 
@@ -368,7 +377,7 @@ struct ImportCardsSheet: View {
                 currentLang = nextLang
                 translationConfig = TranslationSession.Configuration(
                     source: Locale.Language(identifier: "en"),
-                    target: Locale.Language(identifier: nextLang.langId)
+                    target: Locale.Language(identifier: nextLang.translationLocaleId)
                 )
             } else {
                 isTranslating     = false

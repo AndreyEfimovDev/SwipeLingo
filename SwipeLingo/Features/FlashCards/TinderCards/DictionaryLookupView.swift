@@ -69,18 +69,21 @@ final class DictionaryLookupViewModel {
         translatedText: String? = nil,
         translatedExample: String? = nil
     ) {
-        var samplesEN   = card.sampleEN
-        var samplesItem = card.sampleItem
+        // Write to userSample* — preserved on Firestore sync (sampleEN/sampleItem are Firestore-managed).
+        var samplesEN   = card.userSampleEN
+        var samplesItem = card.userSampleItem
         var changed = false
 
-        if !samplesEN.contains(definition.text) {
+        let allEN = card.allSampleEN   // Firestore + user, for duplicate check
+
+        if !allEN.contains(definition.text) {
             samplesEN.append(definition.text)
             samplesItem.append(translatedText ?? "")
             changed = true
             log("[+] definition: \"\(definition.text.prefix(60))\"")
             if let t = translatedText { log("    translation: \"\(t.prefix(60))\"") }
         }
-        if let example = definition.example, !samplesEN.contains(example) {
+        if let example = definition.example, !allEN.contains(example) {
             samplesEN.append(example)
             samplesItem.append(translatedExample ?? "")
             changed = true
@@ -93,8 +96,8 @@ final class DictionaryLookupViewModel {
             return
         }
 
-        card.sampleEN   = samplesEN
-        card.sampleItem = samplesItem
+        card.userSampleEN   = samplesEN
+        card.userSampleItem = samplesItem
         save(context: context)
         addedItems.insert(definition.text)
     }
@@ -365,8 +368,8 @@ struct DictionaryLookupView: View {
 
             Spacer(minLength: 8)
 
-            // [+] adds the definition (+ example) to card.sampleEN / sampleItem with translation
-            let alreadyAdded = viewModel.addedItems.contains(definition.text) || card.sampleEN.contains(definition.text)
+            // [+] adds the definition (+ example) to card.userSampleEN / userSampleItem with translation
+            let alreadyAdded = viewModel.addedItems.contains(definition.text) || card.allSampleEN.contains(definition.text)
             Button {
                 Task {
                     let (translatedText, translatedExample) = await translate(definition)
