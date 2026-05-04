@@ -112,11 +112,13 @@ final class AdminStore {
         save()
     }
 
-    /// Восстанавливает мягко удалённый сет → .draft.
+    /// Восстанавливает мягко удалённый сет → предыдущий статус (или .live если неизвестен).
+    /// Fallback .live: soft-delete не трогает FB, значит после Restore сет там актуален.
     func restore(cardSetId: String) {
         guard let idx = cardSets.firstIndex(where: { $0.id == cardSetId }) else { return }
-        cardSets[idx].deployStatus = .draft
-        cardSets[idx].updatedAt   = .now
+        cardSets[idx].deployStatus         = cardSets[idx].previousDeployStatus ?? .live
+        cardSets[idx].previousDeployStatus = nil
+        cardSets[idx].updatedAt            = .now
         save()
     }
 
@@ -130,13 +132,13 @@ final class AdminStore {
         save()
     }
 
-    /// Удаляет CardSet из FB (если был .live) и полностью убирает из store.json.
+    /// Удаляет CardSet из FB (всегда пробуем — delete несуществующего doc в Firestore безопасен)
+    /// и полностью убирает из store.json.
     func deleteForever(cardSetId: String) async {
         isDeleting  = true
         deleteError = nil
-        let wasLive = cardSets.first(where: { $0.id == cardSetId })?.deployStatus == .live
         do {
-            if wasLive { try await FirestoreService().deleteCardSet(id: cardSetId) }
+            try await FirestoreService().deleteCardSet(id: cardSetId)
             cardSets.removeAll { $0.id == cardSetId }
             cards.removeAll    { $0.setId == cardSetId }
             save()
@@ -149,8 +151,9 @@ final class AdminStore {
 
     private func softDeleteCardSet(id: String) {
         guard let idx = cardSets.firstIndex(where: { $0.id == id }) else { return }
-        cardSets[idx].deployStatus = .deleted
-        cardSets[idx].updatedAt   = .now
+        cardSets[idx].previousDeployStatus = cardSets[idx].deployStatus
+        cardSets[idx].deployStatus         = .deleted
+        cardSets[idx].updatedAt            = .now
     }
 
     // MARK: - Cards
@@ -220,21 +223,23 @@ final class AdminStore {
         save()
     }
 
-    /// Восстанавливает мягко удалённый сет → .draft.
+    /// Восстанавливает мягко удалённый сет → предыдущий статус (или .live если неизвестен).
+    /// Fallback .live: soft-delete не трогает FB, значит после Restore сет там актуален.
     func restore(pairsSetId: String) {
         guard let idx = pairsSets.firstIndex(where: { $0.id == pairsSetId }) else { return }
-        pairsSets[idx].deployStatus = .draft
-        pairsSets[idx].updatedAt   = .now
+        pairsSets[idx].deployStatus         = pairsSets[idx].previousDeployStatus ?? .live
+        pairsSets[idx].previousDeployStatus = nil
+        pairsSets[idx].updatedAt            = .now
         save()
     }
 
-    /// Удаляет PairsSet из FB (если был .live) и полностью убирает из store.json.
+    /// Удаляет PairsSet из FB (всегда пробуем — delete несуществующего doc в Firestore безопасен)
+    /// и полностью убирает из store.json.
     func deleteForever(pairsSetId: String) async {
         isDeleting  = true
         deleteError = nil
-        let wasLive = pairsSets.first(where: { $0.id == pairsSetId })?.deployStatus == .live
         do {
-            if wasLive { try await FirestoreService().deletePairsSet(id: pairsSetId) }
+            try await FirestoreService().deletePairsSet(id: pairsSetId)
             pairsSets.removeAll { $0.id == pairsSetId }
             save()
         } catch {

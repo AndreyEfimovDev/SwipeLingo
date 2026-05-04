@@ -12,6 +12,7 @@ struct PairsListView: View {
 
     let setId:   String
     let setName: String
+    let onBack:  () -> Void
 
     @State private var showNewPair  = false
     @State private var showImport   = false
@@ -61,12 +62,33 @@ struct PairsListView: View {
         .navigationSubtitle("\(allItems.count) pairs")
         .toolbar {
             ToolbarItem(placement: .navigation) {
+                Button { onBack() } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .help("Back to sets")
+            }
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 8) {
+                    if let level = pairsSet?.cefrLevel {
+                        Text(level.displayCode)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(level.color, in: RoundedRectangle(cornerRadius: 5))
+                    }
+                    Text(setName)
+                        .font(.headline)
+                }
+                .padding(.horizontal)
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button {
                     showImport = true
                 } label: {
                     Label("Import", systemImage: "square.and.arrow.down")
                 }
-                .help("Import pairs from text")
+                .help("Batch import pairs from text")
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -74,7 +96,7 @@ struct PairsListView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .help("New pair")
+                .help("Add pair")
             }
         }
         .sheet(isPresented: $showImport) {
