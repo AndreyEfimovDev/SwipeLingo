@@ -1,23 +1,40 @@
 import SwiftUI
 import SwiftData
+import FirebaseCore
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+  func application(_ application: UIApplication,
+                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+    if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+        FirebaseApp.configure()
+        log("[Firebase] App configured", level: .info)
+    } else {
+        log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
+    }
+    return true
+  }
+}
+
 
 @main
 struct SwipeLingoApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
+    
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     private let appGroupID  = "group.PELSH.SwipeLingo"
     private let pendingKey  = "pendingInboxWords"
 
     let container: ModelContainer?
+    
+    // register app delegate for Firebase setup
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
         container = Self.makeContainer()
         if let ctx = container?.mainContext {
-            FirestoreImportService().importIfNeeded(into: ctx)
-            MockDataSeeder.ensureSystemCollections(into: ctx)
-            MockDataSeeder.ensureMockDevCollection(into: ctx)
-            MockDataSeeder.ensureMockPairsSets(into: ctx)
+            SystemSeeder.ensureSystemCollections(into: ctx)
         }
     }
 
@@ -31,7 +48,10 @@ struct SwipeLingoApp: App {
             PairsPile.self,
             UserProfile.self
         ])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let config = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false
+        )
         let storeURL = config.url
 
         do {
@@ -55,22 +75,34 @@ struct SwipeLingoApp: App {
         }
     }
 
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-
     var body: some Scene {
         WindowGroup {
-            if let container {
-                if hasCompletedOnboarding {
-                    AppView()
+            Group {
+                if let container {
+                    if hasCompletedOnboarding {
+                        AppView()
+                            .modelContainer(container)
+                    } else {
+                        OnboardingView {
+                            hasCompletedOnboarding = true
+                        }
                         .modelContainer(container)
-                } else {
-                    OnboardingView {
-                        hasCompletedOnboarding = true
                     }
-                    .modelContainer(container)
+                } else {
+                    DatabseErrorView()
                 }
-            } else {
-                DatabseErrorView()
+            }
+            // Syncs live Firestore content into SwiftData (idempotent via firestoreId).
+            // Skip on first launch (onboarding not done yet — no UserProfile, level unknown).
+            // On first launch the sync is triggered by .onChange below after onboarding.
+            .task {
+                if hasCompletedOnboarding { await firestoreSync() }
+            }
+            // After onboarding: UserProfile exists with correct cefrLevel → sync with right level.
+            .onChange(of: hasCompletedOnboarding) { _, completed in
+                if completed {
+                    Task { await firestoreSync() }
+                }
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -78,6 +110,25 @@ struct SwipeLingoApp: App {
                 drainInboxQueue()
             }
         }
+    }
+
+    // MARK: - Firestore sync
+
+    private func firestoreSync() async {
+        guard let ctx = container?.mainContext else { return }
+
+        let langRaw  = UserDefaults.standard.string(forKey: "nativeLanguage") ?? ""
+        let language = NativeLanguage(rawValue: langRaw) ?? .russian
+
+        // Уровень пользователя из UserProfile — определяет какие сеты загружать
+        let profiles  = ctx.fetchWithErrorHandling(FetchDescriptor<UserProfile>())
+        let userLevel = profiles.first?.cefrLevel ?? .c2  // c2 = загрузить всё если профиль не задан
+
+        await FirestoreImportService().syncFromFirestore(
+            into: ctx,
+            language: language,
+            upToLevel: userLevel
+        )
     }
 
     // MARK: - Share Extension inbox drain

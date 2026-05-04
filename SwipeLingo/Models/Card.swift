@@ -29,10 +29,12 @@ final class Card {
     var item: String = ""
 
     // Backing stores — String is fully CloudKit-compatible
-    private var sampleENRaw:   String = ""
-    private var sampleItemRaw: String = ""
-    private var tagsRaw:       String = ""
-    private var synonymsRaw:   String = ""
+    private var sampleENRaw:       String = ""
+    private var sampleItemRaw:     String = ""
+    private var userSampleENRaw:   String = ""  // user-added examples (preserved on Firestore sync)
+    private var userSampleItemRaw: String = ""
+    private var tagsRaw:           String = ""
+    private var synonymsRaw:       String = ""
 
     var status: CardStatus = CardStatus.active
     var isFavorite: Bool = false
@@ -62,6 +64,7 @@ final class Card {
     var updatedAt:  Date  = Date.epoch  // обновляется Admin Tool при публикации
     var importedAt: Date? = nil
     var setId:      UUID  = UUID()
+    var firestoreId: String? = nil      // Firestore document ID for sync deduplication
 
     // MARK: Computed [String] accessors (same public API as before)
 
@@ -74,6 +77,21 @@ final class Card {
         get { decodeArray(sampleItemRaw) }
         set { sampleItemRaw = encodeArray(newValue) }
     }
+
+    /// User-added examples from DictionaryLookupView — preserved on Firestore sync.
+    var userSampleEN: [String] {
+        get { decodeArray(userSampleENRaw) }
+        set { userSampleENRaw = encodeArray(newValue) }
+    }
+
+    var userSampleItem: [String] {
+        get { decodeArray(userSampleItemRaw) }
+        set { userSampleItemRaw = encodeArray(newValue) }
+    }
+
+    /// Combined Firestore + user examples for display.
+    var allSampleEN: [String]   { sampleEN + userSampleEN }
+    var allSampleItem: [String] { sampleItem + userSampleItem }
 
     var tags: [String] {
         get { decodeArray(tagsRaw) }
