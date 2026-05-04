@@ -26,16 +26,24 @@ struct PairsLibraryView: View {
     @AppStorage("nativeLanguage") private var nativeLangRaw: String = ""
     @Query private var profiles: [UserProfile]
 
-    @State private var showAllPiles = false
-    @State private var pileSheet: PairsPileSheet?
-    @State private var isSyncing = false
+    @State private var showAllPiles   = false
+    @State private var pileSheet:     PairsPileSheet?
+    @State private var isSyncing      = false
+    @State private var setToDelete:   PairsSet?
+    @State private var showDeleted    = false
+    @State private var setForNewPile: PairsSet?
+    @State private var newPileName    = ""
 
     // MARK: - Grouping helpers
 
     private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
 
     private func sets(for collection: Collection) -> [PairsSet] {
-        allSets.filter { $0.collectionId == collection.id && $0.cefrLevel <= userLevel }
+        allSets.filter { $0.collectionId == collection.id && $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
+    }
+
+    private var deletedSets: [PairsSet] {
+        allSets.filter { $0.isSoftDeleted }
     }
 
     /// Только коллекции с хотя бы одним сетом — скрываем пустые (кратковременно
@@ -48,6 +56,7 @@ struct PairsLibraryView: View {
     private var orphanedSets: [PairsSet] {
         let knownIds = Set(visiblePairsCollections.map(\.id))
         return allSets.filter { set in
+            guard !set.isSoftDeleted else { return false }
             guard let colId = set.collectionId else { return true }
             return !knownIds.contains(colId)
         }
@@ -58,6 +67,7 @@ struct PairsLibraryView: View {
             VStack(spacing: 24) {
                 pilesSection
                 setsSection
+                managingSection
             }
             .padding(.vertical, 16)
         }
@@ -93,6 +103,40 @@ struct PairsLibraryView: View {
             case .edit(let p):  PairsPileBuilderView(editingPile: p)
             }
         }
+        .confirmationDialog(
+            "Delete \"\(setToDelete?.title ?? "Set")\"?",
+            isPresented: Binding(
+                get: { setToDelete != nil },
+                set: { if !$0 { setToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Set", role: .destructive) {
+                if let set = setToDelete {
+                    set.isSoftDeleted = true
+                    context.saveWithErrorHandling()
+                    setToDelete = nil
+                }
+            }
+            Button("Cancel", role: .cancel) { setToDelete = nil }
+        } message: {
+            Text("The set will be hidden. You can restore it from Deleted Sets.")
+        }
+        .alert("New Pile", isPresented: Binding(
+            get: { setForNewPile != nil },
+            set: { if !$0 { setForNewPile = nil; newPileName = "" } }
+        )) {
+            TextField("Pile name", text: $newPileName)
+            Button("Create") {
+                if let set = setForNewPile { createNewPile(named: newPileName, with: set) }
+                setForNewPile = nil; newPileName = ""
+            }
+            Button("Cancel", role: .cancel) { setForNewPile = nil; newPileName = "" }
+        } message: {
+            if let set = setForNewPile {
+                Text("\"\(set.title ?? "Set")\" will be added to the new pile.")
+            }
+        }
     }
 
     // MARK: - Piles Section
@@ -126,7 +170,7 @@ struct PairsLibraryView: View {
             } else {
                 let activePile  = allPiles.first(where: { $0.isActive })
                 let sortedPiles = allPiles.sorted { $0.name.lowercased() < $1.name.lowercased() }
-                let showToggle  = allPiles.count > 1
+                let showToggle  = allPiles.count > 1 || (allPiles.count == 1 && activePile == nil)
 
                 VStack(spacing: 0) {
                     if showAllPiles {
@@ -239,7 +283,8 @@ struct PairsLibraryView: View {
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .padding(.horizontal, 32)
 
-            if allSets.isEmpty {
+            let nonDeletedSets = allSets.filter { !$0.isSoftDeleted }
+            if nonDeletedSets.isEmpty {
                 Text("No sets available")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
@@ -251,7 +296,7 @@ struct PairsLibraryView: View {
                     .padding(.horizontal, 16)
             } else if visiblePairsCollections.isEmpty {
                 // Нет коллекций с сетами — плоский список (резервный вариант)
-                flatSetsBlock(allSets)
+                flatSetsBlock(nonDeletedSets)
             } else {
                 // Сгруппировано по коллекциям
                 ForEach(visiblePairsCollections) { collection in
@@ -300,6 +345,9 @@ struct PairsLibraryView: View {
                         LibrarySetRow(set: set)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        setContextMenu(for: set)
+                    }
                 }
             }
         }
@@ -319,6 +367,9 @@ struct PairsLibraryView: View {
                     LibrarySetRow(set: set)
                 }
                 .buttonStyle(.plain)
+                .contextMenu {
+                    setContextMenu(for: set)
+                }
                 if set.id != items.last?.id {
                     Divider().padding(.leading, 16)
                 }
@@ -330,6 +381,131 @@ struct PairsLibraryView: View {
         .padding(.horizontal, 16)
     }
 
+    // MARK: - Managing Section
+
+    private var managingSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("MANAGING PAIRS")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.myColors.myAccent)
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 0) {
+                // Deleted Sets row (only when there are deleted sets)
+                if !deletedSets.isEmpty {
+                    deletedSetsRow
+
+                    if showDeleted {
+                        ForEach(deletedSets) { set in
+                            Divider().padding(.leading, 16)
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(set.title ?? "Untitled")
+                                        .font(.subheadline)
+                                        .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                                        .lineLimit(1)
+                                    CEFRBadgeView(level: set.cefrLevel)
+                                        .font(.caption.weight(.semibold))
+                                }
+                                Spacer()
+                                Button("Restore") {
+                                    set.isSoftDeleted = false
+                                    context.saveWithErrorHandling()
+                                }
+                                .font(.subheadline)
+                                .foregroundStyle(Color.myColors.myBlue)
+                                .buttonStyle(.borderless)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+                    }
+
+                    Divider().padding(.leading, 46)
+                }
+
+                Label("Share Pairs", systemImage: "square.and.arrow.up")
+                    .labelStyle(.fixedIcon)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+
+                Divider().padding(.leading, 46)
+
+                Label("Backup Pairs", systemImage: "arrow.clockwise.icloud")
+                    .labelStyle(.fixedIcon)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+            }
+            .foregroundStyle(Color.myColors.myAccent)
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    @ViewBuilder
+    private var deletedSetsRow: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) { showDeleted.toggle() }
+        } label: {
+            HStack {
+                Label {
+                    HStack(spacing: 0) {
+                        Text("Deleted Sets")
+                        Text(" (\(deletedSets.count))")
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    }
+                } icon: {
+                    Image(systemName: "trash")
+                }
+                .labelStyle(.fixedIcon)
+                .foregroundStyle(Color.myColors.myAccent)
+                Spacer()
+                Image(systemName: showDeleted ? "chevron.up" : "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myBlue)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Set Context Menu
+
+    @ViewBuilder
+    private func setContextMenu(for set: PairsSet) -> some View {
+        Menu {
+            ForEach(allPiles) { pile in
+                let inPile = pile.setIds.contains(set.id)
+                Button {
+                    toggleSet(set, in: pile)
+                } label: {
+                    Label(pile.name, systemImage: inPile ? "checkmark.circle" : "circle")
+                }
+                .disabled(inPile)
+            }
+            if !allPiles.isEmpty { Divider() }
+            Button {
+                setForNewPile = set
+            } label: {
+                Label("New Pile…", systemImage: "plus")
+            }
+        } label: {
+            Label("Add to Pile", systemImage: "square.stack.3d.up")
+        }
+
+        Button(role: .destructive) {
+            setToDelete = set
+        } label: {
+            Label("Delete Set", systemImage: "trash")
+        }
+    }
+
     // MARK: - Actions
 
     private func syncContent() async {
@@ -337,13 +513,32 @@ struct PairsLibraryView: View {
         defer { isSyncing = false }
         let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
         let level    = profiles.first?.cefrLevel ?? .c2
-        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level)
+        // Ручной sync = full sync: запускает orphan removal и гарантирует актуальность данных.
+        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level, forceFullSync: true)
     }
 
     private func activatePile(_ pile: PairsPile) {
         for p in allPiles { p.isActive = false }
         pile.isActive = true
         context.saveWithErrorHandling()
+    }
+
+    private func toggleSet(_ set: PairsSet, in pile: PairsPile) {
+        if pile.setIds.contains(set.id) {
+            pile.setIds.removeAll { $0 == set.id }
+        } else {
+            pile.setIds.append(set.id)
+        }
+        context.saveWithErrorHandling()
+    }
+
+    private func createNewPile(named name: String, with set: PairsSet) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        let pile = PairsPile(name: trimmed, setIds: [set.id])
+        context.insert(pile)
+        context.saveWithErrorHandling()
+        showAllPiles = true   // раскрыть список чтобы новый пайл был виден
     }
 }
 

@@ -36,7 +36,8 @@ struct LibraryView: View {
         defer { isSyncing = false }
         let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
         let level    = profiles.first?.cefrLevel ?? .c2
-        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level)
+        // Ручной sync = full sync: запускает orphan removal и гарантирует актуальность данных.
+        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level, forceFullSync: true)
     }
 
     private func setCount(for collection: Collection) -> Int {
@@ -56,7 +57,7 @@ struct LibraryView: View {
 
     private func setsForCollection(_ collection: Collection) -> [CardSet] {
         cardSets
-            .filter { $0.collectionId == collection.id && $0.cefrLevel <= userLevel }
+            .filter { $0.collectionId == collection.id && $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
             .filter { set in
                 let cards = allCards.filter { $0.setId == set.id }
                 return cards.isEmpty || cards.contains { $0.status != .deleted }
@@ -74,9 +75,17 @@ struct LibraryView: View {
 
     private func deleteSetWithCards(_ cardSet: CardSet) {
         let cards = allCards.filter { $0.setId == cardSet.id }
-        if cards.isEmpty {
-            context.delete(cardSet)
+        if cardSet.isUserCreated {
+            // User-created: hard-delete когда карточек нет, иначе soft-delete карточек
+            if cards.isEmpty {
+                context.delete(cardSet)
+            } else {
+                cards.forEach { $0.status = .deleted }
+            }
         } else {
+            // Curated: tombstone — сет остаётся в SwiftData, sync не будет его перезагружать.
+            // Карточки soft-deleted → появляются в Deleted Cards только с кнопкой Restore.
+            cardSet.isSoftDeleted = true
             cards.forEach { $0.status = .deleted }
         }
         context.saveWithErrorHandling()
@@ -88,6 +97,7 @@ struct LibraryView: View {
         let pile = Pile(name: trimmed, setIds: [set.id])
         context.insert(pile)
         context.saveWithErrorHandling()
+        showAllPiles = true   // раскрыть список чтобы новый пайл был виден
     }
 
     var body: some View {
@@ -249,7 +259,7 @@ struct LibraryView: View {
             } else {
                 let activePile   = piles.first(where: { $0.isActive })
                 let sortedPiles  = piles.sorted { $0.name.lowercased() < $1.name.lowercased() }
-                let showToggle   = piles.count > 1
+                let showToggle   = piles.count > 1 || (piles.count == 1 && activePile == nil)
 
                 VStack(spacing: 0) {
                     if showAllPiles {
@@ -536,6 +546,7 @@ struct LibraryView: View {
                     } label: {
                         Label(pile.name, systemImage: inPile ? "checkmark.circle" : "circle")
                     }
+                    .disabled(inPile)
                 }
                 if !piles.isEmpty { Divider() }
                 Button {
@@ -547,12 +558,10 @@ struct LibraryView: View {
                 Label("Add to Pile", systemImage: "square.stack.3d.up")
             }
 
-            if collection.isUserCreated {
-                Button(role: .destructive) {
-                    setToDelete = cardSet
-                } label: {
-                    Label("Delete Set", systemImage: "trash")
-                }
+            Button(role: .destructive) {
+                setToDelete = cardSet
+            } label: {
+                Label("Delete Set", systemImage: "trash")
             }
         }
     }
