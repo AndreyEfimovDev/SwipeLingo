@@ -1,85 +1,5 @@
 import SwiftUI
-
-// MARK: - AppViewModel
-
-@Observable
-final class AppViewModel {
-
-    private static let studyModeKey = "studyMode"
-
-    var studyMode: StudyMode {
-        didSet { UserDefaults.standard.set(studyMode.label, forKey: Self.studyModeKey) }
-    }
-    var activeSheet: AppSheet? = nil
-
-    init() {
-        let saved = UserDefaults.standard.string(forKey: Self.studyModeKey) ?? ""
-        studyMode = StudyMode.allCases.first { $0.label == saved } ?? .cards
-    }
-
-    // MARK: - StudyMode
-
-    enum StudyMode: String, CaseIterable {
-        case cards
-        case pairs
-
-        var icon: String {
-            switch self {
-            case .cards: return "rectangle.stack"
-            case .pairs: return "sparkles"
-            }
-        }
-
-        var label: String {
-            switch self {
-            case .cards: return "Cards"
-            case .pairs: return "Pairs"
-            }
-        }
-
-        var other: StudyMode {
-            switch self {
-            case .cards: return .pairs
-            case .pairs: return .cards
-            }
-        }
-    }
-
-    // MARK: - AppSheet
-
-    enum AppSheet: String, Identifiable {
-        case cardsLibrary
-        case pairsLibrary
-        case statistics
-        case settings
-
-        var id: String { rawValue }
-    }
-}
-
-// MARK: - Theme
-
-enum Theme: String, CaseIterable {
-    case light
-    case dark
-    case system
-
-    var displayName: String {
-        switch self {
-        case .light:  return "Light"
-        case .dark:   return "Dark"
-        case .system: return "System"
-        }
-    }
-
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .light:  return .light
-        case .dark:   return .dark
-        case .system: return nil
-        }
-    }
-}
+import SwiftData
 
 // MARK: - AppView
 
@@ -87,8 +7,13 @@ struct AppView: View {
 
     @State private var viewModel = AppViewModel()
     @AppStorage("colorScheme") private var theme: Theme = .system
+    @AppStorage("nativeLanguage") private var nativeLangRaw: String = ""
+    @Environment(\.modelContext) private var context
+    @Query private var profiles: [UserProfile]
 
-    init() { configureNavigationBarAppearance() }
+    init() {
+        configureNavigationBarAppearance()
+    }
 
     var body: some View {
         studyContent
@@ -99,6 +24,26 @@ struct AppView: View {
             .preferredColorScheme(theme.colorScheme)
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
+            .errorBanner()
+            // Re-sync when user raises their CEFR level.
+            // При ПОНИЖЕНИИ уровня данные уже есть локально — UI фильтрует по уровню мгновенно,
+            // sync не нужен.
+            // При ПОВЫШЕНИИ — нужен forceFullSync: true чтобы скачать контент нового уровня.
+            // (delta-запрос не подойдёт: новые сеты могут иметь updatedAt < lastSyncAt и не попадут в delta.)
+            .onChange(of: profiles.first?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
+                let oldLevel = CEFRLevel(rawValue: oldLevelRaw ?? "") ?? .c2
+                let newLevel = CEFRLevel(rawValue: newLevelRaw ?? "") ?? .c2
+                guard newLevel > oldLevel else { return }   // понижение — sync не нужен
+                let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
+                Task {
+                    await FirestoreImportService().syncFromFirestore(
+                        into: context,
+                        language: language,
+                        upToLevel: newLevel,
+                        forceFullSync: true
+                    )
+                }
+            }
     }
 
     // MARK: - Study Content
@@ -116,8 +61,8 @@ struct AppView: View {
     @ViewBuilder
     private func sheetView(for sheet: AppViewModel.AppSheet) -> some View {
         switch sheet {
-        case .cardsLibrary: LibraryView()
-        case .pairsLibrary: NavigationStack { PairsLibraryView() }
+        case .cardsLibrary: LibraryView()                          .errorBanner()
+        case .pairsLibrary: NavigationStack { PairsLibraryView() } .errorBanner()
         case .statistics:   StatisticsView()
         case .settings:     SettingsView()
         }

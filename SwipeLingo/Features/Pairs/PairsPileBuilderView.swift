@@ -140,13 +140,12 @@ struct PairsPileBuilderView: View {
         }
 
         ToolbarItem(placement: .confirmationAction) {
-            Button("Save") {
+            Button(viewModel.editingPile == nil ? "Create" : "Save") {
                 viewModel.saveAndActivate(context: context, allPiles: allPiles)
                 dismiss()
             }
             .disabled(!viewModel.canSave)
-            .font(.subheadline.weight(viewModel.canSave ? .semibold : .regular))
-            .foregroundStyle(viewModel.canSave ? Color.myColors.myGreen : Color.myColors.myAccent.opacity(0.4))
+            .foregroundStyle(viewModel.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
         }
 
         if viewModel.editingPile != nil {
@@ -167,7 +166,7 @@ struct PairsPileBuilderView: View {
         guard !searchText.isEmpty else { return allSets }
         return allSets.filter {
             ($0.title ?? "").localizedCaseInsensitiveContains(searchText) ||
-            ($0.subtitle ?? "").localizedCaseInsensitiveContains(searchText)
+            ($0.setDescription ?? "").localizedCaseInsensitiveContains(searchText)
         }
     }
 }

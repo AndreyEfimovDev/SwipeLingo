@@ -233,12 +233,12 @@ struct PileBuilderView: View {
         }
 
         ToolbarItem(placement: .confirmationAction) {
-            Button("Save") {
+            Button(viewModel.editingPile == nil ? "Create" : "Save") {
                 viewModel.saveAndActivate(context: context, allPiles: allPiles)
                 dismiss()
             }
             .disabled(!viewModel.canSave)
-            .foregroundStyle(viewModel.canSave ? Color.myColors.myGreen : Color.myAccent.opacity(0.8))
+            .foregroundStyle(viewModel.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
         }
         if viewModel.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {
