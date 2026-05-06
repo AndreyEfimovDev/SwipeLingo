@@ -1,17 +1,12 @@
 import SwiftUI
 import SwiftData
 import FirebaseCore
+import GoogleSignIn
+import FirebaseAuth
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-  func application(_ application: UIApplication,
-                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
-        FirebaseApp.configure()
-        log("[Firebase] App configured", level: .info)
-    } else {
-        log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
-    }
-    return true
+  func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    GIDSignIn.sharedInstance.handle(url)
   }
 }
 
@@ -27,11 +22,36 @@ struct SwipeLingoApp: App {
     private let pendingKey  = "pendingInboxWords"
 
     let container: ModelContainer?
-    
+
+    @State private var authService: AuthService
+    @State private var userService: UserService
+
     // register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
+        // Firebase must be configured before AuthService initializes Auth.auth()
+        if FirebaseApp.app() == nil {
+            if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+                FirebaseApp.configure()
+                log("[Firebase] App configured", level: .info)
+            } else {
+                log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
+            }
+        }
+
+        // Fresh install detection: UserDefaults is wiped on reinstall, Keychain is not.
+        // If this is the first launch ever recorded, sign out any stale Keychain token
+        // so the user goes through onboarding + auth from scratch.
+        let launchedBefore = UserDefaults.standard.bool(forKey: Constants.StorageKey.appEverLaunched)
+        if !launchedBefore {
+            try? Auth.auth().signOut()
+            UserDefaults.standard.set(true, forKey: Constants.StorageKey.appEverLaunched)
+            log("[App] Fresh install detected — Keychain token cleared", level: .info)
+        }
+
+        _authService = State(initialValue: AuthService())
+        _userService = State(initialValue: UserService())
         container = Self.makeContainer()
         if let ctx = container?.mainContext {
             SystemSeeder.ensureSystemCollections(into: ctx)
@@ -57,6 +77,8 @@ struct SwipeLingoApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
+#warning("STUB: Replace with SchemaMigrationPlan before App Store release.")
+
             // NSCocoaErrorDomain Code=134110 → schema mismatch.
             // TODO: Replace with SchemaMigrationPlan before App Store release.
             log("ModelContainer failed: \(error)", level: .error)
@@ -78,15 +100,27 @@ struct SwipeLingoApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if let container {
-                    if hasCompletedOnboarding {
-                        AppView()
-                            .modelContainer(container)
-                    } else {
+                if authService.isLoading {
+                    Color.myColors.myBackground.ignoresSafeArea()
+                } else if let container {
+                    if !hasCompletedOnboarding {
+                        // Onboarding handles auth internally (step 4)
                         OnboardingView {
                             hasCompletedOnboarding = true
                         }
                         .modelContainer(container)
+                        .environment(authService)
+                        .environment(userService)
+                    } else if !authService.isAuthenticated {
+                        // Signed out after onboarding → standalone auth screen
+                        AuthView()
+                            .environment(authService)
+                            .environment(userService)
+                    } else {
+                        AppView()
+                            .modelContainer(container)
+                            .environment(authService)
+                            .environment(userService)
                     }
                 } else {
                     DatabseErrorView()
@@ -104,10 +138,26 @@ struct SwipeLingoApp: App {
                     Task { await firestoreSync() }
                 }
             }
+            // Create/update Firestore user doc on sign-in; sync subscription from Firestore.
+            .onChange(of: authService.currentUser) { _, user in
+                guard let user else { return }
+                Task {
+                    let langRaw = UserDefaults.standard.string(forKey: Constants.StorageKey.nativeLanguage) ?? ""
+                    let ctx = container?.mainContext
+                    let profiles = ctx?.fetchWithErrorHandling(FetchDescriptor<UserProfile>()) ?? []
+                    let cefrRaw = profiles.first?.cefrLevel.rawValue ?? ""
+                    await userService.createOrUpdateUser(user, nativeLanguage: langRaw, cefrLevel: cefrRaw)
+                    await userService.syncSubscription(for: user.uid)
+                }
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 drainInboxQueue()
+                // Re-sync subscription on each foreground to catch server-side changes.
+                if let uid = authService.currentUser?.uid {
+                    Task { await userService.syncSubscription(for: uid) }
+                }
             }
         }
     }
