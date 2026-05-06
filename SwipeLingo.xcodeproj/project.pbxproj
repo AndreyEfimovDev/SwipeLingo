@@ -56,6 +56,9 @@
 		4787293E2FA9D9A7001282EF /* SwipeLingoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4787293B2FA9D9A7001282EF /* SwipeLingoUITests.swift */; };
 		4787293F2FA9D9A7001282EF /* SwipeLingoUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4787293C2FA9D9A7001282EF /* SwipeLingoUITestsLaunchTests.swift */; };
 		478729412FA9D9D4001282EF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 478729402FA9D9D4001282EF /* GoogleService-Info.plist */; };
+		478729452FAA0DD4001282EF /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729442FAA0DD4001282EF /* Constants.swift */; };
+		478729482FAB7331001282EF /* UserFirestoreDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729462FAB7331001282EF /* UserFirestoreDocument.swift */; };
+		478729492FAB7331001282EF /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729472FAB7331001282EF /* UserService.swift */; };
 		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		478C784F2F794487005FBDFE /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppViewModel.swift */; };
 		478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78122F794487005FBDFE /* SwipeLingoApp.swift */; };
@@ -226,6 +229,9 @@
 		4787293C2FA9D9A7001282EF /* SwipeLingoUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		478729402FA9D9D4001282EF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		478729422FA9DB46001282EF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		478729442FAA0DD4001282EF /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		478729462FAB7331001282EF /* UserFirestoreDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFirestoreDocument.swift; sourceTree = "<group>"; };
+		478729472FAB7331001282EF /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
 		478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwipeLingoShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		478C78112F794487005FBDFE /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		478C78122F794487005FBDFE /* SwipeLingoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoApp.swift; sourceTree = "<group>"; };
@@ -640,6 +646,7 @@
 		478C784E2F794487005FBDFE /* SwipeLingo */ = {
 			isa = PBXGroup;
 			children = (
+				478729442FAA0DD4001282EF /* Constants.swift */,
 				478C78132F794487005FBDFE /* App */,
 				47D2803E2F96A97300BBD66B /* Firebase */,
 				478C781F2F794487005FBDFE /* CustomFeatures */,
@@ -694,6 +701,8 @@
 		47D2803E2F96A97300BBD66B /* Firebase */ = {
 			isa = PBXGroup;
 			children = (
+				478729462FAB7331001282EF /* UserFirestoreDocument.swift */,
+				478729472FAB7331001282EF /* UserService.swift */,
 				478728FA2FA9D3FD001282EF /* AuthService.swift */,
 				478C78472F794487005FBDFE /* FirestoreImportService.swift */,
 			);
@@ -923,6 +932,7 @@
 				47EF10022F8531C20049858B /* PairsSetContentView.swift in Sources */,
 				47C09A592F8531C20049858B /* PairsPileBuilderViewModel.swift in Sources */,
 				474F1FEA2F7DAA9F00128E83 /* OnTopButton.swift in Sources */,
+				478729452FAA0DD4001282EF /* Constants.swift in Sources */,
 				474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */,
 				478C784F2F794487005FBDFE /* AppViewModel.swift in Sources */,
 				478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */,
@@ -953,6 +963,8 @@
 				478C78622F794487005FBDFE /* PileBuilderViewModel.swift in Sources */,
 				478C78632F794487005FBDFE /* SettingsView.swift in Sources */,
 				478C78642F794487005FBDFE /* VoiceSettingsView.swift in Sources */,
+				478729482FAB7331001282EF /* UserFirestoreDocument.swift in Sources */,
+				478729492FAB7331001282EF /* UserService.swift in Sources */,
 				478C78652F794487005FBDFE /* StatisticsView.swift in Sources */,
 				478C78662F794487005FBDFE /* DictionaryLookupView.swift in Sources */,
 				47DE7F922F844EF700F6BCF3 /* PairsVerticalToggle.swift in Sources */,

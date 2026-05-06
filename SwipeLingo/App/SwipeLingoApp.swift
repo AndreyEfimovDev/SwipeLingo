@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import FirebaseCore
 import GoogleSignIn
+import FirebaseAuth
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
@@ -23,6 +24,7 @@ struct SwipeLingoApp: App {
     let container: ModelContainer?
 
     @State private var authService: AuthService
+    @State private var userService: UserService
 
     // register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
@@ -38,6 +40,7 @@ struct SwipeLingoApp: App {
             }
         }
         _authService = State(initialValue: AuthService())
+        _userService = State(initialValue: UserService())
         container = Self.makeContainer()
         if let ctx = container?.mainContext {
             SystemSeeder.ensureSystemCollections(into: ctx)
@@ -91,17 +94,20 @@ struct SwipeLingoApp: App {
                 } else if !authService.isAuthenticated {
                     AuthView()
                         .environment(authService)
+                        .environment(userService)
                 } else if let container {
                     if hasCompletedOnboarding {
                         AppView()
                             .modelContainer(container)
                             .environment(authService)
+                            .environment(userService)
                     } else {
                         OnboardingView {
                             hasCompletedOnboarding = true
                         }
                         .modelContainer(container)
                         .environment(authService)
+                        .environment(userService)
                     }
                 } else {
                     DatabseErrorView()
@@ -119,10 +125,26 @@ struct SwipeLingoApp: App {
                     Task { await firestoreSync() }
                 }
             }
+            // Create/update Firestore user doc on sign-in; sync subscription from Firestore.
+            .onChange(of: authService.currentUser) { _, user in
+                guard let user else { return }
+                Task {
+                    let langRaw = UserDefaults.standard.string(forKey: Constants.StorageKey.nativeLanguage) ?? ""
+                    let ctx = container?.mainContext
+                    let profiles = ctx?.fetchWithErrorHandling(FetchDescriptor<UserProfile>()) ?? []
+                    let cefrRaw = profiles.first?.cefrLevel.rawValue ?? ""
+                    await userService.createOrUpdateUser(user, nativeLanguage: langRaw, cefrLevel: cefrRaw)
+                    await userService.syncSubscription(for: user.uid)
+                }
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 drainInboxQueue()
+                // Re-sync subscription on each foreground to catch server-side changes.
+                if let uid = authService.currentUser?.uid {
+                    Task { await userService.syncSubscription(for: uid) }
+                }
             }
         }
     }
