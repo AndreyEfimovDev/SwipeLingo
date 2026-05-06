@@ -19,9 +19,7 @@ final class FlashCardsViewModel {
 
     private(set) var studyCards: [Card] = []
     /// Card IDs that show locked back (paywall preview exceeded).
-    /// Future: paywallPreviewCount fetched from Firebase Remote Config.
     private(set) var lockedCardIds: Set<UUID> = []
-    private let paywallPreviewCount = 8
     private(set) var contextLabels: [UUID: String] = [:]
     private(set) var cefrLabels: [UUID: CEFRLevel] = [:]
     private(set) var activePileName: String = ""
@@ -196,12 +194,14 @@ final class FlashCardsViewModel {
     }
 
     private func computeLockedCards(cardSets: [CardSet], userPlan: AccessTier) {
-        var locked = Set<UUID>()
-        let cardsBySet = Dictionary(grouping: studyCards, by: \.setId)
-        for (setId, cards) in cardsBySet {
-            guard let cardSet = cardSets.first(where: { $0.id == setId }),
-                  !userPlan.canAccess(cardSet.accessTier) else { continue }
-            locked.formUnion(cards.dropFirst(paywallPreviewCount).map(\.id))
+        let setIndex = Dictionary(uniqueKeysWithValues: cardSets.map { ($0.id, $0) })
+        var paidSeen = 0
+        var locked   = Set<UUID>()
+        for card in studyCards {
+            guard let set = setIndex[card.setId],
+                  !userPlan.canAccess(set.accessTier) else { continue }
+            paidSeen += 1
+            if paidSeen > Constants.paywallPreviewLimit { locked.insert(card.id) }
         }
         lockedCardIds = locked
     }
