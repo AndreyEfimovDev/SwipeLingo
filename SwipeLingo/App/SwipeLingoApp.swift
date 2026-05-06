@@ -39,6 +39,17 @@ struct SwipeLingoApp: App {
                 log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
             }
         }
+
+        // Fresh install detection: UserDefaults is wiped on reinstall, Keychain is not.
+        // If this is the first launch ever recorded, sign out any stale Keychain token
+        // so the user goes through onboarding + auth from scratch.
+        let launchedBefore = UserDefaults.standard.bool(forKey: Constants.StorageKey.appEverLaunched)
+        if !launchedBefore {
+            try? Auth.auth().signOut()
+            UserDefaults.standard.set(true, forKey: Constants.StorageKey.appEverLaunched)
+            log("[App] Fresh install detected — Keychain token cleared", level: .info)
+        }
+
         _authService = State(initialValue: AuthService())
         _userService = State(initialValue: UserService())
         container = Self.makeContainer()
@@ -91,23 +102,25 @@ struct SwipeLingoApp: App {
             Group {
                 if authService.isLoading {
                     Color.myColors.myBackground.ignoresSafeArea()
-                } else if !authService.isAuthenticated {
-                    AuthView()
-                        .environment(authService)
-                        .environment(userService)
                 } else if let container {
-                    if hasCompletedOnboarding {
-                        AppView()
-                            .modelContainer(container)
-                            .environment(authService)
-                            .environment(userService)
-                    } else {
+                    if !hasCompletedOnboarding {
+                        // Onboarding handles auth internally (step 4)
                         OnboardingView {
                             hasCompletedOnboarding = true
                         }
                         .modelContainer(container)
                         .environment(authService)
                         .environment(userService)
+                    } else if !authService.isAuthenticated {
+                        // Signed out after onboarding → standalone auth screen
+                        AuthView()
+                            .environment(authService)
+                            .environment(userService)
+                    } else {
+                        AppView()
+                            .modelContainer(container)
+                            .environment(authService)
+                            .environment(userService)
                     }
                 } else {
                     DatabseErrorView()

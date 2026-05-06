@@ -2,16 +2,30 @@ import SwiftUI
 import AuthenticationServices
 
 // MARK: - AuthView
+// Used in two contexts:
+//   • Standalone — shown after sign-out (no cancel, no guest option)
+//   • Sheet from ProfileView — isDismissible: true (Cancel button, no guest option)
+// "Continue as Guest" lives only in OnboardingAuthView.
 
 struct AuthView: View {
 
+    /// When true, shows a Cancel button that dismisses the sheet.
+    var isDismissible: Bool = false
+
     @Environment(AuthService.self) private var authService
+    @Environment(\.dismiss) private var dismiss
 
     @State private var mode: AuthMode = .signIn
     @State private var email = ""
     @State private var password = ""
     @State private var errorMessage: String? = nil
     @State private var isLoading = false
+
+    private var isEmailValid: Bool {
+        let parts = email.split(separator: "@", omittingEmptySubsequences: true)
+        return parts.count == 2 && (parts.last?.contains(".") == true)
+    }
+    private var canSubmit: Bool { isEmailValid && !password.isEmpty }
 
     var body: some View {
         ZStack {
@@ -47,14 +61,22 @@ struct AuthView: View {
                     Spacer().frame(height: 24)
 
                     socialButtons
-
-                    Spacer().frame(height: 32)
-
-                    anonymousButton
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 60)
+                .padding(.top, isDismissible ? 24 : 60)
                 .padding(.bottom, 40)
+            }
+        }
+        .if(isDismissible) { view in
+            NavigationStack {
+                view
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Cancel") { dismiss() }
+                                .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                        }
+                    }
             }
         }
     }
@@ -82,7 +104,7 @@ struct AuthView: View {
                 .keyboardType(.emailAddress)
                 .textContentType(.emailAddress)
                 .autocapitalization(.none)
-                .textInputStyle()
+                .textInputStyle(invalid: !email.isEmpty && !isEmailValid)
 
             SecureField("Password", text: $password)
                 .textContentType(mode == .signIn ? .password : .newPassword)
@@ -113,8 +135,8 @@ struct AuthView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
-        .disabled(isLoading || email.isEmpty || password.isEmpty)
-        .opacity(email.isEmpty || password.isEmpty ? 0.6 : 1)
+        .disabled(isLoading || !canSubmit)
+        .opacity(canSubmit ? 1 : 0.6)
         .padding(.bottom, 12)
     }
 
@@ -200,21 +222,6 @@ struct AuthView: View {
         .disabled(isLoading)
     }
 
-    // MARK: - Anonymous
-
-    private var anonymousButton: some View {
-        Button {
-            Task { await signInAnonymously() }
-        } label: {
-            Text("Continue as Guest")
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
-                .underline()
-        }
-        .buttonStyle(.plain)
-        .disabled(isLoading)
-    }
-
     // MARK: - Actions
 
     private func submitEmailPassword() async {
@@ -257,18 +264,6 @@ struct AuthView: View {
             log("[Auth] Apple Sign-In failed: \(error)", level: .error)
         }
     }
-
-    private func signInAnonymously() async {
-        errorMessage = nil
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            try await authService.signInAnonymously()
-        } catch {
-            errorMessage = error.localizedDescription
-            log("[Auth] Anonymous Sign-In failed: \(error)", level: .error)
-        }
-    }
 }
 
 // MARK: - AuthMode
@@ -280,7 +275,7 @@ private enum AuthMode {
 // MARK: - TextInput Style
 
 private extension View {
-    func textInputStyle() -> some View {
+    func textInputStyle(invalid: Bool = false) -> some View {
         self
             .padding(.horizontal, 16)
             .frame(height: 52)
@@ -288,7 +283,10 @@ private extension View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.myColors.myAccent.opacity(0.2), lineWidth: 1)
+                    .stroke(
+                        invalid ? Color.myColors.myRed.opacity(0.6) : Color.myColors.myAccent.opacity(0.2),
+                        lineWidth: invalid ? 1.5 : 1
+                    )
             )
             .foregroundStyle(Color.myColors.myAccent)
     }

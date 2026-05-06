@@ -59,6 +59,7 @@
 		478729452FAA0DD4001282EF /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729442FAA0DD4001282EF /* Constants.swift */; };
 		478729482FAB7331001282EF /* UserFirestoreDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729462FAB7331001282EF /* UserFirestoreDocument.swift */; };
 		478729492FAB7331001282EF /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729472FAB7331001282EF /* UserService.swift */; };
+		4787294B2FAB7CBB001282EF /* OnboardingAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4787294A2FAB7CBB001282EF /* OnboardingAuthView.swift */; };
 		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		478C784F2F794487005FBDFE /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppViewModel.swift */; };
 		478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78122F794487005FBDFE /* SwipeLingoApp.swift */; };
@@ -232,6 +233,7 @@
 		478729442FAA0DD4001282EF /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		478729462FAB7331001282EF /* UserFirestoreDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFirestoreDocument.swift; sourceTree = "<group>"; };
 		478729472FAB7331001282EF /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
+		4787294A2FAB7CBB001282EF /* OnboardingAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAuthView.swift; sourceTree = "<group>"; };
 		478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwipeLingoShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		478C78112F794487005FBDFE /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		478C78122F794487005FBDFE /* SwipeLingoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoApp.swift; sourceTree = "<group>"; };
@@ -663,6 +665,7 @@
 		47C099F52F84F0B80049858B /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				4787294A2FAB7CBB001282EF /* OnboardingAuthView.swift */,
 				47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */,
 				47C099F32F84F0B80049858B /* OnboardingView.swift */,
 				47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */,
@@ -955,6 +958,7 @@
 				47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */,
 				47C09A8E2F853D8B0049858B /* DisplayMode.swift in Sources */,
 				47C09A492F8531910049858B /* PairsSet.swift in Sources */,
+				4787294B2FAB7CBB001282EF /* OnboardingAuthView.swift in Sources */,
 				478C785D2F794487005FBDFE /* CardSetDetailView.swift in Sources */,
 				478C785E2F794487005FBDFE /* CollectionDetailView.swift in Sources */,
 				478C785F2F794487005FBDFE /* DeletedCardsView.swift in Sources */,
