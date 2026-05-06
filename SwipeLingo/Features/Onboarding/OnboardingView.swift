@@ -16,7 +16,7 @@ struct OnboardingView: View {
     @State private var step: Int = 0
     @State private var goingForward = true
 
-    private let totalSteps = 5
+    private let totalSteps = 6
 
     var body: some View {
         ZStack {
@@ -40,6 +40,9 @@ struct OnboardingView: View {
                             .transition(stepTransition)
                     case 3:
                         OnboardingLevelView(onNext: { next() }, onBack: { back() })
+                            .transition(stepTransition)
+                    case 4:
+                        OnboardingAuthView(onNext: { next() })
                             .transition(stepTransition)
                     default:
                         OnboardingConfirmView(onComplete: onComplete, onBack: { back() })
@@ -75,8 +78,8 @@ struct OnboardingView: View {
 
             Spacer()
 
-            // Dots — только для шагов настройки (1–3), не на intro и финале
-            if step > 0 && step < totalSteps - 1 {
+            // Dots — только для шагов настройки (1–3), не на intro, auth и финале
+            if step > 0 && step < 4 {
                 progressDots
             }
 
