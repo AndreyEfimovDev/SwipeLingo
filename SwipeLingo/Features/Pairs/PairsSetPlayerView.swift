@@ -70,7 +70,7 @@ struct PairsSetPlayerView: View {
     /// чтобы waitForAudio/waitForAudioThenPause не думали что аудио уже закончилось
     @State private var isRightSpeechPending: Bool = false
     
-    private let previewPairCount = 5          // пар с полным доступом для preview
+    private var previewPairCount: Int { Constants.paywallPreviewLimit }
     
     private var isPaywalled: Bool { !userPlan.canAccess(set.accessTier) }
     
@@ -392,7 +392,7 @@ struct PairsSetPlayerView: View {
         let rightVisible  = thresh.rightStep.map  { revealedSteps >= $0 } ?? false
         let descVisible   = thresh.descStep.map   { revealedSteps >= $0 } ?? false
         let sampleVisible = thresh.sampleStep.map { revealedSteps >= $0 } ?? false
-        let rightLocked   = isPaywalled && index >= previewPairCount
+        let isLocked      = isPaywalled && index >= previewPairCount
 
         VStack(alignment: .leading, spacing: 0) {
 
@@ -408,7 +408,7 @@ struct PairsSetPlayerView: View {
                         .frame(width: 1)
                         .padding(.vertical, 8)
 
-                    if rightLocked {
+                    if isLocked {
                         lockedCell(visible: rightVisible)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
@@ -424,12 +424,20 @@ struct PairsSetPlayerView: View {
 
             // Line 2: description
             if pair.description != nil {
-                cellTextSecondary(pair.description, visible: descVisible, isItalic: false)
+                if isLocked {
+                    lockedCellSecondary(visible: descVisible)
+                } else {
+                    cellTextSecondary(pair.description, visible: descVisible, isItalic: false)
+                }
             }
 
             // Line 3: sample
             if pair.sample != nil {
-                cellTextSecondary(pair.sample, visible: sampleVisible, isItalic: true)
+                if isLocked {
+                    lockedCellSecondary(visible: sampleVisible)
+                } else {
+                    cellTextSecondary(pair.sample, visible: sampleVisible, isItalic: true)
+                }
             }
 
             if index < set.items.count - 1 {
@@ -455,6 +463,29 @@ struct PairsSetPlayerView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+        .opacity(visible ? 1 : 0)
+        .offset(y: visible ? 0 : 6)
+    }
+
+    @ViewBuilder
+    private func lockedCellSecondary(visible: Bool) -> some View {
+        Button {
+            pauseForUpgrade()
+            showPlans = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "lock.fill")
+                    .font(.caption2)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
+                Text("Upgrade to unlock")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myBlue.opacity(0.8))
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
         .opacity(visible ? 1 : 0)
@@ -852,21 +883,21 @@ struct PairsSetPlayerView: View {
         for (index, thresh) in thresholds.enumerated() {
             guard index < set.items.count else { continue }
             let pair = set.items[index]
-            let rightLocked = isPaywalled && index >= previewPairCount
+            let isLocked = isPaywalled && index >= previewPairCount
 
             if thresh.leftStep == revealedSteps {
                 // Left step (sequential) OR shared left+right step (parallel)
                 primaryText = pair.left
                 // Parallel: leftStep == rightStep → queue right as secondary
-                if thresh.rightStep == revealedSteps, !rightLocked {
+                if thresh.rightStep == revealedSteps, !isLocked {
                     secondaryText = pair.right
                 }
-            } else if thresh.rightStep == revealedSteps, !rightLocked {
+            } else if thresh.rightStep == revealedSteps, !isLocked {
                 // Sequential: right on its own step
                 primaryText = pair.right
-            } else if thresh.descStep == revealedSteps {
+            } else if thresh.descStep == revealedSteps, !isLocked {
                 primaryText = pair.description
-            } else if thresh.sampleStep == revealedSteps {
+            } else if thresh.sampleStep == revealedSteps, !isLocked {
                 primaryText = pair.sample
             }
         }

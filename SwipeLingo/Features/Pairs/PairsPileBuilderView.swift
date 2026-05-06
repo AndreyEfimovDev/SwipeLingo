@@ -15,7 +15,8 @@ struct PairsPileBuilderView: View {
 
     @State private var viewModel: PairsPileBuilderViewModel
     @State private var isShowingDeleteConfirm = false
-    @State private var searchText = ""
+    @State private var searchText   = ""
+    @State private var selectedLevel: CEFRLevel? = nil
 
     init(editingPile: PairsPile? = nil) {
         _viewModel = State(initialValue: PairsPileBuilderViewModel(editingPile: editingPile))
@@ -26,12 +27,13 @@ struct PairsPileBuilderView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     nameSection
+                    shuffleSection
                     setsSection
                 }
                 .padding(.vertical, 16)
             }
             .safeAreaInset(edge: .top, spacing: 0) {
-                searchHeader
+                setsFilterHeader
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle(viewModel.editingPile == nil ? "New Pile" : "Edit Pile")
@@ -74,23 +76,110 @@ struct PairsPileBuilderView: View {
         }
     }
 
-    // MARK: - Search Header
+    // MARK: - Shuffle Section
 
-    private var searchHeader: some View {
-        SearchBar(text: $searchText, prompt: "Search sets")
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background {
-                LinearGradient(
-                    gradient: Gradient(stops: [
-                        .init(color: Color.myColors.myBackground.opacity(0.01), location: 0.0),
-                        .init(color: Color.myColors.myBackground.opacity(0.95), location: 0.3),
-                        .init(color: Color.myColors.myBackground,               location: 1.0)
-                    ]),
-                    startPoint: .bottom,
-                    endPoint: .top
-                )
+    private var shuffleSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("SHUFFLE METHOD")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 0) {
+                shuffleRow(.random,     icon: "shuffle",     name: "Random")
+                Divider().padding(.leading, 52)
+                shuffleRow(.sequential, icon: "arrow.down",  name: "Sequential")
             }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+
+            Text(shuffleFooter)
+                .font(.footnote)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                .padding(.horizontal, 32)
+        }
+    }
+
+    private func shuffleRow(_ method: ShuffleMethod, icon: String, name: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .frame(width: 28)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            Text(name)
+                .font(.body)
+            Spacer()
+            if viewModel.shuffleMethod == method {
+                Image(systemName: "checkmark")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+        .onTapGesture { viewModel.shuffleMethod = method }
+    }
+
+    private var shuffleFooter: String {
+        switch viewModel.shuffleMethod {
+        case .random:      return "Sets appear in a random order every session."
+        case .sequential:  return "Sets appear in the order they were added."
+        case .prioritized: return "Hardest sets appear first."
+        }
+    }
+
+    // MARK: - Sets Filter Header
+
+    private var setsFilterHeader: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                levelPill(nil, label: "All")
+                ForEach(availableLevels, id: \.self) { level in
+                    levelPill(level, label: level.displayCode)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+
+            SearchBar(text: $searchText, prompt: "Search sets")
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+        }
+        .background {
+            LinearGradient(
+                gradient: Gradient(stops: [
+                    .init(color: Color.myColors.myBackground.opacity(0.01), location: 0.0),
+                    .init(color: Color.myColors.myBackground.opacity(0.95), location: 0.3),
+                    .init(color: Color.myColors.myBackground,               location: 1.0)
+                ]),
+                startPoint: .bottom,
+                endPoint: .top
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func levelPill(_ level: CEFRLevel?, label: String) -> some View {
+        let isActive = selectedLevel == level
+        Button { selectedLevel = level } label: {
+            Text(label)
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(isActive ? Color.myColors.myBlue : Color.myColors.myBackground)
+                .foregroundStyle(isActive ? Color.white : Color.myColors.myAccent)
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(
+                    isActive ? Color.clear : Color.myColors.myAccent.opacity(0.25),
+                    lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .animation(.easeInOut(duration: 0.15), value: selectedLevel)
     }
 
     // MARK: - Sets
@@ -162,11 +251,16 @@ struct PairsPileBuilderView: View {
 
     // MARK: - Helpers
 
+    private var availableLevels: [CEFRLevel] {
+        let levels = Set(allSets.map { $0.cefrLevel })
+        return CEFRLevel.allCases.filter { levels.contains($0) }
+    }
+
     private var filteredSets: [PairsSet] {
-        guard !searchText.isEmpty else { return allSets }
-        return allSets.filter {
-            ($0.title ?? "").localizedCaseInsensitiveContains(searchText) ||
-            ($0.setDescription ?? "").localizedCaseInsensitiveContains(searchText)
+        allSets.filter { set in
+            let matchesLevel  = selectedLevel == nil || set.cefrLevel == selectedLevel
+            let matchesSearch = searchText.isEmpty   || (set.title ?? "").localizedCaseInsensitiveContains(searchText)
+            return matchesLevel && matchesSearch
         }
     }
 }
@@ -202,6 +296,8 @@ private struct PairsSetToggleRow: View {
             }
 
             Spacer()
+
+            CEFRBadgeView(level: set.cefrLevel)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
