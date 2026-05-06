@@ -1,17 +1,11 @@
 import SwiftUI
 import SwiftData
 import FirebaseCore
+import GoogleSignIn
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-  func application(_ application: UIApplication,
-                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
-        FirebaseApp.configure()
-        log("[Firebase] App configured", level: .info)
-    } else {
-        log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
-    }
-    return true
+  func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    GIDSignIn.sharedInstance.handle(url)
   }
 }
 
@@ -27,11 +21,23 @@ struct SwipeLingoApp: App {
     private let pendingKey  = "pendingInboxWords"
 
     let container: ModelContainer?
-    
+
+    @State private var authService: AuthService
+
     // register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
+        // Firebase must be configured before AuthService initializes Auth.auth()
+        if FirebaseApp.app() == nil {
+            if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+                FirebaseApp.configure()
+                log("[Firebase] App configured", level: .info)
+            } else {
+                log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
+            }
+        }
+        _authService = State(initialValue: AuthService())
         container = Self.makeContainer()
         if let ctx = container?.mainContext {
             SystemSeeder.ensureSystemCollections(into: ctx)
@@ -57,6 +63,8 @@ struct SwipeLingoApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
+#warning("STUB: Replace with SchemaMigrationPlan before App Store release.")
+
             // NSCocoaErrorDomain Code=134110 → schema mismatch.
             // TODO: Replace with SchemaMigrationPlan before App Store release.
             log("ModelContainer failed: \(error)", level: .error)
@@ -78,15 +86,22 @@ struct SwipeLingoApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if let container {
+                if authService.isLoading {
+                    Color.myColors.myBackground.ignoresSafeArea()
+                } else if !authService.isAuthenticated {
+                    AuthView()
+                        .environment(authService)
+                } else if let container {
                     if hasCompletedOnboarding {
                         AppView()
                             .modelContainer(container)
+                            .environment(authService)
                     } else {
                         OnboardingView {
                             hasCompletedOnboarding = true
                         }
                         .modelContainer(container)
+                        .environment(authService)
                     }
                 } else {
                     DatabseErrorView()
