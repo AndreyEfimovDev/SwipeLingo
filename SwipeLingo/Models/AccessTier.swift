@@ -48,12 +48,12 @@ enum AccessTier: String, Codable, CaseIterable {
             "Your own flashcards",
             "Free content sets",
             "Spaced repetition (SRS)",
-            "8-card preview of Go & Pro sets",
+            "\(Constants.paywallPreviewLimit)-item preview of Go & Pro sets",
         ]
         case .go: return [
             "Everything in Free",
             "Full access to all Go sets",
-            "8-card preview of Pro sets",
+            "\(Constants.paywallPreviewLimit)-item preview of Pro sets",
         ]
         case .pro: return [
             "Everything in Go",

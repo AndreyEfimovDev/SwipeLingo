@@ -16,7 +16,6 @@ private func decodeUUIDs(_ raw: String) -> [UUID] {
 
 // MARK: - PairsPile
 // Именованная подборка PairsSet-ов для раздела Pairs.
-// Без shuffleMethod — сеты воспроизводятся в заданном порядке.
 // Только один pile может быть isActive в каждый момент.
 
 @Model
@@ -24,6 +23,7 @@ final class PairsPile {
     var id: UUID
     var name: String
     private var setIdsRaw: String
+    var shuffleMethodRaw: String
     var isActive: Bool
     var createdAt: Date
     var updatedAt: Date
@@ -33,19 +33,26 @@ final class PairsPile {
         set { setIdsRaw = encodeUUIDs(newValue) }
     }
 
+    var shuffleMethod: ShuffleMethod {
+        get { ShuffleMethod(rawValue: shuffleMethodRaw) ?? .random }
+        set { shuffleMethodRaw = newValue.rawValue }
+    }
+
     init(
         id: UUID = UUID(),
         name: String,
         setIds: [UUID] = [],
+        shuffleMethod: ShuffleMethod = .random,
         isActive: Bool = false,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
-        self.id         = id
-        self.name       = name
-        self.setIdsRaw  = encodeUUIDs(setIds)
-        self.isActive   = isActive
-        self.createdAt  = createdAt
-        self.updatedAt  = updatedAt
+        self.id               = id
+        self.name             = name
+        self.setIdsRaw        = encodeUUIDs(setIds)
+        self.shuffleMethodRaw = shuffleMethod.rawValue
+        self.isActive         = isActive
+        self.createdAt        = createdAt
+        self.updatedAt        = updatedAt
     }
 }

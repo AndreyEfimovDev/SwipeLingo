@@ -8,6 +8,13 @@ struct PlansView: View {
 
     @AppStorage("userPlan") private var userPlan: AccessTier = .free
     @Environment(\.dismiss) private var dismiss
+    @Environment(AuthService.self)  private var authService
+    @Environment(UserService.self)  private var userService
+
+    @State private var selectedPlan: AccessTier = .free
+    @State private var isSaving = false
+    @State private var showAuth = false
+    @State private var showTrialUsedAlert = false
 
     var body: some View {
         NavigationStack {
@@ -27,10 +34,6 @@ struct PlansView: View {
                         .font(.caption2)
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
                         .padding(.top, 4)
-
-                    Button("Restore Purchases") { }
-                        .font(.footnote)
-                        .foregroundStyle(Color.myColors.myBlue)
                         .padding(.bottom, 16)
                 }
                 .padding(.horizontal, 16)
@@ -40,22 +43,73 @@ struct PlansView: View {
             .navigationTitle("Plans")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .font(.body)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                        .disabled(isSaving)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                    Group {
+                        if isSaving {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .tint(Color.myColors.myBlue)
+                        } else {
+                            let isCancellation = selectedPlan == .free && userPlan != .free
+                            Button(isCancellation ? "Cancel Plan" : "Save") {
+                                Task { await save() }
+                            }
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(selectedPlan == userPlan
+                                ? Color.myColors.myAccent.opacity(0.3)
+                                : isCancellation ? Color.myColors.myRed : Color.myColors.myBlue)
+                            .disabled(selectedPlan == userPlan)
+                        }
                     }
                 }
             }
+            .onAppear { selectedPlan = userPlan }
+            .alert("Trial Already Used", isPresented: $showTrialUsedAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("You've already used your free trial. To continue, choose a paid plan.")
+            }
+            .sheet(isPresented: $showAuth) {
+                AuthView(isDismissible: true)
+                    .environment(authService)
+                    .onChange(of: authService.isAnonymous) { _, isAnon in
+                        if !isAnon { showAuth = false }
+                    }
+            }
         }
+    }
+
+    private func save() async {
+        // Trial requires a real account — prompt anonymous users to sign in first
+        if selectedPlan != .free && userPlan == .free && authService.isAnonymous {
+            showAuth = true
+            return
+        }
+        isSaving = true
+        defer { isSaving = false }
+        if let uid = authService.currentUser?.uid {
+            let success = await userService.updateSubscription(plan: selectedPlan, for: uid)
+            if !success {
+                showTrialUsedAlert = true
+                return
+            }
+        } else {
+            userPlan = selectedPlan
+        }
+        dismiss()
     }
 
     // MARK: - Plan Card
 
     private func planCard(_ plan: AccessTier) -> some View {
-        let isSelected = userPlan == plan
-        return Button { userPlan = plan } label: {
+        let isSelected = selectedPlan == plan
+        return Button { selectedPlan = plan } label: {
             VStack(alignment: .leading, spacing: 12) {
 
                 // Header row
@@ -70,6 +124,11 @@ struct PlansView: View {
                         Text(plan.priceLabel)
                             .font(.subheadline)
                             .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                        if plan != .free && userPlan == .free {
+                            Text("\(Constants.trialDurationDays)-day free trial")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.myColors.myGreen)
+                        }
                     }
                     Spacer()
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
