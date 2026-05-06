@@ -55,6 +55,7 @@ enum Constants {
     // MARK: - AppStorage Keys
 
     enum StorageKey {
+        static let appEverLaunched        = "appEverLaunched"     // fresh install detection
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let userPlan               = "userPlan"
         static let cachedPlanExpiry       = "cachedPlanExpiry"    // TimeInterval (Date)
