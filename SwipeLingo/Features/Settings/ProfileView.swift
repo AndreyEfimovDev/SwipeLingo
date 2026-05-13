@@ -12,9 +12,13 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var context
     @Environment(AuthService.self) private var authService
 
-    @State private var showAuth    = false
-    @State private var showPlans   = false
-    @State private var didCopyUID  = false
+    @State private var showAuth          = false
+    @State private var showPlans         = false
+    @State private var didCopyUID        = false
+    @State private var showDeleteConfirm   = false
+    @State private var isDeletingAccount   = false
+    @State private var isResendingVerification = false
+    @State private var verificationSent    = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -22,6 +26,7 @@ struct ProfileView: View {
         ScrollView {
             VStack(spacing: 16) {
                 nameSection
+                emailVerificationBanner
                 accountSection
                 planSection
                 levelSection
@@ -33,6 +38,7 @@ struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if profiles.isEmpty { context.insert(UserProfile()) }
+            Task { await authService.reloadUser() }
         }
         .onDisappear {
             context.saveWithErrorHandling()
@@ -46,6 +52,71 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showPlans) {
             PlansView()
+        }
+        .alert("Delete Account", isPresented: $showDeleteConfirm) {
+            Button("Delete", role: .destructive) { Task { await deleteAccount() } }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Your account and all associated data will be permanently deleted. This cannot be undone.")
+        }
+    }
+
+    // MARK: - Email Verification Banner
+
+    @ViewBuilder
+    private var emailVerificationBanner: some View {
+        let user = authService.currentUser
+        let needsVerification = !(user?.isAnonymous ?? true)
+            && !(user?.isEmailVerified ?? true)
+            && user?.email != nil
+
+        if needsVerification {
+            HStack(spacing: 12) {
+                Image(systemName: "envelope.badge")
+                    .font(.title3)
+                    .foregroundStyle(Color.myColors.myOrange)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Verify your email")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myAccent)
+                    Text(user?.email ?? "")
+                        .font(.caption)
+                        .foregroundStyle(Color.myColors.mySecondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Button {
+                    Task { await resendVerification() }
+                } label: {
+                    if isResendingVerification {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(Color.myColors.myBlue)
+                            .frame(width: 44)
+                    } else {
+                        Text(verificationSent ? "Sent ✓" : "Resend")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(verificationSent
+                                ? Color.myColors.myGreen
+                                : Color.myColors.myBlue)
+                            .frame(width: 44)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(isResendingVerification || verificationSent)
+            }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 60)
+            .background(Color.myColors.myOrange.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.myColors.myOrange.opacity(0.25), lineWidth: 1)
+            )
+            .padding(.horizontal, 16)
         }
     }
 
@@ -180,6 +251,31 @@ struct ProfileView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+
+                    Divider().padding(.leading, 56)
+
+                    Button { showDeleteConfirm = true } label: {
+                        HStack(spacing: 12) {
+                            if isDeletingAccount {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .frame(width: 28, height: 28)
+                            } else {
+                                Image(systemName: "person.crop.circle.badge.minus")
+                                    .font(.title2)
+                                    .foregroundStyle(Color.myColors.myRed.opacity(0.7))
+                            }
+                            Text("Delete Account")
+                                .font(.body)
+                                .foregroundStyle(Color.myColors.myRed.opacity(0.7))
+                            Spacer()
+                        }
+                        .frame(height: 52)
+                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isDeletingAccount)
                 }
             }
             .background(Color.myColors.myBackground)
@@ -276,6 +372,29 @@ struct ProfileView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Actions
+
+    private func resendVerification() async {
+        isResendingVerification = true
+        defer { isResendingVerification = false }
+        do {
+            try await authService.sendEmailVerification()
+            withAnimation { verificationSent = true }
+        } catch {
+            log("[ProfileView] sendEmailVerification failed: \(error)", level: .error)
+        }
+    }
+
+    private func deleteAccount() async {
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+        do {
+            try await authService.deleteAccount()
+        } catch {
+            log("[ProfileView] deleteAccount failed: \(error)", level: .error)
         }
     }
 }

@@ -20,6 +20,8 @@ struct AuthView: View {
     @State private var password = ""
     @State private var errorMessage: String? = nil
     @State private var isLoading = false
+    @State private var showResetConfirm = false
+    @State private var showResetSent = false
 
     private var isEmailValid: Bool {
         let parts = email.split(separator: "@", omittingEmptySubsequences: true)
@@ -38,6 +40,16 @@ struct AuthView: View {
                     Spacer().frame(height: 40)
 
                     emailPasswordSection
+
+                    if mode == .signIn && isEmailValid {
+                        HStack {
+                            Spacer()
+                            Button("Forgot password?") { showResetConfirm = true }
+                                .font(.footnote)
+                                .foregroundStyle(Color.myColors.myBlue.opacity(0.8))
+                        }
+                        .padding(.top, 4)
+                    }
 
                     Spacer().frame(height: 16)
 
@@ -66,6 +78,17 @@ struct AuthView: View {
                 .padding(.top, isDismissible ? 24 : 60)
                 .padding(.bottom, 40)
             }
+        }
+        .alert("Reset Password", isPresented: $showResetConfirm) {
+            Button("Send Link") { Task { await sendReset() } }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("A password reset link will be sent to \(email).")
+        }
+        .alert("Email Sent", isPresented: $showResetSent) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Check your inbox and follow the link to reset your password.")
         }
         .if(isDismissible) { view in
             NavigationStack {
@@ -249,6 +272,16 @@ struct AuthView: View {
         } catch {
             errorMessage = error.localizedDescription
             log("[Auth] Google Sign-In failed: \(error)", level: .error)
+        }
+    }
+
+    private func sendReset() async {
+        errorMessage = nil
+        do {
+            try await authService.sendPasswordReset(email: email)
+            showResetSent = true
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
