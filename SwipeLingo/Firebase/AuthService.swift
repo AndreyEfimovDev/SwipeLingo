@@ -63,8 +63,14 @@ final class AuthService {
 
     /// Reloads Firebase user to pick up fresh isEmailVerified status.
     func reloadUser() async {
-        try? await Auth.auth().currentUser?.reload()
-        currentUser = Auth.auth().currentUser
+        guard Auth.auth().currentUser != nil else { return }
+        do {
+            try await Auth.auth().currentUser?.reload()
+            currentUser = Auth.auth().currentUser
+        } catch {
+            // Transient error (network, token refresh) — keep existing session intact
+            log("[AuthService] reloadUser failed, keeping session: \(error.localizedDescription)", level: .warning)
+        }
     }
 
     // MARK: - Google
