@@ -6,8 +6,8 @@ import SwiftData
 struct AppView: View {
 
     @State private var viewModel = AppViewModel()
-    @AppStorage("colorScheme") private var theme: Theme = .system
-    @AppStorage("nativeLanguage") private var nativeLangRaw: String = ""
+    @AppStorage(Constants.StorageKey.colorScheme) private var theme: Theme = .system
+    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
     @Environment(\.modelContext) private var context
     @Query private var profiles: [UserProfile]
 

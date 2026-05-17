@@ -82,13 +82,22 @@ final class UserService {
                   let doc = try? snapshot.data(as: UserFirestoreDocument.self)
             else { return }
 
-            let sub    = doc.subscription
-            let plan   = AccessTier(rawValue: sub.plan)   ?? .free
-            let status = SubscriptionStatus(rawValue: sub.status) ?? .active
+            let sub          = doc.subscription
+            let plan         = AccessTier(rawValue: sub.plan)          ?? .free
+            let status       = SubscriptionStatus(rawValue: sub.status) ?? .active
+            let billingCycle = BillingCycle(rawValue: sub.billingCycle) ?? .none
             // Trial uses trialEndDate as expiry; paid uses endDate
             let expiry = status == .trial ? sub.trialEndDate : sub.endDate
 
-            cachePlan(plan, status: status, expiry: expiry)
+            cachePlan(plan, status: status, expiry: expiry, billingCycle: billingCycle)
+
+            if let pendingRaw = sub.pendingPlan, let pendingPlan = AccessTier(rawValue: pendingRaw) {
+                let pendingCycle = sub.pendingBillingCycle.flatMap { BillingCycle(rawValue: $0) } ?? .none
+                cachePending(plan: pendingPlan, billingCycle: pendingCycle)
+            } else {
+                clearPending()
+            }
+
             log("[UserService] Subscription synced: \(plan.rawValue) / \(status.rawValue)", level: .info)
 
         } catch {
@@ -142,14 +151,111 @@ final class UserService {
 
     // MARK: - Update subscription
 
-    /// Writes the plan change to Firestore and updates local cache.
-    /// DEBUG stub — no real payment. Replace with server-side write after StoreKit integration.
-    ///
-    /// Logic:
-    ///   Free → Paid  : 7-day Pro trial (Constants.trialDurationDays), pendingPlan=selectedPlan
-    ///   Paid → Paid  : direct activation, status=active, endDate=now+1yr
-    ///   Paid → Free  : cancel — status=cancelled, plan+endDate unchanged
-    /// Returns false if trial was already used (Firestore has a prior trialEndDate).
+    /// Simulated purchase: activates subscription, writes PaymentRecord + PlanHistoryRecord to Firestore.
+    /// cardLast4 — last 4 digits of the fake card.
+    @discardableResult
+    func purchaseSubscription(
+        plan: AccessTier,
+        billingCycle: BillingCycle,
+        amount: Double,
+        cardLast4: String,
+        currency: String = "USD",
+        for uid: String
+    ) async -> Bool {
+        let currentPlanRaw = UserDefaults.standard.string(forKey: Constants.StorageKey.userPlan) ?? AccessTier.free.rawValue
+        let currentPlan    = AccessTier(rawValue: currentPlanRaw) ?? .free
+
+        let now      = Date()
+        let days: Double = billingCycle == .monthly ? 30 : 365
+        let endDate  = now.addingTimeInterval(days * 86_400)
+
+        let ref = db.collection("users").document(uid)
+
+        let subscriptionUpdate: [String: Any] = [
+            "subscription.plan":                plan.rawValue,
+            "subscription.billingCycle":        billingCycle.rawValue,
+            "subscription.status":              SubscriptionStatus.active.rawValue,
+            "subscription.startDate":           Timestamp(date: now),
+            "subscription.endDate":             Timestamp(date: endDate),
+            "subscription.trialEndDate":        NSNull(),
+            "subscription.amount":              amount,
+            "subscription.currency":            currency,
+            "subscription.pendingPlan":         NSNull(),
+            "subscription.pendingBillingCycle": NSNull(),
+            "updatedAt":                        Timestamp(date: now)
+        ]
+
+        let reason: String
+        if currentPlan == .free      { reason = "upgrade" }
+        else if plan.rank > currentPlan.rank { reason = "upgrade" }
+        else if plan.rank < currentPlan.rank { reason = "downgrade" }
+        else                         { reason = "cycle_change" }
+
+        let paymentId = UUID().uuidString
+        let payment   = PaymentRecord(
+            id: paymentId, date: now, amount: amount, currency: currency,
+            plan: plan.rawValue, billingCycle: billingCycle.rawValue,
+            paymentMethod: "card", last4: cardLast4,
+            status: PaymentStatus.success.rawValue
+        )
+
+        let historyId = UUID().uuidString
+        let history   = PlanHistoryRecord(
+            id: historyId, date: now,
+            fromPlan: currentPlan.rawValue, toPlan: plan.rawValue, reason: reason
+        )
+
+        do {
+            try await ref.updateData(subscriptionUpdate)
+            try ref.collection("paymentHistory").document(paymentId).setData(from: payment)
+            try ref.collection("planHistory").document(historyId).setData(from: history)
+            cachePlan(plan, status: .active, expiry: endDate, billingCycle: billingCycle)
+            clearPending()
+            log("[UserService] Subscription purchased: \(plan.rawValue)/\(billingCycle.rawValue)", level: .info)
+            return true
+        } catch {
+            log("[UserService] purchaseSubscription failed: \(error)", level: .error)
+            return false
+        }
+    }
+
+    /// Loads payment history from Firestore, sorted newest first.
+    func loadPaymentHistory(for uid: String) async -> [PaymentRecord] {
+        do {
+            let snap = try await db.collection("users").document(uid)
+                .collection("paymentHistory")
+                .order(by: "date", descending: true)
+                .getDocuments()
+            return snap.documents.compactMap { try? $0.data(as: PaymentRecord.self) }
+        } catch {
+            log("[UserService] loadPaymentHistory failed: \(error)", level: .error)
+            return []
+        }
+    }
+
+    /// Schedules a downgrade — keeps current plan active until endDate, sets pending to new plan/cycle.
+    func scheduleDowngrade(plan: AccessTier, billingCycle: BillingCycle, for uid: String) async {
+        let data: [String: Any] = [
+            "subscription.pendingPlan":         plan.rawValue,
+            "subscription.pendingBillingCycle": billingCycle.rawValue,
+            "updatedAt":                        Timestamp(date: Date())
+        ]
+        do {
+            try await db.collection("users").document(uid).updateData(data)
+            cachePending(plan: plan, billingCycle: billingCycle)
+            log("[UserService] Downgrade scheduled → \(plan.rawValue)/\(billingCycle.rawValue)", level: .info)
+        } catch {
+            log("[UserService] scheduleDowngrade failed: \(error)", level: .error)
+        }
+    }
+
+    /// Cancels subscription — keeps access until endDate, updates status to cancelled.
+    func cancelSubscription(for uid: String) async {
+        let currentPlanRaw = UserDefaults.standard.string(forKey: Constants.StorageKey.userPlan) ?? AccessTier.free.rawValue
+        let currentPlan    = AccessTier(rawValue: currentPlanRaw) ?? .free
+        await cancelSubscription(for: uid, currentPlan: currentPlan)
+    }
+
     @discardableResult
     func updateSubscription(plan: AccessTier, for uid: String) async -> Bool {
         let currentPlanRaw = UserDefaults.standard.string(forKey: Constants.StorageKey.userPlan) ?? AccessTier.free.rawValue
@@ -168,7 +274,7 @@ final class UserService {
     // Trial always gives Pro access to showcase full feature set.
     // pendingPlan records what the user intends to pay for after trial.
     // Returns false if trial was already used (trialEndDate exists in Firestore).
-    private func startTrial(pendingPlan: AccessTier, for uid: String) async -> Bool {
+    func startTrial(pendingPlan: AccessTier, for uid: String) async -> Bool {
         let ref = db.collection("users").document(uid)
         do {
             let snapshot = try await ref.getDocument()
@@ -226,7 +332,7 @@ final class UserService {
         }
     }
 
-    private func cancelSubscription(for uid: String, currentPlan: AccessTier) async {
+    func cancelSubscription(for uid: String, currentPlan: AccessTier) async {
         // Keep plan + endDate intact — user retains access until expiry.
         // Only update status and pendingPlan.
         let data: [String: Any] = [
@@ -241,6 +347,7 @@ final class UserService {
             let expiryTS = UserDefaults.standard.double(forKey: Constants.StorageKey.cachedPlanExpiry)
             let expiry   = expiryTS > 0 ? Date(timeIntervalSince1970: expiryTS) : nil
             cachePlan(currentPlan, status: .cancelled, expiry: expiry)
+            cachePending(plan: .free, billingCycle: .none)
             log("[UserService] Subscription cancelled — access until \(expiry?.description ?? "unknown")", level: .info)
         } catch {
             log("[UserService] cancelSubscription failed: \(error)", level: .error)
@@ -263,14 +370,22 @@ final class UserService {
 
     // MARK: - Local cache
 
-    private func cachePlan(_ plan: AccessTier, status: SubscriptionStatus, expiry: Date?) {
-        UserDefaults.standard.set(plan.rawValue,   forKey: Constants.StorageKey.userPlan)
-        UserDefaults.standard.set(status.rawValue, forKey: Constants.StorageKey.cachedPlanStatus)
+    private func cachePending(plan: AccessTier, billingCycle: BillingCycle) {
+        UserDefaults.standard.set(plan.rawValue,         forKey: Constants.StorageKey.cachedPendingPlan)
+        UserDefaults.standard.set(billingCycle.rawValue, forKey: Constants.StorageKey.cachedPendingCycle)
+    }
+
+    private func clearPending() {
+        UserDefaults.standard.removeObject(forKey: Constants.StorageKey.cachedPendingPlan)
+        UserDefaults.standard.removeObject(forKey: Constants.StorageKey.cachedPendingCycle)
+    }
+
+    private func cachePlan(_ plan: AccessTier, status: SubscriptionStatus, expiry: Date?, billingCycle: BillingCycle = .none) {
+        UserDefaults.standard.set(plan.rawValue,          forKey: Constants.StorageKey.userPlan)
+        UserDefaults.standard.set(status.rawValue,        forKey: Constants.StorageKey.cachedPlanStatus)
+        UserDefaults.standard.set(billingCycle.rawValue,  forKey: Constants.StorageKey.cachedBillingCycle)
         if let expiry {
-            UserDefaults.standard.set(
-                expiry.timeIntervalSince1970,
-                forKey: Constants.StorageKey.cachedPlanExpiry
-            )
+            UserDefaults.standard.set(expiry.timeIntervalSince1970, forKey: Constants.StorageKey.cachedPlanExpiry)
         } else {
             UserDefaults.standard.removeObject(forKey: Constants.StorageKey.cachedPlanExpiry)
         }

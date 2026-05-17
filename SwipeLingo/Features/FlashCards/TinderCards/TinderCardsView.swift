@@ -9,9 +9,9 @@ struct TinderCardsView: View {
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
     @Environment(AppViewModel.self)    private var appViewModel
     
-    @AppStorage("ttsVoiceIdentifier")   private var ttsVoiceIdentifier  = ""
-    @AppStorage("englishVariant")       private var englishVariant      = "en-US"
-    @AppStorage("srsEnabled")           private var srsEnabled: Bool    = true
+    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
+    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
+    @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool    = true
 
     @State private var viewModel: TinderCardsViewModel
     @State private var lookupCard:    Card?
