@@ -7,10 +7,15 @@ import FirebaseAuth
 
 struct ProfileView: View {
 
-    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
+    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan:      AccessTier = .free
+    @AppStorage(Constants.StorageKey.cachedPlanStatus)   private var planStatus:    String     = SubscriptionStatus.active.rawValue
+    @AppStorage(Constants.StorageKey.cachedBillingCycle) private var planCycle:     String     = BillingCycle.none.rawValue
+    @AppStorage(Constants.StorageKey.cachedPendingPlan)  private var pendingPlanRaw: String    = ""
+    @AppStorage(Constants.StorageKey.cachedPendingCycle) private var pendingCycleRaw: String   = ""
     @Query private var profiles: [UserProfile]
     @Environment(\.modelContext) private var context
-    @Environment(AuthService.self) private var authService
+    @Environment(AuthService.self)  private var authService
+    @Environment(UserService.self)  private var userService
 
     @State private var showAuth          = false
     @State private var showPlans         = false
@@ -293,6 +298,32 @@ struct ProfileView: View {
 
     // MARK: - Plan
 
+    private var subscriptionStatus: SubscriptionStatus {
+        SubscriptionStatus(rawValue: planStatus) ?? .active
+    }
+
+    private var subscriptionCycle: BillingCycle {
+        BillingCycle(rawValue: planCycle) ?? .none
+    }
+
+    private var cachedExpiry: Date? {
+        let ts = UserDefaults.standard.double(forKey: Constants.StorageKey.cachedPlanExpiry)
+        return ts > 0 ? Date(timeIntervalSince1970: ts) : nil
+    }
+
+    private var pendingPlan: AccessTier? {
+        guard !pendingPlanRaw.isEmpty else { return nil }
+        let plan = AccessTier(rawValue: pendingPlanRaw) ?? .free
+        // Only meaningful if it differs from current plan or cycle
+        let pendingCycle = BillingCycle(rawValue: pendingCycleRaw) ?? .none
+        if plan == userPlan && pendingCycle == subscriptionCycle { return nil }
+        return plan
+    }
+
+    private var pendingCycle: BillingCycle {
+        BillingCycle(rawValue: pendingCycleRaw) ?? .none
+    }
+
     private var planSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("PLAN")
@@ -300,18 +331,85 @@ struct ProfileView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
+                // Plan + cycle row
                 HStack(spacing: 10) {
                     AccessTierBadge(tier: userPlan)
-                    Text(userPlan.displayName)
-                        .font(.body)
-                        .foregroundStyle(Color.myColors.myAccent)
+                    if userPlan != .free && subscriptionCycle != .none {
+                        Text(subscriptionCycle.displayName)
+                            .font(.body)
+                            .foregroundStyle(Color.myColors.myAccent)
+                    } else if userPlan == .free {
+                        Text(userPlan.displayName)
+                            .font(.body)
+                            .foregroundStyle(Color.myColors.myAccent)
+                    }
                     Spacer()
                 }
                 .frame(height: 52)
                 .padding(.horizontal, 16)
 
+                // Status row (expiry / next billing) — only for paid plans
+                if userPlan != .free, let expiry = cachedExpiry {
+                    Divider().padding(.leading, 16)
+                    HStack(spacing: 10) {
+                        let hasPending = pendingPlan != nil
+                        let isCancelled = subscriptionStatus == .cancelled
+                        Image(systemName: isCancelled || hasPending ? "arrow.triangle.2.circlepath" : "arrow.clockwise.circle")
+                            .font(.title3)
+                            .foregroundStyle(isCancelled || hasPending
+                                ? Color.myColors.myOrange
+                                : Color.myColors.mySecondary)
+                        VStack(alignment: .leading, spacing: 1) {
+                            if let pending = pendingPlan {
+                                let pCycle = pendingCycle
+                                let isCancellingToFree = pending == .free
+                                HStack(spacing: 4) {
+                                    Text(isCancellingToFree ? "Cancels" : "Changes to")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.myColors.myOrange)
+                                    if !isCancellingToFree {
+                                        AccessTierBadge(tier: pending)
+                                        if pCycle != .none {
+                                            Text(pCycle.displayName)
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(Color.myColors.myOrange)
+                                        }
+                                    }
+                                }
+                                Text(expiry, style: .date)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.myColors.myAccent)
+                            } else {
+                                Text(isCancelled ? "Access until" : "Renews")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.myColors.mySecondary)
+                                Text(expiry, style: .date)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.myColors.myAccent)
+                            }
+                        }
+                        Spacer()
+                        if let pending = pendingPlan {
+                            // Show new plan's price
+                            let pCycle = pendingCycle == .none ? subscriptionCycle : pendingCycle
+                            if pending != .free {
+                                Text(String(format: "$%.2f", pending.price(for: pCycle)))
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(Color.myColors.myOrange)
+                            }
+                        } else if !isCancelled {
+                            Text(String(format: "$%.2f", userPlan.price(for: subscriptionCycle)))
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Color.myColors.myAccent)
+                        }
+                    }
+                    .frame(minHeight: 52)
+                    .padding(.horizontal, 16)
+                }
+
                 Divider().padding(.leading, 16)
 
+                // Subscribe / Manage button
                 Button { showPlans = true } label: {
                     HStack(spacing: 12) {
                         Image(systemName: userPlan == .free ? "star.circle" : "gearshape.circle")
@@ -330,6 +428,32 @@ struct ProfileView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+
+                // Payment History — only for paid/former-paid users
+                if userPlan != .free || subscriptionStatus == .cancelled, let uid = authService.currentUser?.uid {
+                    Divider().padding(.leading, 16)
+                    NavigationLink {
+                        PaymentHistoryView(uid: uid)
+                            .environment(userService)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "list.bullet.rectangle")
+                                .font(.title2)
+                                .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                            Text("Payment History")
+                                .font(.body)
+                                .foregroundStyle(Color.myColors.myAccent)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                        }
+                        .frame(height: 52)
+                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))

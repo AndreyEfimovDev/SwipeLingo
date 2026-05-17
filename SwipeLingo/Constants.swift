@@ -69,6 +69,9 @@ enum Constants {
         static let studyMode              = "studyMode"              // StudyMode.label — last active tab: Cards or Pairs
         static let pairsAnimationMode     = "pairsAnimationMode"     // AnimationMode.rawValue — manual / auto flip in Pairs
         static let pairsAudioEnabled      = "pairsAudioEnabled"      // Bool — auto-play TTS in Pairs sessions
+        static let cachedBillingCycle     = "cachedBillingCycle"     // BillingCycle.rawValue — billing cycle of active subscription
+        static let cachedPendingPlan      = "cachedPendingPlan"      // AccessTier.rawValue — plan scheduled after current period ends
+        static let cachedPendingCycle     = "cachedPendingCycle"     // BillingCycle.rawValue — cycle of pending plan
     }
 
     // MARK: - App Group

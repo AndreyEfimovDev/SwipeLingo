@@ -68,7 +68,7 @@ enum BillingCycle: String, Codable, CaseIterable {
         switch self {
         case .none:    return "—"
         case .monthly: return "Monthly"
-        case .yearly:  return "Yearly"
+        case .yearly:  return "Annual"
         }
     }
 }
@@ -93,7 +93,8 @@ struct PaymentRecord: Codable {
     var currency:      String
     var plan:          String
     var billingCycle:  String
-    var paymentMethod: String   // "sbp" | "ru_card" | "foreign_card"
+    var paymentMethod: String   // "card" | "sbp" | "ru_card"
+    var last4:         String?  // last 4 digits of card
     var status:        String   // PaymentStatus.rawValue
     var failReason:    String?
     var receiptRef:    String?  // Firebase Storage path

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4700CD772FB9D986003EA2B1 /* PaymentHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4700CD762FB9D986003EA2B1 /* PaymentHistoryView.swift */; };
+		4700CD792FB9D9CE003EA2B1 /* PaymentFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4700CD782FB9D9CE003EA2B1 /* PaymentFormView.swift */; };
 		474D28BC2F9B734400BC11FF /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474D28BB2F9B734400BC11FF /* AppView.swift */; };
 		474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE02F7BB11800128E83 /* ErrorManager.swift */; };
 		474F1FE62F7BE2BA00128E83 /* DatabseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */; };
@@ -187,6 +189,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4700CD762FB9D986003EA2B1 /* PaymentHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentHistoryView.swift; sourceTree = "<group>"; };
+		4700CD782FB9D9CE003EA2B1 /* PaymentFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentFormView.swift; sourceTree = "<group>"; };
 		474BFB622F3C8255006E639B /* SwipeLingo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwipeLingo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB6F2F3C825C006E639B /* SwipeLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -552,6 +556,8 @@
 				47DE7F362F82DB9500F6BCF3 /* ProfileView.swift */,
 				478C782B2F794487005FBDFE /* VoiceSettingsView.swift */,
 				47DE7F342F82D5EC00F6BCF3 /* PlansView.swift */,
+				4700CD782FB9D9CE003EA2B1 /* PaymentFormView.swift */,
+				4700CD762FB9D986003EA2B1 /* PaymentHistoryView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -954,10 +960,12 @@
 				47DE7F862F83CB0300F6BCF3 /* PairsPileService.swift in Sources */,
 				478C785A2F794487005FBDFE /* AddCardSetView.swift in Sources */,
 				478C785B2F794487005FBDFE /* AddCollectionView.swift in Sources */,
+				4700CD772FB9D986003EA2B1 /* PaymentHistoryView.swift in Sources */,
 				478C785C2F794487005FBDFE /* AddEditCardView.swift in Sources */,
 				47DE7F372F82DB9500F6BCF3 /* ProfileView.swift in Sources */,
 				47C09A8E2F853D8B0049858B /* DisplayMode.swift in Sources */,
 				47C09A492F8531910049858B /* PairsSet.swift in Sources */,
+				4700CD792FB9D9CE003EA2B1 /* PaymentFormView.swift in Sources */,
 				4787294B2FAB7CBB001282EF /* OnboardingAuthView.swift in Sources */,
 				478C785D2F794487005FBDFE /* CardSetDetailView.swift in Sources */,
 				478C785E2F794487005FBDFE /* CollectionDetailView.swift in Sources */,
