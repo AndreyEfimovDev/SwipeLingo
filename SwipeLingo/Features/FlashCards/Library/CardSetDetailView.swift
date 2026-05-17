@@ -241,8 +241,16 @@ private struct CardRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(card.en)
-                    .font(.headline)
+                HStack(alignment: .top, spacing: 2) {
+                    Text(card.en)
+                        .font(.headline)
+                    if card.isNew {
+                        Circle()
+                            .fill(Color.myColors.myGreen)
+                            .frame(width: 7, height: 7)
+                            .padding(.top, 3)
+                    }
+                }
                 Text(card.item)
                     .font(.subheadline)
             }

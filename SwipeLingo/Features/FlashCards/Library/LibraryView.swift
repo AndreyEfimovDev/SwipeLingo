@@ -53,6 +53,10 @@ struct LibraryView: View {
         allCards.filter { $0.setId == cardSet.id && $0.status != .deleted }.count
     }
 
+    private func newCount(forSet cardSet: CardSet) -> Int {
+        allCards.filter { $0.setId == cardSet.id && $0.isNew }.count
+    }
+
     private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
 
     private func setsForCollection(_ collection: Collection) -> [CardSet] {
@@ -512,13 +516,24 @@ struct LibraryView: View {
         } label: {
             HStack {
                 let count = cardCount(forSet: cardSet)
+                let newCards = newCount(forSet: cardSet)
                 HStack(alignment: .top, spacing: 2) {
-                    HStack(spacing: 0) {
-                        Text(cardSet.name)
-                            .font(.body)
-                        if count > 0 {
-                            Text(" (\(count))")
-                                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    HStack(alignment: .top, spacing: 1) {
+                        Group {
+                            if count > 0 {
+                                Text(cardSet.name)
+                                + Text(" (\(count))")
+                                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                            } else {
+                                Text(cardSet.name)
+                            }
+                        }
+                        .font(.body)
+                        if newCards > 0 {
+                            Circle()
+                                .fill(Color.myColors.myGreen)
+                                .frame(width: 7, height: 7)
+                                .padding(.top, 2)
                         }
                     }
                     AccessTierBadge(tier: cardSet.accessTier)

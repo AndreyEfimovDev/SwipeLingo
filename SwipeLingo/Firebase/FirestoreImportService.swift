@@ -286,6 +286,7 @@ struct FirestoreImportService {
                             setId: sdSet.id
                         )
                         c.firestoreId = cardFsId
+                        c.isNew = true
                         context.insert(c)
                         cardsByFsId[cardFsId] = c
                     }
@@ -388,6 +389,7 @@ struct FirestoreImportService {
                         createdAt: (pd["createdAt"] as? Timestamp)?.dateValue() ?? .now
                     )
                     ps.firestoreId = pairsFsId
+                    ps.isNew = true
                     context.insert(ps)
                     pairsSetsByFsId[pairsFsId] = ps
                 }

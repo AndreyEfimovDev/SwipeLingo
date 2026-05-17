@@ -228,6 +228,10 @@ struct PairsSetPlayerView: View {
             }
             animationMode = initialAnimationMode ?? defaultAnimationMode
             if autoStart { startPlayback() }
+            if set.isNew {
+                set.isNew = false
+                context.saveWithErrorHandling()
+            }
         }
         .onDisappear {
             cancelAllTasks()

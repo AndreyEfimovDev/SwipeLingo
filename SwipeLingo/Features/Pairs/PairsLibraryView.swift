@@ -565,12 +565,22 @@ private struct LibrarySetRow: View {
         HStack(alignment: .center, spacing: 8) {
             HStack(alignment: .top, spacing: 2) {
                 let count = set.items.count
-                HStack(spacing: 0) {
-                    Text(set.title ?? "Untitled")
-                        .font(.body)
-                    if count > 0 {
-                        Text(" (\(count))")
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                HStack(alignment: .top, spacing: 1) {
+                    Group {
+                        if count > 0 {
+                            Text(set.title ?? "Untitled")
+                            + Text(" (\(count))")
+                                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                        } else {
+                            Text(set.title ?? "Untitled")
+                        }
+                    }
+                    .font(.body)
+                    if set.isNew {
+                        Circle()
+                            .fill(Color.myColors.myGreen)
+                            .frame(width: 7, height: 7)
+                            .padding(.top, 2)
                     }
                 }
                 AccessTierBadge(tier: set.accessTier)
