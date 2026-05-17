@@ -11,7 +11,7 @@ struct OnboardingConfirmView: View {
     var onComplete: () -> Void
     var onBack: () -> Void
 
-    @AppStorage("nativeLanguage") private var nativeLanguage: NativeLanguage = .russian
+    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
     @Query private var profiles: [UserProfile]
     private var profile: UserProfile? { profiles.first }

@@ -6,17 +6,15 @@ import SwiftData
 @Observable
 final class AppViewModel {
 
-    private static let studyModeKey = "studyMode"
-
     var studyMode: StudyMode {
         didSet {
-            UserDefaults.standard.set(studyMode.label, forKey: Self.studyModeKey)
+            UserDefaults.standard.set(studyMode.label, forKey: Constants.StorageKey.studyMode)
         }
     }
     var activeSheet: AppSheet? = nil
 
     init() {
-        let saved = UserDefaults.standard.string(forKey: Self.studyModeKey) ?? ""
+        let saved = UserDefaults.standard.string(forKey: Constants.StorageKey.studyMode) ?? ""
         studyMode = StudyMode.allCases.first { $0.label == saved } ?? .cards
     }
 

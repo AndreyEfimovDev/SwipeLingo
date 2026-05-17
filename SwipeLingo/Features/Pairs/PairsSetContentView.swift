@@ -16,16 +16,10 @@ struct PairsSetContentView: View {
 
     let set: PairsSet
 
-    @AppStorage("userPlan") private var userPlan: AccessTier = .free
+    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
     @State private var showPlans = false
 
-    private let previewPairCount = 5
     private var isPaywalled: Bool { !userPlan.canAccess(set.accessTier) }
-
-    // Map original position for paywall checks
-    private var globalIndex: [UUID: Int] {
-        Dictionary(uniqueKeysWithValues: set.items.enumerated().map { ($0.element.id, $0.offset) })
-    }
 
     // Groups preserving first-appearance order of tags
     private var groupedContent: [(tag: String, pairs: [Pair])] {
@@ -160,8 +154,7 @@ struct PairsSetContentView: View {
     @ViewBuilder
     private func pairRows(_ pairs: [Pair]) -> some View {
         ForEach(Array(pairs.enumerated()), id: \.element.id) { localIndex, pair in
-            let idx = globalIndex[pair.id] ?? 0
-            if isPaywalled && idx >= previewPairCount {
+            if isPaywalled {
                 lockedPairRow(pair)
             } else {
                 pairRow(pair)
