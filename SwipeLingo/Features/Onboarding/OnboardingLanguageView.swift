@@ -9,7 +9,7 @@ struct OnboardingLanguageView: View {
 
     var onNext: () -> Void
 
-    @AppStorage("nativeLanguage") private var nativeLanguage: NativeLanguage = .russian
+    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 

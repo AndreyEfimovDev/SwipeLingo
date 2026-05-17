@@ -39,11 +39,11 @@ struct PairsSetPlayerView: View {
     /// поменять его локально для replay, но Next Set всегда получает pile-level.
     var initialAnimationMode: AnimationMode? = nil
     
-    @AppStorage("pairsAnimationMode") private var defaultAnimationMode: AnimationMode = .manual
-    @AppStorage("pairsAudioEnabled")  private var audioEnabled: Bool = true
-    @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier: String = ""
-    @AppStorage("srsEnabled")         private var srsEnabled: Bool = true
-    @AppStorage("userPlan")           private var userPlan: AccessTier = .free
+    @AppStorage(Constants.StorageKey.pairsAnimationMode) private var defaultAnimationMode: AnimationMode = .manual
+    @AppStorage(Constants.StorageKey.pairsAudioEnabled)  private var audioEnabled: Bool = true
+    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier: String = ""
+    @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool = true
+    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan: AccessTier = .free
     
     @State private var animationMode:    AnimationMode = .manual
     @State private var hasStarted:       Bool = false

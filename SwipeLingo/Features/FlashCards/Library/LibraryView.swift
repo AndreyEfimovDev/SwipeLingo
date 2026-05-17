@@ -13,7 +13,7 @@ struct LibraryView: View {
     @Query                              private var allCards:    [Card]
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
 
-    @AppStorage("nativeLanguage") private var nativeLangRaw: String = ""
+    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
     @Query private var profiles: [UserProfile]
     @State private var isSyncing = false
 

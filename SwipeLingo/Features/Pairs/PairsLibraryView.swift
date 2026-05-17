@@ -23,7 +23,7 @@ struct PairsLibraryView: View {
     @Query(filter: #Predicate<Collection> { $0.typeRaw == "pairs" },
            sort: \Collection.createdAt)                   private var pairsCollections: [Collection]
 
-    @AppStorage("nativeLanguage") private var nativeLangRaw: String = ""
+    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
     @Query private var profiles: [UserProfile]
 
     @State private var showAllPiles   = false

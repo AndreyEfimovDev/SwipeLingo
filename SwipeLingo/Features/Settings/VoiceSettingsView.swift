@@ -5,8 +5,8 @@ import SwiftUI
 
 struct VoiceSettingsView: View {
 
-    @AppStorage("ttsVoiceIdentifier") private var selectedIdentifier = ""
-    @AppStorage("englishVariant")     private var englishVariant    = "en-US"
+    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var selectedIdentifier = ""
+    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant    = "en-US"
     @State private var previewService       = AudioPlayerService()
     @State private var previewingVoiceId    = ""
 

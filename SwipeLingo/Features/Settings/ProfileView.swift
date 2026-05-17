@@ -7,7 +7,7 @@ import FirebaseAuth
 
 struct ProfileView: View {
 
-    @AppStorage("userPlan") private var userPlan: AccessTier = .free
+    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
     @Query private var profiles: [UserProfile]
     @Environment(\.modelContext) private var context
     @Environment(AuthService.self) private var authService
