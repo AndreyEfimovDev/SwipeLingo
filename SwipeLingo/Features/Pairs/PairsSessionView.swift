@@ -18,7 +18,7 @@ struct PairsSessionView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
-    @AppStorage("srsEnabled") private var srsEnabled: Bool = true
+    @AppStorage(Constants.StorageKey.srsEnabled) private var srsEnabled: Bool = true
 
     @State private var currentIndex  = 0
     @State private var setKey        = UUID()

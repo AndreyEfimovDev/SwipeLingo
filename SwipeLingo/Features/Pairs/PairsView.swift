@@ -20,8 +20,8 @@ struct PairsView: View {
         allSets.filter { $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
     }
 
-    @AppStorage("srsEnabled")           private var srsEnabled: Bool = true
-    @AppStorage("pairsAnimationMode") private var animationMode: AnimationMode = .manual
+    @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool = true
+    @AppStorage(Constants.StorageKey.pairsAnimationMode) private var animationMode: AnimationMode = .manual
 
     @State private var isDueMode = false
 

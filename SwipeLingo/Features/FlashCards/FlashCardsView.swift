@@ -22,9 +22,9 @@ struct FlashCardsView: View {
     }
 
     @State private var viewModel = FlashCardsViewModel()
-    @AppStorage("studyStartHour")  private var studyStartHour: Int = 6
-    @AppStorage("srsEnabled")      private var srsEnabled: Bool    = true
-    @AppStorage("userPlan") private var userPlan: AccessTier = .free
+    @AppStorage(Constants.StorageKey.studyStartHour) private var studyStartHour: Int = 6
+    @AppStorage(Constants.StorageKey.srsEnabled)     private var srsEnabled: Bool    = true
+    @AppStorage(Constants.StorageKey.userPlan)       private var userPlan: AccessTier = .free
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
