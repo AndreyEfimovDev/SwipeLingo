@@ -227,6 +227,12 @@ struct ProfileView: View {
                              ?? "Account")
                             .font(.body)
                             .foregroundStyle(Color.myColors.myAccent)
+                        if let user = authService.currentUser,
+                           user.providerData.contains(where: { $0.providerID == "password" }) {
+                            Image(systemName: user.isEmailVerified ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(user.isEmailVerified ? Color.myColors.myGreen : Color.myColors.myOrange)
+                        }
                         Spacer()
                     }
                     .frame(height: 52)
