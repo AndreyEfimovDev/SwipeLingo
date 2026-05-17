@@ -34,6 +34,9 @@ struct SwipeLingoApp: App {
         if FirebaseApp.app() == nil {
             if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
                 FirebaseApp.configure()
+                if let clientID = FirebaseApp.app()?.options.clientID {
+                    GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+                }
                 log("[Firebase] App configured", level: .info)
             } else {
                 log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
