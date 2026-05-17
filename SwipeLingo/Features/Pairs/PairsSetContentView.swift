@@ -16,7 +16,7 @@ struct PairsSetContentView: View {
 
     let set: PairsSet
 
-    @AppStorage("userPlan") private var userPlan: AccessTier = .free
+    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
     @State private var showPlans = false
 
     private let previewPairCount = 5

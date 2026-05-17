@@ -7,7 +7,7 @@ import FirebaseAuth
 
 struct PlansView: View {
 
-    @AppStorage("userPlan") private var userPlan: AccessTier = .free
+    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthService.self)  private var authService
     @Environment(UserService.self)  private var userService

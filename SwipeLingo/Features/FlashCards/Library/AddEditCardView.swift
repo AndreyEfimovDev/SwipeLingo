@@ -45,7 +45,7 @@ struct AddEditCardView: View {
     @FocusState private var focused: Field?
 
     // Auto-fill (dictionary + Apple Translation)
-    @AppStorage("nativeLanguage") private var nativeLanguage: NativeLanguage = .russian
+    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
     @State private var translationSession: TranslationSession?
     @State private var translationConfig: TranslationSession.Configuration?
     @State private var isAutoFilling = false

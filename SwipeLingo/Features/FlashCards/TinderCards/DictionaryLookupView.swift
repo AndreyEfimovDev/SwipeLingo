@@ -132,9 +132,9 @@ struct DictionaryLookupView: View {
     @State private var viewModel = DictionaryLookupViewModel()
 
     // Reads native language from the same AppStorage key used across the app.
-    @AppStorage("nativeLanguage")      private var nativeLanguage: NativeLanguage = .russian
-    @AppStorage("ttsVoiceIdentifier")  private var ttsVoiceIdentifier  = ""
-    @AppStorage("englishVariant")      private var englishVariant      = "en-US"
+    @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
+    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
+    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
 
     // Translation session — prepared once (or re-prepared if language changes) via .translationTask.
     // Simulator does not support Translation — config stays nil to suppress the error dialog.

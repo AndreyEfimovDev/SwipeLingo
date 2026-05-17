@@ -18,7 +18,7 @@ struct PileBuilderView: View {
 
     @State private var viewModel: PileBuilderViewModel
     @State private var isShowingDeleteConfirm = false
-    @AppStorage("srsEnabled") private var srsEnabled: Bool = true
+    @AppStorage(Constants.StorageKey.srsEnabled) private var srsEnabled: Bool = true
     @State private var searchText   = ""
     @State private var selectedLevel: String? = nil
 
