@@ -55,16 +55,23 @@ enum Constants {
     // MARK: - AppStorage Keys
 
     enum StorageKey {
-        static let appEverLaunched        = "appEverLaunched"     // fresh install detection
-        static let hasCompletedOnboarding = "hasCompletedOnboarding"
-        static let userPlan               = "userPlan"
-        static let cachedPlanExpiry       = "cachedPlanExpiry"    // TimeInterval (Date)
-        static let cachedPlanStatus       = "cachedPlanStatus"    // SubscriptionStatus.rawValue
-        static let nativeLanguage         = "nativeLanguage"
-        static let colorScheme            = "colorScheme"
-        static let ttsVoiceIdentifier     = "ttsVoiceIdentifier"
-        static let srsEnabled             = "srsEnabled"
-        static let studyMode              = "studyMode"
+        static let appEverLaunched        = "appEverLaunched"        // Bool — fresh install detection, clears stale Keychain token
+        static let hasCompletedOnboarding = "hasCompletedOnboarding" // Bool — controls onboarding vs main app flow
+        static let userPlan               = "userPlan"               // AccessTier.rawValue — current subscription tier
+        static let cachedPlanStatus       = "cachedPlanStatus"       // SubscriptionStatus.rawValue — last known subscription status from Firestore
+        static let cachedPlanExpiry       = "cachedPlanExpiry"       // Timубираем Interval — subscription expiry date cached locally
+        static let nativeLanguage         = "nativeLanguage"         // NativeLanguage.rawValue — user's native language (ISO 639-1)
+        static let colorScheme            = "colorScheme"            // Theme.rawValue — light / dark / system
+        static let ttsVoiceIdentifier     = "ttsVoiceIdentifier"     // String — AVSpeechSynthesisVoice identifier, empty = system default
+        static let englishVariant         = "englishVariant"         // String — BCP-47 locale for TTS, e.g. "en-US" / "en-GB"
+        static let srsEnabled             = "srsEnabled"             // Bool — spaced repetition scheduling on/off
+        static let studyStartHour         = "studyStartHour"         // Int — hour of day when SRS "new day" resets (0–23)
+        static let studyMode              = "studyMode"              // StudyMode.label — last active tab: Cards or Pairs
+        static let pairsAnimationMode     = "pairsAnimationMode"     // AnimationMode.rawValue — manual / auto flip in Pairs
+        static let pairsAudioEnabled      = "pairsAudioEnabled"      // Bool — auto-play TTS in Pairs sessions
+        static let cachedBillingCycle     = "cachedBillingCycle"     // BillingCycle.rawValue — billing cycle of active subscription
+        static let cachedPendingPlan      = "cachedPendingPlan"      // AccessTier.rawValue — plan scheduled after current period ends
+        static let cachedPendingCycle     = "cachedPendingCycle"     // BillingCycle.rawValue — cycle of pending plan
     }
 
     // MARK: - App Group

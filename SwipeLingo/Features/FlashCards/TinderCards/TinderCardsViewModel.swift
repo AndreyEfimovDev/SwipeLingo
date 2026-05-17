@@ -115,17 +115,19 @@ final class TinderCardsViewModel {
     ///   right → card becomes .learnt
     func commitSwipe(direction: SwipeDirection, context: ModelContext) {
         guard let card = currentCard else { return }
+        card.isNew = false
         if direction == .right {
             card.status = .learnt
             learntInSession += 1
-            context.saveWithErrorHandling()
         }
+        context.saveWithErrorHandling()
         advance()
     }
 
     /// Sends the current card to .deleted and advances.
     func commitDelete(context: ModelContext) {
         guard let card = currentCard else { return }
+        card.isNew = false
         card.status = .deleted
         context.saveWithErrorHandling()
         advance()
@@ -134,6 +136,7 @@ final class TinderCardsViewModel {
     /// Applies SM-2, records weak cards (Forgot/Hard), saves, and advances.
     func evaluate(rating: SRSRating, context: ModelContext) {
         guard let card = currentCard else { return }
+        card.isNew = false
         SRSService().evaluate(card: card, rating: rating)
         if rating == .again || rating == .hard {
             weakCards.append(card)

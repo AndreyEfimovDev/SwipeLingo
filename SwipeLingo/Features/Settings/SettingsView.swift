@@ -7,13 +7,13 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @AppStorage("nativeLanguage")     private var nativeLanguage: NativeLanguage = .russian
-    @AppStorage("englishVariant")     private var englishVariant     = "en-US"
-    @AppStorage("colorScheme")        private var theme: Theme       = .system
-    @AppStorage("ttsVoiceIdentifier") private var ttsVoiceIdentifier = ""
-    @AppStorage("studyStartHour")     private var studyStartHour: Int = 6
-    @AppStorage("srsEnabled")         private var srsEnabled: Bool   = true
-    @AppStorage("userPlan")           private var userPlan: AccessTier = .free
+    @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
+    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant     = "en-US"
+    @AppStorage(Constants.StorageKey.colorScheme)        private var theme: Theme       = .system
+    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier = ""
+    @AppStorage(Constants.StorageKey.studyStartHour)     private var studyStartHour: Int = 6
+    @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool   = true
+    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan: AccessTier = .free
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body

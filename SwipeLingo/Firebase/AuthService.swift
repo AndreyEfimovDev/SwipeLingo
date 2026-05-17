@@ -50,6 +50,27 @@ final class AuthService {
             let result = try await Auth.auth().createUser(withEmail: email, password: password)
             currentUser = result.user
         }
+        // Send verification email immediately after account creation
+        try? await Auth.auth().currentUser?.sendEmailVerification()
+        log("[Auth] Verification email sent to \(email)", level: .info)
+    }
+
+    func sendEmailVerification() async throws {
+        guard let user = Auth.auth().currentUser else { return }
+        try await user.sendEmailVerification()
+        log("[Auth] Verification email resent to \(user.email ?? "")", level: .info)
+    }
+
+    /// Reloads Firebase user to pick up fresh isEmailVerified status.
+    func reloadUser() async {
+        guard Auth.auth().currentUser != nil else { return }
+        do {
+            try await Auth.auth().currentUser?.reload()
+            currentUser = Auth.auth().currentUser
+        } catch {
+            // Transient error (network, token refresh) — keep existing session intact
+            log("[AuthService] reloadUser failed, keeping session: \(error.localizedDescription)", level: .warning)
+        }
     }
 
     // MARK: - Google
@@ -97,6 +118,22 @@ final class AuthService {
         )
         let result = try await signInOrLink(with: firebaseCredential)
         currentUser = result.user
+    }
+
+    // MARK: - Password Reset
+
+    func sendPasswordReset(email: String) async throws {
+        try await Auth.auth().sendPasswordReset(withEmail: email)
+        log("[Auth] Password reset email sent to \(email)", level: .info)
+    }
+
+    // MARK: - Delete Account
+
+    func deleteAccount() async throws {
+        guard let user = Auth.auth().currentUser else { return }
+        try await user.delete()
+        currentUser = nil
+        log("[Auth] Account deleted", level: .info)
     }
 
     // MARK: - Sign Out

@@ -65,6 +65,7 @@ final class Card {
     var importedAt: Date? = nil
     var setId:      UUID  = UUID()
     var firestoreId: String? = nil      // Firestore document ID for sync deduplication
+    var isNew:      Bool  = false       // true = imported from Firestore but not yet seen in study session
 
     // MARK: Computed [String] accessors (same public API as before)
 
