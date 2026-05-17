@@ -59,7 +59,7 @@ enum Constants {
         static let hasCompletedOnboarding = "hasCompletedOnboarding" // Bool — controls onboarding vs main app flow
         static let userPlan               = "userPlan"               // AccessTier.rawValue — current subscription tier
         static let cachedPlanStatus       = "cachedPlanStatus"       // SubscriptionStatus.rawValue — last known subscription status from Firestore
-        static let cachedPlanExpiry       = "cachedPlanExpiry"       // TimeInterval — subscription expiry date cached locally
+        static let cachedPlanExpiry       = "cachedPlanExpiry"       // Timубираем Interval — subscription expiry date cached locally
         static let nativeLanguage         = "nativeLanguage"         // NativeLanguage.rawValue — user's native language (ISO 639-1)
         static let colorScheme            = "colorScheme"            // Theme.rawValue — light / dark / system
         static let ttsVoiceIdentifier     = "ttsVoiceIdentifier"     // String — AVSpeechSynthesisVoice identifier, empty = system default
