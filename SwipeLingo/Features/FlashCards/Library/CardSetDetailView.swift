@@ -20,10 +20,14 @@ struct CardSetDetailView: View {
     var backTitle: String = "Library"
 
     @Query(sort: \Card.createdAt) private var allCards: [Card]
+    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
     @State private var isActiveExpanded  = true
     @State private var isLearntExpanded  = false
     @State private var isShowingAddCard  = false
     @State private var editingCard: Card? = nil
+    @State private var showPlans         = false
+
+    private var isPaywalled: Bool { !userPlan.canAccess(cardSet.accessTier) }
 
     // Fallback covers first render; updated by PreferenceKey after layout
     @State private var rowHeight: CGFloat = 68
@@ -63,7 +67,7 @@ struct CardSetDetailView: View {
                             .padding(.horizontal, 32)
 
                             if isActiveExpanded {
-                                cardList(cards: activeCards, showRestore: false)
+                                cardList(cards: activeCards, showRestore: false, paywalled: isPaywalled)
                             }
                         }
                     }
@@ -81,7 +85,7 @@ struct CardSetDetailView: View {
                         .padding(.horizontal, 32)
 
                         if isLearntExpanded {
-                            cardList(cards: learntCards, showRestore: true)
+                            cardList(cards: learntCards, showRestore: true, paywalled: isPaywalled)
                         }
                     }
                 }
@@ -109,6 +113,9 @@ struct CardSetDetailView: View {
         }
         .sheet(item: $editingCard) { card in
             AddEditCardView(card: card)
+        }
+        .sheet(isPresented: $showPlans) {
+            PlansView()
         }
         .overlay {
             let hasCards = allCards.contains { $0.setId == cardSet.id && $0.status != .deleted }
@@ -151,10 +158,15 @@ struct CardSetDetailView: View {
 
     // MARK: - Card List
 
-    private func cardList(cards: [Card], showRestore: Bool) -> some View {
+    private func cardList(cards: [Card], showRestore: Bool, paywalled: Bool = false) -> some View {
         List {
             ForEach(cards) { card in
-                CardRow(card: card, onEdit: (allowsEditing || isInbox) ? { editingCard = card } : nil)
+                CardRow(
+                    card: card,
+                    onEdit: (allowsEditing || isInbox) ? { editingCard = card } : nil,
+                    isPaywalled: paywalled,
+                    onUpgrade: paywalled ? { showPlans = true } : nil
+                )
                     .background(GeometryReader { geo in
                         Color.clear.preference(key: CardRowHeightKey.self, value: geo.size.height)
                     })
@@ -237,6 +249,8 @@ struct CardSetDetailView: View {
 private struct CardRow: View {
     let card: Card
     var onEdit: (() -> Void)? = nil
+    var isPaywalled: Bool = false
+    var onUpgrade: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -251,12 +265,25 @@ private struct CardRow: View {
                             .padding(.top, 3)
                     }
                 }
-                Text(card.item)
-                    .font(.subheadline)
+                if isPaywalled {
+                    Button { onUpgrade?() } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "lock.fill")
+                                .font(.caption2)
+                            Text("Upgrade your plan")
+                                .font(.subheadline)
+                        }
+                        .foregroundStyle(Color.myColors.myBlue.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text(card.item)
+                        .font(.subheadline)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let onEdit {
+            if let onEdit, !isPaywalled {
                 Button(action: onEdit) {
                     Image(systemName: "pencil")
                         .font(.subheadline)
