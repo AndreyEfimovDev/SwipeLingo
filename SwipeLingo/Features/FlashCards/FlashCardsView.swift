@@ -273,6 +273,12 @@ struct FlashCardsView: View {
                         Text("Switch to Pairs")
                     }
                 }
+                Button { appViewModel.studyMode = .books } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "book.closed").frame(width: 20)
+                        Text("Switch to Books")
+                    }
+                }
                 Divider()
                 Button { appViewModel.activeSheet = .statistics } label: {
                     HStack(spacing: 10) {
