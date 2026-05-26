@@ -18,6 +18,12 @@ struct BookReaderView: View {
     @State private var viewModel: BookReaderViewModel
     @State private var downloadTask: Task<Void, Never>? = nil
 
+    @AppStorage("bookFontSize") private var fontSize: Int = 18
+
+    private let fontSizeMin = 14
+    private let fontSizeMax = 26
+    private let fontSizeStep = 2
+
     init(book: Book) {
         self.book = book
         _viewModel = State(initialValue: BookReaderViewModel(book: book, progress: nil))
@@ -92,80 +98,71 @@ struct BookReaderView: View {
     // MARK: - Reader content
 
     private var readerContent: some View {
-        VStack(spacing: 0) {
-            BookPagedReader(
-                book:         book,
-                chapterIndex: viewModel.chapterIndex,
-                colorScheme:  colorScheme,
-                onWordTap: { word in
-                    viewModel.handleWordTap(word)
-                },
-                onPageChange: { newIndex in
-                    // Called by UIPageViewController after user swipe completes
-                    viewModel.goToChapter(newIndex)
-                    viewModel.saveProgress(context: context)
-                    // Proactively download the next 2 chapters so swipe is always available
-                    downloadTask = Task {
-                        for offset in 1...2 {
-                            let idx = newIndex + offset
-                            guard idx < book.totalChapters else { break }
-                            try? await BookDownloadService.shared.downloadChapter(book: book, index: idx)
-                        }
+        BookPagedReader(
+            book:         book,
+            chapterIndex: viewModel.chapterIndex,
+            colorScheme:  colorScheme,
+            fontSize:     fontSize,
+            onWordTap: { word in
+                viewModel.handleWordTap(word)
+            },
+            onPageChange: { newIndex in
+                // Called by UIPageViewController after user swipe completes
+                viewModel.goToChapter(newIndex)
+                viewModel.saveProgress(context: context)
+                // Proactively download the next 2 chapters so swipe is always available
+                downloadTask = Task {
+                    for offset in 1...2 {
+                        let idx = newIndex + offset
+                        guard idx < book.totalChapters else { break }
+                        try? await BookDownloadService.shared.downloadChapter(book: book, index: idx)
                     }
                 }
-            )
-
+            }
+        )
+        .ignoresSafeArea(edges: .bottom)
+        .overlay(alignment: .bottom) {
             chapterNavigationBar
         }
     }
 
-    // MARK: - Chapter navigation bar
+    // MARK: - Chapter navigation bar (floating pill)
 
     private var chapterNavigationBar: some View {
-        HStack {
-            navButton(systemImage: "chevron.left", enabled: viewModel.hasPrevious) {
-                viewModel.goToPrevious()
-                viewModel.saveProgress(context: context)
+        HStack(spacing: 12) {
+            fontSizeButton(label: "A−", enabled: fontSize > fontSizeMin) {
+                fontSize = max(fontSize - fontSizeStep, fontSizeMin)
             }
-
-            Spacer()
 
             Text("\(viewModel.chapterIndex + 1) / \(book.totalChapters)")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                .frame(minWidth: 52)
 
-            Spacer()
-
-            navButton(systemImage: "chevron.right", enabled: viewModel.hasNext) {
-                viewModel.goToNext()
-                viewModel.saveProgress(context: context)
-                // Download next chapter proactively
-                downloadTask = Task {
-                    let idx = viewModel.chapterIndex + 1
-                    guard idx < book.totalChapters else { return }
-                    try? await BookDownloadService.shared.downloadChapter(book: book, index: idx)
-                }
+            fontSizeButton(label: "A+", enabled: fontSize < fontSizeMax) {
+                fontSize = min(fontSize + fontSizeStep, fontSizeMax)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 10)
-        .background(Color(.systemBackground))
-        .overlay(alignment: .top) { Divider() }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.bottom, 8)
     }
 
-    private func navButton(systemImage: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+    private func fontSizeButton(label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(enabled ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.25))
+            Text(label)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(enabled ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myAccent.opacity(0.25))
                 .frame(width: 44, height: 32)
                 .background(
                     Capsule()
                         .strokeBorder(
-                            enabled ? Color.myColors.myBlue.opacity(0.35) : Color.myColors.myAccent.opacity(0.12),
+                            enabled ? Color.myColors.myAccent.opacity(0.2) : Color.myColors.myAccent.opacity(0.08),
                             lineWidth: 1.2
                         )
                 )
+                .contentShape(Capsule())
         }
         .disabled(!enabled)
         .buttonStyle(.plain)

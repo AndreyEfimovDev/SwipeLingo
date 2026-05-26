@@ -15,10 +15,11 @@ struct BookPagedReader: UIViewControllerRepresentable {
     let book:         Book
     let chapterIndex: Int          // driven by BookReaderViewModel
     let colorScheme:  ColorScheme
+    let fontSize:     Int          // user-adjustable, persisted in AppStorage
     let onWordTap:    (String) -> Void
     let onPageChange: (Int) -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator(book: book) }
+    func makeCoordinator() -> Coordinator { Coordinator(book: book, fontSize: fontSize) }
 
     func makeUIViewController(context: Context) -> UIPageViewController {
         let pageVC = UIPageViewController(
@@ -48,6 +49,12 @@ struct BookPagedReader: UIViewControllerRepresentable {
         coord.onPageChange = onPageChange
         pageVC.view.backgroundColor = background(for: colorScheme)
 
+        // Propagate font size change to all cached chapter VCs
+        if fontSize != coord.currentFontSize {
+            coord.currentFontSize = fontSize
+            coord.applyFontSizeToAllCached(fontSize)
+        }
+
         let target = chapterIndex
         guard target != coord.currentIndex else { return }
         let dir: UIPageViewController.NavigationDirection = target > coord.currentIndex ? .forward : .reverse
@@ -67,13 +74,17 @@ struct BookPagedReader: UIViewControllerRepresentable {
     final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
 
         let book: Book
-        var currentIndex = 0
+        var currentIndex    = 0
+        var currentFontSize: Int
         var onWordTap:    (String) -> Void = { _ in }
         var onPageChange: (Int) -> Void    = { _ in }
         private weak var pageVC: UIPageViewController?
         private var cache: [Int: BookChapterVC] = [:]
 
-        init(book: Book) { self.book = book }
+        init(book: Book, fontSize: Int) {
+            self.book            = book
+            self.currentFontSize = fontSize
+        }
 
         func configure(
             pageVC: UIPageViewController,
@@ -87,10 +98,14 @@ struct BookPagedReader: UIViewControllerRepresentable {
 
         func chapterVC(at index: Int) -> BookChapterVC {
             if let cached = cache[index] { return cached }
-            let vc = BookChapterVC(index: index, book: book, coordinator: self)
+            let vc = BookChapterVC(index: index, book: book, coordinator: self, fontSize: currentFontSize)
             cache[index] = vc
             pruneCache(around: index)
             return vc
+        }
+
+        func applyFontSizeToAllCached(_ size: Int) {
+            cache.values.forEach { $0.applyFontSize(size) }
         }
 
         private func pruneCache(around center: Int) {
@@ -145,12 +160,23 @@ final class BookChapterVC: UIViewController {
     private let book: Book
     private weak var coordinator: BookPagedReader.Coordinator?
     private var webView: WKWebView?
+    private var fontSize: Int
 
-    init(index: Int, book: Book, coordinator: BookPagedReader.Coordinator) {
+    init(index: Int, book: Book, coordinator: BookPagedReader.Coordinator, fontSize: Int) {
         self.index       = index
         self.book        = book
         self.coordinator = coordinator
+        self.fontSize    = fontSize
         super.init(nibName: nil, bundle: nil)
+    }
+
+    /// Live font-size update — called by coordinator when user taps A− / A+.
+    func applyFontSize(_ size: Int) {
+        fontSize = size
+        webView?.evaluateJavaScript(
+            "document.body.style.fontSize = '\(size)px'",
+            completionHandler: nil
+        )
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -240,7 +266,7 @@ private extension BookChapterVC {
         html { -webkit-text-size-adjust: 100%; }
         body {
             font-family: Georgia, 'Times New Roman', serif;
-            font-size: 18px;
+            font-size: \(fontSize)px;
             line-height: 1.75;
             color: \(fg);
             background: \(bg);

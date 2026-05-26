@@ -22,7 +22,8 @@ struct BookWordLookupView: View {
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant = "en-US"
 
     @State private var viewModel = DictionaryLookupViewModel()
-    @State private var savedToInbox = false
+    @State private var savedToInbox  = false
+    @State private var showSavedToast = false
 
     @State private var translationConfig: TranslationSession.Configuration?
     @State private var translationSession: TranslationSession?
@@ -48,6 +49,24 @@ struct BookWordLookupView: View {
                 }
             }
         }
+        .overlay(alignment: .bottom) {
+            if showSavedToast {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16))
+                    Text("Saved to Inbox")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color.myColors.myGreen, in: Capsule())
+                .shadow(color: Color.myColors.myGreen.opacity(0.35), radius: 8, y: 4)
+                .padding(.bottom, 32)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.35), value: showSavedToast)
         .task {
             await viewModel.load(word: word)
         }
@@ -148,23 +167,18 @@ struct BookWordLookupView: View {
             saveToInbox()
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: savedToInbox ? "checkmark.circle.fill" : "plus.circle")
+                Image(systemName: "plus.circle")
                     .font(.system(size: 18))
-                Text(savedToInbox ? "Saved to Inbox" : "Save to Cards")
+                Text("Save to Inbox")
                     .font(.system(size: 16, weight: .semibold))
             }
-            .foregroundStyle(savedToInbox ? Color.myColors.myGreen : .white)
+            .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(savedToInbox ? Color.myColors.myGreen.opacity(0.12) : Color.myColors.myBlue,
-                        in: RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(savedToInbox ? Color.myColors.myGreen.opacity(0.4) : Color.clear, lineWidth: 1)
-            )
+            .background(Color.myColors.myBlue, in: RoundedRectangle(cornerRadius: 12))
         }
         .disabled(savedToInbox)
-        .animation(.easeInOut(duration: 0.2), value: savedToInbox)
+        .opacity(savedToInbox ? 0.4 : 1)
     }
 
     // MARK: - Loading / error
@@ -210,16 +224,20 @@ struct BookWordLookupView: View {
             FetchDescriptor<Card>(predicate: #Predicate { $0.setId == inboxSetId })
         )) ?? []
 
-        guard !existing.contains(where: { $0.en.lowercased() == word.lowercased() }) else {
-            savedToInbox = true
-            return
+        if !existing.contains(where: { $0.en.lowercased() == word.lowercased() }) {
+            let card = Card(en: word, item: translatedWord, setId: inboxSet.id)
+            context.insert(card)
+            context.saveWithErrorHandling()
+            log("[BookLookup] Saved '\(word)' to Inbox", level: .info)
         }
 
-        let card = Card(en: word, item: translatedWord, setId: inboxSet.id)
-        context.insert(card)
-        context.saveWithErrorHandling()
         savedToInbox = true
-        log("[BookLookup] Saved '\(word)' to Inbox", level: .info)
+        showSavedToast = true
+
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            dismiss()
+        }
     }
 
     // MARK: - Translation
