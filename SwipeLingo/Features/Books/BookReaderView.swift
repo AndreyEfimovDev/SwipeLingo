@@ -147,6 +147,8 @@ struct BookReaderView: View {
                     .font(.system(size: 13))
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     .frame(minWidth: 52)
+                    .frame(height: 44)
+
                 fontSizeButton(label: "A+", enabled: fontSize < fontSizeMax) {
                     fontSize = min(fontSize + fontSizeStep, fontSizeMax)
                 }
@@ -178,13 +180,14 @@ struct BookReaderView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(enabled ? Color.myColors.myBlue : Color.myColors.myBlue.opacity(0.25))
                 .frame(width: 44, height: 44)
-                .background(
-                    Capsule()
-                        .strokeBorder(
-                            enabled ? Color.myColors.myBlue.opacity(0.5) : Color.myColors.myBlue.opacity(0.15),
-                            lineWidth: 1.5
-                        )
-                )
+                .background(.ultraThinMaterial, in: Capsule())
+//                .background(
+//                    Capsule()
+//                        .strokeBorder(
+//                            enabled ? Color.myColors.myBlue.opacity(0.5) : Color.myColors.myBlue.opacity(0.15),
+//                            lineWidth: 1.5
+//                        )
+//                )
                 .contentShape(Capsule())
         }
         .disabled(!enabled)
