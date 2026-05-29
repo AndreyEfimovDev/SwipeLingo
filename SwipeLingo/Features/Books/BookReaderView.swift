@@ -122,31 +122,73 @@ struct BookReaderView: View {
         )
         .ignoresSafeArea(edges: .bottom)
         .overlay(alignment: .bottom) {
-            chapterNavigationBar
+            bottomControls
         }
     }
 
-    // MARK: - Chapter navigation bar (floating pill)
+    // MARK: - Bottom controls (floating, independent capsules)
 
-    private var chapterNavigationBar: some View {
-        HStack(spacing: 12) {
-            fontSizeButton(label: "A−", enabled: fontSize > fontSizeMin) {
-                fontSize = max(fontSize - fontSizeStep, fontSizeMin)
+    private var bottomControls: some View {
+        HStack(alignment: .center) {
+            // ‹ Previous chapter
+            navButton(systemImage: "chevron.left", enabled: viewModel.hasPrevious) {
+                viewModel.goToPrevious()
+                viewModel.saveProgress(context: context)
             }
 
-            Text("\(viewModel.chapterIndex + 1) / \(book.totalChapters)")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                .frame(minWidth: 52)
+            Spacer()
 
-            fontSizeButton(label: "A+", enabled: fontSize < fontSizeMax) {
-                fontSize = min(fontSize + fontSizeStep, fontSizeMax)
+            // Center pill: A− / counter / A+
+            HStack(spacing: 12) {
+                fontSizeButton(label: "A−", enabled: fontSize > fontSizeMin) {
+                    fontSize = max(fontSize - fontSizeStep, fontSizeMin)
+                }
+                Text("\(viewModel.chapterIndex + 1) / \(book.totalChapters)")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    .frame(minWidth: 52)
+                fontSizeButton(label: "A+", enabled: fontSize < fontSizeMax) {
+                    fontSize = min(fontSize + fontSizeStep, fontSizeMax)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial, in: Capsule())
+
+            Spacer()
+
+            // › Next chapter
+            navButton(systemImage: "chevron.right", enabled: viewModel.hasNext) {
+                viewModel.goToNext()
+                viewModel.saveProgress(context: context)
+                downloadTask = Task {
+                    let idx = viewModel.chapterIndex + 1
+                    guard idx < book.totalChapters else { return }
+                    try? await BookDownloadService.shared.downloadChapter(book: book, index: idx)
+                }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.horizontal, 16)
         .padding(.bottom, 8)
+    }
+
+    private func navButton(systemImage: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(enabled ? Color.myColors.myBlue : Color.myColors.myBlue.opacity(0.25))
+                .frame(width: 44, height: 44)
+                .background(
+                    Capsule()
+                        .strokeBorder(
+                            enabled ? Color.myColors.myBlue.opacity(0.5) : Color.myColors.myBlue.opacity(0.15),
+                            lineWidth: 1.5
+                        )
+                )
+                .contentShape(Capsule())
+        }
+        .disabled(!enabled)
+        .buttonStyle(.plain)
     }
 
     private func fontSizeButton(label: String, enabled: Bool, action: @escaping () -> Void) -> some View {

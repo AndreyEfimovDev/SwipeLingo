@@ -40,6 +40,23 @@ final class BookReaderViewModel {
         book.chapters.first { $0.index == chapterIndex }
     }
 
+    var hasPrevious: Bool { chapterIndex > 0 }
+    var hasNext:     Bool { chapterIndex < book.totalChapters - 1 }
+
+    func goToPrevious() {
+        guard hasPrevious else { return }
+        chapterIndex -= 1
+        scrollOffset  = 0
+        refreshChapterReady()
+    }
+
+    func goToNext() {
+        guard hasNext else { return }
+        chapterIndex += 1
+        scrollOffset  = 0
+        refreshChapterReady()
+    }
+
     func goToChapter(_ index: Int) {
         chapterIndex = index
         scrollOffset = 0
