@@ -153,8 +153,7 @@ struct BookReaderView: View {
                     fontSize = min(fontSize + fontSizeStep, fontSizeMax)
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 5)
             .background(.ultraThinMaterial, in: Capsule())
 
             Spacer()
@@ -199,7 +198,7 @@ struct BookReaderView: View {
             Text(label)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(enabled ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myAccent.opacity(0.25))
-                .frame(width: 44, height: 32)
+                .frame(width: 48, height: 36)
                 .background(
                     Capsule()
                         .strokeBorder(
