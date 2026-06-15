@@ -74,7 +74,10 @@ struct SwipeLingoApp: App {
             Pile.self,
             PairsSet.self,
             PairsPile.self,
-            UserProfile.self
+            UserProfile.self,
+            Book.self,
+            BookProgress.self,
+            BookBookmark.self
         ])
         let config = ModelConfiguration(
             schema: schema,

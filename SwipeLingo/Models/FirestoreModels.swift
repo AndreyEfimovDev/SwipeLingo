@@ -210,6 +210,61 @@ struct FSPair: Codable, Identifiable {
 
 }
 
+// MARK: - FSBook
+
+struct FSBook: Codable, Identifiable {
+    var id:                   String
+    var title:                String
+    var author:               String
+    var description:          String?
+    var cefrLevel:            CEFRLevel
+    var accessTier:           AccessTier
+    var coverStoragePath:     String          // Firebase Storage path, e.g. "books/{id}/cover.jpg"
+    var totalChapters:        Int
+    var chapters:             [FSBookChapter]
+    // Admin-only — not written to Firestore
+    var deployStatus:         SetDeployStatus
+    var previousDeployStatus: SetDeployStatus?
+    var updatedAt:            Date
+    var createdAt:            Date
+
+    init(
+        id:               String,
+        title:            String,
+        author:           String,
+        description:      String? = nil,
+        cefrLevel:        CEFRLevel,
+        accessTier:       AccessTier,
+        coverStoragePath: String,
+        totalChapters:    Int,
+        chapters:         [FSBookChapter],
+        deployStatus:     SetDeployStatus = .new,
+        updatedAt:        Date,
+        createdAt:        Date
+    ) {
+        self.id               = id
+        self.title            = title
+        self.author           = author
+        self.description      = description
+        self.cefrLevel        = cefrLevel
+        self.accessTier       = accessTier
+        self.coverStoragePath = coverStoragePath
+        self.totalChapters    = totalChapters
+        self.chapters         = chapters
+        self.deployStatus     = deployStatus
+        self.updatedAt        = updatedAt
+        self.createdAt        = createdAt
+    }
+}
+
+// MARK: - FSBookChapter
+
+struct FSBookChapter: Codable, Identifiable {
+    var index: Int
+    var title: String
+    var id: Int { index }
+}
+
 // MARK: - FirestoreID
 
 enum FirestoreID {

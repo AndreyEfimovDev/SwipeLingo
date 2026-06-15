@@ -49,6 +49,16 @@ struct ImportCardsSheet: View {
 
     let setId: String
 
+    /// Topic context added to each word before translation so Apple Translation picks the right meaning.
+    private var setContext: String? {
+        guard let set = store.cardSets.first(where: { $0.id == setId }) else { return nil }
+        let collection = store.collections.first(where: { $0.id == set.collectionId })
+        if let col = collection {
+            return "\(col.name) — \(set.name)"
+        }
+        return set.name
+    }
+
     // MARK: State
 
     @State private var pasteText:   String        = ""
@@ -295,7 +305,7 @@ struct ImportCardsSheet: View {
                         let entry = try await dictionaryService.lookup(word: word)
                         await MainActor.run {
                             drafts[i].transcription = entry.transcription
-                            if let example = entry.meanings.first?.definitions.first?.example {
+                            if let example = bestExample(from: entry) {
                                 drafts[i].sampleEN = [example]
                             }
                             drafts[i].enrichStatus = .done
@@ -311,6 +321,41 @@ struct ImportCardsSheet: View {
             }
             await MainActor.run { isEnriching = false }
         }
+    }
+
+    // MARK: — Best example selection
+
+    /// Picks the most contextually relevant example from all dictionary meanings.
+    /// Scores each definition by how many set-context keywords appear in its text + example.
+    /// Falls back to the first available example if no keyword match is found.
+    private func bestExample(from entry: DictionaryEntry) -> String? {
+        let contextKeywords = contextKeywords()
+
+        // Collect all definitions that have an example
+        let candidates: [(score: Int, example: String)] = entry.meanings.flatMap { meaning in
+            meaning.definitions.compactMap { def -> (Int, String)? in
+                guard let example = def.example else { return nil }
+                guard !example.isEmpty else { return nil }
+                let haystack = (def.text + " " + example).lowercased()
+                let score = contextKeywords.reduce(0) { $0 + (haystack.contains($1) ? 1 : 0) }
+                return (score, example)
+            }
+        }
+
+        // Best scoring candidate, fallback to first
+        return candidates.max(by: { $0.score < $1.score })?.example
+            ?? candidates.first?.example
+    }
+
+    /// Splits the set context string into lowercase keywords for scoring.
+    private func contextKeywords() -> [String] {
+        guard let ctx = setContext else { return [] }
+        let stopWords: Set<String> = ["and", "the", "a", "an", "of", "in", "&", "—", "-"]
+        return ctx
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { $0.count > 2 && !stopWords.contains($0) }
     }
 
     // MARK: — Translate (Apple Translation)
@@ -339,11 +384,13 @@ struct ImportCardsSheet: View {
     private func runTranslationBatch(session: TranslationSession) async {
         guard let lang = currentLang, isTranslating else { return }
 
-        // Строим батч: слово + пример (если есть)
+        // Строим батч: слово (с контекстом темы) + пример (если есть)
         // clientIdentifier: "w_<idx>" для слова, "s_<idx>" для примера
+        let context = setContext
         var requests: [TranslationSession.Request] = []
         for (i, draft) in drafts.enumerated() {
-            requests.append(.init(sourceText: draft.word, clientIdentifier: "w_\(i)"))
+            let wordSource = context.map { "\(draft.word) (\($0))" } ?? draft.word
+            requests.append(.init(sourceText: wordSource, clientIdentifier: "w_\(i)"))
             if let sample = draft.sampleEN.first, !sample.isEmpty {
                 requests.append(.init(sourceText: sample, clientIdentifier: "s_\(i)"))
             }
@@ -355,7 +402,10 @@ struct ImportCardsSheet: View {
                 for response in responses {
                     guard let key = response.clientIdentifier else { continue }
                     if key.hasPrefix("w_"), let idx = Int(key.dropFirst(2)) {
-                        drafts[idx].translations[lang.langId] = response.targetText
+                        // Strip any context the translation engine may have echoed back
+                        let raw = response.targetText
+                        let cleaned = raw.components(separatedBy: " (").first ?? raw
+                        drafts[idx].translations[lang.langId] = cleaned
                     } else if key.hasPrefix("s_"), let idx = Int(key.dropFirst(2)) {
                         drafts[idx].sampleTranslations[lang.langId] = response.targetText
                     }
