@@ -33,6 +33,7 @@ enum AccessTier: String, Codable, CaseIterable {
         }
     }
 
+#if os(iOS)
     func price(for cycle: BillingCycle) -> Double {
         switch (self, cycle) {
         case (.free, _):        return 0
@@ -97,4 +98,5 @@ enum AccessTier: String, Codable, CaseIterable {
         ]
         }
     }
+#endif
 }

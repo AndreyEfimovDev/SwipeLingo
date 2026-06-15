@@ -23,11 +23,13 @@ final class AppViewModel {
     enum StudyMode: String, CaseIterable {
         case cards
         case pairs
+        case books
 
         var icon: String {
             switch self {
             case .cards: return "rectangle.stack"
             case .pairs: return "sparkles"
+            case .books: return "book.closed"
             }
         }
 
@@ -35,13 +37,15 @@ final class AppViewModel {
             switch self {
             case .cards: return "Cards"
             case .pairs: return "Pairs"
+            case .books: return "Books"
             }
         }
 
         var other: StudyMode {
             switch self {
             case .cards: return .pairs
-            case .pairs: return .cards
+            case .pairs: return .books
+            case .books: return .cards
             }
         }
     }

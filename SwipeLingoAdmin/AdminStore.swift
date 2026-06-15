@@ -23,6 +23,7 @@ final class AdminStore {
     var cardSets:    [FSCardSet]    = []
     var cards:       [FSCard]       = []
     var pairsSets:   [FSPairsSet]   = []
+    var books:       [FSBook]       = []
 
     // Deploy state (shared — only one deploy runs at a time)
     var isDeploying    = false
@@ -259,6 +260,72 @@ final class AdminStore {
         save()
     }
 
+    // MARK: - Books
+
+    func add(_ book: FSBook) {
+        books.append(book)
+        save()
+    }
+
+    func update(_ book: FSBook) {
+        guard let idx = books.firstIndex(where: { $0.id == book.id }) else { return }
+        var updated = book
+        if book.deployStatus == .live || book.deployStatus == .ready {
+            updated.deployStatus = .draft
+        }
+        updated.updatedAt = .now
+        books[idx] = updated
+        save()
+    }
+
+    func delete(bookId: String) {
+        guard let idx = books.firstIndex(where: { $0.id == bookId }) else { return }
+        books[idx].previousDeployStatus = books[idx].deployStatus
+        books[idx].deployStatus         = .deleted
+        books[idx].updatedAt            = .now
+        save()
+    }
+
+    func restore(bookId: String) {
+        guard let idx = books.firstIndex(where: { $0.id == bookId }) else { return }
+        books[idx].deployStatus         = books[idx].previousDeployStatus ?? .live
+        books[idx].previousDeployStatus = nil
+        books[idx].updatedAt            = .now
+        save()
+    }
+
+    func deployBook(id: String) async {
+        guard let book = books.first(where: { $0.id == id }) else { return }
+        isDeploying = true
+        deployError = nil
+        do {
+            try await FirestoreService().deployBook(book)
+            if let idx = books.firstIndex(where: { $0.id == id }) {
+                books[idx].deployStatus = .live
+                books[idx].updatedAt   = .now
+            }
+            save()
+        } catch {
+            deployError = error.localizedDescription
+            log("[Deploy] Book deploy failed: \(error)", level: .error)
+        }
+        isDeploying = false
+    }
+
+    func deleteBookForever(id: String) async {
+        isDeleting  = true
+        deleteError = nil
+        do {
+            try await FirestoreService().deleteBook(id: id)
+            books.removeAll { $0.id == id }
+            save()
+        } catch {
+            deleteError = error.localizedDescription
+            log("[Delete] Book deleteForever failed: \(error)", level: .error)
+        }
+        isDeleting = false
+    }
+
     // MARK: - Deploy
 
     /// Deploys a CardSet (plus its cards and parent collection) to Firestore.
@@ -359,6 +426,25 @@ final class AdminStore {
         var cardSets:    [FSCardSet]
         var cards:       [FSCard]
         var pairsSets:   [FSPairsSet]
+        var books:       [FSBook]
+
+        init(collections: [FSCollection], cardSets: [FSCardSet], cards: [FSCard],
+             pairsSets: [FSPairsSet], books: [FSBook]) {
+            self.collections = collections
+            self.cardSets    = cardSets
+            self.cards       = cards
+            self.pairsSets   = pairsSets
+            self.books       = books
+        }
+
+        init(from decoder: Decoder) throws {
+            let c        = try decoder.container(keyedBy: CodingKeys.self)
+            collections  = try c.decode([FSCollection].self, forKey: .collections)
+            cardSets     = try c.decode([FSCardSet].self,    forKey: .cardSets)
+            cards        = try c.decode([FSCard].self,       forKey: .cards)
+            pairsSets    = try c.decode([FSPairsSet].self,   forKey: .pairsSets)
+            books        = (try? c.decode([FSBook].self,     forKey: .books)) ?? []
+        }
     }
 
     private func save() {
@@ -366,7 +452,8 @@ final class AdminStore {
             collections: collections,
             cardSets:    cardSets,
             cards:       cards,
-            pairsSets:   pairsSets
+            pairsSets:   pairsSets,
+            books:       books
         )
         do {
             let data = try Self.encoder.encode(payload)
@@ -385,7 +472,8 @@ final class AdminStore {
             cardSets    = payload.cardSets
             cards       = payload.cards
             pairsSets   = payload.pairsSets
-            log("AdminStore loaded: \(collections.count) collections, \(cardSets.count) sets, \(cards.count) cards, \(pairsSets.count) pairsSets")
+            books       = payload.books
+            log("AdminStore loaded: \(collections.count) collections, \(cardSets.count) sets, \(cards.count) cards, \(pairsSets.count) pairsSets, \(books.count) books")
         } catch {
             log("AdminStore load failed: \(error)", level: .error)
         }
