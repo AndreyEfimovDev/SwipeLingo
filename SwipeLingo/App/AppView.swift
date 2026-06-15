@@ -53,6 +53,7 @@ struct AppView: View {
         switch viewModel.studyMode {
         case .cards: FlashCardsView()
         case .pairs: PairsView()
+        case .books: BooksView()
         }
     }
 

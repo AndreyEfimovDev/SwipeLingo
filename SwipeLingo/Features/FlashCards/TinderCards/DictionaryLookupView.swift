@@ -59,30 +59,21 @@ final class DictionaryLookupViewModel {
     // Context and card are passed explicitly — same pattern as SRSService / PileBuilderViewModel.
     // Using do-catch instead of try? so errors are visible in the console.
 
-    /// Keys of texts already added in this session — drives the ✓ indicator in the UI.
-    private(set) var addedItems: Set<String> = []
+    /// Keys of examples already added in this session — drives the ✓ indicator in the UI.
+    var addedItems: Set<String> = []
 
     func addDefinition(
         _ definition: DictionaryDefinition,
         to card: Card,
         context: ModelContext,
-        translatedText: String? = nil,
         translatedExample: String? = nil
     ) {
-        // Write to userSample* — preserved on Firestore sync (sampleEN/sampleItem are Firestore-managed).
         var samplesEN   = card.userSampleEN
         var samplesItem = card.userSampleItem
         var changed = false
 
-        let allEN = card.allSampleEN   // Firestore + user, for duplicate check
+        let allEN = card.allSampleEN
 
-        if !allEN.contains(definition.text) {
-            samplesEN.append(definition.text)
-            samplesItem.append(translatedText ?? "")
-            changed = true
-            log("[+] definition: \"\(definition.text.prefix(60))\"")
-            if let t = translatedText { log("    translation: \"\(t.prefix(60))\"") }
-        }
         if let example = definition.example, !allEN.contains(example) {
             samplesEN.append(example)
             samplesItem.append(translatedExample ?? "")
@@ -99,7 +90,7 @@ final class DictionaryLookupViewModel {
         card.userSampleEN   = samplesEN
         card.userSampleItem = samplesItem
         save(context: context)
-        addedItems.insert(definition.text)
+        if let example = definition.example { addedItems.insert(example) }
     }
 
     func addSynonym(_ synonym: String, to card: Card, context: ModelContext) {
@@ -111,7 +102,6 @@ final class DictionaryLookupViewModel {
         syns.append(synonym)
         card.synonyms = syns
         save(context: context)
-        addedItems.insert(synonym)
         log("[+] synonym: '\(synonym)'")
     }
 
@@ -140,6 +130,9 @@ struct DictionaryLookupView: View {
     // Simulator does not support Translation — config stays nil to suppress the error dialog.
     @State private var translationSession: TranslationSession?
     @State private var translationConfig: TranslationSession.Configuration?
+
+    /// Translation of card.en shown in the error state (phrase not found in dictionary).
+    @State private var phraseTranslation: String? = nil
 
     private func buildTranslationConfig() {
         #if !targetEnvironment(simulator)
@@ -211,28 +204,26 @@ struct DictionaryLookupView: View {
         .translationTask(translationConfig) { session in
             translationSession = session
         }
+        // If we're in error state and session just became ready, translate the phrase.
+        .onChange(of: translationSession == nil) { _, isNil in
+            guard !isNil, case .error = viewModel.phase, phraseTranslation == nil else { return }
+            Task { phraseTranslation = await translateText(card.en, clientId: "phrase") }
+        }
     }
 
-    // MARK: - Translation helper
+    // MARK: - Translation helpers
 
-    /// Translates definition + optional example in one batch call.
-    /// Falls back silently (empty strings) if session unavailable or translation fails.
-    private func translate(_ definition: DictionaryDefinition) async -> (text: String?, example: String?) {
-        guard let session = translationSession else { return (nil, nil) }
+    /// Translates a single string. Falls back silently if session unavailable or translation fails.
+    private func translateText(_ text: String, clientId: String = "t") async -> String? {
+        guard let session = translationSession else { return nil }
         do {
-            var requests: [TranslationSession.Request] = [
-                TranslationSession.Request(sourceText: definition.text, clientIdentifier: "def")
-            ]
-            if let ex = definition.example {
-                requests.append(TranslationSession.Request(sourceText: ex, clientIdentifier: "ex"))
-            }
-            let responses = try await session.translations(from: requests)
-            let text    = responses.first { $0.clientIdentifier == "def" }?.targetText
-            let example = responses.first { $0.clientIdentifier == "ex" }?.targetText
-            return (text, example)
+            let responses = try await session.translations(from: [
+                TranslationSession.Request(sourceText: text, clientIdentifier: clientId)
+            ])
+            return responses.first?.targetText
         } catch {
             log("Translation failed: \(error)", level: .warning)
-            return (nil, nil)
+            return nil
         }
     }
 
@@ -251,7 +242,7 @@ struct DictionaryLookupView: View {
     // MARK: - Error
 
     private func errorView(_ message: String) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 48))
                 .foregroundStyle(.orange)
@@ -262,12 +253,35 @@ struct DictionaryLookupView: View {
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
+
+            // Show translation when available (useful for phrases saved from Books)
+            if let translation = phraseTranslation {
+                VStack(spacing: 6) {
+                    Text(card.en)
+                        .font(.body.bold())
+                        .multilineTextAlignment(.center)
+                    Text(translation)
+                        .font(.body)
+                        .foregroundStyle(Color.myColors.mySecondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 32)
+            }
+
             Button("Try Again") {
+                phraseTranslation = nil
                 Task { await viewModel.load(word: card.en) }
             }
             .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task(id: message) {
+            // Auto-translate the phrase when dictionary lookup fails
+            phraseTranslation = await translateText(card.en, clientId: "phrase")
+        }
     }
 
     // MARK: - Entry scroll view
@@ -351,33 +365,34 @@ struct DictionaryLookupView: View {
     // MARK: - Definition row
 
     private func definitionRow(_ definition: DictionaryDefinition) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(definition.text)
-                    .font(.body)
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(definition.text)
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
 
-                if let example = definition.example {
-                    Text("\"\(example)\"")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                        .italic()
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            if let example = definition.example, !card.allSampleEN.contains(example) {
+                let alreadyAdded = viewModel.addedItems.contains(example)
+                exampleRow(example: example, definition: definition, alreadyAdded: alreadyAdded)
             }
+        }
+        .padding(.leading, 4)
+    }
 
-            Spacer(minLength: 8)
+    @ViewBuilder
+    private func exampleRow(example: String, definition: DictionaryDefinition, alreadyAdded: Bool) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("\"\(example)\"")
+                .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                .italic()
+                .fixedSize(horizontal: false, vertical: true)
 
-            // [+] adds the definition (+ example) to card.userSampleEN / userSampleItem with translation
-            let alreadyAdded = viewModel.addedItems.contains(definition.text) || card.allSampleEN.contains(definition.text)
+            Spacer(minLength: 4)
+
             Button {
                 Task {
-                    let (translatedText, translatedExample) = await translate(definition)
-                    viewModel.addDefinition(
-                        definition, to: card, context: context,
-                        translatedText: translatedText,
-                        translatedExample: translatedExample
-                    )
+                    let translatedExample = await translateText(example, clientId: "ex")
+                    viewModel.addDefinition(definition, to: card, context: context, translatedExample: translatedExample)
                 }
             } label: {
                 Image(systemName: alreadyAdded ? "checkmark.circle" : "plus.circle")
@@ -386,9 +401,8 @@ struct DictionaryLookupView: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(alreadyAdded ? "Added" : "Add to card examples")
+            .accessibilityLabel(alreadyAdded ? "Added" : "Add example to card")
         }
-        .padding(.leading, 4)
     }
 
     // MARK: - Synonyms section
@@ -409,7 +423,7 @@ struct DictionaryLookupView: View {
         HStack(spacing: 4) {
             Text(synonym)
                 .font(.subheadline)
-            let synonymAdded = viewModel.addedItems.contains(synonym) || card.synonyms.contains(synonym)
+            let synonymAdded = card.synonyms.contains(synonym)
             Button {
                 viewModel.addSynonym(synonym, to: card, context: context)
             } label: {
