@@ -162,6 +162,9 @@ struct BookReaderView: View {
             .sheet(isPresented: $viewModel.showDictionary) {
                 if let word = viewModel.tappedWord {
                     BookWordLookupView(word: word)
+                        .onAppear {
+                            AnalyticsService.wordLookedUp(word: word, source: .book)
+                        }
                 }
             }
             .sheet(isPresented: $viewModel.showChapterList) {
@@ -198,6 +201,7 @@ struct BookReaderView: View {
                 viewModel = BookReaderViewModel(book: book, progress: p)
             }
             downloadTask = Task { await viewModel.downloadCurrentChapterIfNeeded() }
+            AnalyticsService.bookOpened(bookId: book.id, bookTitle: book.title)
         }
         .onDisappear {
             downloadTask?.cancel()
@@ -223,6 +227,7 @@ struct BookReaderView: View {
                 // Called by UIPageViewController after user swipe completes
                 viewModel.goToChapter(newIndex)
                 viewModel.saveProgress(context: context)
+                AnalyticsService.bookChapterRead(bookId: book.id, chapterIndex: newIndex, totalChapters: book.totalChapters)
                 // Proactively download the next 2 chapters so swipe is always available
                 downloadTask = Task {
                     for offset in 1...2 {
