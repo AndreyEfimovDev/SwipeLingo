@@ -7,9 +7,6 @@ struct SwipeLingoAdminApp: App {
     @State private var store = AdminStore()
 
     init() {
-        // Configures Firebase from GoogleService-Info.plist.
-        // ⚠️  Requires GoogleService-Info.plist added to the SwipeLingoAdmin target.
-        //     Without it this call is a no-op (guarded below).
         if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
             FirebaseApp.configure()
             log("[Firebase] App configured", level: .info)
@@ -20,7 +17,7 @@ struct SwipeLingoAdminApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AdminRootView()
                 .environment(store)
         }
         .defaultSize(width: 1200, height: 750)

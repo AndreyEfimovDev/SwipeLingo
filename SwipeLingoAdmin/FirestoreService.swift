@@ -213,6 +213,42 @@ struct FirestoreService {
         if let v = p.rightTitle  { d["rightTitle"]  = v }
         return d
     }
+
+    // MARK: - Deploy Book
+
+    /// Записывает метаданные книги в Firestore /books/{id}.
+    /// Главы и обложка уже должны быть залиты в Firebase Storage перед вызовом.
+    func deployBook(_ book: FSBook) async throws {
+        let ref = db.collection("books").document(book.id)
+        try await ref.setData(bookDoc(book))
+        log("[Firestore] Deployed book '\(book.title)' (\(book.totalChapters) chapters)", level: .info)
+    }
+
+    /// Удаляет документ книги из Firestore /books/{id}.
+    /// Файлы в Firebase Storage удаляются отдельно через BookStorageService.
+    func deleteBook(id: String) async throws {
+        try await db.collection("books").document(id).delete()
+        log("[Firestore] Deleted book '\(id)'", level: .info)
+    }
+
+    // MARK: - Book document builder
+
+    private func bookDoc(_ book: FSBook) -> [String: Any] {
+        var d: [String: Any] = [
+            "id":               book.id,
+            "title":            book.title,
+            "author":           book.author,
+            "cefrLevel":        book.cefrLevel.rawValue,
+            "accessTier":       book.accessTier.rawValue,
+            "coverStoragePath": book.coverStoragePath,
+            "totalChapters":    book.totalChapters,
+            "chapters":         book.chapters.map { ["index": $0.index, "title": $0.title] },
+            "updatedAt":        Timestamp(date: book.updatedAt),
+            "createdAt":        Timestamp(date: book.createdAt)
+        ]
+        if let desc = book.description { d["description"] = desc }
+        return d
+    }
 }
 
 // MARK: - FirestoreServiceError

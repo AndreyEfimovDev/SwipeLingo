@@ -5,6 +5,7 @@ import SwiftUI
 enum AdminSection: String, CaseIterable, Identifiable {
     case cardsCollections
     case pairsCollections
+    case books
 
     var id: String { label }
 
@@ -12,6 +13,7 @@ enum AdminSection: String, CaseIterable, Identifiable {
         switch self {
         case .cardsCollections: "Cards"
         case .pairsCollections: "Pairs"
+        case .books:            "Books"
         }
     }
 
@@ -19,13 +21,15 @@ enum AdminSection: String, CaseIterable, Identifiable {
         switch self {
         case .cardsCollections: "rectangle.stack"
         case .pairsCollections: "square.grid.2x2"
+        case .books:            "book.closed"
         }
     }
 
-    var collectionType: CollectionType {
+    var collectionType: CollectionType? {
         switch self {
         case .cardsCollections: .cards
         case .pairsCollections: .pairs
+        case .books:            nil
         }
     }
 }
@@ -46,15 +50,26 @@ struct ContentView: View {
             sidebar
         } content: {
             if let section = selectedSection {
-                CollectionsListView(
-                    type: section.collectionType,
-                    selectedCollectionId: $selectedCollectionId
-                )
+                switch section {
+                case .books:
+                    BooksListView()
+                default:
+                    if let type = section.collectionType {
+                        CollectionsListView(
+                            type: type,
+                            selectedCollectionId: $selectedCollectionId
+                        )
+                    }
+                }
             } else {
                 ContentUnavailableView("Select a section", systemImage: "sidebar.left")
             }
         } detail: {
-            detailView
+            if selectedSection == .books {
+                ContentUnavailableView("Select a book", systemImage: "book.closed")
+            } else {
+                detailView
+            }
         }
         // Сброс выбранного сета при смене коллекции или раздела
         .onChange(of: selectedCollectionId) { _, _ in
@@ -93,6 +108,8 @@ struct ContentView: View {
                     PairsSetsListView(collectionId: collectionId,
                                       selectedSetId: $selectedPairsSetId)
                 }
+            case nil:
+                ContentUnavailableView("Select a collection", systemImage: "rectangle.stack")
             }
         } else {
             ContentUnavailableView("Select a collection", systemImage: "rectangle.stack")
