@@ -16,11 +16,12 @@ struct CardsListView: View {
     let setName: String
     let onBack:  () -> Void
 
-    @State private var showNewEditor: Bool    = false
-    @State private var showImport:    Bool    = false
-    @State private var editingCard:   FSCard? = nil
-    @State private var selectedCard:  FSCard? = nil
-    @State private var selectedTag:   String? = nil
+    @State private var showNewEditor:     Bool    = false
+    @State private var showImport:        Bool    = false
+    @State private var showRetranslate:   Bool    = false
+    @State private var editingCard:       FSCard? = nil
+    @State private var selectedCard:      FSCard? = nil
+    @State private var selectedTag:       String? = nil
 
     private var cardSet: FSCardSet? {
         store.cardSets.first { $0.id == setId }
@@ -87,6 +88,15 @@ struct CardsListView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
+                    showRetranslate = true
+                } label: {
+                    Label("Re-translate", systemImage: "arrow.trianglehead.2.clockwise")
+                }
+                .help("Re-translate all cards using topic context")
+                .disabled(allCards.isEmpty)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
                     showNewEditor = true
                 } label: {
                     Image(systemName: "plus")
@@ -96,6 +106,9 @@ struct CardsListView: View {
         }
         .sheet(isPresented: $showImport) {
             ImportCardsSheet(setId: setId)
+        }
+        .sheet(isPresented: $showRetranslate) {
+            RetranslateSetSheet(setId: setId, setName: setName)
         }
         .sheet(isPresented: $showNewEditor) {
             NavigationStack {
