@@ -100,25 +100,25 @@ enum AnalyticsService {
 
     // MARK: - Books
 
-    static func bookOpened(bookId: String, bookTitle: String) {
+    static func bookOpened(bookId: UUID, bookTitle: String) {
         Analytics.logEvent("book_opened", parameters: [
-            "book_id":    bookId,
+            "book_id":    bookId.uuidString,
             "book_title": bookTitle
         ])
     }
 
-    static func bookChapterRead(bookId: String, chapterIndex: Int, totalChapters: Int) {
+    static func bookChapterRead(bookId: UUID, chapterIndex: Int, totalChapters: Int) {
         Analytics.logEvent("book_chapter_read", parameters: [
-            "book_id":       bookId,
-            "chapter_index": chapterIndex,
+            "book_id":        bookId.uuidString,
+            "chapter_index":  chapterIndex,
             "total_chapters": totalChapters
         ])
     }
 
-    static func wordSavedFromBook(word: String, bookId: String) {
+    static func wordSavedFromBook(word: String, bookId: UUID) {
         Analytics.logEvent("word_saved_from_book", parameters: [
             "word":    word,
-            "book_id": bookId
+            "book_id": bookId.uuidString
         ])
     }
 
