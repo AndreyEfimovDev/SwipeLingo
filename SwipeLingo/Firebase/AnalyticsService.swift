@@ -28,7 +28,7 @@ enum AnalyticsService {
         var info: [String: Any] = [:]
         if let context { info["context"] = context }
         Crashlytics.crashlytics().record(error: error, userInfo: info)
-        log("[Crashlytics] recorded error: \(error) context=\(context ?? "-")", level: .error)
+        SwipeLingo.log("[Crashlytics] recorded error: \(error) context=\(context ?? "-")", level: .error)
     }
 
     static func log(_ message: String) {
