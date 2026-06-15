@@ -2,6 +2,109 @@ import SwiftUI
 import SwiftData
 import WebKit
 
+// MARK: - IdentifiableString
+
+private struct IdentifiableString: Identifiable {
+    let id = UUID()
+    let value: String
+}
+
+// MARK: - BookImageFullscreenView
+
+private struct BookImageFullscreenView: View {
+
+    let urlString: String
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var scale:       CGFloat = 1.0
+    @State private var lastScale:   CGFloat = 1.0
+    @State private var offset:      CGSize  = .zero
+    @State private var lastOffset:  CGSize  = .zero
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+
+            if let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .scaleEffect(scale)
+                            .offset(offset)
+                            .gesture(
+                                MagnificationGesture()
+                                    .onChanged { value in
+                                        scale = max(1.0, lastScale * value)
+                                    }
+                                    .onEnded { _ in
+                                        lastScale = scale
+                                        if scale < 1.0 {
+                                            withAnimation(.spring()) {
+                                                scale = 1.0
+                                                offset = .zero
+                                            }
+                                            lastScale = 1.0
+                                            lastOffset = .zero
+                                        }
+                                    }
+                                    .simultaneously(with:
+                                        DragGesture()
+                                            .onChanged { value in
+                                                guard scale > 1.0 else { return }
+                                                offset = CGSize(
+                                                    width:  lastOffset.width  + value.translation.width,
+                                                    height: lastOffset.height + value.translation.height
+                                                )
+                                            }
+                                            .onEnded { _ in
+                                                lastOffset = offset
+                                            }
+                                    )
+                            )
+                            .onTapGesture(count: 2) {
+                                withAnimation(.spring()) {
+                                    if scale > 1.0 {
+                                        scale = 1.0
+                                        offset = .zero
+                                        lastScale = 1.0
+                                        lastOffset = .zero
+                                    } else {
+                                        scale = 2.5
+                                        lastScale = 2.5
+                                    }
+                                }
+                            }
+                    case .failure:
+                        VStack(spacing: 12) {
+                            Image(systemName: "photo.badge.exclamationmark")
+                                .font(.system(size: 48))
+                                .foregroundStyle(.white.opacity(0.5))
+                            Text("Failed to load image")
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                    default:
+                        ProgressView().tint(.white)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(20)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
 // MARK: - BookReaderView
 
 struct BookReaderView: View {
@@ -17,6 +120,7 @@ struct BookReaderView: View {
 
     @State private var viewModel: BookReaderViewModel
     @State private var downloadTask: Task<Void, Never>? = nil
+    @State private var fullscreenImageURL: String? = nil
 
     @AppStorage("bookFontSize") private var fontSize: Int = 18
 
@@ -83,6 +187,12 @@ struct BookReaderView: View {
                 )
             }
         }
+        .fullScreenCover(item: Binding(
+            get: { fullscreenImageURL.map { IdentifiableString(value: $0) } },
+            set: { if $0 == nil { fullscreenImageURL = nil } }
+        )) { item in
+            BookImageFullscreenView(urlString: item.value)
+        }
         .onAppear {
             if let p = progress, viewModel.chapterIndex == 0 && viewModel.scrollOffset == 0 {
                 viewModel = BookReaderViewModel(book: book, progress: p)
@@ -105,6 +215,9 @@ struct BookReaderView: View {
             fontSize:     fontSize,
             onWordTap: { word in
                 viewModel.handleWordTap(word)
+            },
+            onImageTap: { src in
+                fullscreenImageURL = src
             },
             onPageChange: { newIndex in
                 // Called by UIPageViewController after user swipe completes
