@@ -139,7 +139,6 @@
 		478C78802F794487005FBDFE /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C781E2F794487005FBDFE /* Views.swift */; };
 		47C099F62F84F0B80049858B /* OnboardingLevelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F12F84F0B80049858B /* OnboardingLevelView.swift */; };
 		47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */; };
-		47C099F82F84F0B80049858B /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F42F84F0B80049858B /* OnboardingWelcomeView.swift */; };
 		47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F32F84F0B80049858B /* OnboardingView.swift */; };
 		47C099FA2F84F0B80049858B /* OnboardingNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F22F84F0B80049858B /* OnboardingNameView.swift */; };
 		47C099FC2F84F3A10049858B /* OnboardingIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */; };
@@ -338,7 +337,6 @@
 		47C099F12F84F0B80049858B /* OnboardingLevelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelView.swift; sourceTree = "<group>"; };
 		47C099F22F84F0B80049858B /* OnboardingNameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNameView.swift; sourceTree = "<group>"; };
 		47C099F32F84F0B80049858B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-		47C099F42F84F0B80049858B /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroView.swift; sourceTree = "<group>"; };
 		47C09A482F8531910049858B /* PairsSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSet.swift; sourceTree = "<group>"; };
 		47C09A4B2F8531C20049858B /* PairsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsLibraryView.swift; sourceTree = "<group>"; };
@@ -678,11 +676,11 @@
 		478C78362F794487005FBDFE /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				4700CD812FBA27B1003EA2B1 /* Books */,
-				478728F82FA9D386001282EF /* Auth */,
 				47C099F52F84F0B80049858B /* Onboarding */,
 				478C78352F794487005FBDFE /* FlashCards */,
 				47C09A522F8531C20049858B /* Pairs */,
+				4700CD812FBA27B1003EA2B1 /* Books */,
+				478728F82FA9D386001282EF /* Auth */,
 				478C782E2F794487005FBDFE /* Statistics */,
 				478C782C2F794487005FBDFE /* Settings */,
 			);
@@ -760,14 +758,13 @@
 		47C099F52F84F0B80049858B /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
-				4787294A2FAB7CBB001282EF /* OnboardingAuthView.swift */,
-				47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */,
 				47C099F32F84F0B80049858B /* OnboardingView.swift */,
 				47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */,
 				47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */,
 				47C099F22F84F0B80049858B /* OnboardingNameView.swift */,
 				47C099F12F84F0B80049858B /* OnboardingLevelView.swift */,
-				47C099F42F84F0B80049858B /* OnboardingWelcomeView.swift */,
+				4787294A2FAB7CBB001282EF /* OnboardingAuthView.swift */,
+				47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -1091,7 +1088,6 @@
 				47C099F62F84F0B80049858B /* OnboardingLevelView.swift in Sources */,
 				474D28BC2F9B734400BC11FF /* AppView.swift in Sources */,
 				47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */,
-				47C099F82F84F0B80049858B /* OnboardingWelcomeView.swift in Sources */,
 				47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */,
 				47C099FA2F84F0B80049858B /* OnboardingNameView.swift in Sources */,
 				478C78682F794487005FBDFE /* TinderCardsViewModel.swift in Sources */,

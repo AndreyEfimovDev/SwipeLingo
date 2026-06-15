@@ -17,6 +17,7 @@ struct BookPagedReader: UIViewControllerRepresentable {
     let colorScheme:  ColorScheme
     let fontSize:     Int          // user-adjustable, persisted in AppStorage
     let onWordTap:    (String) -> Void
+    let onImageTap:   (String) -> Void
     let onPageChange: (Int) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(book: book, fontSize: fontSize) }
@@ -32,6 +33,7 @@ struct BookPagedReader: UIViewControllerRepresentable {
         context.coordinator.configure(
             pageVC:       pageVC,
             onWordTap:    onWordTap,
+            onImageTap:   onImageTap,
             onPageChange: onPageChange
         )
 
@@ -46,6 +48,7 @@ struct BookPagedReader: UIViewControllerRepresentable {
     func updateUIViewController(_ pageVC: UIPageViewController, context: Context) {
         let coord = context.coordinator
         coord.onWordTap    = onWordTap
+        coord.onImageTap   = onImageTap
         coord.onPageChange = onPageChange
         pageVC.view.backgroundColor = background(for: colorScheme)
 
@@ -77,6 +80,7 @@ struct BookPagedReader: UIViewControllerRepresentable {
         var currentIndex    = 0
         var currentFontSize: Int
         var onWordTap:    (String) -> Void = { _ in }
+        var onImageTap:   (String) -> Void = { _ in }
         var onPageChange: (Int) -> Void    = { _ in }
         private weak var pageVC: UIPageViewController?
         private var cache: [Int: BookChapterVC] = [:]
@@ -89,10 +93,12 @@ struct BookPagedReader: UIViewControllerRepresentable {
         func configure(
             pageVC: UIPageViewController,
             onWordTap: @escaping (String) -> Void,
+            onImageTap: @escaping (String) -> Void,
             onPageChange: @escaping (Int) -> Void
         ) {
             self.pageVC       = pageVC
             self.onWordTap    = onWordTap
+            self.onImageTap   = onImageTap
             self.onPageChange = onPageChange
         }
 
@@ -195,6 +201,7 @@ final class BookChapterVC: UIViewController {
         let config = WKWebViewConfiguration()
         let proxy  = WeakScriptHandler(self)
         config.userContentController.add(proxy, name: "wordTapped")
+        config.userContentController.add(proxy, name: "imageTapped")
         config.userContentController.add(proxy, name: "pageReady")
 
         let wv = WKWebView(frame: .zero, configuration: config)
@@ -243,6 +250,10 @@ extension BookChapterVC: WKScriptMessageHandler {
                 let clean = word.trimmingCharacters(in: .punctuationCharacters)
                 guard !clean.isEmpty else { return }
                 DispatchQueue.main.async { self.coordinator?.onWordTap(clean) }
+            }
+        case "imageTapped":
+            if let src = message.body as? String, !src.isEmpty {
+                DispatchQueue.main.async { self.coordinator?.onImageTap(src) }
             }
         case "pageReady":
             DispatchQueue.main.async {
@@ -322,6 +333,15 @@ private extension BookChapterVC {
                 }
             }
             wrapWords(document.body);
+
+            // Image tap → fullscreen
+            document.querySelectorAll('img').forEach(function(img) {
+                img.style.cursor = 'pointer';
+                img.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    window.webkit.messageHandlers.imageTapped.postMessage(img.src);
+                });
+            });
 
             // Signal ready after all images are loaded or failed
             var imgs     = Array.from(document.querySelectorAll('img[src]'));
