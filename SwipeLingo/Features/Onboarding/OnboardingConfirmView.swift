@@ -79,7 +79,13 @@ struct OnboardingConfirmView: View {
 
             // Buttons
             VStack(spacing: 12) {
-                Button(action: onComplete) {
+                Button {
+                    AnalyticsService.onboardingCompleted(
+                        nativeLanguage: nativeLanguage.rawValue,
+                        cefrLevel: cefrLevel.rawValue
+                    )
+                    onComplete()
+                } label: {
                     Text("Start Learning")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.white)
