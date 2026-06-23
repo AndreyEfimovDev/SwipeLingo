@@ -43,9 +43,8 @@ struct BooksView: View {
                 BookReaderView(book: book)
             }
         }
-        .task {
-            syncTask = Task { await viewModel.syncBooks(context: context) }
-        }
+        // BOOKS_SYNC_STUB: автосинк при входе отключён — книги на GitHub, не в Firestore.
+        // .task { syncTask = Task { await viewModel.syncBooks(context: context) } }
         .onDisappear { syncTask?.cancel() }
     }
 
@@ -132,17 +131,18 @@ struct BooksView: View {
         }
 
         ToolbarItemGroup(placement: .topBarTrailing) {
-            // Sync
-            if viewModel.isSyncing {
-                ProgressView().tint(Color.myColors.myBlue)
-            } else {
-                Button {
-                    syncTask = Task { await viewModel.syncBooks(context: context) }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                }
-            }
+            // BOOKS_SYNC_STUB: кнопка sync и спиннер скрыты — книги загружаются с GitHub, не из Firestore.
+            // Когда книги переедут в Firebase Storage/Firestore — раскомментировать:
+            // if viewModel.isSyncing {
+            //     ProgressView().tint(Color.myColors.myBlue)
+            // } else {
+            //     Button {
+            //         syncTask = Task { await viewModel.syncBooks(context: context) }
+            //     } label: {
+            //         Image(systemName: "arrow.clockwise")
+            //             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            //     }
+            // }
 
             // Debug import
             Button {
@@ -186,7 +186,22 @@ struct BooksView: View {
     // MARK: - Debug import
 
     private func importDebugBook() async {
-        let metaURL = URL(string: "https://raw.githubusercontent.com/AndreyEfimovDev/Support/main/Books/metadata.json")!
+        let indexURL = URL(string: "https://raw.githubusercontent.com/AndreyEfimovDev/Support/main/Books/books_index.json")!
+        do {
+            let (indexData, _) = try await URLSession.shared.data(from: indexURL)
+            guard let index = try JSONSerialization.jsonObject(with: indexData) as? [String: Any],
+                  let bookURLs = index["books"] as? [String] else { return }
+
+            for urlString in bookURLs {
+                guard let metaURL = URL(string: urlString) else { continue }
+                await importSingleBook(from: metaURL)
+            }
+        } catch {
+            log("[BookDebug] Index load failed: \(error)", level: .error)
+        }
+    }
+
+    private func importSingleBook(from metaURL: URL) async {
         do {
             let (data, _) = try await URLSession.shared.data(from: metaURL)
             guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
@@ -230,7 +245,7 @@ struct BooksView: View {
             try context.save()
             log("[BookDebug] Imported '\(title)' (\(totalChapters) chapters)", level: .info)
         } catch {
-            log("[BookDebug] Import failed: \(error)", level: .error)
+            log("[BookDebug] Import '\(metaURL.lastPathComponent)' failed: \(error)", level: .error)
         }
     }
 }
