@@ -143,7 +143,6 @@
 		47C099F62F84F0B80049858B /* OnboardingLevelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F12F84F0B80049858B /* OnboardingLevelView.swift */; };
 		47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */; };
 		47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F32F84F0B80049858B /* OnboardingView.swift */; };
-		47C099FA2F84F0B80049858B /* OnboardingNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099F22F84F0B80049858B /* OnboardingNameView.swift */; };
 		47C099FC2F84F3A10049858B /* OnboardingIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */; };
 		47C09A492F8531910049858B /* PairsSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A482F8531910049858B /* PairsSet.swift */; };
 		47C09A532F8531C20049858B /* PairsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C09A512F8531C20049858B /* PairsViewModel.swift */; };
@@ -339,7 +338,6 @@
 		478C784D2F794487005FBDFE /* SwipeLingo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwipeLingo.entitlements; sourceTree = "<group>"; };
 		47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLanguageView.swift; sourceTree = "<group>"; };
 		47C099F12F84F0B80049858B /* OnboardingLevelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelView.swift; sourceTree = "<group>"; };
-		47C099F22F84F0B80049858B /* OnboardingNameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNameView.swift; sourceTree = "<group>"; };
 		47C099F32F84F0B80049858B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroView.swift; sourceTree = "<group>"; };
 		47C09A482F8531910049858B /* PairsSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSet.swift; sourceTree = "<group>"; };
@@ -767,7 +765,6 @@
 				47C099F32F84F0B80049858B /* OnboardingView.swift */,
 				47C099FB2F84F3A10049858B /* OnboardingIntroView.swift */,
 				47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */,
-				47C099F22F84F0B80049858B /* OnboardingNameView.swift */,
 				47C099F12F84F0B80049858B /* OnboardingLevelView.swift */,
 				4787294A2FAB7CBB001282EF /* OnboardingAuthView.swift */,
 				47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */,
@@ -1122,7 +1119,6 @@
 				474D28BC2F9B734400BC11FF /* AppView.swift in Sources */,
 				47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */,
 				47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */,
-				47C099FA2F84F0B80049858B /* OnboardingNameView.swift in Sources */,
 				478C78682F794487005FBDFE /* TinderCardsViewModel.swift in Sources */,
 				478C78692F794487005FBDFE /* FlashCardsView.swift in Sources */,
 				474F1FE62F7BE2BA00128E83 /* DatabseErrorView.swift in Sources */,

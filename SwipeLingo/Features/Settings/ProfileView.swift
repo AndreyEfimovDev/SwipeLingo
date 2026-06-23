@@ -1,40 +1,61 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import AuthenticationServices
 
 // MARK: - ProfileView
 // User profile: name, auth state, subscription plan, English level.
 
 struct ProfileView: View {
 
-    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan:      AccessTier = .free
-    @AppStorage(Constants.StorageKey.cachedPlanStatus)   private var planStatus:    String     = SubscriptionStatus.active.rawValue
-    @AppStorage(Constants.StorageKey.cachedBillingCycle) private var planCycle:     String     = BillingCycle.none.rawValue
-    @AppStorage(Constants.StorageKey.cachedPendingPlan)  private var pendingPlanRaw: String    = ""
-    @AppStorage(Constants.StorageKey.cachedPendingCycle) private var pendingCycleRaw: String   = ""
+    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan:      AccessTier    = .free
+    @AppStorage(Constants.StorageKey.cachedPlanStatus)   private var planStatus:    String        = SubscriptionStatus.active.rawValue
+    @AppStorage(Constants.StorageKey.cachedBillingCycle) private var planCycle:     String        = BillingCycle.none.rawValue
+    @AppStorage(Constants.StorageKey.cachedPendingPlan)  private var pendingPlanRaw: String       = ""
+    @AppStorage(Constants.StorageKey.cachedPendingCycle) private var pendingCycleRaw: String      = ""
+    @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
     @Query private var profiles: [UserProfile]
     @Environment(\.modelContext) private var context
     @Environment(AuthService.self)  private var authService
     @Environment(UserService.self)  private var userService
 
+    @AppStorage("appleRelayBannerDismissed") private var relayBannerDismissed = false
+
+    @State private var nameInput  = ""
+    @State private var pendingLevel: CEFRLevel = .a1
+    @State private var isInitialized     = false
+    @State private var saveConfirmed     = false
     @State private var showAuth          = false
     @State private var showPlans         = false
     @State private var didCopyUID        = false
-    @State private var showDeleteConfirm   = false
-    @State private var isDeletingAccount   = false
+    @State private var showDeleteConfirm         = false
+    @State private var needsAppleReauthForDeletion = false
+    @State private var isDeletingAccount         = false
+    @State private var deleteErrorMessage: String? = nil
     @State private var isResendingVerification = false
     @State private var verificationSent    = false
 
     private var profile: UserProfile? { profiles.first }
+    private var isAppleRelayEmail: Bool {
+        authService.currentUser?.email?.contains("privaterelay.appleid.com") == true
+    }
+    private var linkedProviders: [String] {
+        authService.currentUser?.providerData.map { $0.providerID } ?? []
+    }
+    private var hasChanges: Bool {
+        guard isInitialized, let profile else { return false }
+        return nameInput != profile.name || pendingLevel != profile.cefrLevel
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
                 nameSection
                 emailVerificationBanner
+                appleRelayBanner
                 accountSection
-                planSection
                 levelSection
+                languageSection
             }
             .padding(.vertical, 16)
         }
@@ -42,12 +63,26 @@ struct ProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .customBackButton("Settings")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if saveConfirmed {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.myColors.myGreen)
+                        .transition(.scale.combined(with: .opacity))
+                } else if hasChanges {
+                    Button("Save") { saveChanges() }
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
+                        .transition(.opacity)
+                }
+            }
+        }
         .onAppear {
             if profiles.isEmpty { context.insert(UserProfile()) }
+            nameInput    = profile?.name ?? ""
+            pendingLevel = profile?.cefrLevel ?? .a1
+            isInitialized = true
             Task { await authService.reloadUser() }
-        }
-        .onDisappear {
-            context.saveWithErrorHandling()
         }
         .sheet(isPresented: $showAuth) {
             AuthView(isDismissible: true)
@@ -60,10 +95,31 @@ struct ProfileView: View {
             PlansView()
         }
         .alert("Delete Account", isPresented: $showDeleteConfirm) {
-            Button("Delete", role: .destructive) { Task { await deleteAccount() } }
+            Button("Delete", role: .destructive) {
+                if authService.isAppleUser {
+                    needsAppleReauthForDeletion = true
+                } else {
+                    Task { await deleteAccount() }
+                }
+            }
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Your account and all associated data will be permanently deleted. This cannot be undone.")
+        }
+        .sheet(isPresented: $needsAppleReauthForDeletion) {
+            AppleDeletionSheet { authorization in
+                needsAppleReauthForDeletion = false
+                Task { await deleteAccountWithApple(authorization) }
+            }
+            .environment(authService)
+        }
+        .alert("Cannot Delete Account", isPresented: Binding(
+            get: { deleteErrorMessage != nil },
+            set: { if !$0 { deleteErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(deleteErrorMessage ?? "")
         }
     }
 
@@ -126,6 +182,48 @@ struct ProfileView: View {
         }
     }
 
+    // MARK: - Apple Relay Banner
+
+    @ViewBuilder
+    private var appleRelayBanner: some View {
+        if !relayBannerDismissed && isAppleRelayEmail {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "info.circle")
+                    .font(.title3)
+                    .foregroundStyle(Color.myColors.myBlue)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Signed in with Apple")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myAccent)
+                    Text("Apple hides your real email. Always use Sign in with Apple on new devices to access your data.")
+                        .font(.caption)
+                        .foregroundStyle(Color.myColors.mySecondary)
+                }
+
+                Spacer()
+
+                Button {
+                    withAnimation { relayBannerDismissed = true }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.myColors.mySecondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color.myColors.myBlue.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.myColors.myBlue.opacity(0.2), lineWidth: 1)
+            )
+            .padding(.horizontal, 16)
+        }
+    }
+
     // MARK: - Name
 
     private var nameSection: some View {
@@ -140,14 +238,10 @@ struct ProfileView: View {
                         .font(.title2)
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
 
-                    TextField("Anonymous", text: Binding(
-                        get: { profile?.name ?? "" },
-                        set: { profile?.name = $0 }
-                    ))
-                    .font(.body)
-                    .foregroundStyle(Color.myColors.myAccent)
-                    .submitLabel(.done)
-                    .onSubmit { context.saveWithErrorHandling() }
+                    TextField("Anonymous", text: $nameInput)
+                        .font(.body)
+                        .foregroundStyle(Color.myColors.myAccent)
+                        .submitLabel(.done)
                 }
                 .frame(height: 52)
                 .padding(.horizontal, 16)
@@ -243,6 +337,26 @@ struct ProfileView: View {
                     }
                     .frame(height: 52)
                     .padding(.horizontal, 16)
+
+                    if !linkedProviders.isEmpty {
+                        Divider().padding(.leading, 56)
+                        HStack(spacing: 8) {
+                            Image(systemName: "link")
+                                .font(.body)
+                                .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                            Text("Linked with")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.myColors.mySecondary)
+                            Spacer()
+                            HStack(spacing: 6) {
+                                ForEach(linkedProviders, id: \.self) { providerID in
+                                    providerChip(providerID)
+                                }
+                            }
+                        }
+                        .frame(height: 44)
+                        .padding(.horizontal, 16)
+                    }
 
                     Divider().padding(.leading, 56)
 
@@ -476,7 +590,7 @@ struct ProfileView: View {
                 ForEach(Array(CEFRLevel.allCases.enumerated()), id: \.offset) { index, level in
                     if index > 0 { Divider().padding(.leading, 16) }
                     Button {
-                        profile?.cefrLevel = level
+                        pendingLevel = level
                     } label: {
                         HStack(spacing: 10) {
                             Text(level.displayCode)
@@ -486,7 +600,7 @@ struct ProfileView: View {
                             Text(level.displayName)
                                 .foregroundStyle(Color.myColors.myAccent)
                             Spacer()
-                            if profile?.cefrLevel == level {
+                            if pendingLevel == level {
                                 Image(systemName: "checkmark")
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(Color.myColors.myBlue)
@@ -507,7 +621,65 @@ struct ProfileView: View {
         }
     }
 
+    // MARK: - Language Section
+
+    private var languageSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("NATIVE LANGUAGE")
+                .font(.caption)
+                .padding(.horizontal, 32)
+
+            HStack {
+                Text("Native language")
+                Spacer()
+                Text("\(nativeLanguage.flag) \(nativeLanguage.displayName)")
+                    .foregroundStyle(Color.myColors.mySecondary)
+            }
+            .font(.body)
+            .frame(height: 52)
+            .padding(.horizontal, 16)
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func providerChip(_ providerID: String) -> some View {
+        let label: String = switch providerID {
+        case "password": "Email"
+        case "google.com": "Google"
+        case "apple.com": "Apple"
+        default: providerID
+        }
+        return Text(label)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.myColors.myAccent.opacity(0.08))
+            .clipShape(Capsule())
+    }
+
     // MARK: - Actions
+
+    private func saveChanges() {
+        let trimmedName = nameInput.trimmingCharacters(in: .whitespaces)
+        let nameChanged = trimmedName != (profile?.name ?? "")
+        profile?.name = trimmedName
+        profile?.cefrLevel = pendingLevel
+        context.saveWithErrorHandling()
+        if !authService.isAnonymous && nameChanged && authService.isSessionVerified {
+            Task { try? await authService.updateDisplayName(trimmedName) }
+        }
+        withAnimation(.spring(duration: 0.35)) { saveConfirmed = true }
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            withAnimation(.easeOut(duration: 0.3)) { saveConfirmed = false }
+        }
+    }
 
     private func resendVerification() async {
         isResendingVerification = true
@@ -525,8 +697,83 @@ struct ProfileView: View {
         defer { isDeletingAccount = false }
         do {
             try await authService.deleteAccount()
-        } catch {
+        } catch let error as NSError {
             log("[ProfileView] deleteAccount failed: \(error)", level: .error)
+            if error.code == AuthErrorCode.requiresRecentLogin.rawValue {
+                deleteErrorMessage = "For security, please sign out and sign in again before deleting your account."
+            } else {
+                deleteErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func deleteAccountWithApple(_ authorization: ASAuthorization) async {
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+        do {
+            try await authService.deleteAccountWithApple(authorization: authorization)
+        } catch let error as NSError {
+            log("[ProfileView] deleteAccountWithApple failed: \(error)", level: .error)
+            if error.code == AuthErrorCode.requiresRecentLogin.rawValue {
+                deleteErrorMessage = "For security, please sign out and sign in again before deleting your account."
+            } else {
+                deleteErrorMessage = error.localizedDescription
+            }
+        }
+    }
+}
+
+// MARK: - Apple Deletion Confirmation Sheet
+
+private struct AppleDeletionSheet: View {
+
+    let onAuthorization: (ASAuthorization) -> Void
+
+    @Environment(AuthService.self) private var authService
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color.myColors.myBackground.ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                Spacer()
+
+                Image(systemName: "person.crop.circle.badge.minus")
+                    .font(.system(size: 52))
+                    .foregroundStyle(Color.myColors.myRed.opacity(0.7))
+
+                VStack(spacing: 8) {
+                    Text("Confirm Deletion")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myAccent)
+
+                    Text("Re-authenticate with Apple to permanently delete your account.")
+                        .font(.body)
+                        .foregroundStyle(Color.myColors.mySecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+
+                SignInWithAppleButton(.continue) { request in
+                    request.requestedScopes = [.fullName, .email]
+                    request.nonce = authService.prepareAppleSignIn()
+                } onCompletion: { result in
+                    if case .success(let authorization) = result {
+                        onAuthorization(authorization)
+                    }
+                }
+                .signInWithAppleButtonStyle(.black)
+                .frame(height: 52)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .padding(.horizontal, 24)
+
+                Button("Cancel") { dismiss() }
+                    .font(.body)
+                    .foregroundStyle(Color.myColors.mySecondary)
+
+                Spacer()
+            }
         }
     }
 }
