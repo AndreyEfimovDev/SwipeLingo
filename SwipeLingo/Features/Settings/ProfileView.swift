@@ -407,27 +407,28 @@ struct ProfileView: View {
                     .padding(.horizontal, 16)
                 }
 
-                Divider().padding(.leading, 16)
-
-                // Subscribe / Manage button
-                Button { showPlans = true } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: userPlan == .free ? "star.circle" : "gearshape.circle")
-                            .font(.title2)
-                            .foregroundStyle(Color.myColors.myBlue)
-                        Text(userPlan == .free ? "Subscribe to Go or Pro" : "Manage Subscription")
-                            .font(.body)
-                            .foregroundStyle(userPlan == .free ? Color.myColors.myBlue : Color.myColors.myAccent)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
-                    }
-                    .frame(height: 52)
-                    .padding(.horizontal, 16)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                // MONETIZATION_STUB: кнопка Subscribe/Manage скрыта — монетизация отключена.
+                // Когда будет готова: убрать эту заглушку и раскомментировать блок ниже.
+                //
+                // Divider().padding(.leading, 16)
+                // Button { showPlans = true } label: {
+                //     HStack(spacing: 12) {
+                //         Image(systemName: userPlan == .free ? "star.circle" : "gearshape.circle")
+                //             .font(.title2)
+                //             .foregroundStyle(Color.myColors.myBlue)
+                //         Text(userPlan == .free ? "Subscribe to Go or Pro" : "Manage Subscription")
+                //             .font(.body)
+                //             .foregroundStyle(userPlan == .free ? Color.myColors.myBlue : Color.myColors.myAccent)
+                //         Spacer()
+                //         Image(systemName: "chevron.right")
+                //             .font(.caption.weight(.semibold))
+                //             .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                //     }
+                //     .frame(height: 52)
+                //     .padding(.horizontal, 16)
+                //     .contentShape(Rectangle())
+                // }
+                // .buttonStyle(.plain)
 
                 // Payment History — only for paid/former-paid users
                 if userPlan != .free || subscriptionStatus == .cancelled, let uid = authService.currentUser?.uid {

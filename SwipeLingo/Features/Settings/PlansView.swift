@@ -91,8 +91,6 @@ struct PlansView: View {
                     billingCycle: selectedCycle,
                     onSuccess: { dismiss() }
                 )
-                .environment(authService)
-                .environment(userService)
             }
             .sheet(isPresented: $showAuthSheet) {
                 AuthView(isDismissible: true)
