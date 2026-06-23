@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - AccessTierBadge
 // Reusable badge for subscription plan indicators.
-// Plans: Free (no badge) / Go (purple→blue gradient) / Pro (yellow→orange gradient)
+// Plans: Free (green gradient) / Go (purple→blue gradient) / Pro (yellow→orange gradient)
 //
 // Usage:
 //   AccessTierBadge(tier: set.accessTier)            // regular size
@@ -15,11 +15,11 @@ struct AccessTierBadge: View {
     var body: some View {
         switch tier {
         case .free:
-            EmptyView()
+            badge("FREE", colors: [Color.myColors.myGreen, Color.myColors.myGreen.opacity(0.6)])
         case .go:
-            badge("GO",  colors: [Color.myColors.myPurple, Color.myColors.myBlue])
+            badge("GO",   colors: [Color.myColors.myPurple, Color.myColors.myBlue])
         case .pro:
-            badge("PRO", colors: [Color.myColors.myYellow, Color.myColors.myOrange])
+            badge("PRO",  colors: [Color.myColors.myYellow, Color.myColors.myOrange])
         }
     }
 
@@ -30,7 +30,6 @@ struct AccessTierBadge: View {
             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             .padding(.horizontal, isSmall ? 4 : 6)
             .padding(.vertical,   isSmall ? 2 : 4)
-            .frame(width: isSmall ? 26 : 38, alignment: .center)
             .background(gradient.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: isSmall ? 3 : 5))
             .overlay(

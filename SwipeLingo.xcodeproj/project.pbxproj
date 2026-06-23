@@ -623,8 +623,8 @@
 		478C78292F794487005FBDFE /* Library */ = {
 			isa = PBXGroup;
 			children = (
-				47D280372F968E5600BBD66B /* ExampleEditorSheet.swift */,
 				478C78262F794487005FBDFE /* LibraryView.swift */,
+				47D280372F968E5600BBD66B /* ExampleEditorSheet.swift */,
 				478C78272F794487005FBDFE /* PileBuilderView.swift */,
 				478C78242F794487005FBDFE /* CollectionDetailView.swift */,
 				478C78232F794487005FBDFE /* CardSetDetailView.swift */,

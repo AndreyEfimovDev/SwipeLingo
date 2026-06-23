@@ -267,28 +267,41 @@ private struct BookCard: View {
                 coverView
                     .frame(height: 180)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(alignment: .bottomTrailing) {
+                        if book.isNew {
+                            Text("NEW")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color.myColors.myRed.opacity(0.8), in: Capsule())
+                                .padding(8)
+                        }
+                    }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(book.title)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.myColors.myAccent)
                         .lineLimit(2)
+                        .minimumScaleFactor(0.75)
                         .multilineTextAlignment(.leading)
+                        .frame(height: 36, alignment: .topLeading)
 
                     Text(book.author)
                         .font(.system(size: 12))
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                         .lineLimit(1)
+                        .frame(height: 16, alignment: .topLeading)
 
                     HStack(spacing: 6) {
                         CEFRBadgeView(level: book.cefrLevel)
-                        if book.accessTier != .free {
-                            AccessTierBadge(tier: book.accessTier)
-                        }
+                        AccessTierBadge(tier: book.accessTier)
                     }
+                    .frame(height: 22, alignment: .center)
                 }
                 .padding(.horizontal, 4)
-                .padding(.bottom, 8)
+                .padding(.vertical, 8)
             }
         }
         .buttonStyle(.plain)
