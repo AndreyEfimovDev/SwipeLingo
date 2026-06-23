@@ -148,12 +148,10 @@ struct BookReaderView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                if viewModel.isDownloading && !viewModel.isChapterReady {
-                    downloadingView
-                } else if viewModel.isChapterReady {
+                if viewModel.isChapterReady {
                     readerContent
                 } else {
-                    downloadPrompt
+                    downloadingView
                 }
             }
             .navigationTitle(viewModel.currentChapter?.title ?? book.title)
@@ -200,7 +198,10 @@ struct BookReaderView: View {
             if let p = progress, viewModel.chapterIndex == 0 && viewModel.scrollOffset == 0 {
                 viewModel = BookReaderViewModel(book: book, progress: p)
             }
-            downloadTask = Task { await viewModel.downloadCurrentChapterIfNeeded() }
+            downloadTask = Task {
+                await viewModel.downloadAllIfNeeded(context: context)
+                await viewModel.downloadCurrentChapterIfNeeded()
+            }
             AnalyticsService.bookOpened(bookId: book.id, bookTitle: book.title)
         }
         .onDisappear {
@@ -334,44 +335,22 @@ struct BookReaderView: View {
 
     private var downloadingView: some View {
         VStack(spacing: 20) {
-            ProgressView()
-                .tint(Color.myColors.myBlue)
-                .scaleEffect(1.5)
-            Text("Loading chapter…")
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
-        }
-    }
-
-    private var downloadPrompt: some View {
-        VStack(spacing: 24) {
             Image(systemName: "icloud.and.arrow.down")
-                .font(.system(size: 56))
+                .font(.system(size: 48))
                 .foregroundStyle(Color.myColors.myBlue)
 
-            VStack(spacing: 8) {
-                Text(book.title)
-                    .font(.headline)
-                    .foregroundStyle(Color.myColors.myAccent)
-                Text("Download to start reading")
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
-            }
+            Text(viewModel.downloadFraction > 0 ? "Downloading… \(Int(viewModel.downloadFraction * 100))%" : "Preparing…")
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
 
-            Button {
-                downloadTask = Task {
-                    await viewModel.downloadAllIfNeeded()
-                    if viewModel.isChapterReady { return }
-                    await viewModel.downloadCurrentChapterIfNeeded()
-                }
-            } label: {
-                Text("Download Book")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 14)
-                    .background(Color.myColors.myBlue, in: Capsule())
+            if viewModel.downloadFraction > 0 {
+                ProgressView(value: viewModel.downloadFraction)
+                    .tint(Color.myColors.myBlue)
+                    .frame(width: 200)
+            } else {
+                ProgressView()
+                    .tint(Color.myColors.myBlue)
             }
         }
-        .padding(32)
     }
 
     // MARK: - Toolbar
