@@ -21,7 +21,9 @@ enum AccessTier: String, Codable, CaseIterable {
     }
 
     /// Returns true if this plan covers the required tier.
-    func canAccess(_ required: AccessTier) -> Bool { rank >= required.rank }
+    // MONETIZATION_STUB: всегда true — монетизация отключена до получения ИП/ООО и External Purchase Entitlement.
+    // Когда монетизация будет готова: вернуть `rank >= required.rank`
+    func canAccess(_ required: AccessTier) -> Bool { true }
 
     // MARK: - Display
 

@@ -81,8 +81,11 @@ final class BookReaderViewModel {
         }
     }
 
-    func downloadAllIfNeeded() async {
-        guard !downloader.allChaptersDownloaded(book: book) else { return }
+    func downloadAllIfNeeded(context: ModelContext? = nil) async {
+        guard !downloader.allChaptersDownloaded(book: book) else {
+            clearNewFlag(context: context)
+            return
+        }
         isDownloading = true
         defer { isDownloading = false }
         do {
@@ -91,9 +94,16 @@ final class BookReaderViewModel {
                     self?.downloadFraction = fraction
                 }
             }
+            clearNewFlag(context: context)
         } catch {
             log("[Reader] Bulk download failed: \(error)", level: .error)
         }
+    }
+
+    private func clearNewFlag(context: ModelContext?) {
+        guard book.isNew, let context else { return }
+        book.isNew = false
+        context.saveWithErrorHandling()
     }
 
     // MARK: - Local chapter URL

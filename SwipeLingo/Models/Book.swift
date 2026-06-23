@@ -24,6 +24,7 @@ struct BookChapter: Codable, Identifiable, Hashable {
     var chapterBaseURL:     String          // "" = Firebase Storage; "https://..." = HTTP debug stub
     var totalChapters:      Int
     var chaptersJSON:       String          // JSON-encoded [BookChapter]
+    var isNew:              Bool            // true after import, false after first full download
     var createdAt:          Date
     var updatedAt:          Date
 
@@ -38,6 +39,7 @@ struct BookChapter: Codable, Identifiable, Hashable {
         chapterBaseURL:   String = "",
         totalChapters:    Int,
         chapters:         [BookChapter],
+        isNew:            Bool = true,
         createdAt:        Date,
         updatedAt:        Date
     ) {
@@ -52,6 +54,7 @@ struct BookChapter: Codable, Identifiable, Hashable {
         self.chapterBaseURL   = chapterBaseURL
         self.totalChapters    = totalChapters
         self.chaptersJSON     = Self.encode(chapters)
+        self.isNew            = isNew
         self.createdAt        = createdAt
         self.updatedAt        = updatedAt
     }
