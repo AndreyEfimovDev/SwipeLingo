@@ -74,6 +74,16 @@ enum Constants {
         static let cachedPendingCycle     = "cachedPendingCycle"     // BillingCycle.rawValue — cycle of pending plan
     }
 
+    // MARK: - Website
+
+    /// Base URL of the SwipeLingo website. Replace with production URL before release.
+    static let websiteBaseURL = "https://swipelingo.app"
+
+    /// Subscription management page — opened when user taps "Subscribe" or "Manage Plan".
+    static func subscribeURL(plan: String, cycle: String) -> URL {
+        URL(string: "\(websiteBaseURL)/subscribe?plan=\(plan)&cycle=\(cycle)")!
+    }
+
     // MARK: - App Group
 
     static let appGroupID = "group.PELSH.SwipeLingo"
