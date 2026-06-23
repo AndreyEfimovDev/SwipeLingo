@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseCore
+import FirebaseCrashlytics
 import GoogleSignIn
 import FirebaseAuth
 
@@ -42,6 +43,7 @@ struct SwipeLingoApp: App {
                 if let clientID = FirebaseApp.app()?.options.clientID {
                     GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
                 }
+                Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
                 log("[Firebase] App configured", level: .info)
             } else {
                 log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
@@ -151,6 +153,11 @@ struct SwipeLingoApp: App {
             }
             // Create/update Firestore user doc on sign-in; sync subscription from Firestore.
             .onChange(of: authService.currentUser) { _, user in
+                if let user {
+                    AnalyticsService.setUser(id: user.uid)
+                } else {
+                    AnalyticsService.clearUser()
+                }
                 guard let user else { return }
                 Task {
                     let langRaw = UserDefaults.standard.string(forKey: Constants.StorageKey.nativeLanguage) ?? ""
@@ -238,6 +245,7 @@ struct SwipeLingoApp: App {
         }
 
         context.saveWithErrorHandling()
+        AnalyticsService.wordSavedFromShareExtension(wordCount: pending.count)
         log("[InboxDrain] saved \(pending.count) card(s) to Inbox", level: .info)
     }
 

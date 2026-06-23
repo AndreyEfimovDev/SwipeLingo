@@ -65,6 +65,7 @@ struct PlansView: View {
             .onAppear {
                 selectedPlan  = userPlan
                 selectedCycle = currentCycle == .none ? .yearly : currentCycle
+                AnalyticsService.plansScreenOpened()
             }
             .confirmationDialog(
                 selectedPlan == .free ? "Cancel Subscription" : "Schedule Downgrade",
@@ -90,8 +91,6 @@ struct PlansView: View {
                     billingCycle: selectedCycle,
                     onSuccess: { dismiss() }
                 )
-                .environment(authService)
-                .environment(userService)
             }
             .sheet(isPresented: $showAuthSheet) {
                 AuthView(isDismissible: true)
@@ -295,7 +294,12 @@ struct PlansView: View {
         isSaving = true
         defer { isSaving = false }
         let started = await userService.startTrial(pendingPlan: selectedPlan, for: uid)
-        if started { dismiss() } else { showTrialUsedAlert = true }
+        if started {
+            AnalyticsService.trialStarted(plan: selectedPlan.rawValue)
+            dismiss()
+        } else {
+            showTrialUsedAlert = true
+        }
     }
 
     private func handleCancel() async {

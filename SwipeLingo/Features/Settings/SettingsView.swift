@@ -65,8 +65,9 @@ struct SettingsView: View {
                 HStack {
                     Label("Your profile", systemImage: "person.circle")
                         .labelStyle(.fixedIcon)
-                    AccessTierBadge(tier: userPlan)
-                    
+                    // MONETIZATION_STUB: badge плана скрыт. Раскомментировать когда монетизация включена:
+                    // AccessTierBadge(tier: userPlan)
+
                     Spacer()
                     
                     Image(systemName: "chevron.right")

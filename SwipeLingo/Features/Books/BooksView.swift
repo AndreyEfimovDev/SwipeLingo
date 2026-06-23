@@ -16,10 +16,7 @@ struct BooksView: View {
     @State private var debugImportTask: Task<Void, Never>?
     @State private var bookToDelete: Book? = nil
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
-    ]
+    private let columns = [GridItem(.adaptive(minimum: 155, maximum: 190), spacing: 16)]
 
     var body: some View {
         NavigationStack {
@@ -43,9 +40,8 @@ struct BooksView: View {
                 BookReaderView(book: book)
             }
         }
-        .task {
-            syncTask = Task { await viewModel.syncBooks(context: context) }
-        }
+        // BOOKS_SYNC_STUB: автосинк при входе отключён — книги на GitHub, не в Firestore.
+        // .task { syncTask = Task { await viewModel.syncBooks(context: context) } }
         .onDisappear { syncTask?.cancel() }
     }
 
@@ -132,17 +128,18 @@ struct BooksView: View {
         }
 
         ToolbarItemGroup(placement: .topBarTrailing) {
-            // Sync
-            if viewModel.isSyncing {
-                ProgressView().tint(Color.myColors.myBlue)
-            } else {
-                Button {
-                    syncTask = Task { await viewModel.syncBooks(context: context) }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                }
-            }
+            // BOOKS_SYNC_STUB: кнопка sync и спиннер скрыты — книги загружаются с GitHub, не из Firestore.
+            // Когда книги переедут в Firebase Storage/Firestore — раскомментировать:
+            // if viewModel.isSyncing {
+            //     ProgressView().tint(Color.myColors.myBlue)
+            // } else {
+            //     Button {
+            //         syncTask = Task { await viewModel.syncBooks(context: context) }
+            //     } label: {
+            //         Image(systemName: "arrow.clockwise")
+            //             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            //     }
+            // }
 
             // Debug import
             Button {
@@ -186,7 +183,22 @@ struct BooksView: View {
     // MARK: - Debug import
 
     private func importDebugBook() async {
-        let metaURL = URL(string: "https://raw.githubusercontent.com/AndreyEfimovDev/Support/main/Books/metadata.json")!
+        let indexURL = URL(string: "https://raw.githubusercontent.com/AndreyEfimovDev/Support/main/Books/books_index.json")!
+        do {
+            let (indexData, _) = try await URLSession.shared.data(from: indexURL)
+            guard let index = try JSONSerialization.jsonObject(with: indexData) as? [String: Any],
+                  let bookURLs = index["books"] as? [String] else { return }
+
+            for urlString in bookURLs {
+                guard let metaURL = URL(string: urlString) else { continue }
+                await importSingleBook(from: metaURL)
+            }
+        } catch {
+            log("[BookDebug] Index load failed: \(error)", level: .error)
+        }
+    }
+
+    private func importSingleBook(from metaURL: URL) async {
         do {
             let (data, _) = try await URLSession.shared.data(from: metaURL)
             guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
@@ -230,7 +242,7 @@ struct BooksView: View {
             try context.save()
             log("[BookDebug] Imported '\(title)' (\(totalChapters) chapters)", level: .info)
         } catch {
-            log("[BookDebug] Import failed: \(error)", level: .error)
+            log("[BookDebug] Import '\(metaURL.lastPathComponent)' failed: \(error)", level: .error)
         }
     }
 }
@@ -250,30 +262,43 @@ private struct BookCard: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 8) {
                 coverView
-                    .frame(height: 180)
+                    .frame(maxWidth: .infinity, minHeight: 180, maxHeight: 180)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(alignment: .bottomTrailing) {
+                        if book.isNew {
+                            Text("NEW")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color.myColors.myRed.opacity(0.8), in: Capsule())
+                                .padding(8)
+                        }
+                    }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(book.title)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.myColors.myAccent)
                         .lineLimit(2)
+                        .minimumScaleFactor(0.75)
                         .multilineTextAlignment(.leading)
+                        .frame(height: 36, alignment: .topLeading)
 
                     Text(book.author)
                         .font(.system(size: 12))
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                         .lineLimit(1)
+                        .frame(height: 16, alignment: .topLeading)
 
                     HStack(spacing: 6) {
                         CEFRBadgeView(level: book.cefrLevel)
-                        if book.accessTier != .free {
-                            AccessTierBadge(tier: book.accessTier)
-                        }
+                        AccessTierBadge(tier: book.accessTier)
                     }
+                    .frame(height: 22, alignment: .center)
                 }
                 .padding(.horizontal, 4)
-                .padding(.bottom, 8)
+                .padding(.vertical, 8)
             }
         }
         .buttonStyle(.plain)
@@ -292,7 +317,7 @@ private struct BookCard: View {
         if let image = coverImage {
             image
                 .resizable()
-                .scaledToFill()
+                .scaledToFit()
         } else {
             ZStack {
                 book.cefrLevel.color.opacity(0.15)

@@ -26,11 +26,12 @@ struct ImportEPUBSheet: View {
     @State private var step: Step = .pick
 
     // Metadata (editable in preview step)
-    @State private var title:       String     = ""
-    @State private var author:      String     = ""
-    @State private var description: String     = ""
-    @State private var cefrLevel:   CEFRLevel  = .a1
-    @State private var accessTier:  AccessTier = .free
+    @State private var title:            String     = ""
+    @State private var author:           String     = ""
+    @State private var description:      String     = ""
+    @State private var cefrLevel:        CEFRLevel  = .a1
+    @State private var accessTier:       AccessTier = .free
+    @State private var paragraphsPerPage: Int        = 10
 
     @State private var uploadTask: Task<Void, Never>? = nil
 
@@ -100,6 +101,19 @@ struct ImportEPUBSheet: View {
                             Text(tier.displayName).tag(tier)
                         }
                     }
+                }
+                Section {
+                    Picker("Paragraphs per page", selection: $paragraphsPerPage) {
+                        Text("5 — short pages").tag(5)
+                        Text("8 — medium pages").tag(8)
+                        Text("10 — standard (default)").tag(10)
+                        Text("15 — long pages").tag(15)
+                    }
+                    .help("Used when the chapter has no headings (e.g. novels like Call of the Wild). Splits long chapters by paragraph count.")
+                } header: {
+                    Text("Page splitting")
+                } footer: {
+                    Text("Only applies when no h2/h3 headings are found in a chapter.")
                 }
                 Section {
                     LabeledContent("Cover", value: book.coverImageData != nil ? "Found" : "Not found")
@@ -328,7 +342,7 @@ struct ImportEPUBSheet: View {
                     imagesBaseURL: imagesBase
                 )
                 // Split large chapter by h3/h2 headings (one fable = one file)
-                let sections = HTMLSplitter.split(html: updatedHTML, fallbackTitle: parsedChapter.title)
+                let sections = HTMLSplitter.split(html: updatedHTML, fallbackTitle: parsedChapter.title, paragraphsPerPage: paragraphsPerPage)
 
                 for section in sections {
                     let file = chapDir.appendingPathComponent("\(chapterIndex).html")
@@ -358,7 +372,6 @@ struct ImportEPUBSheet: View {
             ]
             let metaData = try JSONSerialization.data(withJSONObject: meta, options: .prettyPrinted)
             try metaData.write(to: bookDir.appendingPathComponent("metadata.json"))
-            try metaData.write(to: dest.appendingPathComponent("metadata.json"))
 
             NSWorkspace.shared.open(dest)
             log("[Export] \(chapterIndex) chapters, \(book.images.count) images → \(bookDir.path)", level: .info)
