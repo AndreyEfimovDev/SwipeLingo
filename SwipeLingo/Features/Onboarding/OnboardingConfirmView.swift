@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - OnboardingConfirmView
 // Финальный шаг онбординга — сводка настроек и подтверждение.
-// Показывает язык, имя, уровень. Пользователь либо подтверждает (→ в приложение)
+// Показывает язык и уровень. Пользователь либо подтверждает (→ в приложение)
 // либо возвращается к редактированию.
 
 struct OnboardingConfirmView: View {
@@ -15,7 +15,6 @@ struct OnboardingConfirmView: View {
 
     @Query private var profiles: [UserProfile]
     private var profile: UserProfile? { profiles.first }
-    private var displayName: String { profile?.displayName ?? "Anonymous" }
     private var cefrLevel: CEFRLevel { profile?.cefrLevel ?? .a1 }
 
     var body: some View {
@@ -46,12 +45,6 @@ struct OnboardingConfirmView: View {
                     icon: nativeLanguage.flag,
                     title: "Native language",
                     value: nativeLanguage.displayName,
-                    isLast: false
-                )
-                settingRow(
-                    icon: "👤",
-                    title: "Name",
-                    value: displayName,
                     isLast: false
                 )
                 settingRow(
