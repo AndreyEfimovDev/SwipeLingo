@@ -25,8 +25,10 @@ private struct CustomBackButtonModifier: ViewModifier {
                             if !title.isEmpty {
                                 Text(title)
                                     .font(.body)
+                                    .lineLimit(1)
                             }
                         }
+                        .fixedSize()
                         .foregroundStyle(Color.myColors.myBlue)
                     }
                     .buttonStyle(.plain)

@@ -53,6 +53,7 @@ struct PaymentHistoryView: View {
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle("Payment History")
         .navigationBarTitleDisplayMode(.inline)
+        .customBackButton("Profile")
         .task {
             payments  = await userService.loadPaymentHistory(for: uid)
             isLoading = false

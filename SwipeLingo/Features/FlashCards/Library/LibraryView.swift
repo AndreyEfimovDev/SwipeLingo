@@ -536,8 +536,10 @@ struct LibraryView: View {
                                 .padding(.top, 2)
                         }
                     }
-                    AccessTierBadge(tier: cardSet.accessTier)
-                        .offset(y: -4)
+                    if !collection.isUserCreated {
+                        AccessTierBadge(tier: cardSet.accessTier)
+                            .offset(y: -4)
+                    }
                 }
                 Spacer()
                 CEFRBadgeView(level: collection.isUserCreated ? nil : cardSet.cefrLevel)

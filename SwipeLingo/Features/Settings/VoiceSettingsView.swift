@@ -83,12 +83,20 @@ struct VoiceSettingsView: View {
 
     // MARK: - Info card
 
+    private var voiceDownloadPath: String {
+        if ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 26 {
+            return "iOS Settings → Accessibility → Read & Speak → Voices → English → Voice"
+        } else {
+            return "iOS Settings → Accessibility → Spoken Content → Voices → English → Voices"
+        }
+    }
+
     private var infoCard: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "info.circle")
                 .foregroundStyle(Color.myColors.myBlue)
                 .padding(.top, 1)
-            Text("Enhanced and Premium voices sound more natural but must be downloaded first: **iOS Settings → Accessibility → Spoken Content → Voices → English → Voices**")
+            Text("Enhanced and Premium voices sound more natural but must be downloaded first: **\(voiceDownloadPath)**")
                 .font(.footnote)
         }
         .padding(14)

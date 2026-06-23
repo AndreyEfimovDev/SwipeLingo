@@ -41,6 +41,7 @@ struct ProfileView: View {
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
+        .customBackButton("Settings")
         .onAppear {
             if profiles.isEmpty { context.insert(UserProfile()) }
             Task { await authService.reloadUser() }

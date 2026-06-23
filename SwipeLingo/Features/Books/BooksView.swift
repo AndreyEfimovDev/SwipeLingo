@@ -16,10 +16,7 @@ struct BooksView: View {
     @State private var debugImportTask: Task<Void, Never>?
     @State private var bookToDelete: Book? = nil
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
-    ]
+    private let columns = [GridItem(.adaptive(minimum: 155, maximum: 190), spacing: 16)]
 
     var body: some View {
         NavigationStack {
@@ -265,7 +262,7 @@ private struct BookCard: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 8) {
                 coverView
-                    .frame(height: 180)
+                    .frame(maxWidth: .infinity, minHeight: 180, maxHeight: 180)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(alignment: .bottomTrailing) {
                         if book.isNew {
@@ -320,7 +317,7 @@ private struct BookCard: View {
         if let image = coverImage {
             image
                 .resizable()
-                .scaledToFill()
+                .scaledToFit()
         } else {
             ZStack {
                 book.cefrLevel.color.opacity(0.15)
