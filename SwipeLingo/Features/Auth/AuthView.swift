@@ -9,13 +9,13 @@ import AuthenticationServices
 
 struct AuthView: View {
 
-    /// When true, shows a Cancel button that dismisses the sheet.
     var isDismissible: Bool = false
 
     @Environment(AuthService.self) private var authService
     @Environment(\.dismiss) private var dismiss
 
     @State private var mode: AuthMode = .signIn
+    @State private var name = ""
     @State private var email = ""
     @State private var password = ""
     @State private var errorMessage: String? = nil
@@ -37,7 +37,11 @@ struct AuthView: View {
                 VStack(spacing: 0) {
                     headerSection
 
-                    Spacer().frame(height: 40)
+                    Spacer().frame(height: 24)
+
+                    modePicker
+
+                    Spacer().frame(height: 24)
 
                     emailPasswordSection
 
@@ -63,8 +67,6 @@ struct AuthView: View {
                     }
 
                     primaryButton
-
-                    modeSwitchButton
 
                     Spacer().frame(height: 28)
 
@@ -107,32 +109,69 @@ struct AuthView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: 10) {
-            Text("SwipeLingo")
-                .font(.largeTitle.bold())
-                .foregroundStyle(Color.myColors.myAccent)
+        Text("SwipeLingo")
+            .font(.largeTitle.bold())
+            .foregroundStyle(Color.myColors.myAccent)
+            .multilineTextAlignment(.center)
+    }
 
-            Text(mode == .signIn ? "Sign in to continue" : "Create your account")
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+    // MARK: - Mode Picker
+
+    private var modePicker: some View {
+        HStack(spacing: 4) {
+            modeButton("Sign In", active: mode == .signIn) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    mode = .signIn
+                    errorMessage = nil
+                    name = ""
+                }
+            }
+            modeButton("Sign Up", active: mode == .signUp) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    mode = .signUp
+                    errorMessage = nil
+                }
+            }
         }
-        .multilineTextAlignment(.center)
+        .padding(4)
+        .background(Color.myColors.myAccent.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func modeButton(_ title: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(active ? .semibold : .regular))
+                .foregroundStyle(active ? Color.myColors.myAccent : Color.myColors.mySecondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 38)
+                .background(active ? Color.myColors.myBackground : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+                .shadow(color: active ? Color.black.opacity(0.06) : Color.clear, radius: 2, y: 1)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Email / Password
 
     private var emailPasswordSection: some View {
         VStack(spacing: 12) {
+            if mode == .signUp {
+                TextField("Name (optional)", text: $name)
+                    .textContentType(.name)
+                    .textInputStyle()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             TextField("Email", text: $email)
                 .keyboardType(.emailAddress)
                 .textContentType(.emailAddress)
                 .autocapitalization(.none)
                 .textInputStyle(invalid: !email.isEmpty && !isEmailValid)
-
             SecureField("Password", text: $password)
                 .textContentType(mode == .signIn ? .password : .newPassword)
                 .textInputStyle()
         }
+        .animation(.easeInOut(duration: 0.2), value: mode)
     }
 
     // MARK: - Primary Button
@@ -145,38 +184,21 @@ struct AuthView: View {
                 if isLoading {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(.white)
+                        .tint(canSubmit ? .white : Color.myColors.myAccent)
                 } else {
                     Text(mode == .signIn ? "Sign In" : "Create Account")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(canSubmit ? .white : Color.myColors.myAccent.opacity(0.4))
                 }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 52)
-            .background(Color.myColors.myBlue)
+            .background(canSubmit ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
         .disabled(isLoading || !canSubmit)
-        .opacity(canSubmit ? 1 : 0.6)
         .padding(.bottom, 12)
-    }
-
-    private var modeSwitchButton: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                mode = mode == .signIn ? .signUp : .signIn
-                errorMessage = nil
-            }
-        } label: {
-            Text(mode == .signIn
-                 ? "Don't have an account? **Sign Up**"
-                 : "Already have an account? **Sign In**")
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Divider
@@ -201,6 +223,11 @@ struct AuthView: View {
         VStack(spacing: 12) {
             googleSignInButton
             appleSignInButton
+            Text("Use the same sign-in method on all devices to keep your progress")
+                .font(.caption)
+                .foregroundStyle(Color.myColors.mySecondary)
+                .multilineTextAlignment(.center)
+                .padding(.top, 4)
         }
     }
 
@@ -255,7 +282,7 @@ struct AuthView: View {
             if mode == .signIn {
                 try await authService.signIn(email: email, password: password)
             } else {
-                try await authService.createAccount(email: email, password: password)
+                try await authService.createAccount(email: email, password: password, name: name)
             }
         } catch {
             errorMessage = error.localizedDescription

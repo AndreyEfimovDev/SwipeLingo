@@ -5,6 +5,7 @@ import SwiftData
 final class UserProfile {
     var name:         String = ""
     var cefrLevelRaw: String = CEFRLevel.a1.rawValue
+    var firebaseUID:  String = ""
 
     var cefrLevel: CEFRLevel {
         get { CEFRLevel(rawValue: cefrLevelRaw) ?? .a1 }

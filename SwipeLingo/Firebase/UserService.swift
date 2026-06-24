@@ -41,13 +41,15 @@ final class UserService {
         do {
             let snapshot = try await ref.getDocument()
             if snapshot.exists {
-                // Update mutable fields only — do NOT overwrite subscription
-                let updates: [String: Any] = [
+                // Update mutable fields only — do NOT overwrite subscription.
+                // nativeLanguage backfills accounts created before onboarding set the preference.
+                var updates: [String: Any] = [
                     "authProvider": AuthProviderID.from(firebaseUser),
                     "displayName":  firebaseUser.displayName ?? "",
                     "email":        firebaseUser.isAnonymous ? NSNull() : (firebaseUser.email as Any),
                     "updatedAt":    Timestamp(date: Date())
                 ]
+                if !nativeLanguage.isEmpty { updates["nativeLanguage"] = nativeLanguage }
                 try await ref.updateData(updates)
                 log("[UserService] User document updated: \(firebaseUser.uid)", level: .info)
             } else {

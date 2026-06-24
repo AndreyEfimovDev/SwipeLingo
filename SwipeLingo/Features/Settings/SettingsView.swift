@@ -7,7 +7,6 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant     = "en-US"
     @AppStorage(Constants.StorageKey.colorScheme)        private var theme: Theme       = .system
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier = ""
@@ -31,7 +30,6 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     accountSection
-                    languageSection
                     studySection
                     voiceSection
                     appearanceSection
@@ -87,31 +85,6 @@ struct SettingsView: View {
     }
 
     // MARK: - Language
-
-    private var languageSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("LANGUAGE")
-                .font(titleFont)
-                .padding(.horizontal, 32)
-
-            VStack(spacing: 0) {
-                HStack {
-                    Text("Native language")
-                    Spacer()
-                    Text("\(nativeLanguage.flag) \(nativeLanguage.displayName)")
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
-                }
-                .font(textFont)
-                .frame(height: 52)
-                .padding(.horizontal, 16)
-
-            }
-            .background(Color.myColors.myBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .myShadow()
-            .padding(.horizontal, 16)
-        }
-    }
 
     // MARK: - Study
 
