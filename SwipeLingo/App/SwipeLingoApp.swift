@@ -23,6 +23,7 @@ struct SwipeLingoApp: App {
     @Environment(\.scenePhase) private var scenePhase
     
     @AppStorage(Constants.StorageKey.hasCompletedOnboarding) private var hasCompletedOnboarding = false
+    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
     private let appGroupID  = "group.PELSH.SwipeLingo"
     private let pendingKey  = "pendingInboxWords"
@@ -151,22 +152,48 @@ struct SwipeLingoApp: App {
                     Task { await firestoreSync() }
                 }
             }
-            // Create/update Firestore user doc on sign-in; sync subscription from Firestore.
+            // Analytics only — Firestore writes are guarded by isSessionVerified.
             .onChange(of: authService.currentUser) { _, user in
-                if let user {
-                    AnalyticsService.setUser(id: user.uid)
-                } else {
-                    AnalyticsService.clearUser()
+                if let user { AnalyticsService.setUser(id: user.uid) }
+                else { AnalyticsService.clearUser() }
+            }
+        }
+        // Single entry point for all Firestore writes after a verified session.
+        // Fires on app launch (after verifySession passes) and after every fresh sign-in.
+        .onChange(of: authService.isSessionVerified) { _, verified in
+            guard verified, let user = authService.currentUser else { return }
+            Task {
+                let ctx = container?.mainContext
+                let profiles = ctx?.fetchWithErrorHandling(FetchDescriptor<UserProfile>()) ?? []
+                var profile = profiles.first
+
+                if profile == nil {
+                    let p = UserProfile()
+                    ctx?.insert(p)
+                    profile = p
                 }
-                guard let user else { return }
-                Task {
-                    let langRaw = UserDefaults.standard.string(forKey: Constants.StorageKey.nativeLanguage) ?? ""
-                    let ctx = container?.mainContext
-                    let profiles = ctx?.fetchWithErrorHandling(FetchDescriptor<UserProfile>()) ?? []
-                    let cefrRaw = profiles.first?.cefrLevel.rawValue ?? ""
-                    await userService.createOrUpdateUser(user, nativeLanguage: langRaw, cefrLevel: cefrRaw)
-                    await userService.syncSubscription(for: user.uid)
+
+                // UID mismatch → different user signed in, reset the profile.
+                if let p = profile, !p.firebaseUID.isEmpty, p.firebaseUID != user.uid {
+                    log("[App] Firebase UID changed — resetting UserProfile", level: .info)
+                    p.name = ""
+                    p.cefrLevel = .a1
                 }
+
+                // Stamp UID and sync name from Firebase.
+                profile?.firebaseUID = user.uid
+                if user.isAnonymous {
+                    if profile?.name.isEmpty == true { profile?.name = "Anonymous" }
+                } else if let n = user.displayName, !n.isEmpty {
+                    profile?.name = n
+                } else if let email = user.email, !email.isEmpty {
+                    profile?.name = String(email.prefix(while: { $0 != "@" }))
+                }
+                ctx?.saveWithErrorHandling()
+
+                let cefrRaw = profile?.cefrLevel.rawValue ?? ""
+                await userService.createOrUpdateUser(user, nativeLanguage: nativeLanguage.rawValue, cefrLevel: cefrRaw)
+                await userService.syncSubscription(for: user.uid)
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -185,8 +212,7 @@ struct SwipeLingoApp: App {
     private func firestoreSync() async {
         guard let ctx = container?.mainContext else { return }
 
-        let langRaw  = UserDefaults.standard.string(forKey: "nativeLanguage") ?? ""
-        let language = NativeLanguage(rawValue: langRaw) ?? .russian
+        let language = nativeLanguage
 
         // Уровень пользователя из UserProfile — определяет какие сеты загружать
         let profiles  = ctx.fetchWithErrorHandling(FetchDescriptor<UserProfile>())

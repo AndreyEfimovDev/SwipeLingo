@@ -5,8 +5,8 @@ import SwiftUI
 // Шаги:
 //   0 — intro
 //   1 — выбор языка (с предупреждением о постоянстве)
-//   2 — ввод имени
-//   3 — выбор уровня CEFR
+//   2 — выбор уровня CEFR
+//   3 — авторизация (имя вводится здесь при email sign-up)
 //   4 — подтверждение настроек → в приложение
 
 struct OnboardingView: View {
@@ -16,7 +16,7 @@ struct OnboardingView: View {
     @State private var step: Int = 0
     @State private var goingForward = true
 
-    private let totalSteps = 6
+    private let totalSteps = 5
 
     var body: some View {
         ZStack {
@@ -36,12 +36,9 @@ struct OnboardingView: View {
                         OnboardingLanguageView { next() }
                             .transition(stepTransition)
                     case 2:
-                        OnboardingNameView(onNext: { next() }, onBack: { back() })
-                            .transition(stepTransition)
-                    case 3:
                         OnboardingLevelView(onNext: { next() }, onBack: { back() })
                             .transition(stepTransition)
-                    case 4:
+                    case 3:
                         OnboardingAuthView(onNext: { next() })
                             .transition(stepTransition)
                     default:
@@ -79,7 +76,7 @@ struct OnboardingView: View {
             Spacer()
 
             // Dots — только для шагов настройки (1–3), не на intro, auth и финале
-            if step > 0 && step < 4 {
+            if step > 0 && step < 3 {
                 progressDots
             }
 
@@ -91,11 +88,11 @@ struct OnboardingView: View {
         .padding(.top, 8)
     }
 
-    // Dots показывают шаги 1–3 (язык, имя, уровень) — всего 3 точки
+    // Dots показывают шаги 1–2 (язык, уровень) — всего 2 точки
     private var progressDots: some View {
-        let setupStep = step - 1  // 0, 1, 2 для шагов 1, 2, 3
+        let setupStep = step - 1  // 0, 1 для шагов 1, 2
         return HStack(spacing: 6) {
-            ForEach(0..<3, id: \.self) { i in
+            ForEach(0..<2, id: \.self) { i in
                 Capsule()
                     .fill(i <= setupStep
                           ? Color.myColors.myBlue
