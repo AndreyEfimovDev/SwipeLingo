@@ -2,14 +2,15 @@ import SwiftUI
 import AuthenticationServices
 
 // MARK: - AuthView
-// Used in two contexts:
+// Used in three contexts:
+//   • First launch — before onboarding (showGuestOption: true)
 //   • Standalone — shown after sign-out (no cancel, no guest option)
 //   • Sheet from ProfileView — isDismissible: true (Cancel button, no guest option)
-// "Continue as Guest" lives only in OnboardingAuthView.
 
 struct AuthView: View {
 
     var isDismissible: Bool = false
+    var showGuestOption: Bool = false
 
     @Environment(AuthService.self) private var authService
     @Environment(\.dismiss) private var dismiss
@@ -75,6 +76,20 @@ struct AuthView: View {
                     Spacer().frame(height: 24)
 
                     socialButtons
+
+                    if showGuestOption {
+                        Spacer().frame(height: 32)
+                        Button {
+                            Task { await signInAnonymously() }
+                        } label: {
+                            Text("Continue as Guest")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+                                .underline()
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isLoading)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, isDismissible ? 24 : 60)
@@ -299,6 +314,18 @@ struct AuthView: View {
         } catch {
             errorMessage = error.localizedDescription
             log("[Auth] Google Sign-In failed: \(error)", level: .error)
+        }
+    }
+
+    private func signInAnonymously() async {
+        errorMessage = nil
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            try await authService.signInAnonymously()
+        } catch {
+            errorMessage = error.localizedDescription
+            log("[Auth] Anonymous sign-in failed: \(error)", level: .error)
         }
     }
 

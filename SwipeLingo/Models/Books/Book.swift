@@ -13,20 +13,20 @@ struct BookChapter: Codable, Identifiable, Hashable {
 
 @Model class Book {
 
-    var id:                UUID
-    var firestoreId:       String
-    var title:             String
-    var author:            String
+    var id:                UUID   = UUID()
+    var firestoreId:       String = ""
+    var title:             String = ""
+    var author:            String = ""
     var bookDescription:   String?
-    var cefrLevelRaw:      String
-    var accessTierRaw:     String
-    var coverStoragePath:   String          // Firebase Storage path or full HTTP URL
-    var chapterBaseURL:     String          // "" = Firebase Storage; "https://..." = HTTP debug stub
-    var totalChapters:      Int
-    var chaptersJSON:       String          // JSON-encoded [BookChapter]
-    var isNew:              Bool            // true after import, false after first full download
-    var createdAt:          Date
-    var updatedAt:          Date
+    var cefrLevelRaw:      String = CEFRLevel.a1.rawValue
+    var accessTierRaw:     String = AccessTier.free.rawValue
+    var coverStoragePath:   String = ""     // Firebase Storage path or full HTTP URL
+    var chapterBaseURL:     String = ""     // "" = Firebase Storage; "https://..." = HTTP debug stub
+    var totalChapters:      Int   = 0
+    var chaptersJSON:       String = "[]"   // JSON-encoded [BookChapter]
+    var isNew:              Bool   = true   // true after import, false after first full download
+    var createdAt:          Date  = Date()
+    var updatedAt:          Date  = Date()
 
     init(
         firestoreId:      String,

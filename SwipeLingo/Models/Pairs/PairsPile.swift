@@ -20,13 +20,13 @@ private func decodeUUIDs(_ raw: String) -> [UUID] {
 
 @Model
 final class PairsPile {
-    var id: UUID
-    var name: String
-    private var setIdsRaw: String
-    var shuffleMethodRaw: String
-    var isActive: Bool
-    var createdAt: Date
-    var updatedAt: Date
+    var id: UUID = UUID()
+    var name: String = ""
+    private var setIdsRaw: String = ""
+    var shuffleMethodRaw: String = ShuffleMethod.random.rawValue
+    var isActive: Bool = false
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
 
     var setIds: [UUID] {
         get { decodeUUIDs(setIdsRaw) }

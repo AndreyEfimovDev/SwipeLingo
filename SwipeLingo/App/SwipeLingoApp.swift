@@ -8,6 +8,9 @@ import FirebaseAuth
 class AppDelegate: NSObject, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Required for CloudKit push notifications (real-time sync delivery).
+        // Without this CloudKit falls back to polling instead of push.
+        application.registerForRemoteNotifications()
         return true
     }
 
@@ -22,7 +25,6 @@ struct SwipeLingoApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
     
-    @AppStorage(Constants.StorageKey.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
     private let appGroupID  = "group.PELSH.SwipeLingo"
@@ -32,6 +34,7 @@ struct SwipeLingoApp: App {
 
     @State private var authService: AuthService
     @State private var userService: UserService
+    @State private var appSyncStateService: AppSyncStateService
 
     // register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
@@ -63,9 +66,13 @@ struct SwipeLingoApp: App {
 
         _authService = State(initialValue: AuthService())
         _userService = State(initialValue: UserService())
-        container = Self.makeContainer()
-        if let ctx = container?.mainContext {
+        let builtContainer = Self.makeContainer()
+        container = builtContainer
+        if let ctx = builtContainer?.mainContext {
             SystemSeeder.ensureSystemCollections(into: ctx)
+            _appSyncStateService = State(initialValue: AppSyncStateService(modelContext: ctx))
+        } else {
+            _appSyncStateService = State(initialValue: AppSyncStateService(modelContext: ModelContext(try! ModelContainer(for: AppSyncState.self))))
         }
     }
 
@@ -80,11 +87,13 @@ struct SwipeLingoApp: App {
             UserProfile.self,
             Book.self,
             BookProgress.self,
-            BookBookmark.self
+            BookBookmark.self,
+            AppSyncState.self
         ])
         let config = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
         )
         let storeURL = config.url
 
@@ -117,24 +126,26 @@ struct SwipeLingoApp: App {
                 if authService.isLoading {
                     Color.myColors.myBackground.ignoresSafeArea()
                 } else if let container {
-                    if !hasCompletedOnboarding {
-                        // Onboarding handles auth internally (step 4)
+                    if !authService.isAuthenticated {
+                        // Auth first: Sign In / Sign Up / Continue as Guest
+                        AuthView(showGuestOption: true)
+                            .environment(authService)
+                            .environment(userService)
+                    } else if !appSyncStateService.hasCompletedOnboarding {
+                        // New user: language + level selection (no auth step)
                         OnboardingView {
-                            hasCompletedOnboarding = true
+                            appSyncStateService.hasCompletedOnboarding = true
                         }
                         .modelContainer(container)
                         .environment(authService)
                         .environment(userService)
-                    } else if !authService.isAuthenticated {
-                        // Signed out after onboarding → standalone auth screen
-                        AuthView()
-                            .environment(authService)
-                            .environment(userService)
+                        .environment(appSyncStateService)
                     } else {
                         AppView()
                             .modelContainer(container)
                             .environment(authService)
                             .environment(userService)
+                            .environment(appSyncStateService)
                     }
                 } else {
                     DatabseErrorView()
@@ -144,15 +155,11 @@ struct SwipeLingoApp: App {
             // Skip on first launch (onboarding not done yet — no UserProfile, level unknown).
             // On first launch the sync is triggered by .onChange below after onboarding.
             .task {
-                if hasCompletedOnboarding { await firestoreSync() }
+                if appSyncStateService.hasCompletedOnboarding { await firestoreSync() }
             }
-            // After onboarding: UserProfile exists with correct cefrLevel → sync with right level.
-            .onChange(of: hasCompletedOnboarding) { _, completed in
-                if completed {
-                    Task { await firestoreSync() }
-                }
+            .onChange(of: appSyncStateService.hasCompletedOnboarding) { _, completed in
+                if completed { Task { await firestoreSync() } }
             }
-            // Analytics only — Firestore writes are guarded by isSessionVerified.
             .onChange(of: authService.currentUser) { _, user in
                 if let user { AnalyticsService.setUser(id: user.uid) }
                 else { AnalyticsService.clearUser() }
@@ -192,7 +199,12 @@ struct SwipeLingoApp: App {
                 ctx?.saveWithErrorHandling()
 
                 let cefrRaw = profile?.cefrLevel.rawValue ?? ""
-                await userService.createOrUpdateUser(user, nativeLanguage: nativeLanguage.rawValue, cefrLevel: cefrRaw)
+                let isReturningUser = await userService.createOrUpdateUser(user, nativeLanguage: nativeLanguage.rawValue, cefrLevel: cefrRaw)
+                // Second device: Firebase doc exists with cefrLevel → skip onboarding
+                if isReturningUser && !appSyncStateService.hasCompletedOnboarding {
+                    appSyncStateService.hasCompletedOnboarding = true
+                    log("[App] Returning user detected — skipping onboarding", level: .info)
+                }
                 await userService.syncSubscription(for: user.uid)
             }
         }

@@ -28,20 +28,25 @@ private func decodeUUIDs(_ raw: String) -> [UUID] {
 
 @Model
 final class Pile {
-    var id: UUID
-    var name: String
+    var id: UUID = UUID()
+    var name: String = ""
     /// Backing store — plain String is CloudKit-compatible.
-    private var setIdsRaw: String
-    var isActive: Bool
-    var shuffleMethod: ShuffleMethod
-    var createdAt: Date
-    var updatedAt: Date
+    private var setIdsRaw: String = ""
+    var isActive: Bool = false
+    var shuffleMethodRaw: String = ShuffleMethod.random.rawValue
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
 
     // MARK: Computed [UUID] accessor
 
     var setIds: [UUID] {
         get { decodeUUIDs(setIdsRaw) }
         set { setIdsRaw = encodeUUIDs(newValue) }
+    }
+
+    var shuffleMethod: ShuffleMethod {
+        get { ShuffleMethod(rawValue: shuffleMethodRaw) ?? .random }
+        set { shuffleMethodRaw = newValue.rawValue }
     }
 
     // MARK: Init
@@ -58,9 +63,9 @@ final class Pile {
         self.id           = id
         self.name         = name
         self.setIdsRaw    = encodeUUIDs(setIds)
-        self.isActive     = isActive
-        self.shuffleMethod = shuffleMethod
-        self.createdAt    = createdAt
+        self.isActive         = isActive
+        self.shuffleMethodRaw = shuffleMethod.rawValue
+        self.createdAt        = createdAt
         self.updatedAt    = updatedAt
     }
 }

@@ -10,9 +10,8 @@ struct SettingsView: View {
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant     = "en-US"
     @AppStorage(Constants.StorageKey.colorScheme)        private var theme: Theme       = .system
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier = ""
-    @AppStorage(Constants.StorageKey.studyStartHour)     private var studyStartHour: Int = 6
-    @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool   = true
     @AppStorage(Constants.StorageKey.userPlan)           private var userPlan: AccessTier = .free
+    @Environment(AppSyncStateService.self) private var syncState
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
@@ -96,11 +95,12 @@ struct SettingsView: View {
 
             VStack(spacing: 0) {
                 // SRS toggle
+                @Bindable var bs = syncState
                 HStack {
                     Label("Spaced Repetition (SRS)", systemImage: "brain")
                         .labelStyle(.fixedIcon)
                     Spacer()
-                    Toggle("", isOn: $srsEnabled)
+                    Toggle("", isOn: $bs.srsEnabled)
                         .labelsHidden()
                         .tint(Color.myColors.myBlue)
                 }
@@ -109,13 +109,13 @@ struct SettingsView: View {
                 .padding(.horizontal, 16)
 
                 // Due cards from — only when SRS is on
-                if srsEnabled {
+                if syncState.srsEnabled {
                     Divider().padding(.leading, 16)
                     HStack {
                         Label("Due from", systemImage: "clock")
                             .labelStyle(.fixedIcon)
                         Spacer()
-                        Picker("", selection: $studyStartHour) {
+                        Picker("", selection: $bs.studyStartHour) {
                             ForEach(0..<24, id: \.self) { hour in
                                 Text(hourLabel(hour)).tag(hour)
                             }
