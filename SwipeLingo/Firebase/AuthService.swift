@@ -137,19 +137,21 @@ final class AuthService {
             currentUser = Auth.auth().currentUser
         } catch let error as NSError {
             // Firebase wraps underlying NSURLErrors as AuthErrorCode.networkError (17020).
-            // Inspect the underlying error to distinguish true "no internet" (-1009) from
-            // a timeout (-1001): timeout → sign out; no internet → keep session (offline).
-            let genuinelyOfflineCodes: Set<Int> = [
-                NSURLErrorNotConnectedToInternet,  // -1009
-                NSURLErrorNetworkConnectionLost,   // -1005
-                NSURLErrorDataNotAllowed,          // -1020
+            // Any network/timeout error → keep session (retry on next launch).
+            // Only sign out on explicit auth errors (invalid credential, user disabled, etc.).
+            let keepSessionCodes: Set<Int> = [
+                NSURLErrorNotConnectedToInternet,  // -1009 no internet
+                NSURLErrorNetworkConnectionLost,   // -1005 connection dropped
+                NSURLErrorDataNotAllowed,          // -1020 cellular blocked
+                NSURLErrorTimedOut,                // -1001 server slow / proxy / VPN
+                NSURLErrorCannotConnectToHost,     // -1004 host unreachable
             ]
             let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError
-            let isOffline = genuinelyOfflineCodes.contains(error.code)
+            let isNetworkError = keepSessionCodes.contains(error.code)
                 || (error.code == AuthErrorCode.networkError.rawValue
-                    && underlying.map { genuinelyOfflineCodes.contains($0.code) } == true)
-            if isOffline {
-                log("[Auth] Launch verify: offline — keeping session", level: .warning)
+                    && underlying.map { keepSessionCodes.contains($0.code) } == true)
+            if isNetworkError {
+                log("[Auth] Launch verify: network error (\(error.code)) — keeping session", level: .warning)
             } else {
                 log("[Auth] Launch verify: session invalid (domain:\(error.domain) code:\(error.code) underlying:\(String(describing: underlying?.code))) — signing out", level: .warning)
                 try? signOut()

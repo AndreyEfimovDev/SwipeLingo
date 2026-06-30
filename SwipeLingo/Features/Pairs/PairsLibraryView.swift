@@ -424,19 +424,6 @@ struct PairsLibraryView: View {
                     Divider().padding(.leading, 46)
                 }
 
-                Label("Share Pairs", systemImage: "square.and.arrow.up")
-                    .labelStyle(.fixedIcon)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-
-                Divider().padding(.leading, 46)
-
-                Label("Backup Pairs", systemImage: "arrow.clockwise.icloud")
-                    .labelStyle(.fixedIcon)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
             }
             .foregroundStyle(Color.myColors.myAccent)
             .background(Color.myColors.myBackground)

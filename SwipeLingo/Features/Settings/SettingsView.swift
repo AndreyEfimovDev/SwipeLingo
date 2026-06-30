@@ -32,6 +32,7 @@ struct SettingsView: View {
                     studySection
                     voiceSection
                     appearanceSection
+                    dataSection
                 }
                 .padding(.vertical, 16)
             }
@@ -163,6 +164,54 @@ struct SettingsView: View {
                 .frame(height: 52)
                 .padding(.horizontal, 16)
                 .contentShape(Rectangle())
+            }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Data
+
+    private var dataSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("MANAGING DATA")
+                .font(titleFont)
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 0) {
+                NavigationLink { ExportAndShareView() } label: {
+                    HStack {
+                        Label("Export / Backup", systemImage: "square.and.arrow.up")
+                            .labelStyle(.fixedIcon)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                    }
+                    .font(textFont)
+                    .frame(height: 52)
+                    .padding(.horizontal, 16)
+                    .contentShape(Rectangle())
+                }
+
+                Divider().padding(.leading, 46)
+
+                NavigationLink { RestoreBackupView() } label: {
+                    HStack {
+                        Label("Restore", systemImage: "tray.and.arrow.up")
+                            .labelStyle(.fixedIcon)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                    }
+                    .font(textFont)
+                    .frame(height: 52)
+                    .padding(.horizontal, 16)
+                    .contentShape(Rectangle())
+                }
             }
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))

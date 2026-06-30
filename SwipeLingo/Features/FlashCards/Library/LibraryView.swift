@@ -595,21 +595,6 @@ struct LibraryView: View {
             VStack(spacing: 0) {
                 deletedCards
 
-                Divider().padding(.leading, 46)
-
-                Label("Share Cards", systemImage: "square.and.arrow.up")
-                    .labelStyle(.fixedIcon)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-
-                Divider().padding(.leading, 46)
-
-                Label("Backup Cards", systemImage: "arrow.clockwise.icloud")
-                    .labelStyle(.fixedIcon)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
             }
             .foregroundStyle(Color.myColors.myAccent)
             .background(Color.myColors.myBackground)
