@@ -5,10 +5,10 @@ import SwiftData
 // Cards belonging to this set are queried via: #Predicate<Card> { $0.setId == cardSet.id }
 @Model
 final class CardSet {
-    var id: UUID
-    var name: String
-    var collectionId: UUID
-    var createdAt: Date
+    var id: UUID = UUID()
+    var name: String = ""
+    var collectionId: UUID = UUID()
+    var createdAt: Date = Date()
 
     // false = developer content (IELTS sets, Psychology sets)
     // true  = user-created content (sets inside My Sets)

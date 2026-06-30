@@ -1,13 +1,12 @@
 import SwiftUI
 
 // MARK: - OnboardingView
-// Координатор онбординга. Управляет шагами и анимацией перехода.
+// Координатор онбординга. Auth теперь происходит ДО онбординга в SwipeLingoApp.
 // Шаги:
 //   0 — intro
-//   1 — выбор языка (с предупреждением о постоянстве)
+//   1 — выбор языка
 //   2 — выбор уровня CEFR
-//   3 — авторизация (имя вводится здесь при email sign-up)
-//   4 — подтверждение настроек → в приложение
+//   3 — подтверждение настроек → в приложение
 
 struct OnboardingView: View {
 
@@ -16,17 +15,15 @@ struct OnboardingView: View {
     @State private var step: Int = 0
     @State private var goingForward = true
 
-    private let totalSteps = 5
+    private let totalSteps = 4
 
     var body: some View {
         ZStack {
             Color.myColors.myBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Навигационная строка
                 navBar
 
-                // Контент шага
                 ZStack {
                     switch step {
                     case 0:
@@ -37,9 +34,6 @@ struct OnboardingView: View {
                             .transition(stepTransition)
                     case 2:
                         OnboardingLevelView(onNext: { next() }, onBack: { back() })
-                            .transition(stepTransition)
-                    case 3:
-                        OnboardingAuthView(onNext: { next() })
                             .transition(stepTransition)
                     default:
                         OnboardingConfirmView(onComplete: onComplete, onBack: { back() })
@@ -75,7 +69,7 @@ struct OnboardingView: View {
 
             Spacer()
 
-            // Dots — только для шагов настройки (1–3), не на intro, auth и финале
+            // Dots — шаги 1–2 (язык, уровень)
             if step > 0 && step < 3 {
                 progressDots
             }
@@ -90,7 +84,7 @@ struct OnboardingView: View {
 
     // Dots показывают шаги 1–2 (язык, уровень) — всего 2 точки
     private var progressDots: some View {
-        let setupStep = step - 1  // 0, 1 для шагов 1, 2
+        let setupStep = step - 1
         return HStack(spacing: 6) {
             ForEach(0..<2, id: \.self) { i in
                 Capsule()
