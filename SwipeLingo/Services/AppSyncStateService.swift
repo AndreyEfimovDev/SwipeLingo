@@ -164,34 +164,57 @@ final class AppSyncStateService {
 
     // MARK: - CloudKit observer
 
+    // NSPersistentStoreRemoteChange fires for BOTH local saves AND remote CloudKit changes.
+    // Without debounce, a single sync burst (CloudKit delivering many records) triggers
+    // dozens of reloads, each of which saves (cleanupDuplicates) → triggering more notifications.
+    // Debounce collapses the burst into one reload 300ms after the last notification.
+    private var reloadTask: Task<Void, Never>?
+
     private func observeCloudKitChanges() {
         NotificationCenter.default.addObserver(
             forName: .NSPersistentStoreRemoteChange,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.reloadFromSwiftData()
-            }
+            // queue: .main guarantees main thread — asserting MainActor isolation explicitly
+            MainActor.assumeIsolated { self?.scheduleReload() }
+        }
+    }
+
+    private func scheduleReload() {
+        reloadTask?.cancel()
+        reloadTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(1000))
+            guard !Task.isCancelled else { return }
+            self?.reloadFromSwiftData()
         }
     }
 
     private func reloadFromSwiftData() {
         manager.cleanupDuplicates()
         let state = manager.getOrCreateAppState()
+
+        // NSPersistentStoreRemoteChange fires for every model type (Card, CardSet, etc.).
+        // Skip the reload if AppSyncState values haven't actually changed to avoid unnecessary UI updates.
+        let changed = state.srsEnabled            != srsEnabled
+                   || state.studyStartHour        != studyStartHour
+                   || state.hasCompletedOnboarding != hasCompletedOnboarding
+                   || state.nativeLanguageRaw      != nativeLanguageRaw
+                   || state.settingsUpdatedAt      != appState.settingsUpdatedAt
+
+        guard changed else {
+            log("[AppSync] CloudKit ping — AppSyncState unchanged, skipping reload", level: .info)
+            return
+        }
+
         appState = state
-
-        // Suppress didSet saves — we're reloading FROM SwiftData, not writing TO it
         isReloading = true
-//        srsEnabled = state.srsEnabled
-        srsEnabled = appState.srsEnabled
-
+        srsEnabled = state.srsEnabled
         studyStartHour = state.studyStartHour
         hasCompletedOnboarding = state.hasCompletedOnboarding
         nativeLanguageRaw = state.nativeLanguageRaw
         isReloading = false
 
-        // Propagate to UserDefaults so @AppStorage consumers (FlashCardsView etc.) update
         UserDefaults.standard.set(state.srsEnabled, forKey: "srsEnabled")
         UserDefaults.standard.set(state.studyStartHour, forKey: "studyStartHour")
         UserDefaults.standard.set(state.hasCompletedOnboarding, forKey: "hasCompletedOnboarding")
