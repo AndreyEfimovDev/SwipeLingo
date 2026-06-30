@@ -8,6 +8,9 @@ import FirebaseAuth
 class AppDelegate: NSObject, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Required for CloudKit push notifications (real-time sync delivery).
+        // Without this CloudKit falls back to polling instead of push.
+        application.registerForRemoteNotifications()
         return true
     }
 
