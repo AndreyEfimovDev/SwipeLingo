@@ -32,15 +32,19 @@ final class UserService {
 
     /// Creates the Firestore user document on first sign-in.
     /// On subsequent sign-ins updates provider + displayName + updatedAt only (preserves subscription).
+    /// Returns `true` if the user document already existed with cefrLevel set —
+    /// used by SwipeLingoApp to skip onboarding on a second device (returning user).
+    @discardableResult
     func createOrUpdateUser(
         _ firebaseUser: FirebaseAuth.User,
         nativeLanguage: String = "",
         cefrLevel: String = ""
-    ) async {
+    ) async -> Bool {
         let ref = db.collection("users").document(firebaseUser.uid)
         do {
             let snapshot = try await ref.getDocument()
             if snapshot.exists {
+                let isReturningUser = (snapshot.data()?["cefrLevel"] as? String)?.isEmpty == false
                 // Update mutable fields only — do NOT overwrite subscription.
                 // nativeLanguage backfills accounts created before onboarding set the preference.
                 var updates: [String: Any] = [
@@ -51,7 +55,8 @@ final class UserService {
                 ]
                 if !nativeLanguage.isEmpty { updates["nativeLanguage"] = nativeLanguage }
                 try await ref.updateData(updates)
-                log("[UserService] User document updated: \(firebaseUser.uid)", level: .info)
+                log("[UserService] User document updated: \(firebaseUser.uid) returningUser:\(isReturningUser)", level: .info)
+                return isReturningUser
             } else {
                 // First sign-in — create full document
                 let doc = UserFirestoreDocument.make(
@@ -63,9 +68,11 @@ final class UserService {
                 log("[UserService] User document created: \(firebaseUser.uid)", level: .info)
                 // Cache Free plan as default
                 cachePlan(.free, status: .active, expiry: nil)
+                return false
             }
         } catch {
             log("[UserService] createOrUpdateUser failed: \(error)", level: .error)
+            return false
         }
     }
 
