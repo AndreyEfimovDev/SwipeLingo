@@ -5,13 +5,13 @@ import SwiftData
 
 @Model class BookBookmark {
 
-    var id:           UUID
-    var bookId:       UUID
-    var chapterIndex: Int
-    var chapterTitle: String
-    var scrollOffset: Double   // 0.0 – 1.0
+    var id:           UUID   = UUID()
+    var bookId:       UUID   = UUID()
+    var chapterIndex: Int    = 0
+    var chapterTitle: String = ""
+    var scrollOffset: Double = 0.0   // 0.0 – 1.0
     var selectedText: String?
-    var createdAt:    Date
+    var createdAt:    Date   = Date()
 
     init(
         bookId:       UUID,

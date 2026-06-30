@@ -11,16 +11,16 @@ import SwiftData
 
 @Model
 final class PairsSet {
-    var id: UUID
+    var id: UUID = UUID()
     var title: String?
     var setDescription: String?      // optional longer description shown in content view
-    var cefrLevelRaw:    String      // CEFRLevel.rawValue    — хранится как String (CloudKit-safe)
-    var accessTierRaw:   String      // AccessTier.rawValue   — хранится как String (CloudKit-safe)
-    var deployStatusRaw: String      // SetDeployStatus.rawValue — хранится как String (CloudKit-safe)
-    var itemsJSON: String            // JSON-encoded [Pair] — хранится как String (CloudKit-safe)
+    var cefrLevelRaw:    String = CEFRLevel.b2.rawValue   // хранится как String (CloudKit-safe)
+    var accessTierRaw:   String = AccessTier.free.rawValue // хранится как String (CloudKit-safe)
+    var deployStatusRaw: String = SetDeployStatus.new.rawValue // хранится как String (CloudKit-safe)
+    var itemsJSON: String = "[]"     // JSON-encoded [Pair] — хранится как String (CloudKit-safe)
     var collectionId: UUID?          // nil = локальный/мок; UUID = Firebase-коллекция
     var updatedAt: Date = Date.epoch // обновляется Admin Tool при публикации
-    var createdAt: Date
+    var createdAt: Date = Date()
     var firestoreId: String? = nil   // Firestore document ID for sync deduplication
     var isSoftDeleted: Bool  = false // soft-delete: скрыт в UI, не удаляется из SwiftData
     var isNew:       Bool    = false // true = imported from Firestore but not yet opened
