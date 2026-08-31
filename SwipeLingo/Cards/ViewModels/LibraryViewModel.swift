@@ -104,9 +104,11 @@ final class LibraryViewModel {
 
     /// Ручной sync = full sync: перекачивает весь контент до уровня пользователя заново
     /// и запускает orphan removal, гарантируя, что локальные данные совпадают с Firestore.
-    func syncContent(context: ModelContext, language: NativeLanguage, level: CEFRLevel) async {
+    /// `nativeLangRaw` — сырое значение из `@AppStorage`; если оно не распознано, используем `.russian`.
+    func syncContent(context: ModelContext, nativeLangRaw: String, level: CEFRLevel) async {
         isSyncing = true
         defer { isSyncing = false }
+        let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
         await FirestoreImportService().syncFromFirestore(
             into: context, language: language, upToLevel: level, forceFullSync: true
         )

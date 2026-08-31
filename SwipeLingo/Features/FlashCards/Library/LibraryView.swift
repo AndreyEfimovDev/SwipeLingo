@@ -15,7 +15,7 @@ struct LibraryView: View {
 
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
     @Query private var profiles: [UserProfile]
-    @State private var viewModel = LibraryViewModel()
+    @State private var vm = LibraryViewModel()
 
     @State private var isShowingAddCollection = false
     @State private var pileSheet:             PileSheet?
@@ -27,46 +27,7 @@ struct LibraryView: View {
     @State private var newPileName            = ""
     @State private var showAllPiles           = false
 
-    private var deletedCardsCount: Int {
-        viewModel.deletedCardsCount(allCards: allCards)
-    }
-
     private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
-
-    private func syncContent() async {
-        let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
-        await viewModel.syncContent(context: context, language: language, level: userLevel)
-    }
-
-    private func setsForCollection(_ collection: Collection) -> [CardSet] {
-        viewModel.setsForCollection(collection, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
-    }
-
-    private func cardCount(for collection: Collection) -> Int {
-        viewModel.cardCount(for: collection, cardSets: cardSets, allCards: allCards)
-    }
-
-    private func cardCount(forSet cardSet: CardSet) -> Int {
-        viewModel.cardCount(forSet: cardSet, allCards: allCards)
-    }
-
-    private func newCount(forSet cardSet: CardSet) -> Int {
-        viewModel.newCount(forSet: cardSet, allCards: allCards)
-    }
-
-    private func toggleSet(_ set: CardSet, in pile: Pile) {
-        viewModel.toggleSet(set, in: pile, context: context)
-    }
-
-    private func deleteSetWithCards(_ cardSet: CardSet) {
-        viewModel.deleteSetWithCards(cardSet, allCards: allCards, context: context)
-    }
-
-    private func createNewPile(named name: String, with set: CardSet) {
-        if viewModel.createNewPile(named: name, with: set, context: context) {
-            showAllPiles = true   // раскрыть список чтобы новый пайл был виден
-        }
-    }
 
     var body: some View {
         NavigationStack {
@@ -91,16 +52,16 @@ struct LibraryView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        Task { await syncContent() }
+                        Task { await vm.syncContent(context: context, nativeLangRaw: nativeLangRaw, level: userLevel) }
                     } label: {
-                        if viewModel.isSyncing {
+                        if vm.isSyncing {
                             ProgressView().tint(Color.myColors.myBlue)
                         } else {
                             Image(systemName: "arrow.clockwise")
                                 .foregroundStyle(Color.myColors.myBlue)
                         }
                     }
-                    .disabled(viewModel.isSyncing)
+                    .disabled(vm.isSyncing)
                 }
             }
             .sheet(isPresented: $isShowingAddCollection) {
@@ -141,7 +102,7 @@ struct LibraryView: View {
             ) {
                 Button("Delete Collection", role: .destructive) {
                     if let col = collectionToDelete {
-                        deleteCollectionWithCards(col)
+                        vm.deleteCollectionWithCards(col, cardSets: cardSets, allCards: allCards, context: context)
                         collectionToDelete = nil
                     }
                 }
@@ -165,7 +126,7 @@ struct LibraryView: View {
             ) {
                 Button("Delete Set", role: .destructive) {
                     if let set = setToDelete {
-                        deleteSetWithCards(set)
+                        vm.deleteSetWithCards(set, allCards: allCards, context: context)
                         setToDelete = nil
                     }
                 }
@@ -184,7 +145,10 @@ struct LibraryView: View {
             )) {
                 TextField("Pile name", text: $newPileName)
                 Button("Create") {
-                    if let set = setForNewPile { createNewPile(named: newPileName, with: set) }
+                    if let set = setForNewPile,
+                       vm.createNewPile(named: newPileName, with: set, context: context) {
+                        showAllPiles = true   // раскрыть список чтобы новый пайл был виден
+                    }
                     setForNewPile = nil; newPileName = ""
                 }
                 Button("Cancel", role: .cancel) { setForNewPile = nil; newPileName = "" }
@@ -287,7 +251,7 @@ struct LibraryView: View {
     @ViewBuilder
     private func pileRow(_ pile: Pile) -> some View {
         HStack(spacing: 10) {
-            Button { activatePile(pile) } label: {
+            Button { vm.activatePile(pile, among: piles, context: context) } label: {
                 Image(systemName: pile.isActive ? "checkmark.circle" : "circle")
                     .foregroundStyle(pile.isActive ? Color.myColors.myGreen : Color.myColors.myAccent.opacity(0.8))
                     .font(.title3)
@@ -302,7 +266,7 @@ struct LibraryView: View {
                 HStack(spacing: 4) {
                     Image(systemName: pileShuffleIcon(pile.shuffleMethod))
                         .font(.caption2)
-                    Text("\(activeCardCount(for: pile)) active cards")
+                    Text("\(vm.activeCardCount(for: pile, allCards: allCards)) active cards")
                         .font(.caption)
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
                 }
@@ -323,7 +287,7 @@ struct LibraryView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button(role: .destructive) {
-                viewModel.deletePile(pile, context: context)
+                vm.deletePile(pile, context: context)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
@@ -394,7 +358,7 @@ struct LibraryView: View {
     /// Одна карточка-блок: заголовок коллекции + список сетов под ним.
     @ViewBuilder
     private func collectionSetBlock(_ collection: Collection) -> some View {
-        let sets = setsForCollection(collection)
+        let sets = vm.setsForCollection(collection, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
 
         VStack(spacing: 0) {
             // Collection header
@@ -405,7 +369,7 @@ struct LibraryView: View {
                     .labelStyle(.fixedIcon)
                     .lineLimit(1)
 
-                let count = cardCount(for: collection)
+                let count = vm.cardCount(for: collection, cardSets: cardSets, allCards: allCards)
                 if count > 0 {
                     Text(" (\(count))")
                         .font(.subheadline)
@@ -478,8 +442,8 @@ struct LibraryView: View {
             }
         } label: {
             HStack {
-                let count = cardCount(forSet: cardSet)
-                let newCards = newCount(forSet: cardSet)
+                let count = vm.cardCount(forSet: cardSet, allCards: allCards)
+                let newCards = vm.newCount(forSet: cardSet, allCards: allCards)
                 HStack(alignment: .top, spacing: 2) {
                     HStack(alignment: .top, spacing: 1) {
                         Group {
@@ -522,7 +486,7 @@ struct LibraryView: View {
                 ForEach(piles) { pile in
                     let inPile = pile.setIds.contains(cardSet.id)
                     Button {
-                        toggleSet(cardSet, in: pile)
+                        vm.toggleSet(cardSet, in: pile, context: context)
                     } label: {
                         Label(pile.name, systemImage: inPile ? "checkmark.circle" : "circle")
                     }
@@ -569,13 +533,14 @@ struct LibraryView: View {
     
     @ViewBuilder
     private var deletedCards: some View {
-        if deletedCardsCount > 0 {
+        let deletedCount = vm.deletedCardsCount(allCards: allCards)
+        if deletedCount > 0 {
             NavigationLink { DeletedCardsView() } label: {
                 HStack {
                     Label {
                         HStack(spacing: 0) {
                             Text("Deleted Cards")
-                            Text(" (\(deletedCardsCount))")
+                            Text(" (\(deletedCount))")
                                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                         }
                     } icon: {
@@ -599,14 +564,14 @@ struct LibraryView: View {
 
     // Inbox + My Sets + other user-created collections
     private var myCollections: [Collection] {
-        viewModel.myCollections(from: collections, cardSets: cardSets, allCards: allCards)
+        vm.myCollections(from: collections, cardSets: cardSets, allCards: allCards)
     }
 
     // Curated (Firestore) collections — показываем только если есть хотя бы один сет.
     // Скрываем пустые: они появляются кратковременно пока sync ещё не выполнил cleanup,
     // и могут оставаться если у пользователя нет контента на его уровне CEFR.
     private var curatedCollections: [Collection] {
-        viewModel.curatedCollections(from: collections, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
+        vm.curatedCollections(from: collections, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
     }
 
     // MARK: - Empty State
@@ -624,21 +589,6 @@ struct LibraryView: View {
         }
     }
 
-    // MARK: - Actions
-
-    private func deleteCollectionWithCards(_ collection: Collection) {
-        viewModel.deleteCollectionWithCards(collection, cardSets: cardSets, allCards: allCards, context: context)
-    }
-
-    private func activatePile(_ pile: Pile) {
-        viewModel.activatePile(pile, among: piles, context: context)
-    }
-
-    // MARK: - Helpers
-
-    private func activeCardCount(for pile: Pile) -> Int {
-        viewModel.activeCardCount(for: pile, allCards: allCards)
-    }
 }
 
 // MARK: - PileSheet

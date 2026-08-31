@@ -12,7 +12,7 @@ struct CollectionDetailView: View {
     // Та же бизнес-логика Library, что и в LibraryView — этот экран на уровень глубже
     // в том же графе Collection/CardSet/Pile, поэтому переиспользует ViewModel вместо
     // повторного дублирования toggleSet/createNewPile/deleteSetWithCards.
-    @State private var viewModel = LibraryViewModel()
+    @State private var vm = LibraryViewModel()
 
     @Query(sort: \CardSet.createdAt)  private var allSets:  [CardSet]
     @Query(sort: \Card.createdAt)     private var allCards: [Card]
@@ -94,7 +94,7 @@ struct CollectionDetailView: View {
             TextField("Pile name", text: $newPileName)
             Button("Create") {
                 if let set = setForNewPile {
-                    createNewPile(named: newPileName, with: set)
+                    vm.createNewPile(named: newPileName, with: set, context: context)
                 }
                 setForNewPile = nil
                 newPileName   = ""
@@ -125,7 +125,7 @@ struct CollectionDetailView: View {
         ) {
             Button("Delete Set", role: .destructive) {
                 if let set = setToDelete {
-                    deleteSetWithCards(set)
+                    vm.deleteSetWithCards(set, allCards: allCards, context: context)
                     setToDelete = nil
                 }
             }
@@ -138,24 +138,6 @@ struct CollectionDetailView: View {
                     : "This empty set will be permanently removed.")
             }
         }
-    }
-
-    private func cardCount(for cardSet: CardSet) -> Int {
-        allCards.filter { $0.setId == cardSet.id && $0.status != .deleted }.count
-    }
-
-    // MARK: - Actions
-
-    private func createNewPile(named name: String, with set: CardSet) {
-        viewModel.createNewPile(named: name, with: set, context: context)
-    }
-
-    private func toggleSet(_ set: CardSet, in pile: Pile) {
-        viewModel.toggleSet(set, in: pile, context: context)
-    }
-
-    private func deleteSetWithCards(_ cardSet: CardSet) {
-        viewModel.deleteSetWithCards(cardSet, allCards: allCards, context: context)
     }
 
     // MARK: - Filter Bar
@@ -198,7 +180,7 @@ struct CollectionDetailView: View {
                     CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated, backTitle: collection.name)
                 } label: {
                     HStack {
-                        let count = cardCount(for: cardSet)
+                        let count = vm.cardCount(forSet: cardSet, allCards: allCards)
                         HStack(alignment: .top, spacing: 2) {
                             HStack(spacing: 0) {
                                 Text(cardSet.name)
@@ -228,7 +210,7 @@ struct CollectionDetailView: View {
                         ForEach(allPiles) { pile in
                             let inPile = pile.setIds.contains(cardSet.id)
                             Button {
-                                toggleSet(cardSet, in: pile)
+                                vm.toggleSet(cardSet, in: pile, context: context)
                             } label: {
                                 Label(
                                     pile.name,
