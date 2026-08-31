@@ -15,7 +15,7 @@ struct LibraryView: View {
 
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
     @Query private var profiles: [UserProfile]
-    @State private var isSyncing = false
+    @State private var viewModel = LibraryViewModel()
 
     @State private var isShowingAddCollection = false
     @State private var pileSheet:             PileSheet?
@@ -28,80 +28,44 @@ struct LibraryView: View {
     @State private var showAllPiles           = false
 
     private var deletedCardsCount: Int {
-        allCards.filter { $0.status == .deleted }.count
-    }
-
-    private func syncContent() async {
-        isSyncing = true
-        defer { isSyncing = false }
-        let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
-        let level    = profiles.first?.cefrLevel ?? .c2
-        // Ручной sync = full sync: запускает orphan removal и гарантирует актуальность данных.
-        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level, forceFullSync: true)
-    }
-
-    private func setCount(for collection: Collection) -> Int {
-        cardSets.filter { $0.collectionId == collection.id }.count
-    }
-
-    private func cardCount(for collection: Collection) -> Int {
-        let setIds = Set(cardSets.filter { $0.collectionId == collection.id }.map(\.id))
-        return allCards.filter { setIds.contains($0.setId) && $0.status != .deleted }.count
-    }
-
-    private func cardCount(forSet cardSet: CardSet) -> Int {
-        allCards.filter { $0.setId == cardSet.id && $0.status != .deleted }.count
-    }
-
-    private func newCount(forSet cardSet: CardSet) -> Int {
-        allCards.filter { $0.setId == cardSet.id && $0.isNew }.count
+        viewModel.deletedCardsCount(allCards: allCards)
     }
 
     private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
 
+    private func syncContent() async {
+        let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
+        await viewModel.syncContent(context: context, language: language, level: userLevel)
+    }
+
     private func setsForCollection(_ collection: Collection) -> [CardSet] {
-        cardSets
-            .filter { $0.collectionId == collection.id && $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
-            .filter { set in
-                let cards = allCards.filter { $0.setId == set.id }
-                return cards.isEmpty || cards.contains { $0.status != .deleted }
-            }
+        viewModel.setsForCollection(collection, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
+    }
+
+    private func cardCount(for collection: Collection) -> Int {
+        viewModel.cardCount(for: collection, cardSets: cardSets, allCards: allCards)
+    }
+
+    private func cardCount(forSet cardSet: CardSet) -> Int {
+        viewModel.cardCount(forSet: cardSet, allCards: allCards)
+    }
+
+    private func newCount(forSet cardSet: CardSet) -> Int {
+        viewModel.newCount(forSet: cardSet, allCards: allCards)
     }
 
     private func toggleSet(_ set: CardSet, in pile: Pile) {
-        if pile.setIds.contains(set.id) {
-            pile.setIds.removeAll { $0 == set.id }
-        } else {
-            pile.setIds.append(set.id)
-        }
-        context.saveWithErrorHandling()
+        viewModel.toggleSet(set, in: pile, context: context)
     }
 
     private func deleteSetWithCards(_ cardSet: CardSet) {
-        let cards = allCards.filter { $0.setId == cardSet.id }
-        if cardSet.isUserCreated {
-            // User-created: hard-delete когда карточек нет, иначе soft-delete карточек
-            if cards.isEmpty {
-                context.delete(cardSet)
-            } else {
-                cards.forEach { $0.status = .deleted }
-            }
-        } else {
-            // Curated: tombstone — сет остаётся в SwiftData, sync не будет его перезагружать.
-            // Карточки soft-deleted → появляются в Deleted Cards только с кнопкой Restore.
-            cardSet.isSoftDeleted = true
-            cards.forEach { $0.status = .deleted }
-        }
-        context.saveWithErrorHandling()
+        viewModel.deleteSetWithCards(cardSet, allCards: allCards, context: context)
     }
 
     private func createNewPile(named name: String, with set: CardSet) {
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        let pile = Pile(name: trimmed, setIds: [set.id])
-        context.insert(pile)
-        context.saveWithErrorHandling()
-        showAllPiles = true   // раскрыть список чтобы новый пайл был виден
+        if viewModel.createNewPile(named: name, with: set, context: context) {
+            showAllPiles = true   // раскрыть список чтобы новый пайл был виден
+        }
     }
 
     var body: some View {
@@ -129,14 +93,14 @@ struct LibraryView: View {
                     Button {
                         Task { await syncContent() }
                     } label: {
-                        if isSyncing {
+                        if viewModel.isSyncing {
                             ProgressView().tint(Color.myColors.myBlue)
                         } else {
                             Image(systemName: "arrow.clockwise")
                                 .foregroundStyle(Color.myColors.myBlue)
                         }
                     }
-                    .disabled(isSyncing)
+                    .disabled(viewModel.isSyncing)
                 }
             }
             .sheet(isPresented: $isShowingAddCollection) {
@@ -359,8 +323,7 @@ struct LibraryView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button(role: .destructive) {
-                context.delete(pile)
-                context.saveWithErrorHandling()
+                viewModel.deletePile(pile, context: context)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
@@ -636,30 +599,14 @@ struct LibraryView: View {
 
     // Inbox + My Sets + other user-created collections
     private var myCollections: [Collection] {
-        let inbox    = collections.filter { $0.name == "Inbox" }
-        let mySets   = collections.filter { $0.name == "My Sets" }
-        let userRest = collections.filter {
-            $0.isUserCreated && $0.name != "Inbox" && $0.name != "My Sets" && hasVisibleContent($0)
-        }
-        return inbox + mySets + userRest
+        viewModel.myCollections(from: collections, cardSets: cardSets, allCards: allCards)
     }
 
     // Curated (Firestore) collections — показываем только если есть хотя бы один сет.
     // Скрываем пустые: они появляются кратковременно пока sync ещё не выполнил cleanup,
     // и могут оставаться если у пользователя нет контента на его уровне CEFR.
     private var curatedCollections: [Collection] {
-        collections.filter { !$0.isUserCreated && !setsForCollection($0).isEmpty }
-    }
-
-    /// Коллекция видима если: нет сетов (только что создана), или хотя бы один сет имеет
-    /// хотя бы одну не-удалённую карточку (или пустой сет — тоже видим).
-    private func hasVisibleContent(_ collection: Collection) -> Bool {
-        let setsInCollection = cardSets.filter { $0.collectionId == collection.id }
-        if setsInCollection.isEmpty { return true }
-        return setsInCollection.contains { set in
-            let cards = allCards.filter { $0.setId == set.id }
-            return cards.isEmpty || cards.contains { $0.status != .deleted }
-        }
+        viewModel.curatedCollections(from: collections, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
     }
 
     // MARK: - Empty State
@@ -680,38 +627,17 @@ struct LibraryView: View {
     // MARK: - Actions
 
     private func deleteCollectionWithCards(_ collection: Collection) {
-        let setsInCollection = cardSets.filter { $0.collectionId == collection.id }
-        var hasSoftDeletedCards = false
-
-        for set in setsInCollection {
-            let cards = allCards.filter { $0.setId == set.id }
-            if cards.isEmpty {
-                context.delete(set)        // пустой сет — удаляем сразу
-            } else {
-                hasSoftDeletedCards = true
-                cards.forEach { $0.status = .deleted }
-                // сет остаётся в БД; удалится автоматически когда все карточки будут стёрты
-            }
-        }
-
-        if !hasSoftDeletedCards {
-            // коллекция была пустой — удаляем сразу
-            context.delete(collection)
-        }
-        // иначе коллекция удалится автоматически вместе с последним сетом
-        context.saveWithErrorHandling()
+        viewModel.deleteCollectionWithCards(collection, cardSets: cardSets, allCards: allCards, context: context)
     }
 
     private func activatePile(_ pile: Pile) {
-        for p in piles { p.isActive = false }
-        pile.isActive = true
-        context.saveWithErrorHandling()
+        viewModel.activatePile(pile, among: piles, context: context)
     }
 
     // MARK: - Helpers
 
     private func activeCardCount(for pile: Pile) -> Int {
-        allCards.filter { pile.setIds.contains($0.setId) && $0.status == .active }.count
+        viewModel.activeCardCount(for: pile, allCards: allCards)
     }
 }
 

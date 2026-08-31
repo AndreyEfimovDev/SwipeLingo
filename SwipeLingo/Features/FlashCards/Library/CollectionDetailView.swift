@@ -9,6 +9,11 @@ struct CollectionDetailView: View {
     @Environment(\.modelContext) private var context
     let collection: Collection
 
+    // Та же бизнес-логика Library, что и в LibraryView — этот экран на уровень глубже
+    // в том же графе Collection/CardSet/Pile, поэтому переиспользует ViewModel вместо
+    // повторного дублирования toggleSet/createNewPile/deleteSetWithCards.
+    @State private var viewModel = LibraryViewModel()
+
     @Query(sort: \CardSet.createdAt)  private var allSets:  [CardSet]
     @Query(sort: \Card.createdAt)     private var allCards: [Card]
     @Query(sort: \Pile.createdAt)     private var allPiles: [Pile]
@@ -142,31 +147,15 @@ struct CollectionDetailView: View {
     // MARK: - Actions
 
     private func createNewPile(named name: String, with set: CardSet) {
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        let pile = Pile(name: trimmed, setIds: [set.id])
-        context.insert(pile)
-        context.saveWithErrorHandling()
+        viewModel.createNewPile(named: name, with: set, context: context)
     }
 
     private func toggleSet(_ set: CardSet, in pile: Pile) {
-        if pile.setIds.contains(set.id) {
-            pile.setIds.removeAll { $0 == set.id }
-        } else {
-            pile.setIds.append(set.id)
-        }
-        context.saveWithErrorHandling()
+        viewModel.toggleSet(set, in: pile, context: context)
     }
 
     private func deleteSetWithCards(_ cardSet: CardSet) {
-        let cards = allCards.filter { $0.setId == cardSet.id }
-        if cards.isEmpty {
-            context.delete(cardSet)    // пустой сет — удаляем сразу
-        } else {
-            cards.forEach { $0.status = .deleted }
-            // сет остаётся в БД; удалится автоматически когда все карточки будут стёрты
-        }
-        context.saveWithErrorHandling()
+        viewModel.deleteSetWithCards(cardSet, allCards: allCards, context: context)
     }
 
     // MARK: - Filter Bar

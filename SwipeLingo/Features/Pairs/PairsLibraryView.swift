@@ -34,6 +34,8 @@ struct PairsLibraryView: View {
     @State private var setForNewPile: PairsSet?
     @State private var newPileName    = ""
 
+    private let pileService = PileManagementService()
+
     // MARK: - Grouping helpers
 
     private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
@@ -266,8 +268,7 @@ struct PairsLibraryView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button(role: .destructive) {
-                context.delete(pile)
-                context.saveWithErrorHandling()
+                pileService.delete(pile, context: context)
             } label: {
                 Label("Delete Pile", systemImage: "trash")
             }
@@ -505,27 +506,17 @@ struct PairsLibraryView: View {
     }
 
     private func activatePile(_ pile: PairsPile) {
-        for p in allPiles { p.isActive = false }
-        pile.isActive = true
-        context.saveWithErrorHandling()
+        pileService.activate(pile, among: allPiles, context: context)
     }
 
     private func toggleSet(_ set: PairsSet, in pile: PairsPile) {
-        if pile.setIds.contains(set.id) {
-            pile.setIds.removeAll { $0 == set.id }
-        } else {
-            pile.setIds.append(set.id)
-        }
-        context.saveWithErrorHandling()
+        pileService.toggleSet(set.id, in: pile, context: context)
     }
 
     private func createNewPile(named name: String, with set: PairsSet) {
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        let pile = PairsPile(name: trimmed, setIds: [set.id])
-        context.insert(pile)
-        context.saveWithErrorHandling()
-        showAllPiles = true   // раскрыть список чтобы новый пайл был виден
+        if pileService.createPairsPile(named: name, setId: set.id, context: context) {
+            showAllPiles = true   // раскрыть список чтобы новый пайл был виден
+        }
     }
 }
 
