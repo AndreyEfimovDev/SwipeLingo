@@ -34,7 +34,7 @@ struct PairsLibraryView: View {
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
     @Query private var profiles: [UserProfile]
 
-    @State private var viewModel = PairsLibraryViewModel()
+    @State private var vm = PairsLibraryViewModel()
 
     @State private var showAllPiles   = false
     @State private var pileSheet:     PairsPileSheet?
@@ -45,25 +45,25 @@ struct PairsLibraryView: View {
 
     // MARK: - Grouping helpers (делегируют в VM, добавляя @Query-результаты)
 
-    private var userLevel: CEFRLevel { viewModel.userLevel(profiles: profiles) }
+    private var userLevel: CEFRLevel { vm.userLevel(profiles: profiles) }
 
     private func sets(for collection: Collection) -> [PairsSet] {
-        viewModel.sets(for: collection, allSets: allSets, userLevel: userLevel)
+        vm.sets(for: collection, allSets: allSets, userLevel: userLevel)
     }
 
     private var deletedSets: [PairsSet] {
-        viewModel.deletedSets(allSets: allSets)
+        vm.deletedSets(allSets: allSets)
     }
 
     /// Только коллекции с хотя бы одним сетом — скрываем пустые (кратковременно
     /// появляются во время sync пока cleanup ещё не удалил их).
     private var visiblePairsCollections: [Collection] {
-        viewModel.visiblePairsCollections(pairsCollections: pairsCollections, allSets: allSets, userLevel: userLevel)
+        vm.visiblePairsCollections(pairsCollections: pairsCollections, allSets: allSets, userLevel: userLevel)
     }
 
     /// Сеты без коллекции или с неизвестным collectionId
     private var orphanedSets: [PairsSet] {
-        viewModel.orphanedSets(allSets: allSets, visibleCollections: visiblePairsCollections)
+        vm.orphanedSets(allSets: allSets, visibleCollections: visiblePairsCollections)
     }
 
     var body: some View {
@@ -87,7 +87,7 @@ struct PairsLibraryView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if viewModel.isSyncing {
+                if vm.isSyncing {
                     ProgressView()
                         .tint(Color.myColors.myBlue)
                 } else {
@@ -117,7 +117,7 @@ struct PairsLibraryView: View {
         ) {
             Button("Delete Set", role: .destructive) {
                 if let set = setToDelete {
-                    viewModel.deleteSet(set, context: context)
+                    vm.deleteSet(set, context: context)
                     setToDelete = nil
                 }
             }
@@ -246,7 +246,7 @@ struct PairsLibraryView: View {
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                     .foregroundStyle(Color.myColors.myAccent)
-                let summary = viewModel.pileSummary(for: pile, allSets: allSets)
+                let summary = vm.pileSummary(for: pile, allSets: allSets)
                 Text("\(summary.setCount) \(summary.setCount == 1 ? "set" : "sets") (\(summary.pairCount))")
                     .font(.caption)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
@@ -267,7 +267,7 @@ struct PairsLibraryView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button(role: .destructive) {
-                viewModel.deletePile(pile, context: context)
+                vm.deletePile(pile, context: context)
             } label: {
                 Label("Delete Pile", systemImage: "trash")
             }
@@ -409,7 +409,7 @@ struct PairsLibraryView: View {
                                 }
                                 Spacer()
                                 Button("Restore") {
-                                    viewModel.restoreSet(set, context: context)
+                                    vm.restoreSet(set, context: context)
                                 }
                                 .font(.subheadline)
                                 .foregroundStyle(Color.myColors.myBlue)
@@ -495,19 +495,19 @@ struct PairsLibraryView: View {
     // MARK: - Actions
 
     private func syncContent() async {
-        await viewModel.syncContent(context: context, nativeLangRaw: nativeLangRaw, level: userLevel)
+        await vm.syncContent(context: context, nativeLangRaw: nativeLangRaw, level: userLevel)
     }
 
     private func activatePile(_ pile: PairsPile) {
-        viewModel.activatePile(pile, among: allPiles, context: context)
+        vm.activatePile(pile, among: allPiles, context: context)
     }
 
     private func toggleSet(_ set: PairsSet, in pile: PairsPile) {
-        viewModel.toggleSet(set, in: pile, context: context)
+        vm.toggleSet(set, in: pile, context: context)
     }
 
     private func createNewPile(named name: String, with set: PairsSet) {
-        if viewModel.createNewPile(named: name, with: set, context: context) {
+        if vm.createNewPile(named: name, with: set, context: context) {
             showAllPiles = true   // раскрыть список чтобы новый пайл был виден
         }
     }

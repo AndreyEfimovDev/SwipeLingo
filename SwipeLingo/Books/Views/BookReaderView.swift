@@ -118,7 +118,7 @@ struct BookReaderView: View {
     @Query private var allProgress:  [BookProgress]
     @Query private var allBookmarks: [BookBookmark]
 
-    @State private var viewModel: BookReaderViewModel
+    @State private var vm: BookReaderViewModel
     @State private var downloadTask: Task<Void, Never>? = nil
     @State private var fullscreenImageURL: String? = nil
 
@@ -130,7 +130,7 @@ struct BookReaderView: View {
 
     init(book: Book) {
         self.book = book
-        _viewModel = State(initialValue: BookReaderViewModel(book: book, progress: nil))
+        _vm = State(initialValue: BookReaderViewModel(book: book, progress: nil))
     }
 
     private var progress: BookProgress? {
@@ -142,48 +142,48 @@ struct BookReaderView: View {
     }
 
     private var hasBookmarkHere: Bool {
-        viewModel.hasBookmark(in: bookmarks)
+        vm.hasBookmark(in: bookmarks)
     }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                if viewModel.isChapterReady {
+                if vm.isChapterReady {
                     readerContent
                 } else {
                     downloadingView
                 }
             }
-            .navigationTitle(viewModel.currentChapter?.title ?? book.title)
+            .navigationTitle(vm.currentChapter?.title ?? book.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
-            .sheet(isPresented: $viewModel.showDictionary) {
-                if let word = viewModel.tappedWord {
+            .sheet(isPresented: $vm.showDictionary) {
+                if let word = vm.tappedWord {
                     BookWordLookupView(word: word)
                         .onAppear {
                             AnalyticsService.wordLookedUp(word: word, source: .book)
                         }
                 }
             }
-            .sheet(isPresented: $viewModel.showChapterList) {
+            .sheet(isPresented: $vm.showChapterList) {
                 BookChapterListView(
                     book: book,
-                    currentIndex: viewModel.chapterIndex
+                    currentIndex: vm.chapterIndex
                 ) { index in
-                    viewModel.goToChapter(index)
-                    viewModel.showChapterList = false
+                    vm.goToChapter(index)
+                    vm.showChapterList = false
                 }
             }
-            .sheet(isPresented: $viewModel.showBookmarks) {
+            .sheet(isPresented: $vm.showBookmarks) {
                 BookBookmarksView(
                     bookmarks:    bookmarks,
-                    currentIndex: viewModel.chapterIndex,
+                    currentIndex: vm.chapterIndex,
                     onSelect: { bookmark in
-                        viewModel.goToChapter(bookmark.chapterIndex)
-                        viewModel.showBookmarks = false
+                        vm.goToChapter(bookmark.chapterIndex)
+                        vm.showBookmarks = false
                     },
                     onDelete: { bookmark in
-                        viewModel.deleteBookmark(bookmark, context: context)
+                        vm.deleteBookmark(bookmark, context: context)
                     }
                 )
             }
@@ -195,18 +195,18 @@ struct BookReaderView: View {
             BookImageFullscreenView(urlString: item.value)
         }
         .onAppear {
-            if let p = progress, viewModel.chapterIndex == 0 && viewModel.scrollOffset == 0 {
-                viewModel = BookReaderViewModel(book: book, progress: p)
+            if let p = progress, vm.chapterIndex == 0 && vm.scrollOffset == 0 {
+                vm = BookReaderViewModel(book: book, progress: p)
             }
             downloadTask = Task {
-                await viewModel.downloadAllIfNeeded(context: context)
-                await viewModel.downloadCurrentChapterIfNeeded()
+                await vm.downloadAllIfNeeded(context: context)
+                await vm.downloadCurrentChapterIfNeeded()
             }
             AnalyticsService.bookOpened(bookId: book.id, bookTitle: book.title)
         }
         .onDisappear {
             downloadTask?.cancel()
-            viewModel.saveProgress(context: context)
+            vm.saveProgress(context: context)
         }
     }
 
@@ -215,19 +215,19 @@ struct BookReaderView: View {
     private var readerContent: some View {
         BookPagedReader(
             book:         book,
-            chapterIndex: viewModel.chapterIndex,
+            chapterIndex: vm.chapterIndex,
             colorScheme:  colorScheme,
             fontSize:     fontSize,
             onWordTap: { word in
-                viewModel.handleWordTap(word)
+                vm.handleWordTap(word)
             },
             onImageTap: { src in
                 fullscreenImageURL = src
             },
             onPageChange: { newIndex in
                 // Called by UIPageViewController after user swipe completes
-                viewModel.goToChapter(newIndex)
-                viewModel.saveProgress(context: context)
+                vm.goToChapter(newIndex)
+                vm.saveProgress(context: context)
                 AnalyticsService.bookChapterRead(bookId: book.id, chapterIndex: newIndex, totalChapters: book.totalChapters)
                 // Proactively download the next 2 chapters so swipe is always available
                 downloadTask = Task {
@@ -250,9 +250,9 @@ struct BookReaderView: View {
     private var bottomControls: some View {
         HStack(alignment: .center) {
             // ‹ Previous chapter
-            navButton(systemImage: "chevron.left", enabled: viewModel.hasPrevious) {
-                viewModel.goToPrevious()
-                viewModel.saveProgress(context: context)
+            navButton(systemImage: "chevron.left", enabled: vm.hasPrevious) {
+                vm.goToPrevious()
+                vm.saveProgress(context: context)
             }
 
             Spacer()
@@ -262,7 +262,7 @@ struct BookReaderView: View {
                 fontSizeButton(label: "A−", enabled: fontSize > fontSizeMin) {
                     fontSize = max(fontSize - fontSizeStep, fontSizeMin)
                 }
-                Text("\(viewModel.chapterIndex + 1) / \(book.totalChapters)")
+                Text("\(vm.chapterIndex + 1) / \(book.totalChapters)")
                     .font(.system(size: 13))
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     .frame(minWidth: 52)
@@ -278,11 +278,11 @@ struct BookReaderView: View {
             Spacer()
 
             // › Next chapter
-            navButton(systemImage: "chevron.right", enabled: viewModel.hasNext) {
-                viewModel.goToNext()
-                viewModel.saveProgress(context: context)
+            navButton(systemImage: "chevron.right", enabled: vm.hasNext) {
+                vm.goToNext()
+                vm.saveProgress(context: context)
                 downloadTask = Task {
-                    let idx = viewModel.chapterIndex + 1
+                    let idx = vm.chapterIndex + 1
                     guard idx < book.totalChapters else { return }
                     try? await BookDownloadService.shared.downloadChapter(book: book, index: idx)
                 }
@@ -339,11 +339,11 @@ struct BookReaderView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.myColors.myBlue)
 
-            Text(viewModel.downloadFraction > 0 ? "Downloading… \(Int(viewModel.downloadFraction * 100))%" : "Preparing…")
+            Text(vm.downloadFraction > 0 ? "Downloading… \(Int(vm.downloadFraction * 100))%" : "Preparing…")
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
 
-            if viewModel.downloadFraction > 0 {
-                ProgressView(value: viewModel.downloadFraction)
+            if vm.downloadFraction > 0 {
+                ProgressView(value: vm.downloadFraction)
                     .tint(Color.myColors.myBlue)
                     .frame(width: 200)
             } else {
@@ -359,7 +359,7 @@ struct BookReaderView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             Button {
-                viewModel.saveProgress(context: context)
+                vm.saveProgress(context: context)
                 dismiss()
             } label: {
                 HStack(spacing: 4) {
@@ -373,36 +373,36 @@ struct BookReaderView: View {
         ToolbarItemGroup(placement: .topBarTrailing) {
             // Tap → open list. Long press → Add / Remove / Show All
             Button {
-                viewModel.showBookmarks = true
+                vm.showBookmarks = true
             } label: {
                 Image(systemName: hasBookmarkHere ? "bookmark.fill" : "bookmark")
                     .foregroundStyle(Color.myColors.myBlue)
-                    .symbolEffect(.bounce, value: viewModel.bookmarkJustAdded)
+                    .symbolEffect(.bounce, value: vm.bookmarkJustAdded)
             }
             .contextMenu {
                 if hasBookmarkHere {
                     Button(role: .destructive) {
-                        viewModel.removeBookmark(from: bookmarks, context: context)
+                        vm.removeBookmark(from: bookmarks, context: context)
                     } label: {
                         Label("Remove Bookmark", systemImage: "bookmark.slash")
                     }
                 } else {
                     Button {
-                        viewModel.addBookmark(context: context)
+                        vm.addBookmark(context: context)
                     } label: {
                         Label("Add Bookmark", systemImage: "bookmark")
                     }
                 }
                 Divider()
                 Button {
-                    viewModel.showBookmarks = true
+                    vm.showBookmarks = true
                 } label: {
                     Label("Show All Bookmarks", systemImage: "bookmark.fill")
                 }
             }
 
             Button {
-                viewModel.showChapterList = true
+                vm.showChapterList = true
             } label: {
                 Image(systemName: "list.bullet")
                     .foregroundStyle(Color.myColors.myBlue)

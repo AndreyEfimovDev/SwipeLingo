@@ -24,7 +24,7 @@ struct FlashCardsView: View {
         cardSets.filter { $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
     }
 
-    @State private var viewModel = FlashCardsViewModel()
+    @State private var vm = FlashCardsViewModel()
     @AppStorage(Constants.StorageKey.studyStartHour) private var studyStartHour: Int = 6
     @AppStorage(Constants.StorageKey.srsEnabled)     private var srsEnabled: Bool    = true
     @AppStorage(Constants.StorageKey.userPlan)       private var userPlan: AccessTier = .free
@@ -63,14 +63,14 @@ struct FlashCardsView: View {
                 pileBadge
                     .padding(.top, 4)
                 content
-                    .animation(.spring(duration: 0.35, bounce: 0.1), value: viewModel.sessionID)
+                    .animation(.spring(duration: 0.35, bounce: 0.1), value: vm.sessionID)
             }
             .navigationTitle("Cards")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
         }
         .onAppear {
-            viewModel.startSessionIfNeeded(
+            vm.startSessionIfNeeded(
                 piles: piles, allCards: allCards,
                 cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
@@ -78,7 +78,7 @@ struct FlashCardsView: View {
             )
         }
         .onChange(of: activePileSnapshot) {
-            viewModel.startNewSession(
+            vm.startNewSession(
                 piles: piles, allCards: allCards,
                 cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
@@ -86,7 +86,7 @@ struct FlashCardsView: View {
             )
         }
         .onChange(of: srsEnabled) {
-            viewModel.startNewSession(
+            vm.startNewSession(
                 piles: piles, allCards: allCards,
                 cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
@@ -94,7 +94,7 @@ struct FlashCardsView: View {
             )
         }
         .onChange(of: userPlan) {
-            viewModel.startNewSession(
+            vm.startNewSession(
                 piles: piles, allCards: allCards,
                 cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
@@ -112,7 +112,7 @@ struct FlashCardsView: View {
         // Sync запускается только из библиотеки, пока пользователь не изучает карточки,
         // поэтому прерывания активной сессии не происходит.
         .onChange(of: allCards.count) {
-            viewModel.startNewSession(
+            vm.startNewSession(
                 piles: piles, allCards: allCards,
                 cardSets: levelFilteredCardSets, collections: collections,
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
@@ -127,35 +127,35 @@ struct FlashCardsView: View {
     private var content: some View {
         if !hasActiveLevelCards {
             emptyStateView
-        } else if viewModel.isCaughtUp {
+        } else if vm.isCaughtUp {
             caughtUpView
-                .id(viewModel.sessionID)
+                .id(vm.sessionID)
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
-        } else if viewModel.studyCards.isEmpty {
+        } else if vm.studyCards.isEmpty {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             TinderCardsView(
-                cards: viewModel.studyCards,
+                cards: vm.studyCards,
                 appViewModel: appViewModel,
                 authService: authService,
                 userService: userService,
-                lockedCardIds: viewModel.lockedCardIds,
-                contextLabels: viewModel.contextLabels,
-                cefrLabels: viewModel.cefrLabels,
-                pileTagsLine: viewModel.pileTagsLine,
-                isDueMode: viewModel.studyMode == .due,
-                pileLearntCount: viewModel.pileLearntCount,
+                lockedCardIds: vm.lockedCardIds,
+                contextLabels: vm.contextLabels,
+                cefrLabels: vm.cefrLabels,
+                pileTagsLine: vm.pileTagsLine,
+                isDueMode: vm.studyMode == .due,
+                pileLearntCount: vm.pileLearntCount,
                 onToggleMode: srsEnabled ? {
-                    if viewModel.studyMode == .due {
+                    if vm.studyMode == .due {
                         // Due → All: перезагружаем сессию со всеми карточками
-                        viewModel.studyAll(
+                        vm.studyAll(
                             piles: piles, allCards: allCards,
                             cardSets: levelFilteredCardSets, collections: collections
                         )
                     } else if hasDueCards {
                         // All → Due: есть due карточки — загружаем их
-                        viewModel.startNewSession(
+                        vm.startNewSession(
                             piles: piles, allCards: allCards,
                             cardSets: levelFilteredCardSets, collections: collections,
                             dueHour: studyStartHour, srsEnabled: srsEnabled
@@ -163,19 +163,19 @@ struct FlashCardsView: View {
                     } else {
                         // All → Due: нет due карточек — не сбрасываем сессию,
                         // только меняем режим отображения → покажет caught-up оверлей
-                        viewModel.switchToDueDisplay()
+                        vm.switchToDueDisplay()
                     }
                 } : nil,
                 hasDueCards: hasDueCards,
                 onDone: {
-                    viewModel.onSessionComplete(
+                    vm.onSessionComplete(
                         piles: piles, allCards: allCards,
                         cardSets: levelFilteredCardSets, collections: collections,
                         dueHour: studyStartHour
                     )
                 }
             )
-            .id(viewModel.sessionID)
+            .id(vm.sessionID)
             .transition(.scale(scale: 0.95).combined(with: .opacity))
             .padding(.vertical)
         }
@@ -184,7 +184,7 @@ struct FlashCardsView: View {
     // MARK: - Pile Badge
 
     private var pileBadge: some View {
-        let name = viewModel.activePileName
+        let name = vm.activePileName
         let hasActivePile = !name.isEmpty && name != "All Cards"
         return Button { appViewModel.activeSheet = .cardsLibrary } label: {
             HStack(spacing: 6) {
@@ -224,8 +224,8 @@ struct FlashCardsView: View {
                     Text("You're all caught up!")
                         .font(.title2.bold())
 
-                    if !viewModel.nextReviewLabel.isEmpty {
-                        Text("Next review: \(viewModel.nextReviewLabel)")
+                    if !vm.nextReviewLabel.isEmpty {
+                        Text("Next review: \(vm.nextReviewLabel)")
                             .font(.subheadline)
                             .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
                     }
@@ -235,13 +235,13 @@ struct FlashCardsView: View {
                 Spacer()
 
                 Button {
-                    viewModel.studyAll(
+                    vm.studyAll(
                         piles: piles, allCards: allCards,
                         cardSets: levelFilteredCardSets, collections: collections,
                         userPlan: userPlan
                     )
                 } label: {
-                    Text("Study anyway  ·  All: \(viewModel.allActiveCount)")
+                    Text("Study anyway  ·  All: \(vm.allActiveCount)")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)

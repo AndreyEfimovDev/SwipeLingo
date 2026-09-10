@@ -16,7 +16,7 @@ struct TinderCardsView: View {
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
     @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool    = true
 
-    @State private var viewModel: TinderCardsViewModel
+    @State private var vm: TinderCardsViewModel
     @State private var lookupCard:    Card?
     @State private var editExamplesCard: Card?
     @State private var audioService  = AudioPlayerService()
@@ -42,10 +42,10 @@ struct TinderCardsView: View {
 
     /// 0…1 upward-drag progress for trash animation. Zero when card is flipped.
     private var upSwipeProgress: Double {
-        guard !viewModel.isFlipped,
-              viewModel.dragOffset.height < -10,
-              abs(viewModel.dragOffset.width) < 55 else { return 0 }
-        return min(1.0, abs(Double(viewModel.dragOffset.height)) / Double(upSwipeThreshold))
+        guard !vm.isFlipped,
+              vm.dragOffset.height < -10,
+              abs(vm.dragOffset.width) < 55 else { return 0 }
+        return min(1.0, abs(Double(vm.dragOffset.height)) / Double(upSwipeThreshold))
     }
 
     init(cards: [Card],
@@ -61,7 +61,7 @@ struct TinderCardsView: View {
          onToggleMode: (() -> Void)? = nil,
          hasDueCards: Bool = true,
          onDone: (() -> Void)? = nil) {
-        _viewModel             = State(initialValue: TinderCardsViewModel(
+        _vm             = State(initialValue: TinderCardsViewModel(
                                     cards: cards,
                                     contextLabels: contextLabels,
                                     onDone: onDone))
@@ -84,9 +84,9 @@ struct TinderCardsView: View {
             if isLandscape { landscapeBody } else { portraitBody }
         }
         .background(Color.myColors.myBackground)
-        .animation(.spring(duration: 0.3), value: viewModel.currentIndex)
-        .animation(.spring(duration: 0.3), value: viewModel.isFlipped)
-        .animation(.spring(duration: 0.4), value: viewModel.isDone)
+        .animation(.spring(duration: 0.3), value: vm.currentIndex)
+        .animation(.spring(duration: 0.3), value: vm.isFlipped)
+        .animation(.spring(duration: 0.4), value: vm.isDone)
         .overlay {
             // Показываем caught-up когда пользователь переключился в Due,
             // но due карточек нет — сессия не сбрасывается, карточка за оверлеем сохраняется
@@ -97,7 +97,7 @@ struct TinderCardsView: View {
         .sheet(item: $lookupCard)       { DictionaryLookupView(card: $0) }
         .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0) }
         .onDisappear { audioService.stop() }
-        .onChange(of: viewModel.currentIndex) { _, _ in
+        .onChange(of: vm.currentIndex) { _, _ in
             examplePageIndex = 0
             audioService.stop()
         }
@@ -107,13 +107,13 @@ struct TinderCardsView: View {
 
     private var portraitBody: some View {
         VStack(spacing: 0) {
-            if !viewModel.isDone {
+            if !vm.isDone {
                 progressStatsRow
                     .padding(.bottom, 8)
             }
 
             ZStack {
-                if viewModel.isDone { doneFullCard } else { cardStack }
+                if vm.isDone { doneFullCard } else { cardStack }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 16)
@@ -127,7 +127,7 @@ struct TinderCardsView: View {
         HStack(spacing: 0) {
             landscapeStatsColumn
             ZStack {
-                if viewModel.isDone { doneFullCard } else { cardStack }
+                if vm.isDone { doneFullCard } else { cardStack }
             }
             .padding(.horizontal, 12)
         }
@@ -139,13 +139,13 @@ struct TinderCardsView: View {
     // MARK: - Landscape Stats Column
 
     private var landscapeStatsColumn: some View {
-        let allCards    = viewModel.cards
+        let allCards    = vm.cards
         let effTotal    = allCards.filter { $0.status != .deleted }.count
-        let learnt      = pileLearntCount + viewModel.learntInSession
+        let learnt      = pileLearntCount + vm.learntInSession
         let active      = allCards.filter { $0.status == .active }.count
-        let deletedSoFar = allCards.prefix(viewModel.currentIndex).filter { $0.status == .deleted }.count
-        let current     = min(viewModel.currentIndex - deletedSoFar + 1, max(effTotal, 1))
-        let progress    = effTotal > 0 ? CGFloat(max(0, viewModel.currentIndex - deletedSoFar)) / CGFloat(effTotal) : 0
+        let deletedSoFar = allCards.prefix(vm.currentIndex).filter { $0.status == .deleted }.count
+        let current     = min(vm.currentIndex - deletedSoFar + 1, max(effTotal, 1))
+        let progress    = effTotal > 0 ? CGFloat(max(0, vm.currentIndex - deletedSoFar)) / CGFloat(effTotal) : 0
 
         return HStack(spacing: 0) {
             // Stats content
@@ -277,13 +277,13 @@ struct TinderCardsView: View {
     // MARK: - Portrait Stats Row
 
     private var progressStatsRow: some View {
-        let allCards = viewModel.cards
+        let allCards = vm.cards
         let effTotal = allCards.filter { $0.status != .deleted }.count
-        let learnt   = pileLearntCount + viewModel.learntInSession
+        let learnt   = pileLearntCount + vm.learntInSession
         let active   = allCards.filter { $0.status == .active }.count
-        let deletedSoFar = allCards.prefix(viewModel.currentIndex).filter { $0.status == .deleted }.count
-        let current  = min(viewModel.currentIndex - deletedSoFar + 1, max(effTotal, 1))
-        let progress = effTotal > 0 ? CGFloat(max(0, viewModel.currentIndex - deletedSoFar)) / CGFloat(effTotal) : 0
+        let deletedSoFar = allCards.prefix(vm.currentIndex).filter { $0.status == .deleted }.count
+        let current  = min(vm.currentIndex - deletedSoFar + 1, max(effTotal, 1))
+        let progress = effTotal > 0 ? CGFloat(max(0, vm.currentIndex - deletedSoFar)) / CGFloat(effTotal) : 0
 
         return VStack(spacing: 6) {
             HStack {
@@ -327,15 +327,15 @@ struct TinderCardsView: View {
 
     /// "Collection › Set" label for the *current* card — per-card, not pile-level.
     private var cardBreadcrumb: String {
-        guard let card = viewModel.currentCard else { return "" }
-        return viewModel.contextLabels[card.setId] ?? ""
+        guard let card = vm.currentCard else { return "" }
+        return vm.contextLabels[card.setId] ?? ""
     }
 
     @ViewBuilder
     private var breadcrumbRow: some View {
         let label = cardBreadcrumb
-        let tag   = viewModel.currentCard?.tags.first ?? ""
-        let level = viewModel.currentCard.flatMap { cefrLabels[$0.setId] }
+        let tag   = vm.currentCard?.tags.first ?? ""
+        let level = vm.currentCard.flatMap { cefrLabels[$0.setId] }
         if !label.isEmpty {
             VStack(spacing: 3) {
                 // Строка 1: Collection › Set · Group
@@ -361,11 +361,11 @@ struct TinderCardsView: View {
 
     private var cardStack: some View {
         ZStack {
-            let dragProgress = min(1.0, abs(viewModel.dragOffset.width) / swipeThreshold)
+            let dragProgress = min(1.0, abs(vm.dragOffset.width) / swipeThreshold)
 
             ForEach([2, 1], id: \.self) { offset in
-                let idx = viewModel.currentIndex + offset
-                if idx < viewModel.cards.count {
+                let idx = vm.currentIndex + offset
+                if idx < vm.cards.count {
                     let step:        CGFloat = isLandscape ? 0.05 : 0.06
                     let yStep:       CGFloat = isLandscape ? -20.0 : -28.0
                     let baseScale    = 1.0 - CGFloat(offset) * step
@@ -375,7 +375,7 @@ struct TinderCardsView: View {
                     let targetY      = CGFloat(offset - 1) * yStep
                     let yOffset      = baseY + (targetY - baseY) * dragProgress
                     Group {
-                        if offset == 1 { nextCardPreview(viewModel.cards[idx]) }
+                        if offset == 1 { nextCardPreview(vm.cards[idx]) }
                         else           { cardPlaceholder }
                     }
                     .myShadow()
@@ -384,9 +384,9 @@ struct TinderCardsView: View {
                 }
             }
 
-            if let card = viewModel.currentCard {
+            if let card = vm.currentCard {
                 topCard(card)
-                    .id(viewModel.currentIndex)
+                    .id(vm.currentIndex)
                     .transition(.asymmetric(insertion: .scale(scale: 0.96), removal: .identity))
                     .zIndex(1)
             }
@@ -417,22 +417,22 @@ struct TinderCardsView: View {
     // MARK: - Top Card
 
     private func topCard(_ card: Card) -> some View {
-        let yOffset: CGFloat = viewModel.isFlipped ? 0 :
-            (viewModel.dragOffset.height < -5
-                ? viewModel.dragOffset.height
-                : viewModel.dragOffset.height * 0.15)
+        let yOffset: CGFloat = vm.isFlipped ? 0 :
+            (vm.dragOffset.height < -5
+                ? vm.dragOffset.height
+                : vm.dragOffset.height * 0.15)
         let scale = max(0.3, 1.0 - 0.5 * upSwipeProgress)
 
         return fullCardContainer(card)
             .overlay(swipeColorOverlay)
-            .offset(x: viewModel.dragOffset.width, y: yOffset)
-            .rotationEffect(viewModel.dragRotation)
+            .offset(x: vm.dragOffset.width, y: yOffset)
+            .rotationEffect(vm.dragRotation)
             .scaleEffect(scale)
             .simultaneousGesture(dragGesture)
             .onTapGesture {
                 // Block tap while drag is active OR while card is spring-animating back.
-                guard !dragIsActive, !viewModel.isDragging else { return }
-                viewModel.flipToggle()
+                guard !dragIsActive, !vm.isDragging else { return }
+                vm.flipToggle()
             }
             .onChange(of: dragIsActive) { _, isActive in
                 guard !isActive else { return }
@@ -440,17 +440,17 @@ struct TinderCardsView: View {
                 // onEnded sets dragOffset to ±600 / -800 only when a swipe is fully
                 // committed. Any smaller value means the gesture was cancelled mid-drag
                 // and the card must return to centre regardless of swipeThreshold.
-                let isFlying = abs(viewModel.dragOffset.width) > 400
-                            || viewModel.dragOffset.height < -400
+                let isFlying = abs(vm.dragOffset.width) > 400
+                            || vm.dragOffset.height < -400
 
                 if !isFlying {
                     withAnimation(.spring(duration: 0.4, bounce: 0.4)) {
-                        viewModel.dragOffset = .zero
+                        vm.dragOffset = .zero
                     }
                 }
                 // Clear isDragging after spring settles (covers both normal & cancel paths)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
-                    viewModel.isDragging = false
+                    vm.isDragging = false
                 }
             }
             .myShadow()
@@ -480,9 +480,9 @@ struct TinderCardsView: View {
             if srsEnabled {
                 srsButtonsRow
                     .padding(12)
-                    .opacity(viewModel.isFlipped ? 1 : 0)
-                    .allowsHitTesting(viewModel.isFlipped)
-                    .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.isFlipped)
+                    .opacity(vm.isFlipped ? 1 : 0)
+                    .allowsHitTesting(vm.isFlipped)
+                    .animation(.spring(duration: 0.35, bounce: 0.2), value: vm.isFlipped)
             }
         }
     }
@@ -496,13 +496,13 @@ struct TinderCardsView: View {
             .frame(maxWidth: .infinity)
 
             // SRS column — only present on back side, no reserved space on front
-            if srsEnabled && viewModel.isFlipped {
+            if srsEnabled && vm.isFlipped {
                 srsButtonsColumn
                     .frame(width: 90)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: viewModel.isFlipped)
+        .animation(.easeInOut(duration: 0.25), value: vm.isFlipped)
     }
 
     // MARK: - Flip Content
@@ -511,19 +511,19 @@ struct TinderCardsView: View {
         ZStack {
             cardFront(card)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .rotation3DEffect(.degrees(viewModel.isFlipped ? 180 : 0),
+                .rotation3DEffect(.degrees(vm.isFlipped ? 180 : 0),
                                   axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                .opacity(viewModel.isFlipped ? 0 : 1)
-                .allowsHitTesting(!viewModel.isFlipped)
+                .opacity(vm.isFlipped ? 0 : 1)
+                .allowsHitTesting(!vm.isFlipped)
 
             cardBack(card)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .rotation3DEffect(.degrees(viewModel.isFlipped ? 0 : -180),
+                .rotation3DEffect(.degrees(vm.isFlipped ? 0 : -180),
                                   axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                .opacity(viewModel.isFlipped ? 1 : 0)
-                .allowsHitTesting(viewModel.isFlipped)
+                .opacity(vm.isFlipped ? 1 : 0)
+                .allowsHitTesting(vm.isFlipped)
         }
-        .animation(.spring(duration: 0.5, bounce: 0.15), value: viewModel.isFlipped)
+        .animation(.spring(duration: 0.5, bounce: 0.15), value: vm.isFlipped)
     }
 
     // MARK: - Audio Button
@@ -767,7 +767,7 @@ struct TinderCardsView: View {
             // Swipe up = delete
             color = CardStatus.deleted.color; opacity = upSwipeProgress * 0.4
         } else {
-            let p = viewModel.swipeProgress
+            let p = vm.swipeProgress
             // Swipe right = learnt (green), swipe left = active/again (blue)
             color = p > 0 ? CardStatus.learnt.color : CardStatus.active.color
             opacity = abs(p) * 0.45
@@ -784,35 +784,35 @@ struct TinderCardsView: View {
             // updating fires on every change AND resets automatically on end OR cancel
             .updating($dragIsActive) { _, state, _ in state = true }
             .onChanged { value in
-                guard !viewModel.isFlipped else { return }
-                viewModel.isDragging = true
-                viewModel.dragOffset = value.translation
+                guard !vm.isFlipped else { return }
+                vm.isDragging = true
+                vm.dragOffset = value.translation
             }
             .onEnded { value in
-                guard !viewModel.isFlipped else { return }
+                guard !vm.isFlipped else { return }
                 let dx = value.translation.width
                 let dy = value.translation.height
 
                 if dx > swipeThreshold {
                     withAnimation(.spring(duration: 0.35)) {
-                        viewModel.dragOffset = CGSize(width: 600, height: dx * 0.3)
+                        vm.dragOffset = CGSize(width: 600, height: dx * 0.3)
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        viewModel.commitSwipe(direction: .right, context: context)
+                        vm.commitSwipe(direction: .right, context: context)
                     }
                 } else if dx < -swipeThreshold {
                     withAnimation(.spring(duration: 0.35)) {
-                        viewModel.dragOffset = CGSize(width: -600, height: dx * 0.3)
+                        vm.dragOffset = CGSize(width: -600, height: dx * 0.3)
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        viewModel.commitSwipe(direction: .left, context: context)
+                        vm.commitSwipe(direction: .left, context: context)
                     }
                 } else if dy < -upSwipeThreshold && abs(dx) < 55 {
                     withAnimation(.spring(duration: 0.4)) {
-                        viewModel.dragOffset = CGSize(width: 0, height: -800)
+                        vm.dragOffset = CGSize(width: 0, height: -800)
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        viewModel.commitDelete(context: context)
+                        vm.commitDelete(context: context)
                     }
                 }
                 // Return-to-centre is handled by onChange(of: dragIsActive) below —
@@ -847,7 +847,7 @@ struct TinderCardsView: View {
 
     @ViewBuilder
     private func srsButton(title: String, color: Color, rating: SRSRating) -> some View {
-        Button { viewModel.evaluate(rating: rating, context: context) } label: {
+        Button { vm.evaluate(rating: rating, context: context) } label: {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(color)
@@ -887,12 +887,12 @@ struct TinderCardsView: View {
                 .font(.title.bold())
             HStack(spacing: 28) {
                 VStack(spacing: 3) {
-                    Text("\(viewModel.dueTomorrowCount)").font(.title2.bold())
+                    Text("\(vm.dueTomorrowCount)").font(.title2.bold())
                     Text("due tomorrow").font(.caption)
                 }
                 Divider().frame(height: 36)
                 VStack(spacing: 3) {
-                    Text("\(viewModel.dueIn3DaysCount)").font(.title2.bold())
+                    Text("\(vm.dueIn3DaysCount)").font(.title2.bold())
                     Text("due in 3 days").font(.caption)
                 }
             }
@@ -906,7 +906,7 @@ struct TinderCardsView: View {
     private var doneActionsView: some View {
         VStack(spacing: 10) {
             Button {
-                withAnimation(.spring(duration: 0.4, bounce: 0.2)) { viewModel.restart() }
+                withAnimation(.spring(duration: 0.4, bounce: 0.2)) { vm.restart() }
             } label: {
                 Text("Study again")
                     .font(.subheadline.weight(.semibold))
@@ -919,11 +919,11 @@ struct TinderCardsView: View {
             }
             .buttonStyle(.plain)
 
-            if viewModel.weakCount > 0 {
+            if vm.weakCount > 0 {
                 Button {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) { viewModel.restartWeak() }
+                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) { vm.restartWeak() }
                 } label: {
-                    Text("Weak cards: \(viewModel.weakCount)")
+                    Text("Weak cards: \(vm.weakCount)")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)

@@ -17,14 +17,14 @@ struct PileBuilderView: View {
     @Query(sort: \Card.createdAt)       private var allCards:    [Card]
     @Query                              private var allPiles:    [Pile]
 
-    @State private var viewModel: PileBuilderViewModel
+    @State private var vm: PileBuilderViewModel
     @State private var isShowingDeleteConfirm = false
     @AppStorage(Constants.StorageKey.srsEnabled) private var srsEnabled: Bool = true
     @State private var searchText   = ""
     @State private var selectedLevel: String? = nil
 
     init(editingPile: Pile? = nil, appViewModel: AppViewModel) {
-        _viewModel = State(initialValue: PileBuilderViewModel(editingPile: editingPile))
+        _vm = State(initialValue: PileBuilderViewModel(editingPile: editingPile))
         self.appViewModel = appViewModel
     }
 
@@ -42,16 +42,16 @@ struct PileBuilderView: View {
                 setsFilterHeader
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle(viewModel.editingPile == nil ? "New Pile" : "Edit Pile")
+            .navigationTitle(vm.editingPile == nil ? "New Pile" : "Edit Pile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarButtons }
             .confirmationDialog(
-                "Delete \"\(viewModel.name)\"?",
+                "Delete \"\(vm.name)\"?",
                 isPresented: $isShowingDeleteConfirm,
                 titleVisibility: .visible
             ) {
                 Button("Delete Pile", role: .destructive) {
-                    if let pile = viewModel.editingPile {
+                    if let pile = vm.editingPile {
                         context.delete(pile)
                         context.saveWithErrorHandling()
                     }
@@ -73,7 +73,7 @@ struct PileBuilderView: View {
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .padding(.horizontal, 32)
 
-            TextField("e.g. Morning Session", text: $viewModel.name)
+            TextField("e.g. Morning Session", text: $vm.name)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(Color.myColors.myBackground)
@@ -102,8 +102,8 @@ struct PileBuilderView: View {
                 }
             }
             .onChange(of: srsEnabled) { _, enabled in
-                if !enabled && viewModel.shuffleMethod == .prioritized {
-                    viewModel.shuffleMethod = .random
+                if !enabled && vm.shuffleMethod == .prioritized {
+                    vm.shuffleMethod = .random
                 }
             }
             .background(Color.myColors.myBackground)
@@ -126,7 +126,7 @@ struct PileBuilderView: View {
             Text(name)
                 .font(.body)
             Spacer()
-            if viewModel.shuffleMethod == method {
+            if vm.shuffleMethod == method {
                 Image(systemName: "checkmark")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
@@ -135,7 +135,7 @@ struct PileBuilderView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .contentShape(Rectangle())
-        .onTapGesture { viewModel.shuffleMethod = method }
+        .onTapGesture { vm.shuffleMethod = method }
     }
 
     // MARK: - Sets Filter Header
@@ -208,9 +208,9 @@ struct PileBuilderView: View {
                             name: set.name,
                             level: group.isUserCreated ? nil : set.cefrLevel,
                             cardCount: activeCardCount(for: set.id),
-                            isSelected: viewModel.selectedSetIds.contains(set.id)
+                            isSelected: vm.selectedSetIds.contains(set.id)
                         ) {
-                            viewModel.toggleSet(set.id)
+                            vm.toggleSet(set.id)
                         }
                         if set.id != group.sets.last?.id {
                             Divider().padding(.leading, 52)
@@ -235,14 +235,14 @@ struct PileBuilderView: View {
         }
 
         ToolbarItem(placement: .confirmationAction) {
-            Button(viewModel.editingPile == nil ? "Create" : "Save") {
-                viewModel.saveAndActivate(context: context, allPiles: allPiles)
+            Button(vm.editingPile == nil ? "Create" : "Save") {
+                vm.saveAndActivate(context: context, allPiles: allPiles)
                 dismiss()
             }
-            .disabled(!viewModel.canSave)
-            .foregroundStyle(viewModel.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
+            .disabled(!vm.canSave)
+            .foregroundStyle(vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
         }
-        if viewModel.editingPile != nil {
+        if vm.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {
                 Button {
                     isShowingDeleteConfirm = true
@@ -302,7 +302,7 @@ struct PileBuilderView: View {
     }
 
     private var shuffleFooter: String {
-        switch viewModel.shuffleMethod {
+        switch vm.shuffleMethod {
         case .random:      return "Cards appear in a random order every session."
         case .sequential:  return "Cards appear in the order they were added."
         case .prioritized: return "Hardest cards (lowest ease) appear first."

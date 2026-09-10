@@ -13,7 +13,7 @@ struct AppView: View {
     /// Передаётся из composition root (SwipeLingoApp) — прокидывается дальше через init,
     /// не через .environment(), чтобы каждый потребитель был виден в сигнатуре явно.
     let dependencies: AppDependencies
-    private var viewModel: AppViewModel { dependencies.appViewModel }
+    private var vm: AppViewModel { dependencies.appViewModel }
 
     init(dependencies: AppDependencies) {
         self.dependencies = dependencies
@@ -22,7 +22,7 @@ struct AppView: View {
 
     var body: some View {
         studyContent
-            .fullScreenCover(item: Bindable(viewModel).activeSheet) { sheet in
+            .fullScreenCover(item: Bindable(vm).activeSheet) { sheet in
                 sheetView(for: sheet)
             }
             .preferredColorScheme(theme.colorScheme)
@@ -54,7 +54,7 @@ struct AppView: View {
 
     @ViewBuilder
     private var studyContent: some View {
-        switch viewModel.studyMode {
+        switch vm.studyMode {
         case .cards:
             FlashCardsView(appViewModel: dependencies.appViewModel,
                             authService: dependencies.authService,

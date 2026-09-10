@@ -21,7 +21,7 @@ struct BookWordLookupView: View {
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier = ""
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant = "en-US"
 
-    @State private var viewModel = DictionaryLookupViewModel()
+    @State private var vm = DictionaryLookupViewModel()
     @State private var savedToInbox  = false
     @State private var showSavedToast = false
 
@@ -32,7 +32,7 @@ struct BookWordLookupView: View {
     var body: some View {
         NavigationStack {
             Group {
-                switch viewModel.phase {
+                switch vm.phase {
                 case .loading:
                     loadingView
                 case .loaded(let entry):
@@ -68,10 +68,10 @@ struct BookWordLookupView: View {
         }
         .animation(.spring(duration: 0.35), value: showSavedToast)
         .task {
-            await viewModel.load(word: word)
+            await vm.load(word: word)
         }
         .onAppear { buildTranslationConfig() }
-        .onDisappear { viewModel.audioService.stop() }
+        .onDisappear { vm.audioService.stop() }
         .translationTask(translationConfig) { session in
             translationSession = session
             await translateWord(session: session)
@@ -118,11 +118,11 @@ struct BookWordLookupView: View {
             Spacer()
             if !entry.audioURL.isEmpty {
                 Button {
-                    viewModel.toggleAudio(urlString: entry.audioURL)
+                    vm.toggleAudio(urlString: entry.audioURL)
                 } label: {
-                    Image(systemName: viewModel.audioService.isPlaying ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
+                    Image(systemName: vm.audioService.isPlaying ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
                         .font(.system(size: 28))
-                        .foregroundStyle(viewModel.audioService.isPlaying ? Color.myColors.myRed : Color.myColors.myBlue)
+                        .foregroundStyle(vm.audioService.isPlaying ? Color.myColors.myRed : Color.myColors.myBlue)
                         .contentTransition(.symbolEffect(.replace))
                 }
             }

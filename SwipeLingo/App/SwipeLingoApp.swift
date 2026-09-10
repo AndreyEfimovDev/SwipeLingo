@@ -144,10 +144,8 @@ struct SwipeLingoApp: App {
                         // Auth first: Sign In / Sign Up / Continue as Guest
                         AuthView(showGuestOption: true, authService: authService)
                     } else if !appSyncStateService.hasCompletedOnboarding {
-                        // New user: language + level selection (no auth step).
-                        // Ни один реально достижимый экран онбординга (Intro/Language/Level/
-                        // Confirm) не читает authService/userService/appSyncStateService —
-                        // OnboardingAuthView их читает, но никуда не подключён (мёртвый код).
+                        // New user: language + level selection (no auth step —
+                        // auth already handled above, before onboarding starts).
                         OnboardingView {
                             appSyncStateService.hasCompletedOnboarding = true
                         }

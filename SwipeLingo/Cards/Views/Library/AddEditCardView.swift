@@ -29,7 +29,7 @@ struct AddEditCardView: View {
     @Query(sort: \Collection.createdAt) private var allCollections: [Collection]
     @Query                              private var allCards: [Card]
 
-    @State private var viewModel: AddEditCardViewModel
+    @State private var vm: AddEditCardViewModel
 
     @State private var isShowingExitConfirm = false
     @FocusState private var focused: Field?
@@ -48,21 +48,21 @@ struct AddEditCardView: View {
     // MARK: - Init
 
     init(card: Card? = nil, preselectedSetId: UUID? = nil) {
-        _viewModel = State(initialValue: AddEditCardViewModel(card: card, preselectedSetId: preselectedSetId))
+        _vm = State(initialValue: AddEditCardViewModel(card: card, preselectedSetId: preselectedSetId))
     }
 
     // MARK: - Computed (делегируют в VM, добавляя @Query-результаты)
 
     private var userSets: [CardSet] {
-        viewModel.userSets(allSets: allSets, allCollections: allCollections)
+        vm.userSets(allSets: allSets, allCollections: allCollections)
     }
 
     private var selectedSetName: String {
-        viewModel.selectedSetName(allSets: allSets, allCollections: allCollections)
+        vm.selectedSetName(allSets: allSets, allCollections: allCollections)
     }
 
     private var isDuplicateEN: Bool {
-        viewModel.isDuplicateEN(allCards: allCards)
+        vm.isDuplicateEN(allCards: allCards)
     }
 
     // MARK: - Body
@@ -82,24 +82,24 @@ struct AddEditCardView: View {
                 .padding(.vertical, 16)
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle(viewModel.isEditMode ? "Edit Card" : "New Card")
+            .navigationTitle(vm.isEditMode ? "Edit Card" : "New Card")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
             .toolbar { toolbarContent }
             .overlay { if isShowingExitConfirm { exitConfirmOverlay } }
             .onAppear {
                 focused = nil // prevent popup keyboard when started
-                if !viewModel.isEditMode && userSets.isEmpty {
-                    viewModel.isCreatingNewSet = true
+                if !vm.isEditMode && userSets.isEmpty {
+                    vm.isCreatingNewSet = true
                 }
-                viewModel.buildTranslationConfig(nativeLanguage: nativeLanguage)
+                vm.buildTranslationConfig(nativeLanguage: nativeLanguage)
             }
             .onDisappear {
-                viewModel.cancelAutoFillTask()
+                vm.cancelAutoFillTask()
             }
-            .translationTask(viewModel.translationConfig) { session in
+            .translationTask(vm.translationConfig) { session in
                 log("translationTask: session received ✓", level: .info)
-                viewModel.translationSession = session
+                vm.translationSession = session
             }
             .overlay(alignment: .bottomTrailing) {
                 hideKeyboardButton
@@ -136,10 +136,10 @@ struct AddEditCardView: View {
         ToolbarItem(placement: .topBarLeading) {
             Button(action: handleSave) {
                 Image(systemName: "checkmark")
-                    .font(.subheadline.weight(viewModel.canSave ? .semibold : .regular))
-                    .foregroundStyle(viewModel.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
+                    .font(.subheadline.weight(vm.canSave ? .semibold : .regular))
+                    .foregroundStyle(vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
             }
-            .disabled(!viewModel.canSave || isShowingExitConfirm)
+            .disabled(!vm.canSave || isShowingExitConfirm)
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button(action: handleCancel) {
@@ -154,12 +154,12 @@ struct AddEditCardView: View {
     // MARK: - Actions
 
     private func handleSave() {
-        guard viewModel.handleSave(context: context, allCollections: allCollections) else { return }
+        guard vm.handleSave(context: context, allCollections: allCollections) else { return }
         dismiss()
     }
 
     private func handleCancel() {
-        if viewModel.hasChanges {
+        if vm.hasChanges {
             focused = nil
             withAnimation(.easeInOut) { isShowingExitConfirm = true }
         } else {
@@ -173,13 +173,13 @@ struct AddEditCardView: View {
         VStack(alignment: .leading, spacing: 4) {
             fieldSection(label: "ENGLISH") {
                 HStack(spacing: 8) {
-                    TextField("Word or phrase", text: $viewModel.en, axis: .vertical)
+                    TextField("Word or phrase", text: $vm.en, axis: .vertical)
                         .font(.body)
                         .focused($focused, equals: .en)
                         .submitLabel(.next)
                         .onSubmit { focused = .item }
-                    if !viewModel.en.isEmpty {
-                        clearButton { viewModel.en = "" }
+                    if !vm.en.isEmpty {
+                        clearButton { vm.en = "" }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -192,38 +192,38 @@ struct AddEditCardView: View {
                     .padding(.horizontal, 20)
                     .transition(.opacity)
             }
-            lengthHint(for: viewModel.en, state: viewModel.enLengthState)
+            lengthHint(for: vm.en, state: vm.enLengthState)
         }
         .animation(.easeInOut(duration: 0.2), value: isDuplicateEN)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.enLengthState == .ok)
+        .animation(.easeInOut(duration: 0.2), value: vm.enLengthState == .ok)
     }
 
     private var itemSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             fieldSection(label: "TRANSLATION") {
                 HStack(spacing: 8) {
-                    TextField("Native translation", text: $viewModel.item, axis: .vertical)
+                    TextField("Native translation", text: $vm.item, axis: .vertical)
                         .font(.body)
                         .focused($focused, equals: .item)
                         .submitLabel(.next)
                         .onSubmit { focused = .sampleEN(0) }
-                    if !viewModel.item.isEmpty {
-                        clearButton { viewModel.item = "" }
+                    if !vm.item.isEmpty {
+                        clearButton { vm.item = "" }
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
             }
-            lengthHint(for: viewModel.item, state: viewModel.itemLengthState)
+            lengthHint(for: vm.item, state: vm.itemLengthState)
         }
-        .animation(.easeInOut(duration: 0.2), value: viewModel.itemLengthState == .ok)
+        .animation(.easeInOut(duration: 0.2), value: vm.itemLengthState == .ok)
     }
 
     // MARK: - Set Picker Section
 
     private var setPickerSection: some View {
         fieldSection(label: "SET") {
-            if viewModel.isCreatingNewSet {
+            if vm.isCreatingNewSet {
                 newSetField
             } else {
                 existingSetMenu
@@ -236,11 +236,11 @@ struct AddEditCardView: View {
         Menu {
             ForEach(userSets) { set in
                 Button {
-                    viewModel.selectedSetId = set.id
+                    vm.selectedSetId = set.id
                 } label: {
                     HStack {
                         Text(set.name)
-                        if viewModel.selectedSetId == set.id {
+                        if vm.selectedSetId == set.id {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -248,8 +248,8 @@ struct AddEditCardView: View {
             }
             Divider()
             Button {
-                viewModel.selectedSetId = nil
-                viewModel.isCreatingNewSet = true
+                vm.selectedSetId = nil
+                vm.isCreatingNewSet = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                     focused = .newSetName
                 }
@@ -261,7 +261,7 @@ struct AddEditCardView: View {
             HStack {
                 Text(selectedSetName)
                     .font(.body)
-                    .foregroundStyle(viewModel.selectedSetId == nil
+                    .foregroundStyle(vm.selectedSetId == nil
                         ? Color.myColors.myAccent.opacity(0.8)
                         : Color.myColors.myAccent)
                 Spacer()
@@ -279,13 +279,13 @@ struct AddEditCardView: View {
     private var newSetField: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                TextField("Set name", text: $viewModel.newSetName)
+                TextField("Set name", text: $vm.newSetName)
                     .font(.body)
                     .focused($focused, equals: .newSetName)
                     .submitLabel(.next)
                     .onSubmit { focused = .sampleEN(0) }
-                if !viewModel.newSetName.isEmpty {
-                    clearButton { viewModel.newSetName = "" }
+                if !vm.newSetName.isEmpty {
+                    clearButton { vm.newSetName = "" }
                 }
             }
             .padding(.horizontal, 16)
@@ -294,9 +294,9 @@ struct AddEditCardView: View {
             if !userSets.isEmpty {
                 Divider()
                 Button {
-                    viewModel.newSetName = ""
-                    viewModel.isCreatingNewSet = false
-                    viewModel.selectedSetId = viewModel.originalSetId ?? viewModel.preselectedSetId
+                    vm.newSetName = ""
+                    vm.isCreatingNewSet = false
+                    vm.selectedSetId = vm.originalSetId ?? vm.preselectedSetId
                 } label: {
                     HStack {
                         Image(systemName: "chevron.left")
@@ -317,14 +317,14 @@ struct AddEditCardView: View {
 
     @ViewBuilder
     private var autoFillButton: some View {
-        if !viewModel.en.trimmingCharacters(in: .whitespaces).isEmpty
-            && (viewModel.isAutoFilling || viewModel.hasEmptyAutoFillFields) {
+        if !vm.en.trimmingCharacters(in: .whitespaces).isEmpty
+            && (vm.isAutoFilling || vm.hasEmptyAutoFillFields) {
             Button {
                 focused = nil // dismiss keyboard before filling
-                viewModel.startAutoFill()
+                vm.startAutoFill()
             } label: {
                 Group {
-                    if viewModel.isAutoFilling {
+                    if vm.isAutoFilling {
                         ProgressView()
                             .tint(Color.myColors.myBlue)
                             .frame(width: 20, height: 20)
@@ -336,12 +336,12 @@ struct AddEditCardView: View {
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
-                .padding(.horizontal, viewModel.isAutoFilling ? 14 : 20)
+                .padding(.horizontal, vm.isAutoFilling ? 14 : 20)
                 .padding(.vertical, 14)
                 .overlay { Capsule().strokeBorder(Color.myColors.myBlue, lineWidth: 1.5) }
             }
             .buttonStyle(.plain)
-            .animation(.spring(response: 0.45, dampingFraction: 0.72), value: viewModel.isAutoFilling)
+            .animation(.spring(response: 0.45, dampingFraction: 0.72), value: vm.isAutoFilling)
         }
     }
 
@@ -349,13 +349,13 @@ struct AddEditCardView: View {
 
     private var examplesENSection: some View {
         fieldSection(label: "ENGLISH EXAMPLES") {
-            examplesList(samples: $viewModel.samplesEN, fieldTag: { .sampleEN($0) }, isLastSection: false)
+            examplesList(samples: $vm.samplesEN, fieldTag: { .sampleEN($0) }, isLastSection: false)
         }
     }
 
     private var examplesItemSection: some View {
         fieldSection(label: "NATIVE EXAMPLES") {
-            examplesList(samples: $viewModel.samplesItem, fieldTag: { .sampleItem($0) }, isLastSection: true)
+            examplesList(samples: $vm.samplesItem, fieldTag: { .sampleItem($0) }, isLastSection: true)
         }
     }
 

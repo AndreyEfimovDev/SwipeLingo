@@ -13,13 +13,13 @@ struct PairsPileBuilderView: View {
     @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets: [PairsSet]
     @Query private var allPiles: [PairsPile]
 
-    @State private var viewModel: PairsPileBuilderViewModel
+    @State private var vm: PairsPileBuilderViewModel
     @State private var isShowingDeleteConfirm = false
     @State private var searchText   = ""
     @State private var selectedLevel: CEFRLevel? = nil
 
     init(editingPile: PairsPile? = nil) {
-        _viewModel = State(initialValue: PairsPileBuilderViewModel(editingPile: editingPile))
+        _vm = State(initialValue: PairsPileBuilderViewModel(editingPile: editingPile))
     }
 
     var body: some View {
@@ -36,16 +36,16 @@ struct PairsPileBuilderView: View {
                 setsFilterHeader
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle(viewModel.editingPile == nil ? "New Pile" : "Edit Pile")
+            .navigationTitle(vm.editingPile == nil ? "New Pile" : "Edit Pile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarButtons }
             .confirmationDialog(
-                "Delete \"\(viewModel.name)\"?",
+                "Delete \"\(vm.name)\"?",
                 isPresented: $isShowingDeleteConfirm,
                 titleVisibility: .visible
             ) {
                 Button("Delete Pile", role: .destructive) {
-                    if let pile = viewModel.editingPile {
+                    if let pile = vm.editingPile {
                         context.delete(pile)
                         context.saveWithErrorHandling()
                     }
@@ -66,7 +66,7 @@ struct PairsPileBuilderView: View {
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .padding(.horizontal, 32)
 
-            TextField("e.g. Evening Session", text: $viewModel.name)
+            TextField("e.g. Evening Session", text: $vm.name)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(Color.myColors.myBackground)
@@ -110,7 +110,7 @@ struct PairsPileBuilderView: View {
             Text(name)
                 .font(.body)
             Spacer()
-            if viewModel.shuffleMethod == method {
+            if vm.shuffleMethod == method {
                 Image(systemName: "checkmark")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
@@ -119,11 +119,11 @@ struct PairsPileBuilderView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .contentShape(Rectangle())
-        .onTapGesture { viewModel.shuffleMethod = method }
+        .onTapGesture { vm.shuffleMethod = method }
     }
 
     private var shuffleFooter: String {
-        switch viewModel.shuffleMethod {
+        switch vm.shuffleMethod {
         case .random:      return "Sets appear in a random order every session."
         case .sequential:  return "Sets appear in the order they were added."
         case .prioritized: return "Hardest sets appear first."
@@ -202,9 +202,9 @@ struct PairsPileBuilderView: View {
                     ForEach(filteredSets) { set in
                         PairsSetToggleRow(
                             set: set,
-                            isSelected: viewModel.selectedSetIds.contains(set.id)
+                            isSelected: vm.selectedSetIds.contains(set.id)
                         ) {
-                            viewModel.toggleSet(set.id)
+                            vm.toggleSet(set.id)
                         }
                         if set.id != filteredSets.last?.id {
                             Divider().padding(.leading, 52)
@@ -229,15 +229,15 @@ struct PairsPileBuilderView: View {
         }
 
         ToolbarItem(placement: .confirmationAction) {
-            Button(viewModel.editingPile == nil ? "Create" : "Save") {
-                viewModel.saveAndActivate(context: context, allPiles: allPiles)
+            Button(vm.editingPile == nil ? "Create" : "Save") {
+                vm.saveAndActivate(context: context, allPiles: allPiles)
                 dismiss()
             }
-            .disabled(!viewModel.canSave)
-            .foregroundStyle(viewModel.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
+            .disabled(!vm.canSave)
+            .foregroundStyle(vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
         }
 
-        if viewModel.editingPile != nil {
+        if vm.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {
                 Button {
                     isShowingDeleteConfirm = true

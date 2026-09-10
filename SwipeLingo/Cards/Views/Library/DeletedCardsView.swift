@@ -15,7 +15,7 @@ struct DeletedCardsView: View {
     @Query(sort: \CardSet.createdAt)    private var allCardSets:    [CardSet]
     @Query(sort: \Collection.createdAt) private var allCollections: [Collection]
 
-    @State private var viewModel = DeletedCardsViewModel()
+    @State private var vm = DeletedCardsViewModel()
 
     @State private var selectedCollectionId:     UUID?     = nil
     @State private var selectedSetId:            UUID?     = nil
@@ -33,11 +33,11 @@ struct DeletedCardsView: View {
     // MARK: - Computed (делегируют в VM, добавляя @Query-результаты и фильтры)
 
     private var deletedCards: [Card] {
-        viewModel.deletedCards(allCards: allCards)
+        vm.deletedCards(allCards: allCards)
     }
 
     private var filteredCards: [Card] {
-        viewModel.filteredCards(
+        vm.filteredCards(
             allCards: allCards, allCardSets: allCardSets,
             selectedCollectionId: selectedCollectionId, selectedSetId: selectedSetId, searchText: searchText
         )
@@ -45,12 +45,12 @@ struct DeletedCardsView: View {
 
     /// Collections that have at least one deleted card
     private var availableCollections: [Collection] {
-        viewModel.availableCollections(allCards: allCards, allCardSets: allCardSets, allCollections: allCollections)
+        vm.availableCollections(allCards: allCards, allCardSets: allCardSets, allCollections: allCollections)
     }
 
     /// Sets that have at least one deleted card; restricted by selected collection if active
     private var availableSets: [CardSet] {
-        viewModel.availableSets(allCards: allCards, allCardSets: allCardSets, selectedCollectionId: selectedCollectionId)
+        vm.availableSets(allCards: allCards, allCardSets: allCardSets, selectedCollectionId: selectedCollectionId)
     }
 
     private var isFiltered: Bool { selectedCollectionId != nil || selectedSetId != nil }
@@ -61,11 +61,11 @@ struct DeletedCardsView: View {
 
     /// Карточки из user-created сетов среди выбранных — только их можно стереть навсегда.
     private var selectedErasableCards: [Card] {
-        viewModel.selectedErasableCards(filteredCards: filteredCards, selectedCardIds: selectedCardIds, allCardSets: allCardSets)
+        vm.selectedErasableCards(filteredCards: filteredCards, selectedCardIds: selectedCardIds, allCardSets: allCardSets)
     }
 
     private func isCurated(_ card: Card) -> Bool {
-        viewModel.isCurated(card, allCardSets: allCardSets)
+        vm.isCurated(card, allCardSets: allCardSets)
     }
 
     private func toggleSelectAll() {
@@ -217,7 +217,7 @@ struct DeletedCardsView: View {
         ) {
             Button("Erase Forever", role: .destructive) {
                 if let card = cardToErase {
-                    viewModel.eraseCard(card, allCards: allCards, allCardSets: allCardSets, allCollections: allCollections, context: context)
+                    vm.eraseCard(card, allCards: allCards, allCardSets: allCardSets, allCollections: allCollections, context: context)
                     cardToErase = nil
                 }
             }
@@ -460,19 +460,19 @@ struct DeletedCardsView: View {
     // MARK: - Actions
 
     private func restoreCard(_ card: Card) {
-        viewModel.restoreCard(card, allCardSets: allCardSets, context: context)
+        vm.restoreCard(card, allCardSets: allCardSets, context: context)
     }
 
     private func restoreSelected() {
         let cards = filteredCards.filter { selectedCardIds.contains($0.id) }
-        viewModel.restoreSelected(cards, allCardSets: allCardSets, context: context)
+        vm.restoreSelected(cards, allCardSets: allCardSets, context: context)
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }
 
     private func eraseSelected() {
         // Только карточки из user-created сетов — curated нельзя стереть навсегда
-        viewModel.eraseSelected(selectedErasableCards, allCards: allCards, allCardSets: allCardSets, allCollections: allCollections, context: context)
+        vm.eraseSelected(selectedErasableCards, allCards: allCards, allCardSets: allCardSets, allCollections: allCollections, context: context)
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }

@@ -18,9 +18,9 @@ extension PairsPile: PileLike {}
 
 // MARK: - PileManagementService
 //
-// Общие мутации Pile, используемые и в Cards Library (LibraryView, CollectionDetailView),
+// Общие мутации Pile, используемые и в Cards Library (LibraryView),
 // и в Pairs Library (PairsLibraryView). Раньше эта логика была продублирована независимо
-// во всех трёх View — теперь это единственный источник истины для неё.
+// в обоих View — теперь это единственный источник истины для неё.
 //
 // Сервис без состояния: ModelContext передаётся параметром на каждый вызов, а не
 // хранится внутри — так же, как уже сделано с FirestoreImportService().syncFromFirestore(into: context, ...).

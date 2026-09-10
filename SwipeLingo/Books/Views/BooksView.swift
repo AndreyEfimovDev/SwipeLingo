@@ -11,7 +11,7 @@ struct BooksView: View {
     @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
 
     @Query private var books: [Book]
-    @State private var viewModel     = BooksViewModel()
+    @State private var vm     = BooksViewModel()
     @State private var syncTask:     Task<Void, Never>?
     @State private var readerBook:   Book? = nil
     @State private var debugImportTask: Task<Void, Never>?
@@ -24,7 +24,7 @@ struct BooksView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     levelFilterBar
-                    if viewModel.filteredBooks(books, userPlan: userPlan).isEmpty {
+                    if vm.filteredBooks(books, userPlan: userPlan).isEmpty {
                         emptyState
                     } else {
                         booksGrid
@@ -35,14 +35,14 @@ struct BooksView: View {
             }
             .background(Color(.systemBackground).ignoresSafeArea())
             .navigationTitle("Books")
-            .searchable(text: $viewModel.searchText, prompt: "Search books")
+            .searchable(text: $vm.searchText, prompt: "Search books")
             .toolbar { toolbarContent }
             .fullScreenCover(item: $readerBook) { book in
                 BookReaderView(book: book)
             }
         }
         // BOOKS_SYNC_STUB: автосинк при входе отключён — книги на GitHub, не в Firestore.
-        // .task { syncTask = Task { await viewModel.syncBooks(context: context) } }
+        // .task { syncTask = Task { await vm.syncBooks(context: context) } }
         .onDisappear { syncTask?.cancel() }
     }
 
@@ -53,15 +53,15 @@ struct BooksView: View {
             HStack(spacing: 8) {
                 FilterChip(
                     title: "All",
-                    isSelected: viewModel.selectedLevel == nil
-                ) { viewModel.selectedLevel = nil }
+                    isSelected: vm.selectedLevel == nil
+                ) { vm.selectedLevel = nil }
 
                 ForEach(CEFRLevel.allCases, id: \.self) { level in
                     FilterChip(
                         title: level.displayCode,
-                        isSelected: viewModel.selectedLevel == level,
+                        isSelected: vm.selectedLevel == level,
                         color: level.color
-                    ) { viewModel.selectedLevel = level }
+                    ) { vm.selectedLevel = level }
                 }
             }
             .padding(.vertical, 4)
@@ -74,7 +74,7 @@ struct BooksView: View {
 
     private var booksGrid: some View {
         LazyVGrid(columns: columns, spacing: 16) {
-            ForEach(viewModel.filteredBooks(books, userPlan: userPlan)) { book in
+            ForEach(vm.filteredBooks(books, userPlan: userPlan)) { book in
                 BookCard(book: book, userPlan: userPlan) {
                     readerBook = book
                 }
@@ -110,7 +110,7 @@ struct BooksView: View {
             Image(systemName: "book.closed")
                 .font(.system(size: 48))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
-            Text(viewModel.isSyncing ? "Loading books…" : "No books available")
+            Text(vm.isSyncing ? "Loading books…" : "No books available")
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
         }
         .frame(maxWidth: .infinity)
@@ -131,11 +131,11 @@ struct BooksView: View {
         ToolbarItemGroup(placement: .topBarTrailing) {
             // BOOKS_SYNC_STUB: кнопка sync и спиннер скрыты — книги загружаются с GitHub, не из Firestore.
             // Когда книги переедут в Firebase Storage/Firestore — раскомментировать:
-            // if viewModel.isSyncing {
+            // if vm.isSyncing {
             //     ProgressView().tint(Color.myColors.myBlue)
             // } else {
             //     Button {
-            //         syncTask = Task { await viewModel.syncBooks(context: context) }
+            //         syncTask = Task { await vm.syncBooks(context: context) }
             //     } label: {
             //         Image(systemName: "arrow.clockwise")
             //             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))

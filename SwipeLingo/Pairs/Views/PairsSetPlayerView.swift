@@ -46,7 +46,7 @@ struct PairsSetPlayerView: View {
     let authService: AuthService
     let userService: UserService
 
-    @State private var viewModel: PairsSetPlayerViewModel
+    @State private var vm: PairsSetPlayerViewModel
 
     init(set: PairsSet, authService: AuthService, userService: UserService,
          onComplete: (() -> Void)? = nil, autoStart: Bool = false, initialAnimationMode: AnimationMode? = nil) {
@@ -56,7 +56,7 @@ struct PairsSetPlayerView: View {
         self.onComplete = onComplete
         self.autoStart = autoStart
         self.initialAnimationMode = initialAnimationMode
-        _viewModel = State(initialValue: PairsSetPlayerViewModel(set: set))
+        _vm = State(initialValue: PairsSetPlayerViewModel(set: set))
     }
 
     @AppStorage(Constants.StorageKey.pairsAnimationMode) private var defaultAnimationMode: AnimationMode = .manual
@@ -79,13 +79,13 @@ struct PairsSetPlayerView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
 
-                        if !viewModel.hasStarted {
+                        if !vm.hasStarted {
                             startScreen
                         } else {
                             // Pairs table — одна карточка, секции внутри
                             VStack(spacing: 0) {
-                                ForEach(Array(viewModel.pairGroups.enumerated()), id: \.offset) { groupIdx, group in
-                                    if let firstIdx = group.indices.first, viewModel.isPairVisible(at: firstIdx) {
+                                ForEach(Array(vm.pairGroups.enumerated()), id: \.offset) { groupIdx, group in
+                                    if let firstIdx = group.indices.first, vm.isPairVisible(at: firstIdx) {
                                         // Разделитель между группами (не перед первой)
                                         if groupIdx > 0 {
                                             Rectangle()
@@ -104,7 +104,7 @@ struct PairsSetPlayerView: View {
                                     }
                                     // Видимые пары секции
                                     ForEach(group.indices, id: \.self) { idx in
-                                        if viewModel.isPairVisible(at: idx) {
+                                        if vm.isPairVisible(at: idx) {
                                             pairRow(pair: set.items[idx], index: idx)
                                         }
                                     }
@@ -116,7 +116,7 @@ struct PairsSetPlayerView: View {
                             .padding(.horizontal, 16)
 
                             // SRS buttons + replay — только в standalone режиме (без onComplete)
-                            if viewModel.showCompletion && onComplete == nil {
+                            if vm.showCompletion && onComplete == nil {
                                 if srsEnabled { srsRatingButtons.padding(.top, 24) }
                                 replayButton
                                     .padding(.top, srsEnabled ? 8 : 24)
@@ -124,14 +124,14 @@ struct PairsSetPlayerView: View {
                             }
 
                             // Hints — только во время воспроизведения
-                            if !viewModel.isComplete {
-                                if viewModel.showTapHint {
+                            if !vm.isComplete {
+                                if vm.showTapHint {
                                     tapHint.padding(.top, 20)
                                         .transition(.opacity)
-                                } else if viewModel.isManualPaused {
+                                } else if vm.isManualPaused {
                                     resumeHint.padding(.top, 20)
                                         .transition(.opacity)
-                                } else if viewModel.animationMode == .automatic && viewModel.isPaused {
+                                } else if vm.animationMode == .automatic && vm.isPaused {
                                     resumeHint.padding(.top, 20)
                                 }
                             }
@@ -143,18 +143,18 @@ struct PairsSetPlayerView: View {
                 }
                 .background(Color(.systemBackground).ignoresSafeArea())
                 .contentShape(Rectangle())
-                .onTapGesture { viewModel.handleTap() }
-                .onChange(of: viewModel.revealedSteps) {
+                .onTapGesture { vm.handleTap() }
+                .onChange(of: vm.revealedSteps) {
                     withAnimation(.easeOut(duration: 0.3)) {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
                 // Parallel mode: когда левый TTS закончил → озвучиваем правый
-                .onChange(of: viewModel.audioService.isPlaying) { _, isNow in
-                    viewModel.handleAudioPlaybackChange(isPlayingNow: isNow)
+                .onChange(of: vm.audioService.isPlaying) { _, isNow in
+                    vm.handleAudioPlaybackChange(isPlayingNow: isNow)
                 }
                 // Завершение сета: в session-режиме вызываем onComplete, иначе прокручиваем к SRS
-                .onChange(of: viewModel.showCompletion) { _, show in
+                .onChange(of: vm.showCompletion) { _, show in
                     guard show else { return }
                     if let onComplete {
                         onComplete()
@@ -167,8 +167,8 @@ struct PairsSetPlayerView: View {
                     }
                 }
                 // Manual mode: последняя строка показана → ждём окончания аудио → показываем SRS
-                .onChange(of: viewModel.isComplete) { _, _ in
-                    viewModel.scheduleCompletionIfNeeded()
+                .onChange(of: vm.isComplete) { _, _ in
+                    vm.scheduleCompletionIfNeeded()
                 }
             } // closes ScrollViewReader
         } // closes VStack
@@ -180,19 +180,19 @@ struct PairsSetPlayerView: View {
         }
         .toolbar { toolbarContent }
         .onAppear {
-            viewModel.audioEnabled = audioEnabled
-            viewModel.ttsVoiceIdentifier = ttsVoiceIdentifier
-            viewModel.userPlan = userPlan
-            viewModel.onAppear(
+            vm.audioEnabled = audioEnabled
+            vm.ttsVoiceIdentifier = ttsVoiceIdentifier
+            vm.userPlan = userPlan
+            vm.onAppear(
                 initialAnimationMode: initialAnimationMode ?? defaultAnimationMode,
                 autoStart: autoStart,
                 context: context
             )
         }
-        .onChange(of: ttsVoiceIdentifier) { _, newValue in viewModel.ttsVoiceIdentifier = newValue }
-        .onChange(of: userPlan) { _, newValue in viewModel.userPlan = newValue }
+        .onChange(of: ttsVoiceIdentifier) { _, newValue in vm.ttsVoiceIdentifier = newValue }
+        .onChange(of: userPlan) { _, newValue in vm.userPlan = newValue }
         .onDisappear {
-            viewModel.cancelAllTasks()
+            vm.cancelAllTasks()
         }
         .sheet(isPresented: $showPlans) { PlansView(authService: authService, userService: userService) }
     } // closes body
@@ -203,7 +203,7 @@ struct PairsSetPlayerView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            Button { viewModel.startPlayback() } label: {
+            Button { vm.startPlayback() } label: {
                 VStack(spacing: 8) {
                     Image(systemName: "play.circle.fill")
                         .font(.system(size: 72))
@@ -289,10 +289,10 @@ struct PairsSetPlayerView: View {
     // MARK: - Mode Toggle (одна кнопка — показывает текущий режим, тап переключает)
 
     private var modeToggle: some View {
-        let isAuto = viewModel.animationMode == .automatic
-        let isPlaybackActive = viewModel.hasStarted && !viewModel.showCompletion
+        let isAuto = vm.animationMode == .automatic
+        let isPlaybackActive = vm.hasStarted && !vm.showCompletion
         return Button {
-            defaultAnimationMode = viewModel.switchMode(to: isAuto ? .manual : .automatic)
+            defaultAnimationMode = vm.switchMode(to: isAuto ? .manual : .automatic)
         } label: {
             HStack(spacing: 4) {
                 Text(isAuto ? "Auto" : "Manual")
@@ -309,7 +309,7 @@ struct PairsSetPlayerView: View {
         }
         .buttonStyle(.plain)
         .disabled(isPlaybackActive)
-        .animation(.easeInOut(duration: 0.15), value: viewModel.animationMode)
+        .animation(.easeInOut(duration: 0.15), value: vm.animationMode)
         .animation(.easeInOut(duration: 0.2), value: isPlaybackActive)
     }
 
@@ -323,13 +323,13 @@ struct PairsSetPlayerView: View {
 
     @ViewBuilder
     private func pairRow(pair: Pair, index: Int) -> some View {
-        let thresh        = viewModel.thresholds[index]
-        let revealedSteps = viewModel.revealedSteps
+        let thresh        = vm.thresholds[index]
+        let revealedSteps = vm.revealedSteps
         let leftVisible   = thresh.leftStep.map   { revealedSteps >= $0 } ?? false
         let rightVisible  = thresh.rightStep.map  { revealedSteps >= $0 } ?? false
         let descVisible   = thresh.descStep.map   { revealedSteps >= $0 } ?? false
         let sampleVisible = thresh.sampleStep.map { revealedSteps >= $0 } ?? false
-        let isLocked      = viewModel.isLocked(at: index)
+        let isLocked      = vm.isLocked(at: index)
 
         VStack(alignment: .leading, spacing: 0) {
 
@@ -387,7 +387,7 @@ struct PairsSetPlayerView: View {
     @ViewBuilder
     private func lockedCell(visible: Bool) -> some View {
         Button {
-            viewModel.pauseForUpgrade()
+            vm.pauseForUpgrade()
             showPlans = true
         } label: {
             HStack(spacing: 6) {
@@ -409,7 +409,7 @@ struct PairsSetPlayerView: View {
     @ViewBuilder
     private func lockedCellSecondary(visible: Bool) -> some View {
         Button {
-            viewModel.pauseForUpgrade()
+            vm.pauseForUpgrade()
             showPlans = true
         } label: {
             HStack(spacing: 6) {
@@ -465,7 +465,7 @@ struct PairsSetPlayerView: View {
     /// Кнопки оценки — показываются только когда SRS включён и оценка ещё не выставлена
     private var srsRatingButtons: some View {
         VStack(spacing: 12) {
-            if viewModel.hasRated {
+            if vm.hasRated {
                 Label("Saved", systemImage: "checkmark.circle.fill")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.myColors.myGreen)
@@ -476,20 +476,20 @@ struct PairsSetPlayerView: View {
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
 
                 HStack(spacing: 10) {
-                    srsButton("Forgot", color: Color.myColors.myRed)    { viewModel.rate(.again, context: context) }
-                    srsButton("Hard",   color: Color.myColors.myOrange) { viewModel.rate(.hard,  context: context) }
-                    srsButton("Easy",   color: Color.myColors.myGreen)  { viewModel.rate(.easy,  context: context) }
+                    srsButton("Forgot", color: Color.myColors.myRed)    { vm.rate(.again, context: context) }
+                    srsButton("Hard",   color: Color.myColors.myOrange) { vm.rate(.hard,  context: context) }
+                    srsButton("Easy",   color: Color.myColors.myGreen)  { vm.rate(.easy,  context: context) }
                 }
             }
         }
         .padding(.horizontal, 24)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.hasRated)
+        .animation(.easeInOut(duration: 0.2), value: vm.hasRated)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     /// Кнопка Replay — всегда видна после завершения воспроизведения
     private var replayButton: some View {
-        Button { viewModel.restartSet() } label: {
+        Button { vm.restartSet() } label: {
             VStack(spacing: 8) {
                 Image(systemName: "arrow.counterclockwise.circle.fill")
                     .font(.system(size: 64))
@@ -548,9 +548,9 @@ struct PairsSetPlayerView: View {
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
                 audioEnabled.toggle()
-                viewModel.audioEnabled = audioEnabled
+                vm.audioEnabled = audioEnabled
                 if !audioEnabled {
-                    viewModel.stopAudioForToggleOff()
+                    vm.stopAudioForToggleOff()
                 }
             } label: {
                 Image(systemName: audioEnabled ? "speaker.wave.2" : "speaker.slash")
