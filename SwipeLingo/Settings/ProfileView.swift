@@ -18,12 +18,12 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var context
 
     /// Передаётся из composition root через SettingsView — не через .environment().
-    private let authService: AuthService
+    private let authService: FireBaseAuthService
     private let userService: UserService
 
     @AppStorage("appleRelayBannerDismissed") private var relayBannerDismissed = false
 
-    init(authService: AuthService, userService: UserService) {
+    init(authService: FireBaseAuthService, userService: UserService) {
         self.authService = authService
         self.userService = userService
     }
@@ -736,7 +736,7 @@ private struct AppleDeletionSheet: View {
     /// fileprivate, не private: AppleDeletionSheet конструируется из ProfileView —
     /// другого типа в том же файле, а `private` в Swift ограничен своим типом
     /// (+ same-file extensions), не всем файлом.
-    fileprivate let authService: AuthService
+    fileprivate let authService: FireBaseAuthService
     let onAuthorization: (ASAuthorization) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -788,5 +788,5 @@ private struct AppleDeletionSheet: View {
 }
 
 #Preview {
-    NavigationStack { ProfileView(authService: AuthService(), userService: UserService()) }
+    NavigationStack { ProfileView(authService: FireBaseAuthService(), userService: UserService()) }
 }

@@ -12,9 +12,9 @@ struct AuthView: View {
     var isDismissible: Bool = false
     var showGuestOption: Bool = false
     /// Передаётся из composition root — не через .environment().
-    private let authService: AuthService
+    private let authService: FireBaseAuthService
 
-    init(isDismissible: Bool = false, showGuestOption: Bool = false, authService: AuthService) {
+    init(isDismissible: Bool = false, showGuestOption: Bool = false, authService: FireBaseAuthService) {
         self.isDismissible = isDismissible
         self.showGuestOption = showGuestOption
         self.authService = authService
@@ -169,7 +169,7 @@ struct AuthView: View {
                 .frame(height: 38)
                 .background(active ? Color.myColors.myBackground : Color.clear)
                 .clipShape(RoundedRectangle(cornerRadius: 9))
-                .shadow(color: active ? Color.black.opacity(0.06) : Color.clear, radius: 2, y: 1)
+                .if(active) { $0.myShadow() }
         }
         .buttonStyle(.plain)
     }
@@ -364,24 +364,4 @@ struct AuthView: View {
 
 private enum AuthMode {
     case signIn, signUp
-}
-
-// MARK: - TextInput Style
-
-private extension View {
-    func textInputStyle(invalid: Bool = false) -> some View {
-        self
-            .padding(.horizontal, 16)
-            .frame(height: 52)
-            .background(Color.myColors.myBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(
-                        invalid ? Color.myColors.myRed.opacity(0.6) : Color.myColors.myAccent.opacity(0.2),
-                        lineWidth: invalid ? 1.5 : 1
-                    )
-            )
-            .foregroundStyle(Color.myColors.myAccent)
-    }
 }

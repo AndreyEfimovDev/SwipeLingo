@@ -9,7 +9,7 @@ import Foundation
 // нужны только глубже), либо форвардят весь бандл, либо распаковывают в
 // отдельные let-параметры конкретных потребителей — см. AppView.swift.
 struct AppDependencies {
-    let authService: AuthService
+    let authService: FireBaseAuthService
     let userService: UserService
     /// Нужен только SettingsView.
     let appSyncStateService: AppSyncStateService

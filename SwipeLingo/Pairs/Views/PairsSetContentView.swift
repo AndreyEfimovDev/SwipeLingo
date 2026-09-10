@@ -16,10 +16,10 @@ struct PairsSetContentView: View {
 
     let set: PairsSet
     /// Передаются из composition root — не через .environment(). Только для PlansView.
-    private let authService: AuthService
+    private let authService: FireBaseAuthService
     private let userService: UserService
 
-    init(set: PairsSet, authService: AuthService, userService: UserService) {
+    init(set: PairsSet, authService: FireBaseAuthService, userService: UserService) {
         self.set = set
         self.authService = authService
         self.userService = userService

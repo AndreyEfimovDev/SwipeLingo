@@ -101,3 +101,24 @@ struct FixedIconLabelStyle: LabelStyle {
 extension LabelStyle where Self == FixedIconLabelStyle {
     static var fixedIcon: FixedIconLabelStyle { .init() }
 }
+
+
+// MARK: - TextInput Style
+
+extension View {
+    func textInputStyle(invalid: Bool = false) -> some View {
+        self
+            .padding(.horizontal, 16)
+            .frame(height: 52)
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(
+                        invalid ? Color.myColors.myRed.opacity(0.6) : Color.myColors.myAccent.opacity(0.2),
+                        lineWidth: invalid ? 1.5 : 1
+                    )
+            )
+            .foregroundStyle(Color.myColors.myAccent)
+    }
+}

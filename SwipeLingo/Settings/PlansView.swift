@@ -12,10 +12,10 @@ struct PlansView: View {
     @Environment(\.dismiss)        private var dismiss
 
     /// Передаётся из composition root — не через .environment().
-    private let authService: AuthService
+    private let authService: FireBaseAuthService
     private let userService: UserService
 
-    init(authService: AuthService, userService: UserService) {
+    init(authService: FireBaseAuthService, userService: UserService) {
         self.authService = authService
         self.userService = userService
     }
@@ -322,5 +322,5 @@ struct PlansView: View {
 }
 
 #Preview {
-    PlansView(authService: AuthService(), userService: UserService())
+    PlansView(authService: FireBaseAuthService(), userService: UserService())
 }

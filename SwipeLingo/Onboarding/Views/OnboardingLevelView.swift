@@ -12,10 +12,14 @@ struct OnboardingLevelView: View {
 
     @Query private var profiles: [UserProfile]
     @Environment(\.modelContext) private var context
+    @State private var vm = OnboardingLevelViewModel()
 
     private var profile: UserProfile? { profiles.first }
 
-    private var selectedLevel: CEFRLevel { profile?.cefrLevel ?? .b1 }
+    // .a1 — тот же дефолт, что и UserProfile(level:) — на первом рендере, до
+    // того как .onAppear вставит профиль и @Query его подхватит, подсветка не
+    // "мигает" с другого уровня на реальный дефолт.
+    private var selectedLevel: CEFRLevel { profile?.cefrLevel ?? .a1 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -68,14 +72,14 @@ struct OnboardingLevelView: View {
             .padding(.bottom, 32)
         }
         .onAppear {
-            if profiles.isEmpty { context.insert(UserProfile()) }
+            vm.ensureProfile(profiles: profiles, context: context)
         }
     }
 
     private func levelRow(_ level: CEFRLevel) -> some View {
         let isSelected = selectedLevel == level
         return Button {
-            profile?.cefrLevel = level
+            vm.selectLevel(level, profile: profile)
         } label: {
             HStack(spacing: 14) {
                 // CEFR badge

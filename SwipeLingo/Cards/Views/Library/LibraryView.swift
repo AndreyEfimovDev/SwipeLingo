@@ -11,10 +11,10 @@ struct LibraryView: View {
 
     /// Передаются из composition root через AppView — не через .environment().
     private let appViewModel: AppViewModel
-    private let authService:  AuthService
+    private let authService:  FireBaseAuthService
     private let userService:  UserService
 
-    init(appViewModel: AppViewModel, authService: AuthService, userService: UserService) {
+    init(appViewModel: AppViewModel, authService: FireBaseAuthService, userService: UserService) {
         self.appViewModel = appViewModel
         self.authService = authService
         self.userService = userService

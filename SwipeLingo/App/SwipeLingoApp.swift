@@ -14,7 +14,7 @@ struct SwipeLingoApp: App {
 
     let container: ModelContainer?
 
-    @State private var authService: AuthService
+    @State private var authService: FireBaseAuthService
     @State private var userService: UserService
     @State private var appSyncStateService: AppSyncStateService
     @State private var appViewModel: AppViewModel
@@ -59,7 +59,7 @@ struct SwipeLingoApp: App {
             log("[App] Fresh install detected — Keychain token cleared", level: .info)
         }
 
-        _authService = State(initialValue: AuthService())
+        _authService = State(initialValue: FireBaseAuthService())
         _userService = State(initialValue: UserService())
         _appViewModel = State(initialValue: AppViewModel())
         let builtContainer = ModelContainerFactory.make()

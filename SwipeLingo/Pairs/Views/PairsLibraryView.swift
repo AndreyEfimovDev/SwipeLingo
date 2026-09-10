@@ -23,10 +23,10 @@ struct PairsLibraryView: View {
 
     /// Передаются из composition root через AppView — не через .environment().
     /// Сама PairsLibraryView их не читает, только форвардит в PairsSetContentView.
-    private let authService: AuthService
+    private let authService: FireBaseAuthService
     private let userService: UserService
 
-    init(authService: AuthService, userService: UserService) {
+    init(authService: FireBaseAuthService, userService: UserService) {
         self.authService = authService
         self.userService = userService
     }

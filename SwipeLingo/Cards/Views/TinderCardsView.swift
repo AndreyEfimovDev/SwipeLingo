@@ -9,7 +9,7 @@ struct TinderCardsView: View {
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
     /// Передаются из composition root через CardsView — не через .environment().
     private let appViewModel: AppViewModel
-    private let authService:  AuthService
+    private let authService:  FireBaseAuthService
     private let userService:  UserService
 
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
@@ -50,7 +50,7 @@ struct TinderCardsView: View {
 
     init(cards: [Card],
          appViewModel: AppViewModel,
-         authService: AuthService,
+         authService: FireBaseAuthService,
          userService: UserService,
          lockedCardIds: Set<UUID> = [],
          contextLabels: [UUID: String] = [:],
@@ -945,7 +945,7 @@ private struct LockedCardBackView: View {
     /// fileprivate, не private: LockedCardBackView конструируется из TinderCardsView —
     /// другого типа в том же файле, а `private` в Swift ограничен своим типом
     /// (+ same-file extensions), не всем файлом.
-    fileprivate let authService: AuthService
+    fileprivate let authService: FireBaseAuthService
     fileprivate let userService: UserService
     @State private var showPlans = false
 
@@ -1034,7 +1034,7 @@ private struct CardFlowLayout: Layout {
     [c1, c2, c3].forEach { ctx.insert($0) }
     return TinderCardsView(cards: [c1, c2, c3],
                            appViewModel: AppViewModel(),
-                           authService: AuthService(),
+                           authService: FireBaseAuthService(),
                            userService: UserService(),
                            contextLabels: [setId: "IELTS Vocabulary · Academic Words"],
                            pileTagsLine:  "IELTS Vocabulary › Academic Words (8 cards)")

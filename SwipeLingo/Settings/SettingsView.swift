@@ -16,13 +16,13 @@ struct SettingsView: View {
     /// Передаётся из composition root (SwipeLingoApp) через AppView — не через .environment().
     private let syncState: AppSyncStateService
     /// Сама SettingsView их не читает — только форвардит в ProfileView.
-    private let authService: AuthService
+    private let authService: FireBaseAuthService
     private let userService: UserService
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
 
-    init(syncState: AppSyncStateService, authService: AuthService, userService: UserService) {
+    init(syncState: AppSyncStateService, authService: FireBaseAuthService, userService: UserService) {
         self.syncState = syncState
         self.authService = authService
         self.userService = userService
@@ -258,5 +258,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView(syncState: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
-                 authService: AuthService(), userService: UserService())
+                 authService: FireBaseAuthService(), userService: UserService())
 }

@@ -9,7 +9,7 @@ import CryptoKit
 
 @Observable
 @MainActor
-final class AuthService {
+final class FireBaseAuthService {
 
     private(set) var currentUser: FirebaseAuth.User? = nil
     private(set) var isLoading = true
