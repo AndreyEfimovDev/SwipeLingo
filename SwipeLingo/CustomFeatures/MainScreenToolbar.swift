@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - MainScreenToolbar
 //
-// Общий toolbar трёх главных экранов (FlashCardsView / PairsView / BooksView):
+// Общий toolbar трёх главных экранов (CardsView / PairsView / BooksView):
 // шестерёнка настроек слева + меню "..." справа (переключение на два других
 // таба + Statistics). Был продублирован по коду во всех трёх — вынесен сюда.
 //

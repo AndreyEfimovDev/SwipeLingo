@@ -1,9 +1,9 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - FlashCardsView
+// MARK: - CardsView
 
-struct FlashCardsView: View {
+struct CardsView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass

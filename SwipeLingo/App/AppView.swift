@@ -56,7 +56,7 @@ struct AppView: View {
     private var studyContent: some View {
         switch vm.studyMode {
         case .cards:
-            FlashCardsView(appViewModel: dependencies.appViewModel,
+            CardsView(appViewModel: dependencies.appViewModel,
                             authService: dependencies.authService,
                             userService: dependencies.userService)
         case .pairs:

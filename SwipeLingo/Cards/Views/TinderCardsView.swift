@@ -7,7 +7,7 @@ struct TinderCardsView: View {
 
     @Environment(\.modelContext)       private var context
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
-    /// Передаются из composition root через FlashCardsView — не через .environment().
+    /// Передаются из composition root через CardsView — не через .environment().
     private let appViewModel: AppViewModel
     private let authService:  AuthService
     private let userService:  UserService

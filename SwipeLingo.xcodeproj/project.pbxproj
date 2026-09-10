@@ -130,7 +130,7 @@
 		478C78662F794487005FBDFE /* DictionaryLookupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C782F2F794487005FBDFE /* DictionaryLookupView.swift */; };
 		478C78672F794487005FBDFE /* TinderCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78302F794487005FBDFE /* TinderCardsView.swift */; };
 		478C78682F794487005FBDFE /* TinderCardsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78312F794487005FBDFE /* TinderCardsViewModel.swift */; };
-		478C78692F794487005FBDFE /* FlashCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78332F794487005FBDFE /* FlashCardsView.swift */; };
+		478C78692F794487005FBDFE /* CardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78332F794487005FBDFE /* CardsView.swift */; };
 		478C786A2F794487005FBDFE /* FlashCardsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78342F794487005FBDFE /* FlashCardsViewModel.swift */; };
 		478C786B2F794487005FBDFE /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78372F794487005FBDFE /* Card.swift */; };
 		478C786C2F794487005FBDFE /* CardSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78382F794487005FBDFE /* CardSet.swift */; };
@@ -346,7 +346,7 @@
 		478C782F2F794487005FBDFE /* DictionaryLookupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryLookupView.swift; sourceTree = "<group>"; };
 		478C78302F794487005FBDFE /* TinderCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinderCardsView.swift; sourceTree = "<group>"; };
 		478C78312F794487005FBDFE /* TinderCardsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinderCardsViewModel.swift; sourceTree = "<group>"; };
-		478C78332F794487005FBDFE /* FlashCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashCardsView.swift; sourceTree = "<group>"; };
+		478C78332F794487005FBDFE /* CardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardsView.swift; sourceTree = "<group>"; };
 		478C78342F794487005FBDFE /* FlashCardsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashCardsViewModel.swift; sourceTree = "<group>"; };
 		478C78372F794487005FBDFE /* Card.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Card.swift; sourceTree = "<group>"; };
 		478C78382F794487005FBDFE /* CardSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSet.swift; sourceTree = "<group>"; };
@@ -568,7 +568,7 @@
 		4761E6103052F01500906F1F /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				478C78332F794487005FBDFE /* FlashCardsView.swift */,
+				478C78332F794487005FBDFE /* CardsView.swift */,
 				478C78302F794487005FBDFE /* TinderCardsView.swift */,
 				478C782F2F794487005FBDFE /* DictionaryLookupView.swift */,
 				478C78292F794487005FBDFE /* Library */,
@@ -1235,7 +1235,7 @@
 				47C099F72F84F0B80049858B /* OnboardingLanguageView.swift in Sources */,
 				47C099F92F84F0B80049858B /* OnboardingView.swift in Sources */,
 				478C78682F794487005FBDFE /* TinderCardsViewModel.swift in Sources */,
-				478C78692F794487005FBDFE /* FlashCardsView.swift in Sources */,
+				478C78692F794487005FBDFE /* CardsView.swift in Sources */,
 				478C786A2F794487005FBDFE /* FlashCardsViewModel.swift in Sources */,
 				478728FB2FA9D3FD001282EF /* AuthService.swift in Sources */,
 				478C786B2F794487005FBDFE /* Card.swift in Sources */,
