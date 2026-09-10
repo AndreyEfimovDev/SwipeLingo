@@ -98,6 +98,7 @@
 		4787293F2FA9D9A7001282EF /* SwipeLingoUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4787293C2FA9D9A7001282EF /* SwipeLingoUITestsLaunchTests.swift */; };
 		478729412FA9D9D4001282EF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 478729402FA9D9D4001282EF /* GoogleService-Info.plist */; };
 		478729452FAA0DD4001282EF /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729442FAA0DD4001282EF /* Constants.swift */; };
+		47E304CDB5E51707ECD4E174 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729442FAA0DD4001282EF /* Constants.swift */; };
 		478729482FAB7331001282EF /* UserFirestoreDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729462FAB7331001282EF /* UserFirestoreDocument.swift */; };
 		478729492FAB7331001282EF /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478729472FAB7331001282EF /* UserService.swift */; };
 		4787294B2FAB7CBB001282EF /* OnboardingAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4787294A2FAB7CBB001282EF /* OnboardingAuthView.swift */; };
@@ -1312,6 +1313,7 @@
 				47D280362F96864A00BBD66B /* CardLengthValidator.swift in Sources */,
 				478C787F2F794487005FBDFE /* Colors.swift in Sources */,
 				478C78802F794487005FBDFE /* Views.swift in Sources */,
+				47E304CDB5E51707ECD4E174 /* Constants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

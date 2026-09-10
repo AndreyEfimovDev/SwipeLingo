@@ -27,9 +27,9 @@ struct SwipeLingoApp: App {
     
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
-    private let appGroupID  = "group.PELSH.SwipeLingo"
-    private let pendingKey  = "pendingInboxWords"
-
+    private let appGroupID  = Constants.appGroupID
+    private let pendingKey  = Constants.StorageKey.pendingInboxWords
+    
     let container: ModelContainer?
 
     @State private var authService: AuthService
