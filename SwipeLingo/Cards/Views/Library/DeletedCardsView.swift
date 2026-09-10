@@ -2,15 +2,21 @@ import SwiftUI
 import SwiftData
 
 // MARK: - DeletedCardsView
+//
+// Бизнес-логика (фильтрация, Restore, Erase Forever) живёт в DeletedCardsViewModel.
+// Здесь остаётся разметка, @Query и фильтры/выбор как @State — конвенция та же, что
+// в PileBuilderView (isShowingDeleteConfirm, searchText остаются во View).
 
 struct DeletedCardsView: View {
-    
+
     @Environment(\.modelContext)        private var context
     @Environment(\.verticalSizeClass)   private var verticalSizeClass
     @Query(sort: \Card.createdAt)       private var allCards:       [Card]
     @Query(sort: \CardSet.createdAt)    private var allCardSets:    [CardSet]
     @Query(sort: \Collection.createdAt) private var allCollections: [Collection]
-    
+
+    @State private var viewModel = DeletedCardsViewModel()
+
     @State private var selectedCollectionId:     UUID?     = nil
     @State private var selectedSetId:            UUID?     = nil
     @State private var editMode:                 EditMode  = .inactive
@@ -24,59 +30,44 @@ struct DeletedCardsView: View {
     /// Scroll-aware behaviour kicks in only when there are enough cards to scroll.
     private let scrollAwareThreshold = 11
     
-    // MARK: - Computed
-    
+    // MARK: - Computed (делегируют в VM, добавляя @Query-результаты и фильтры)
+
     private var deletedCards: [Card] {
-        allCards.filter { $0.status == .deleted }
+        viewModel.deletedCards(allCards: allCards)
     }
-    
+
     private var filteredCards: [Card] {
-        var cards = deletedCards
-        if let colId = selectedCollectionId {
-            let setIds = Set(allCardSets.filter { $0.collectionId == colId }.map { $0.id })
-            cards = cards.filter { setIds.contains($0.setId) }
-        }
-        if let setId = selectedSetId {
-            cards = cards.filter { $0.setId == setId }
-        }
-        return cards.filtered(by: searchText)
+        viewModel.filteredCards(
+            allCards: allCards, allCardSets: allCardSets,
+            selectedCollectionId: selectedCollectionId, selectedSetId: selectedSetId, searchText: searchText
+        )
     }
-    
+
     /// Collections that have at least one deleted card
     private var availableCollections: [Collection] {
-        let deletedSetIds = Set(deletedCards.map { $0.setId })
-        let collectionIds = Set(allCardSets.filter { deletedSetIds.contains($0.id) }.map { $0.collectionId })
-        return allCollections.filter { collectionIds.contains($0.id) }
+        viewModel.availableCollections(allCards: allCards, allCardSets: allCardSets, allCollections: allCollections)
     }
-    
+
     /// Sets that have at least one deleted card; restricted by selected collection if active
     private var availableSets: [CardSet] {
-        let deletedSetIds = Set(deletedCards.map { $0.setId })
-        var sets = allCardSets.filter { deletedSetIds.contains($0.id) }
-        if let colId = selectedCollectionId {
-            sets = sets.filter { $0.collectionId == colId }
-        }
-        return sets
+        viewModel.availableSets(allCards: allCards, allCardSets: allCardSets, selectedCollectionId: selectedCollectionId)
     }
-    
+
     private var isFiltered: Bool { selectedCollectionId != nil || selectedSetId != nil }
-    
+
     private var isAllSelected: Bool {
         !filteredCards.isEmpty && selectedCardIds.count == filteredCards.count
     }
 
     /// Карточки из user-created сетов среди выбранных — только их можно стереть навсегда.
     private var selectedErasableCards: [Card] {
-        filteredCards.filter { card in
-            guard selectedCardIds.contains(card.id) else { return false }
-            return allCardSets.first(where: { $0.id == card.setId })?.isUserCreated ?? true
-        }
+        viewModel.selectedErasableCards(filteredCards: filteredCards, selectedCardIds: selectedCardIds, allCardSets: allCardSets)
     }
 
     private func isCurated(_ card: Card) -> Bool {
-        !(allCardSets.first(where: { $0.id == card.setId })?.isUserCreated ?? true)
+        viewModel.isCurated(card, allCardSets: allCardSets)
     }
-    
+
     private func toggleSelectAll() {
         if isAllSelected {
             selectedCardIds = []
@@ -226,9 +217,7 @@ struct DeletedCardsView: View {
         ) {
             Button("Erase Forever", role: .destructive) {
                 if let card = cardToErase {
-                    cleanupAfterErase(erasingIds: [card.id])
-                    context.delete(card)
-                    context.saveWithErrorHandling()
+                    viewModel.eraseCard(card, allCards: allCards, allCardSets: allCardSets, allCollections: allCollections, context: context)
                     cardToErase = nil
                 }
             }
@@ -469,65 +458,23 @@ struct DeletedCardsView: View {
     }
     
     // MARK: - Actions
-    
+
     private func restoreCard(_ card: Card) {
-        card.status = .active
-        // Curated set: снимаем tombstone чтобы сет снова появился в библиотеке
-        if let cardSet = allCardSets.first(where: { $0.id == card.setId }),
-           !cardSet.isUserCreated, cardSet.isSoftDeleted {
-            cardSet.isSoftDeleted = false
-        }
-        context.saveWithErrorHandling()
+        viewModel.restoreCard(card, allCardSets: allCardSets, context: context)
     }
 
     private func restoreSelected() {
         let cards = filteredCards.filter { selectedCardIds.contains($0.id) }
-        cards.forEach { card in
-            card.status = .active
-            if let cardSet = allCardSets.first(where: { $0.id == card.setId }),
-               !cardSet.isUserCreated, cardSet.isSoftDeleted {
-                cardSet.isSoftDeleted = false
-            }
-        }
-        context.saveWithErrorHandling()
+        viewModel.restoreSelected(cards, allCardSets: allCardSets, context: context)
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
     }
 
     private func eraseSelected() {
         // Только карточки из user-created сетов — curated нельзя стереть навсегда
-        let toErase = selectedErasableCards
-        let ids = Set(toErase.map { $0.id })
-        cleanupAfterErase(erasingIds: ids)
-        toErase.forEach { context.delete($0) }
-        context.saveWithErrorHandling()
+        viewModel.eraseSelected(selectedErasableCards, allCards: allCards, allCardSets: allCardSets, allCollections: allCollections, context: context)
         selectedCardIds = []
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editMode = .inactive }
-    }
-    
-    /// Deletes sets and collections that have no cards remaining after erasing.
-    /// Call BEFORE context.delete so that @Query still contains the cards being erased.
-    private func cleanupAfterErase(erasingIds: Set<UUID>) {
-        let affectedSetIds = Set(allCards.filter { erasingIds.contains($0.id) }.map { $0.setId })
-        
-        for setId in affectedSetIds {
-            // Cards in the set that will remain after erasing
-            let remaining = allCards.filter { $0.setId == setId && !erasingIds.contains($0.id) }
-            guard remaining.isEmpty,
-                  let set = allCardSets.first(where: { $0.id == setId }),
-                  set.isUserCreated,                              // curated sets остаются как tombstone
-                  let collection = allCollections.first(where: { $0.id == set.collectionId }),
-                  collection.name != "Inbox" else { continue }  // Inbox set никогда не удаляем
-            
-            let collectionId = set.collectionId
-            context.delete(set)
-            
-            // check if there are any other sets left in the collection.
-            let remainingSets = allCardSets.filter { $0.collectionId == collectionId && $0.id != setId }
-            guard remainingSets.isEmpty,
-                  collection.name != "My Sets" else { continue }  // My Sets never deleted
-            context.delete(collection)
-        }
     }
 }
 
