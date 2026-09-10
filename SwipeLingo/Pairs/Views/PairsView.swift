@@ -7,7 +7,10 @@ import SwiftData
 
 struct PairsView: View {
 
-    @Environment(AppViewModel.self) private var appViewModel
+    /// Передаются из composition root через AppView — не через .environment().
+    let appViewModel: AppViewModel
+    let authService:  AuthService
+    let userService:  UserService
 
     @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets:  [PairsSet]
     @Query private var allPiles:   [PairsPile]
@@ -328,7 +331,9 @@ struct PairsView: View {
         NavigationLink(
             destination: PairsSessionView(
                 sets: displayedSets,
-                pileName: activePile?.name ?? "Pairs"
+                pileName: activePile?.name ?? "Pairs",
+                authService: authService,
+                userService: userService
             )
         ) {
             VStack(spacing: 8) {
@@ -356,7 +361,9 @@ struct PairsView: View {
             NavigationLink(
                 destination: PairsSessionView(
                     sets: candidateSets,
-                    pileName: activePile?.name ?? "Pairs"
+                    pileName: activePile?.name ?? "Pairs",
+                    authService: authService,
+                    userService: userService
                 )
             ) {
                 Text("Play All")

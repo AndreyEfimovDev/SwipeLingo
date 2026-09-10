@@ -224,6 +224,5 @@ struct VoiceSettingsView: View {
 #Preview {
     NavigationStack {
         VoiceSettingsView()
-            .environment(AppViewModel())
     }
 }

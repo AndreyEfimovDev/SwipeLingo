@@ -15,6 +15,10 @@ struct PairsSessionView: View {
 
     let sets: [PairsSet]
     let pileName: String
+    /// Передаются из composition root через PairsView — не через .environment().
+    /// Сама PairsSessionView их не читает, только форвардит в PairsSetPlayerView.
+    let authService: AuthService
+    let userService: UserService
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
@@ -44,6 +48,8 @@ struct PairsSessionView: View {
         ZStack(alignment: .bottom) {
             PairsSetPlayerView(
                 set: currentSet,
+                authService: authService,
+                userService: userService,
                 onComplete: { withAnimation { isSetComplete = true } },
                 autoStart: true,
                 initialAnimationMode: sessionMode

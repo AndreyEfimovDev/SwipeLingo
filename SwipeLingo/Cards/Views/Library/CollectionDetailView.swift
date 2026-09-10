@@ -8,6 +8,10 @@ struct CollectionDetailView: View {
 
     @Environment(\.modelContext) private var context
     let collection: Collection
+    // NB: экран нигде не сконструирован (мёртвый код — см. CLAUDE.md), но должен
+    // компилироваться. authService/userService только для PlansView внутри CardSetDetailView.
+    let authService: AuthService
+    let userService: UserService
 
     // Та же бизнес-логика Library, что и в LibraryView — этот экран на уровень глубже
     // в том же графе Collection/CardSet/Pile, поэтому переиспользует ViewModel вместо
@@ -177,7 +181,8 @@ struct CollectionDetailView: View {
         VStack(spacing: 0) {
             ForEach(filteredCardSets) { cardSet in
                 NavigationLink {
-                    CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated, backTitle: collection.name)
+                    CardSetDetailView(cardSet: cardSet, allowsEditing: collection.isUserCreated, backTitle: collection.name,
+                                       authService: authService, userService: userService)
                 } label: {
                     HStack {
                         let count = vm.cardCount(forSet: cardSet, allCards: allCards)

@@ -11,8 +11,9 @@ struct AuthView: View {
 
     var isDismissible: Bool = false
     var showGuestOption: Bool = false
+    /// Передаётся из composition root — не через .environment().
+    let authService: AuthService
 
-    @Environment(AuthService.self) private var authService
     @Environment(\.dismiss) private var dismiss
 
     @State private var mode: AuthMode = .signIn

@@ -16,8 +16,10 @@ struct ProfileView: View {
     @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
     @Query private var profiles: [UserProfile]
     @Environment(\.modelContext) private var context
-    @Environment(AuthService.self)  private var authService
-    @Environment(UserService.self)  private var userService
+
+    /// Передаётся из composition root через SettingsView — не через .environment().
+    let authService: AuthService
+    let userService: UserService
 
     @AppStorage("appleRelayBannerDismissed") private var relayBannerDismissed = false
 
@@ -85,14 +87,13 @@ struct ProfileView: View {
             Task { await authService.reloadUser() }
         }
         .sheet(isPresented: $showAuth) {
-            AuthView(isDismissible: true)
-                .environment(authService)
+            AuthView(isDismissible: true, authService: authService)
                 .onChange(of: authService.isAnonymous) { _, isAnon in
                     if !isAnon { showAuth = false }
                 }
         }
         .sheet(isPresented: $showPlans) {
-            PlansView()
+            PlansView(authService: authService, userService: userService)
         }
         .alert("Delete Account", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
@@ -107,11 +108,10 @@ struct ProfileView: View {
             Text("Your account and all associated data will be permanently deleted. This cannot be undone.")
         }
         .sheet(isPresented: $needsAppleReauthForDeletion) {
-            AppleDeletionSheet { authorization in
+            AppleDeletionSheet(authService: authService) { authorization in
                 needsAppleReauthForDeletion = false
                 Task { await deleteAccountWithApple(authorization) }
             }
-            .environment(authService)
         }
         .alert("Cannot Delete Account", isPresented: Binding(
             get: { deleteErrorMessage != nil },
@@ -549,8 +549,7 @@ struct ProfileView: View {
                 if userPlan != .free || subscriptionStatus == .cancelled, let uid = authService.currentUser?.uid {
                     Divider().padding(.leading, 16)
                     NavigationLink {
-                        PaymentHistoryView(uid: uid)
-                            .environment(userService)
+                        PaymentHistoryView(uid: uid, userService: userService)
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "list.bullet.rectangle")
@@ -727,9 +726,11 @@ struct ProfileView: View {
 
 private struct AppleDeletionSheet: View {
 
+    /// Передаётся из ProfileView — не через .environment(). Объявлен перед
+    /// onAuthorization, чтобы trailing-closure синтаксис в call site остался рабочим.
+    let authService: AuthService
     let onAuthorization: (ASAuthorization) -> Void
 
-    @Environment(AuthService.self) private var authService
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -779,5 +780,5 @@ private struct AppleDeletionSheet: View {
 }
 
 #Preview {
-    NavigationStack { ProfileView() }
+    NavigationStack { ProfileView(authService: AuthService(), userService: UserService()) }
 }

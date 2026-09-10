@@ -15,6 +15,9 @@ import SwiftUI
 struct PairsSetContentView: View {
 
     let set: PairsSet
+    /// Передаются из composition root — не через .environment(). Только для PlansView.
+    let authService: AuthService
+    let userService: UserService
 
     @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
     @State private var showPlans = false
@@ -56,7 +59,7 @@ struct PairsSetContentView: View {
         .customBackButton("Pairs")
         .navigationTitle(set.title ?? "Pairs")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showPlans) { PlansView() }
+        .sheet(isPresented: $showPlans) { PlansView(authService: authService, userService: userService) }
     }
 
     // MARK: Metadata card (CEFR + expandable description)

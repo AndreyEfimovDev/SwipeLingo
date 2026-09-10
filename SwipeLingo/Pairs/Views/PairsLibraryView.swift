@@ -21,6 +21,11 @@ struct PairsLibraryView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
 
+    /// Передаются из composition root через AppView — не через .environment().
+    /// Сама PairsLibraryView их не читает, только форвардит в PairsSetContentView.
+    let authService: AuthService
+    let userService: UserService
+
     @Query(sort: \PairsSet.createdAt, order: .reverse)    private var allSets:         [PairsSet]
     @Query(sort: \PairsPile.createdAt, order: .reverse)   private var allPiles:        [PairsPile]
     @Query(filter: #Predicate<Collection> { $0.typeRaw == "pairs" },
@@ -336,7 +341,7 @@ struct PairsLibraryView: View {
             } else {
                 ForEach(items) { set in
                     Divider().padding(.leading, 16)
-                    NavigationLink(destination: PairsSetContentView(set: set)) {
+                    NavigationLink(destination: PairsSetContentView(set: set, authService: authService, userService: userService)) {
                         LibrarySetRow(set: set)
                     }
                     .buttonStyle(.plain)
@@ -358,7 +363,7 @@ struct PairsLibraryView: View {
     private func flatSetsBlock(_ items: [PairsSet]) -> some View {
         VStack(spacing: 0) {
             ForEach(items) { set in
-                NavigationLink(destination: PairsSetContentView(set: set)) {
+                NavigationLink(destination: PairsSetContentView(set: set, authService: authService, userService: userService)) {
                     LibrarySetRow(set: set)
                 }
                 .buttonStyle(.plain)

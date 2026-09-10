@@ -105,6 +105,7 @@
 		4789A20FF9DB70FF42E1535C /* PileManagementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4713B87FCC6D18B942D94ED7 /* PileManagementService.swift */; };
 		478C78022F7902F4005FBDFE /* SwipeLingoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		478C784F2F794487005FBDFE /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78112F794487005FBDFE /* AppViewModel.swift */; };
+		47F4D803AAACDA42B63B9F8F /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4739F3F5518B2F24B631870A /* AppDependencies.swift */; };
 		478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78122F794487005FBDFE /* SwipeLingoApp.swift */; };
 		478C78512F794487005FBDFE /* CEFRBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78142F794487005FBDFE /* CEFRBadgeView.swift */; };
 		478C78522F794487005FBDFE /* UnderlineSermentedPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78162F794487005FBDFE /* UnderlineSermentedPicker.swift */; };
@@ -316,6 +317,7 @@
 		4787294A2FAB7CBB001282EF /* OnboardingAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAuthView.swift; sourceTree = "<group>"; };
 		478C77F82F7902F4005FBDFE /* SwipeLingoShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwipeLingoShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		478C78112F794487005FBDFE /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		4739F3F5518B2F24B631870A /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
 		478C78122F794487005FBDFE /* SwipeLingoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoApp.swift; sourceTree = "<group>"; };
 		478C78142F794487005FBDFE /* CEFRBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CEFRBadgeView.swift; sourceTree = "<group>"; };
 		478C78162F794487005FBDFE /* UnderlineSermentedPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnderlineSermentedPicker.swift; sourceTree = "<group>"; };
@@ -723,6 +725,7 @@
 				478C78122F794487005FBDFE /* SwipeLingoApp.swift */,
 				474D28BB2F9B734400BC11FF /* AppView.swift */,
 				478C78112F794487005FBDFE /* AppViewModel.swift */,
+				4739F3F5518B2F24B631870A /* AppDependencies.swift */,
 				4712E9192FEC030C0014DB01 /* AppSyncState.swift */,
 				474F1FE52F7BE2BA00128E83 /* DatabseErrorView.swift */,
 			);
@@ -1184,6 +1187,7 @@
 				478729452FAA0DD4001282EF /* Constants.swift in Sources */,
 				474F1FE12F7BB11800128E83 /* ErrorManager.swift in Sources */,
 				478C784F2F794487005FBDFE /* AppViewModel.swift in Sources */,
+				47F4D803AAACDA42B63B9F8F /* AppDependencies.swift in Sources */,
 				478C78502F794487005FBDFE /* SwipeLingoApp.swift in Sources */,
 				478C78512F794487005FBDFE /* CEFRBadgeView.swift in Sources */,
 				478C78522F794487005FBDFE /* UnderlineSermentedPicker.swift in Sources */,

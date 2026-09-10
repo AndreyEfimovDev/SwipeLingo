@@ -35,6 +35,19 @@ struct SwipeLingoApp: App {
     @State private var authService: AuthService
     @State private var userService: UserService
     @State private var appSyncStateService: AppSyncStateService
+    @State private var appViewModel: AppViewModel
+
+    /// Собирается заново на каждый body-evaluation — дёшево, поля просто
+    /// переупаковывают уже существующие @State-инстансы (reference types),
+    /// сами сервисы не пересоздаются.
+    private var dependencies: AppDependencies {
+        AppDependencies(
+            authService: authService,
+            userService: userService,
+            appSyncStateService: appSyncStateService,
+            appViewModel: appViewModel
+        )
+    }
 
     // register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
@@ -66,6 +79,7 @@ struct SwipeLingoApp: App {
 
         _authService = State(initialValue: AuthService())
         _userService = State(initialValue: UserService())
+        _appViewModel = State(initialValue: AppViewModel())
         let builtContainer = Self.makeContainer()
         container = builtContainer
         if let ctx = builtContainer?.mainContext {
@@ -128,24 +142,19 @@ struct SwipeLingoApp: App {
                 } else if let container {
                     if !authService.isAuthenticated {
                         // Auth first: Sign In / Sign Up / Continue as Guest
-                        AuthView(showGuestOption: true)
-                            .environment(authService)
-                            .environment(userService)
+                        AuthView(showGuestOption: true, authService: authService)
                     } else if !appSyncStateService.hasCompletedOnboarding {
-                        // New user: language + level selection (no auth step)
+                        // New user: language + level selection (no auth step).
+                        // Ни один реально достижимый экран онбординга (Intro/Language/Level/
+                        // Confirm) не читает authService/userService/appSyncStateService —
+                        // OnboardingAuthView их читает, но никуда не подключён (мёртвый код).
                         OnboardingView {
                             appSyncStateService.hasCompletedOnboarding = true
                         }
                         .modelContainer(container)
-                        .environment(authService)
-                        .environment(userService)
-                        .environment(appSyncStateService)
                     } else {
-                        AppView()
+                        AppView(dependencies: dependencies)
                             .modelContainer(container)
-                            .environment(authService)
-                            .environment(userService)
-                            .environment(appSyncStateService)
                     }
                 } else {
                     DatabseErrorView()

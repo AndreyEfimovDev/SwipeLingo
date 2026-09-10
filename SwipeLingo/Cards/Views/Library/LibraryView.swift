@@ -8,6 +8,12 @@ struct LibraryView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
+
+    /// Передаются из composition root через AppView — не через .environment().
+    let appViewModel: AppViewModel
+    let authService:  AuthService
+    let userService:  UserService
+
     @Query(sort: \Collection.createdAt) private var collections: [Collection]
     @Query(sort: \Pile.createdAt)       private var piles:       [Pile]
     @Query                              private var allCards:    [Card]
@@ -72,8 +78,8 @@ struct LibraryView: View {
             }
             .sheet(item: $pileSheet) { mode in
                 switch mode {
-                case .new:          PileBuilderView(editingPile: nil)
-                case .edit(let p):  PileBuilderView(editingPile: p)
+                case .new:          PileBuilderView(editingPile: nil, appViewModel: appViewModel)
+                case .edit(let p):  PileBuilderView(editingPile: p, appViewModel: appViewModel)
                 }
             }
 //            .overlay {
@@ -432,12 +438,14 @@ struct LibraryView: View {
     private func setRow(_ cardSet: CardSet, in collection: Collection) -> some View {
         NavigationLink {
             if collection.name == "Inbox" {
-                CardSetDetailView(cardSet: cardSet, backTitle: "Library")
+                CardSetDetailView(cardSet: cardSet, backTitle: "Library",
+                                   authService: authService, userService: userService)
             } else {
                 CardSetDetailView(
                     cardSet: cardSet,
                     allowsEditing: collection.isUserCreated,
-                    backTitle: collection.name
+                    backTitle: collection.name,
+                    authService: authService, userService: userService
                 )
             }
         } label: {

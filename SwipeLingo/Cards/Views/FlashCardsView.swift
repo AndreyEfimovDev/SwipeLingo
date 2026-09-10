@@ -7,7 +7,10 @@ struct FlashCardsView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
-    @Environment(AppViewModel.self) private var appViewModel
+    /// Передаются из composition root через AppView — не через .environment().
+    let appViewModel: AppViewModel
+    let authService: AuthService
+    let userService: UserService
     @Query private var piles:       [Pile]
     @Query private var allCards:    [Card]
     @Query private var cardSets:    [CardSet]
@@ -134,6 +137,9 @@ struct FlashCardsView: View {
         } else {
             TinderCardsView(
                 cards: viewModel.studyCards,
+                appViewModel: appViewModel,
+                authService: authService,
+                userService: userService,
                 lockedCardIds: viewModel.lockedCardIds,
                 contextLabels: viewModel.contextLabels,
                 cefrLabels: viewModel.cefrLabels,

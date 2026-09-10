@@ -10,8 +10,10 @@ struct PlansView: View {
     @AppStorage(Constants.StorageKey.cachedBillingCycle) private var planCycle:  String     = BillingCycle.none.rawValue
 
     @Environment(\.dismiss)        private var dismiss
-    @Environment(AuthService.self)  private var authService
-    @Environment(UserService.self)  private var userService
+
+    /// Передаётся из composition root — не через .environment().
+    let authService: AuthService
+    let userService: UserService
 
     @State private var selectedPlan:  AccessTier    = .free
     @State private var selectedCycle: BillingCycle  = .yearly
@@ -93,8 +95,7 @@ struct PlansView: View {
                 )
             }
             .sheet(isPresented: $showAuthSheet) {
-                AuthView(isDismissible: true)
-                    .environment(authService)
+                AuthView(isDismissible: true, authService: authService)
                     .onChange(of: authService.isAnonymous) { _, isAnon in
                         if !isAnon { showAuthSheet = false }
                     }
@@ -316,5 +317,5 @@ struct PlansView: View {
 }
 
 #Preview {
-    PlansView()
+    PlansView(authService: AuthService(), userService: UserService())
 }

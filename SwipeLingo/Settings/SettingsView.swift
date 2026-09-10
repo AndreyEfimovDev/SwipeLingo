@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftUI
+import SwiftData
 
 // MARK: - SettingsView
 
@@ -11,11 +12,22 @@ struct SettingsView: View {
     @AppStorage(Constants.StorageKey.colorScheme)        private var theme: Theme       = .system
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier = ""
     @AppStorage(Constants.StorageKey.userPlan)           private var userPlan: AccessTier = .free
-    @Environment(AppSyncStateService.self) private var syncState
+
+    /// Передаётся из composition root (SwipeLingoApp) через AppView — не через .environment().
+    let syncState: AppSyncStateService
+    /// Сама SettingsView их не читает — только форвардит в ProfileView.
+    let authService: AuthService
+    let userService: UserService
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
-    
+
+    init(syncState: AppSyncStateService, authService: AuthService, userService: UserService) {
+        self.syncState = syncState
+        self.authService = authService
+        self.userService = userService
+    }
+
     private var currentVoiceName: String {
         guard !ttsVoiceIdentifier.isEmpty,
               let voice = AVSpeechSynthesisVoice(identifier: ttsVoiceIdentifier)
@@ -59,7 +71,7 @@ struct SettingsView: View {
                 .font(titleFont)
                 .padding(.horizontal, 32)
 
-            NavigationLink { ProfileView() } label: {
+            NavigationLink { ProfileView(authService: authService, userService: userService) } label: {
                 HStack {
                     Label("Your profile", systemImage: "person.circle")
                         .labelStyle(.fixedIcon)
@@ -245,5 +257,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView()
+    SettingsView(syncState: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
+                 authService: AuthService(), userService: UserService())
 }

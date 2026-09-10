@@ -6,8 +6,8 @@ import SwiftUI
 struct PaymentHistoryView: View {
 
     let uid: String
-
-    @Environment(UserService.self) private var userService
+    /// Передаётся из composition root — не через .environment().
+    let userService: UserService
 
     @State private var payments:   [PaymentRecord] = []
     @State private var isLoading   = true

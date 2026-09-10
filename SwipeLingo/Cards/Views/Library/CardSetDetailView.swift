@@ -18,6 +18,9 @@ struct CardSetDetailView: View {
     let cardSet: CardSet
     var allowsEditing: Bool = false
     var backTitle: String = "Library"
+    /// Передаются из composition root — не через .environment(). Только для PlansView.
+    let authService: AuthService
+    let userService: UserService
 
     @Query(sort: \Card.createdAt) private var allCards: [Card]
     @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
@@ -115,7 +118,7 @@ struct CardSetDetailView: View {
             AddEditCardView(card: card)
         }
         .sheet(isPresented: $showPlans) {
-            PlansView()
+            PlansView(authService: authService, userService: userService)
         }
         .overlay {
             let hasCards = allCards.contains { $0.setId == cardSet.id && $0.status != .deleted }

@@ -7,8 +7,11 @@ struct TinderCardsView: View {
 
     @Environment(\.modelContext)       private var context
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
-    @Environment(AppViewModel.self)    private var appViewModel
-    
+    /// Передаются из composition root через FlashCardsView — не через .environment().
+    let appViewModel: AppViewModel
+    let authService:  AuthService
+    let userService:  UserService
+
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
     @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool    = true
@@ -46,6 +49,9 @@ struct TinderCardsView: View {
     }
 
     init(cards: [Card],
+         appViewModel: AppViewModel,
+         authService: AuthService,
+         userService: UserService,
          lockedCardIds: Set<UUID> = [],
          contextLabels: [UUID: String] = [:],
          cefrLabels: [UUID: CEFRLevel] = [:],
@@ -59,6 +65,9 @@ struct TinderCardsView: View {
                                     cards: cards,
                                     contextLabels: contextLabels,
                                     onDone: onDone))
+        self.appViewModel      = appViewModel
+        self.authService       = authService
+        self.userService       = userService
         self.lockedCardIds     = lockedCardIds
         self.cefrLabels        = cefrLabels
         self.pileTagsLine      = pileTagsLine
@@ -573,7 +582,7 @@ struct TinderCardsView: View {
     @ViewBuilder
     private func cardBack(_ card: Card) -> some View {
         if lockedCardIds.contains(card.id) {
-            LockedCardBackView()
+            LockedCardBackView(authService: authService, userService: userService)
         } else {
             unlockedCardBack(card)
         }
@@ -932,6 +941,9 @@ struct TinderCardsView: View {
 // MARK: - LockedCardBackView
 
 private struct LockedCardBackView: View {
+    /// Передаются из composition root через TinderCardsView — не через .environment().
+    let authService: AuthService
+    let userService: UserService
     @State private var showPlans = false
 
     var body: some View {
@@ -969,7 +981,7 @@ private struct LockedCardBackView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showPlans) {
-            PlansView()
+            PlansView(authService: authService, userService: userService)
         }
     }
 }
@@ -1018,8 +1030,10 @@ private struct CardFlowLayout: Layout {
     let c3 = Card(en: "Melancholy", item: "меланхолия", setId: setId)
     [c1, c2, c3].forEach { ctx.insert($0) }
     return TinderCardsView(cards: [c1, c2, c3],
+                           appViewModel: AppViewModel(),
+                           authService: AuthService(),
+                           userService: UserService(),
                            contextLabels: [setId: "IELTS Vocabulary · Academic Words"],
                            pileTagsLine:  "IELTS Vocabulary › Academic Words (8 cards)")
         .modelContainer(container)
-        .environment(AppViewModel())
 }

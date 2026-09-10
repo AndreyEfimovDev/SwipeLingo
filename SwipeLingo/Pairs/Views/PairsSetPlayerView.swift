@@ -42,11 +42,17 @@ struct PairsSetPlayerView: View {
     /// Позволяет PairsSessionView задать pile-level режим; пользователь может
     /// поменять его локально для replay, но Next Set всегда получает pile-level.
     var initialAnimationMode: AnimationMode? = nil
+    /// Передаются из composition root — не через .environment(). Только для PlansView.
+    let authService: AuthService
+    let userService: UserService
 
     @State private var viewModel: PairsSetPlayerViewModel
 
-    init(set: PairsSet, onComplete: (() -> Void)? = nil, autoStart: Bool = false, initialAnimationMode: AnimationMode? = nil) {
+    init(set: PairsSet, authService: AuthService, userService: UserService,
+         onComplete: (() -> Void)? = nil, autoStart: Bool = false, initialAnimationMode: AnimationMode? = nil) {
         self.set = set
+        self.authService = authService
+        self.userService = userService
         self.onComplete = onComplete
         self.autoStart = autoStart
         self.initialAnimationMode = initialAnimationMode
@@ -188,7 +194,7 @@ struct PairsSetPlayerView: View {
         .onDisappear {
             viewModel.cancelAllTasks()
         }
-        .sheet(isPresented: $showPlans) { PlansView() }
+        .sheet(isPresented: $showPlans) { PlansView(authService: authService, userService: userService) }
     } // closes body
 
     // MARK: - Start Screen

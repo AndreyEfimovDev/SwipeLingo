@@ -9,7 +9,8 @@ struct PileBuilderView: View {
 
     @Environment(\.modelContext)  private var context
     @Environment(\.dismiss)       private var dismiss
-    @Environment(AppViewModel.self) private var appViewModel
+    /// Передаётся из composition root через LibraryView — не через .environment().
+    let appViewModel: AppViewModel
 
     @Query(sort: \Collection.createdAt) private var collections: [Collection]
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
@@ -22,8 +23,9 @@ struct PileBuilderView: View {
     @State private var searchText   = ""
     @State private var selectedLevel: String? = nil
 
-    init(editingPile: Pile? = nil) {
+    init(editingPile: Pile? = nil, appViewModel: AppViewModel) {
         _viewModel = State(initialValue: PileBuilderViewModel(editingPile: editingPile))
+        self.appViewModel = appViewModel
     }
 
     var body: some View {

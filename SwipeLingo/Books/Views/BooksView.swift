@@ -6,7 +6,8 @@ import SwiftData
 struct BooksView: View {
 
     @Environment(\.modelContext) private var context
-    @Environment(AppViewModel.self) private var appViewModel
+    /// Передаётся из composition root через AppView — не через .environment().
+    let appViewModel: AppViewModel
     @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
 
     @Query private var books: [Book]
