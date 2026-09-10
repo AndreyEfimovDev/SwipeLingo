@@ -7,7 +7,12 @@ struct PaymentHistoryView: View {
 
     let uid: String
     /// Передаётся из composition root — не через .environment().
-    let userService: UserService
+    private let userService: UserService
+
+    init(uid: String, userService: UserService) {
+        self.uid = uid
+        self.userService = userService
+    }
 
     @State private var payments:   [PaymentRecord] = []
     @State private var isLoading   = true

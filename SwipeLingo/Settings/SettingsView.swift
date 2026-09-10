@@ -14,10 +14,10 @@ struct SettingsView: View {
     @AppStorage(Constants.StorageKey.userPlan)           private var userPlan: AccessTier = .free
 
     /// Передаётся из composition root (SwipeLingoApp) через AppView — не через .environment().
-    let syncState: AppSyncStateService
+    private let syncState: AppSyncStateService
     /// Сама SettingsView их не читает — только форвардит в ProfileView.
-    let authService: AuthService
-    let userService: UserService
+    private let authService: AuthService
+    private let userService: UserService
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body

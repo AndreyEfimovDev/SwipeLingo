@@ -10,9 +10,15 @@ struct LibraryView: View {
     @Environment(\.dismiss)      private var dismiss
 
     /// Передаются из composition root через AppView — не через .environment().
-    let appViewModel: AppViewModel
-    let authService:  AuthService
-    let userService:  UserService
+    private let appViewModel: AppViewModel
+    private let authService:  AuthService
+    private let userService:  UserService
+
+    init(appViewModel: AppViewModel, authService: AuthService, userService: UserService) {
+        self.appViewModel = appViewModel
+        self.authService = authService
+        self.userService = userService
+    }
 
     @Query(sort: \Collection.createdAt) private var collections: [Collection]
     @Query(sort: \Pile.createdAt)       private var piles:       [Pile]

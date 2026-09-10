@@ -23,8 +23,13 @@ struct PairsLibraryView: View {
 
     /// Передаются из composition root через AppView — не через .environment().
     /// Сама PairsLibraryView их не читает, только форвардит в PairsSetContentView.
-    let authService: AuthService
-    let userService: UserService
+    private let authService: AuthService
+    private let userService: UserService
+
+    init(authService: AuthService, userService: UserService) {
+        self.authService = authService
+        self.userService = userService
+    }
 
     @Query(sort: \PairsSet.createdAt, order: .reverse)    private var allSets:         [PairsSet]
     @Query(sort: \PairsPile.createdAt, order: .reverse)   private var allPiles:        [PairsPile]

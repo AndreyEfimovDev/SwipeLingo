@@ -12,7 +12,7 @@ struct AppView: View {
 
     /// Передаётся из composition root (SwipeLingoApp) — прокидывается дальше через init,
     /// не через .environment(), чтобы каждый потребитель был виден в сигнатуре явно.
-    let dependencies: AppDependencies
+    private let dependencies: AppDependencies
     private var vm: AppViewModel { dependencies.appViewModel }
 
     init(dependencies: AppDependencies) {

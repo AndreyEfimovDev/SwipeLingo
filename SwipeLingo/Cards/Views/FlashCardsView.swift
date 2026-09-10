@@ -8,9 +8,16 @@ struct FlashCardsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     /// Передаются из composition root через AppView — не через .environment().
-    let appViewModel: AppViewModel
-    let authService: AuthService
-    let userService: UserService
+    private let appViewModel: AppViewModel
+    private let authService: AuthService
+    private let userService: UserService
+
+    init(appViewModel: AppViewModel, authService: AuthService, userService: UserService) {
+        self.appViewModel = appViewModel
+        self.authService = authService
+        self.userService = userService
+    }
+
     @Query private var piles:       [Pile]
     @Query private var allCards:    [Card]
     @Query private var cardSets:    [CardSet]
@@ -265,41 +272,7 @@ struct FlashCardsView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button { appViewModel.activeSheet = .settings } label: {
-                Image(systemName: "gear")
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            }
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                Button { appViewModel.studyMode = .pairs } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "sparkles").frame(width: 20)
-                        Text("Switch to Pairs")
-                    }
-                }
-                Button { appViewModel.studyMode = .books } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "book.closed").frame(width: 20)
-                        Text("Switch to Books")
-                    }
-                }
-                Divider()
-                Button { appViewModel.activeSheet = .statistics } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
-                        Text("Statistics")
-                    }
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                    .frame(width: 32, height: 32)
-                    .background(.ultraThinMaterial, in: Circle())
-            }
-        }
+        MainScreenToolbar(appViewModel: appViewModel, currentMode: .cards)
     }
 
     private var emptyStateView: some View {

@@ -12,7 +12,13 @@ struct AuthView: View {
     var isDismissible: Bool = false
     var showGuestOption: Bool = false
     /// Передаётся из composition root — не через .environment().
-    let authService: AuthService
+    private let authService: AuthService
+
+    init(isDismissible: Bool = false, showGuestOption: Bool = false, authService: AuthService) {
+        self.isDismissible = isDismissible
+        self.showGuestOption = showGuestOption
+        self.authService = authService
+    }
 
     @Environment(\.dismiss) private var dismiss
 

@@ -19,8 +19,17 @@ struct CardSetDetailView: View {
     var allowsEditing: Bool = false
     var backTitle: String = "Library"
     /// Передаются из composition root — не через .environment(). Только для PlansView.
-    let authService: AuthService
-    let userService: UserService
+    private let authService: AuthService
+    private let userService: UserService
+
+    init(cardSet: CardSet, allowsEditing: Bool = false, backTitle: String = "Library",
+         authService: AuthService, userService: UserService) {
+        self.cardSet = cardSet
+        self.allowsEditing = allowsEditing
+        self.backTitle = backTitle
+        self.authService = authService
+        self.userService = userService
+    }
 
     @Query(sort: \Card.createdAt) private var allCards: [Card]
     @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free

@@ -10,7 +10,7 @@ struct PileBuilderView: View {
     @Environment(\.modelContext)  private var context
     @Environment(\.dismiss)       private var dismiss
     /// Передаётся из composition root через LibraryView — не через .environment().
-    let appViewModel: AppViewModel
+    private let appViewModel: AppViewModel
 
     @Query(sort: \Collection.createdAt) private var collections: [Collection]
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
@@ -93,12 +93,24 @@ struct PileBuilderView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                shuffleRow(.random,      icon: "shuffle",    name: "Random")
+                shuffleRow(
+                    .random,
+                    icon: "shuffle",
+                    name: "Random"
+                )
                 Divider().padding(.leading, 52)
-                shuffleRow(.sequential,  icon: "arrow.down", name: "Sequential")
+                shuffleRow(
+                    .sequential,
+                    icon: "arrow.down",
+                    name: "Sequential"
+                )
                 if srsEnabled {
                     Divider().padding(.leading, 52)
-                    shuffleRow(.prioritized, icon: "flame",  name: "Hardest first")
+                    shuffleRow(
+                        .prioritized,
+                        icon: "flame",
+                        name: "Hardest first"
+                    )
                 }
             }
             .onChange(of: srsEnabled) { _, enabled in

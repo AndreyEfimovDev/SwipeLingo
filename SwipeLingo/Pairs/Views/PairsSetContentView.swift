@@ -16,8 +16,14 @@ struct PairsSetContentView: View {
 
     let set: PairsSet
     /// Передаются из composition root — не через .environment(). Только для PlansView.
-    let authService: AuthService
-    let userService: UserService
+    private let authService: AuthService
+    private let userService: UserService
+
+    init(set: PairsSet, authService: AuthService, userService: UserService) {
+        self.set = set
+        self.authService = authService
+        self.userService = userService
+    }
 
     @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
     @State private var showPlans = false

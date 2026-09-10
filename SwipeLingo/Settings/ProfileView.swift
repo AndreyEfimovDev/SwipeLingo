@@ -18,10 +18,15 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var context
 
     /// Передаётся из composition root через SettingsView — не через .environment().
-    let authService: AuthService
-    let userService: UserService
+    private let authService: AuthService
+    private let userService: UserService
 
     @AppStorage("appleRelayBannerDismissed") private var relayBannerDismissed = false
+
+    init(authService: AuthService, userService: UserService) {
+        self.authService = authService
+        self.userService = userService
+    }
 
     @State private var nameInput  = ""
     @State private var pendingLevel: CEFRLevel = .a1
@@ -728,7 +733,10 @@ private struct AppleDeletionSheet: View {
 
     /// Передаётся из ProfileView — не через .environment(). Объявлен перед
     /// onAuthorization, чтобы trailing-closure синтаксис в call site остался рабочим.
-    let authService: AuthService
+    /// fileprivate, не private: AppleDeletionSheet конструируется из ProfileView —
+    /// другого типа в том же файле, а `private` в Swift ограничен своим типом
+    /// (+ same-file extensions), не всем файлом.
+    fileprivate let authService: AuthService
     let onAuthorization: (ASAuthorization) -> Void
 
     @Environment(\.dismiss) private var dismiss

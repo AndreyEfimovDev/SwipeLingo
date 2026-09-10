@@ -43,8 +43,8 @@ struct PairsSetPlayerView: View {
     /// поменять его локально для replay, но Next Set всегда получает pile-level.
     var initialAnimationMode: AnimationMode? = nil
     /// Передаются из composition root — не через .environment(). Только для PlansView.
-    let authService: AuthService
-    let userService: UserService
+    private let authService: AuthService
+    private let userService: UserService
 
     @State private var vm: PairsSetPlayerViewModel
 

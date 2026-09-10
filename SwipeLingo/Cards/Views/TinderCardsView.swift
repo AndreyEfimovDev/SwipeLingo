@@ -8,9 +8,9 @@ struct TinderCardsView: View {
     @Environment(\.modelContext)       private var context
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
     /// Передаются из composition root через FlashCardsView — не через .environment().
-    let appViewModel: AppViewModel
-    let authService:  AuthService
-    let userService:  UserService
+    private let appViewModel: AppViewModel
+    private let authService:  AuthService
+    private let userService:  UserService
 
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
@@ -942,8 +942,11 @@ struct TinderCardsView: View {
 
 private struct LockedCardBackView: View {
     /// Передаются из composition root через TinderCardsView — не через .environment().
-    let authService: AuthService
-    let userService: UserService
+    /// fileprivate, не private: LockedCardBackView конструируется из TinderCardsView —
+    /// другого типа в том же файле, а `private` в Swift ограничен своим типом
+    /// (+ same-file extensions), не всем файлом.
+    fileprivate let authService: AuthService
+    fileprivate let userService: UserService
     @State private var showPlans = false
 
     var body: some View {

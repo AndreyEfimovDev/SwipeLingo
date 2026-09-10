@@ -7,8 +7,12 @@ struct BooksView: View {
 
     @Environment(\.modelContext) private var context
     /// Передаётся из composition root через AppView — не через .environment().
-    let appViewModel: AppViewModel
+    private let appViewModel: AppViewModel
     @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
+
+    init(appViewModel: AppViewModel) {
+        self.appViewModel = appViewModel
+    }
 
     @Query private var books: [Book]
     @State private var vm     = BooksViewModel()
@@ -121,14 +125,7 @@ struct BooksView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button { appViewModel.activeSheet = .settings } label: {
-                Image(systemName: "gear")
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            }
-        }
-
-        ToolbarItemGroup(placement: .topBarTrailing) {
+        ToolbarItem(placement: .topBarTrailing) {
             // BOOKS_SYNC_STUB: кнопка sync и спиннер скрыты — книги загружаются с GitHub, не из Firestore.
             // Когда книги переедут в Firebase Storage/Firestore — раскомментировать:
             // if vm.isSyncing {
@@ -142,43 +139,16 @@ struct BooksView: View {
             //     }
             // }
 
-            // Debug import
+            // Debug import — идёт перед меню-переключателем табов (MainScreenToolbar
+            // ниже), чтобы сохранить порядок кнопок в trailing-группе.
             Button {
                 debugImportTask = Task { await importDebugBook() }
             } label: {
                 Image(systemName: "wrench.and.screwdriver")
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
             }
-
-            // Mode switcher — matches FlashCardsView / PairsView style
-            Menu {
-                Button { appViewModel.studyMode = .cards } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "rectangle.stack").frame(width: 20)
-                        Text("Switch to Cards")
-                    }
-                }
-                Button { appViewModel.studyMode = .pairs } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "sparkles").frame(width: 20)
-                        Text("Switch to Pairs")
-                    }
-                }
-                Divider()
-                Button { appViewModel.activeSheet = .statistics } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
-                        Text("Statistics")
-                    }
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                    .frame(width: 32, height: 32)
-                    .background(.ultraThinMaterial, in: Circle())
-            }
         }
+        MainScreenToolbar(appViewModel: appViewModel, currentMode: .books)
     }
 
     // MARK: - Debug import

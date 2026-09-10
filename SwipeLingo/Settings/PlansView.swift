@@ -12,8 +12,13 @@ struct PlansView: View {
     @Environment(\.dismiss)        private var dismiss
 
     /// Передаётся из composition root — не через .environment().
-    let authService: AuthService
-    let userService: UserService
+    private let authService: AuthService
+    private let userService: UserService
+
+    init(authService: AuthService, userService: UserService) {
+        self.authService = authService
+        self.userService = userService
+    }
 
     @State private var selectedPlan:  AccessTier    = .free
     @State private var selectedCycle: BillingCycle  = .yearly
