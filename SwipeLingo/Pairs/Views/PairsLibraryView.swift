@@ -12,6 +12,9 @@ import FirebaseCore
 //   • Синяя кнопка карандаша → редактировать.
 //   • Context menu → удалить.
 // SETS — все доступные сеты → NavigationLink → PairsSetContentView.
+//
+// Бизнес-логика (фильтрация, sync, мутации Pile/Set) живёт в PairsLibraryViewModel.
+// Sheet/alert/disclosure-состояние остаётся во View — та же конвенция, что в LibraryViewModel.
 
 struct PairsLibraryView: View {
 
@@ -26,42 +29,36 @@ struct PairsLibraryView: View {
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
     @Query private var profiles: [UserProfile]
 
+    @State private var viewModel = PairsLibraryViewModel()
+
     @State private var showAllPiles   = false
     @State private var pileSheet:     PairsPileSheet?
-    @State private var isSyncing      = false
     @State private var setToDelete:   PairsSet?
     @State private var showDeleted    = false
     @State private var setForNewPile: PairsSet?
     @State private var newPileName    = ""
 
-    private let pileService = PileManagementService()
+    // MARK: - Grouping helpers (делегируют в VM, добавляя @Query-результаты)
 
-    // MARK: - Grouping helpers
-
-    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+    private var userLevel: CEFRLevel { viewModel.userLevel(profiles: profiles) }
 
     private func sets(for collection: Collection) -> [PairsSet] {
-        allSets.filter { $0.collectionId == collection.id && $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
+        viewModel.sets(for: collection, allSets: allSets, userLevel: userLevel)
     }
 
     private var deletedSets: [PairsSet] {
-        allSets.filter { $0.isSoftDeleted }
+        viewModel.deletedSets(allSets: allSets)
     }
 
     /// Только коллекции с хотя бы одним сетом — скрываем пустые (кратковременно
     /// появляются во время sync пока cleanup ещё не удалил их).
     private var visiblePairsCollections: [Collection] {
-        pairsCollections.filter { !sets(for: $0).isEmpty }
+        viewModel.visiblePairsCollections(pairsCollections: pairsCollections, allSets: allSets, userLevel: userLevel)
     }
 
     /// Сеты без коллекции или с неизвестным collectionId
     private var orphanedSets: [PairsSet] {
-        let knownIds = Set(visiblePairsCollections.map(\.id))
-        return allSets.filter { set in
-            guard !set.isSoftDeleted else { return false }
-            guard let colId = set.collectionId else { return true }
-            return !knownIds.contains(colId)
-        }
+        viewModel.orphanedSets(allSets: allSets, visibleCollections: visiblePairsCollections)
     }
 
     var body: some View {
@@ -85,7 +82,7 @@ struct PairsLibraryView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if isSyncing {
+                if viewModel.isSyncing {
                     ProgressView()
                         .tint(Color.myColors.myBlue)
                 } else {
@@ -115,8 +112,7 @@ struct PairsLibraryView: View {
         ) {
             Button("Delete Set", role: .destructive) {
                 if let set = setToDelete {
-                    set.isSoftDeleted = true
-                    context.saveWithErrorHandling()
+                    viewModel.deleteSet(set, context: context)
                     setToDelete = nil
                 }
             }
@@ -245,10 +241,8 @@ struct PairsLibraryView: View {
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                     .foregroundStyle(Color.myColors.myAccent)
-                let sets   = PairsPileService().sets(for: pile, from: allSets)
-                let count  = sets.count
-                let pairs  = sets.reduce(0) { $0 + $1.items.count }
-                Text("\(count) \(count == 1 ? "set" : "sets") (\(pairs))")
+                let summary = viewModel.pileSummary(for: pile, allSets: allSets)
+                Text("\(summary.setCount) \(summary.setCount == 1 ? "set" : "sets") (\(summary.pairCount))")
                     .font(.caption)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
             }
@@ -268,7 +262,7 @@ struct PairsLibraryView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button(role: .destructive) {
-                pileService.delete(pile, context: context)
+                viewModel.deletePile(pile, context: context)
             } label: {
                 Label("Delete Pile", systemImage: "trash")
             }
@@ -410,8 +404,7 @@ struct PairsLibraryView: View {
                                 }
                                 Spacer()
                                 Button("Restore") {
-                                    set.isSoftDeleted = false
-                                    context.saveWithErrorHandling()
+                                    viewModel.restoreSet(set, context: context)
                                 }
                                 .font(.subheadline)
                                 .foregroundStyle(Color.myColors.myBlue)
@@ -497,24 +490,19 @@ struct PairsLibraryView: View {
     // MARK: - Actions
 
     private func syncContent() async {
-        isSyncing = true
-        defer { isSyncing = false }
-        let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
-        let level    = profiles.first?.cefrLevel ?? .c2
-        // Ручной sync = full sync: запускает orphan removal и гарантирует актуальность данных.
-        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level, forceFullSync: true)
+        await viewModel.syncContent(context: context, nativeLangRaw: nativeLangRaw, level: userLevel)
     }
 
     private func activatePile(_ pile: PairsPile) {
-        pileService.activate(pile, among: allPiles, context: context)
+        viewModel.activatePile(pile, among: allPiles, context: context)
     }
 
     private func toggleSet(_ set: PairsSet, in pile: PairsPile) {
-        pileService.toggleSet(set.id, in: pile, context: context)
+        viewModel.toggleSet(set, in: pile, context: context)
     }
 
     private func createNewPile(named name: String, with set: PairsSet) {
-        if pileService.createPairsPile(named: name, setId: set.id, context: context) {
+        if viewModel.createNewPile(named: name, with: set, context: context) {
             showAllPiles = true   // раскрыть список чтобы новый пайл был виден
         }
     }
