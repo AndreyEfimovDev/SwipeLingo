@@ -18,7 +18,7 @@ enum Constants {
     static let subscriptionGracePeriodDays = 3
 
     /// Trial duration in days for new Go/Pro subscribers.
-    static let trialDurationDays = 7
+    static let trialDurationDays = 30
 
     /// Days before expiry to send first renewal reminder notification.
     static let notificationReminderDays1 = 7

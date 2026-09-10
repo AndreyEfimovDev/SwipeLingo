@@ -13,7 +13,7 @@ import FirebaseFirestore
 //  • effectivePlan      — offline-safe plan resolution with grace period
 //
 // Subscription logic:
-//  • Free → Paid : 7-day Pro trial (Constants.trialDurationDays), status=trial, no grace period
+//  • Free → Paid : 30-day Pro trial (Constants.trialDurationDays), status=trial, no grace period
 //  • Paid → Paid : direct activation, status=active, endDate=now+1yr
 //  • Paid → Free : cancel — status=cancelled, plan+endDate unchanged, grace period applies
 //
