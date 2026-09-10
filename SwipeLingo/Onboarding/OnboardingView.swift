@@ -1,0 +1,119 @@
+import SwiftUI
+
+// MARK: - OnboardingView
+// Координатор онбординга. Auth теперь происходит ДО онбординга в SwipeLingoApp.
+// Шаги:
+//   0 — intro
+//   1 — выбор языка
+//   2 — выбор уровня CEFR
+//   3 — подтверждение настроек → в приложение
+
+struct OnboardingView: View {
+
+    var onComplete: () -> Void
+
+    @State private var step: Int = 0
+    @State private var goingForward = true
+
+    private let totalSteps = 4
+
+    var body: some View {
+        ZStack {
+            Color.myColors.myBackground.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                navBar
+
+                ZStack {
+                    switch step {
+                    case 0:
+                        OnboardingIntroView { next() }
+                            .transition(stepTransition)
+                    case 1:
+                        OnboardingLanguageView { next() }
+                            .transition(stepTransition)
+                    case 2:
+                        OnboardingLevelView(onNext: { next() }, onBack: { back() })
+                            .transition(stepTransition)
+                    default:
+                        OnboardingConfirmView(onComplete: onComplete, onBack: { back() })
+                            .transition(stepTransition)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: step)
+            }
+        }
+    }
+
+    // MARK: - Nav Bar
+
+    private var navBar: some View {
+        HStack {
+            // Back — скрыт на intro (0), language (1) и финальном экране (confirm имеет свою кнопку)
+            if step > 1 && step < totalSteps - 1 {
+                Button { back() } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Back")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(Color.myColors.myBlue)
+                    .frame(height: 44)
+                }
+                .buttonStyle(.plain)
+            } else {
+                Color.clear.frame(width: 44, height: 44)
+            }
+
+            Spacer()
+
+            // Dots — шаги 1–2 (язык, уровень)
+            if step > 0 && step < 3 {
+                progressDots
+            }
+
+            Spacer()
+
+            Color.clear.frame(width: 44, height: 44)
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 8)
+    }
+
+    // Dots показывают шаги 1–2 (язык, уровень) — всего 2 точки
+    private var progressDots: some View {
+        let setupStep = step - 1
+        return HStack(spacing: 6) {
+            ForEach(0..<2, id: \.self) { i in
+                Capsule()
+                    .fill(i <= setupStep
+                          ? Color.myColors.myBlue
+                          : Color.myColors.myAccent.opacity(0.2))
+                    .frame(width: i == setupStep ? 20 : 8, height: 8)
+                    .animation(.spring(response: 0.3), value: step)
+            }
+        }
+    }
+
+    // MARK: - Navigation
+
+    private var stepTransition: AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: goingForward ? .trailing : .leading),
+            removal:   .move(edge: goingForward ? .leading  : .trailing)
+        )
+        .combined(with: .opacity)
+    }
+
+    private func next() {
+        goingForward = true
+        step += 1
+    }
+
+    private func back() {
+        goingForward = false
+        step -= 1
+    }
+}
