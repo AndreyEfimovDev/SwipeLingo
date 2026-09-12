@@ -26,7 +26,13 @@ final class UserFBService {
 
     private(set) var isLoading = false
 
-    private var db: Firestore { Firestore.firestore() }
+    /// Абстракция над `Firestore.firestore()` — см. `FirestoreClient` для причины (тестируемость).
+    /// По умолчанию — настоящий `Firestore.firestore()`, в тестах подставляется fake.
+    private let db: FirestoreClient
+
+    init(db: FirestoreClient = Firestore.firestore()) {
+        self.db = db
+    }
 
     // MARK: - Upsert user document
 

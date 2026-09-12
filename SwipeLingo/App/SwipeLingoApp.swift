@@ -40,7 +40,12 @@ struct SwipeLingoApp: App {
                 if let clientID = FirebaseApp.app()?.options.clientID {
                     GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
                 }
+                // В DEBUG крашлитика отключена — тестовые креши из симулятора/отладки не должны засорять прод-дашборд.
+                #if DEBUG
+                Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
+                #else
                 Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+                #endif
                 log("App configured", level: .info)
             } else {
                 log("GoogleService-Info.plist not found — Firebase disabled", level: .warning)

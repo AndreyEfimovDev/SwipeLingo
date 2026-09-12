@@ -23,8 +23,17 @@ final class AuthFBService {
         currentUser?.providerData.contains(where: { $0.providerID == "apple.com" }) == true
     }
 
-    init() {
-        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+    /// Абстракция над `Auth.auth()` — см. `AuthClient` для причины (тестируемость).
+    /// По умолчанию — настоящий `Auth.auth()`, в тестах подставляется fake.
+    private let auth: AuthClient
+    /// Абстракция над `Firestore.firestore()` — нужна только для удаления документа
+    /// пользователя при удалении аккаунта (см. `deleteAccount`/`deleteAccountWithApple`).
+    private let db: FirestoreClient
+
+    init(auth: AuthClient = Auth.auth(), db: FirestoreClient = Firestore.firestore()) {
+        self.auth = auth
+        self.db = db
+        auth.addStateDidChangeListener { [weak self] user in
             Task { @MainActor in
                 self?.currentUser = user
                 // Держим isLoading = true, пока сессия не подтверждена, чтобы UI
@@ -37,7 +46,7 @@ final class AuthFBService {
     // MARK: - Anonymous
 
     func signInAnonymously() async throws {
-        let result = try await Auth.auth().signInAnonymously()
+        let result = try await auth.signInAnonymously()
         isSessionVerified = true
         currentUser = result.user
     }
@@ -53,12 +62,12 @@ final class AuthFBService {
 
     func createAccount(email: String, password: String, name: String = "") async throws {
         do {
-            if isAnonymous, let user = Auth.auth().currentUser {
+            if isAnonymous, let user = auth.currentUser {
                 let credential = EmailAuthProvider.credential(withEmail: email, password: password)
                 let result = try await user.link(with: credential)
                 currentUser = result.user
             } else {
-                let result = try await Auth.auth().createUser(withEmail: email, password: password)
+                let result = try await auth.createUser(withEmail: email, password: password)
                 currentUser = result.user
             }
         } catch let error as NSError
@@ -71,28 +80,28 @@ final class AuthFBService {
             ? String(email.prefix(while: { $0 != "@" }))
             : name.trimmingCharacters(in: .whitespaces)
         try await updateDisplayName(resolvedName)
-        try? await Auth.auth().currentUser?.sendEmailVerification()
+        try? await auth.currentUser?.sendEmailVerification()
         log("Verification email sent to \(email)", level: .info)
     }
 
     func sendEmailVerification() async throws {
-        guard let user = Auth.auth().currentUser else { return }
+        guard let user = auth.currentUser else { return }
         try await user.sendEmailVerification()
         log("Verification email resent to \(user.email ?? "")", level: .info)
     }
 
     func updateDisplayName(_ name: String) async throws {
-        guard let user = Auth.auth().currentUser else { return }
+        guard let user = auth.currentUser else { return }
         let req = user.createProfileChangeRequest()
         req.displayName = name.trimmingCharacters(in: .whitespaces)
         try await req.commitChanges()
-        currentUser = Auth.auth().currentUser
+        currentUser = auth.currentUser
         log("displayName updated to '\(name)'", level: .info)
     }
 
     /// Устанавливает displayName в префикс email, если он сейчас пуст.
     private func ensureDisplayName() async {
-        guard let user = Auth.auth().currentUser,
+        guard let user = auth.currentUser,
               (user.displayName ?? "").isEmpty,
               let email = user.email, !email.isEmpty
         else { return }
@@ -102,10 +111,10 @@ final class AuthFBService {
 
     /// Перезагружает пользователя Firebase, чтобы получить свежий статус isEmailVerified.
     func reloadUser() async {
-        guard Auth.auth().currentUser != nil else { return }
+        guard auth.currentUser != nil else { return }
         do {
-            try await Auth.auth().currentUser?.reload()
-            currentUser = Auth.auth().currentUser
+            try await auth.currentUser?.reload()
+            currentUser = auth.currentUser
         } catch {
             // Временная ошибка (сеть, обновление токена) — оставляем текущую сессию как есть
             log("reloadUser failed, keeping session: \(error.localizedDescription)", level: .warning)
@@ -119,7 +128,7 @@ final class AuthFBService {
     private func verifyAndFinishLoading() async {
         guard isLoading else { return }
         defer { isLoading = false }
-        guard let user = Auth.auth().currentUser else { return }
+        guard let user = auth.currentUser else { return }
         do {
             // Ограничиваем reload() 8 секундами. При реальном "нет интернета" (-1009) ошибка
             // приходит сразу, так что таймаут срабатывает только когда сеть есть, но auth-сервер
@@ -134,7 +143,7 @@ final class AuthFBService {
                 group.cancelAll()
             }
             isSessionVerified = true
-            currentUser = Auth.auth().currentUser
+            currentUser = auth.currentUser
         } catch let error as NSError {
             // Firebase оборачивает исходные NSURLError в AuthErrorCode.networkError (17020).
             // Любая сетевая ошибка/таймаут → сохраняем сессию (повтор при следующем запуске).
@@ -214,17 +223,17 @@ final class AuthFBService {
     // MARK: - Password Reset
 
     func sendPasswordReset(email: String) async throws {
-        try await Auth.auth().sendPasswordReset(withEmail: email)
+        try await auth.sendPasswordReset(withEmail: email)
         log("Password reset email sent to \(email)", level: .info)
     }
 
     // MARK: - Delete Account
 
     func deleteAccount() async throws {
-        guard let user = Auth.auth().currentUser else { return }
+        guard let user = auth.currentUser else { return }
         // Сначала удаляем документ Firestore, пока auth-токен ещё валиден.
         // user.delete() удаляет запись Auth, но оставляет данные Firestore нетронутыми.
-        try? await Firestore.firestore().collection("users").document(user.uid).delete()
+        try? await db.collection("users").document(user.uid).delete()
         try await user.delete()
         currentUser = nil
         isSessionVerified = false
@@ -235,15 +244,15 @@ final class AuthFBService {
     // Без этого Apple ID остаётся "привязанным" к приложению на стороне Apple, и следующий
     // Sign in with Apple создаст новый Firebase-аккаунт вместо входа в старый.
     func deleteAccountWithApple(authorization: ASAuthorization) async throws {
-        guard let user = Auth.auth().currentUser else { return }
+        guard let user = auth.currentUser else { return }
         guard
             let appleCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
             let authCodeData = appleCredential.authorizationCode,
             let authCode = String(data: authCodeData, encoding: .utf8)
         else { throw AuthError.invalidAppleCredential }
 
-        try await Auth.auth().revokeToken(withAuthorizationCode: authCode)
-        try? await Firestore.firestore().collection("users").document(user.uid).delete()
+        try await auth.revokeToken(withAuthorizationCode: authCode)
+        try? await db.collection("users").document(user.uid).delete()
         try await user.delete()
         currentUser = nil
         isSessionVerified = false
@@ -253,7 +262,7 @@ final class AuthFBService {
     // MARK: - Sign Out
 
     func signOut() throws {
-        try Auth.auth().signOut()
+        try auth.signOut()
         currentUser = nil
         isSessionVerified = false
     }
@@ -263,17 +272,17 @@ final class AuthFBService {
     /// Если текущий пользователь анонимный, привязывает credential, сохраняя UID.
     /// Иначе выполняет обычный вход.
     private func signInOrLink(with credential: AuthCredential) async throws -> AuthDataResult {
-        if isAnonymous, let user = Auth.auth().currentUser {
+        if isAnonymous, let user = auth.currentUser {
             do {
                 return try await user.link(with: credential)
             } catch let error as NSError
                 where error.code == AuthErrorCode.credentialAlreadyInUse.rawValue {
                 log("Credential already in use, signing in to existing account", level: .info)
-                return try await Auth.auth().signIn(with: credential)
+                return try await auth.signIn(with: credential)
             }
         }
         do {
-            return try await Auth.auth().signIn(with: credential)
+            return try await auth.signIn(with: credential)
         } catch let error as NSError
             where error.code == AuthErrorCode.accountExistsWithDifferentCredential.rawValue {
             throw AuthError.accountExistsWithDifferentCredential
