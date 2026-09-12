@@ -18,7 +18,7 @@ struct SwipeLingoApp: App {
 
     /// composition root: FireBaseAuthService, FBUserService, AppSyncStateService, AppViewModel создаются один раз здесь и больше нигде. @State в App-структуре — валидный способ держать reference-type с identity, переживающей re-init структуры SwipeLingoApp (SwiftUI пересоздаёт саму struct на каждый re-render, но @State-storage персистентен)
     @State private var authService: AuthFBService
-    @State private var userService: FBUserService
+    @State private var userService: UserFBService
     @State private var appSyncStateService: AppSyncStateService
     @State private var appViewModel: AppViewModel
 
@@ -34,12 +34,12 @@ struct SwipeLingoApp: App {
         )
     }
 
-    // register app delegate for Firebase setup
-    // Подключает AppDelegate (CloudKit push, Google Sign-In URL handling — по CLAUDE.md) к жизненному циклу SwiftUI-приложения
+    /// Зарегистрировать делегат приложения для настройки Firebase
+    /// Подключает AppDelegate (CloudKit push, Google Sign-In URL handling) к жизненному циклу SwiftUI-приложения
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
-        // Firebase must be configured before AuthService initializes Auth.auth()
+        /// Firebase необходимо настроить до того, как AuthService инициализирует Auth.auth().
         if FirebaseApp.app() == nil {
             if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
                 FirebaseApp.configure()
@@ -53,9 +53,9 @@ struct SwipeLingoApp: App {
             }
         }
 
-        // Fresh install detection: UserDefaults is wiped on reinstall, Keychain is not.
-        // If this is the first launch ever recorded, sign out any stale Keychain token
-        // so the user goes through onboarding + auth from scratch.
+        // Определение чистой установки: при переустановке UserDefaults очищается, а Keychain — нет.
+        // Если это самый первый запуск, удаляем устаревший токен из Keychain,
+        // чтобы пользователь заново прошел онбординг и аутентификацию.
         let launchedBefore = UserDefaults.standard.bool(forKey: Constants.StorageKey.appEverLaunched)
         if !launchedBefore {
             try? Auth.auth().signOut()
@@ -64,8 +64,9 @@ struct SwipeLingoApp: App {
         }
 
         _authService = State(initialValue: AuthFBService())
-        _userService = State(initialValue: FBUserService())
+        _userService = State(initialValue: UserFBService())
         _appViewModel = State(initialValue: AppViewModel())
+        
         let builtContainer = ModelContainerFactory.make()
         container = builtContainer
         if let ctx = builtContainer?.mainContext {
@@ -83,11 +84,11 @@ struct SwipeLingoApp: App {
                     Color.myColors.myBackground.ignoresSafeArea()
                 } else if let container {
                     if !authService.isAuthenticated {
-                        // Auth first: Sign In / Sign Up / Continue as Guest
+                        /// Авторизация: Войти / Зарегистрироваться / Продолжить как гость
                         AuthView(showGuestOption: true, authService: authService)
                     } else if !appSyncStateService.hasCompletedOnboarding {
-                        // New user: language + level selection (no auth step —
-                        // auth already handled above, before onboarding starts).
+                        /// Новый пользователь: выбор языка и уровня (без этапа аутентификации —
+                        /// аутентификация уже выполнена выше, до начала онбординга).
                         OnboardingView {
                             appSyncStateService.hasCompletedOnboarding = true
                         }
@@ -100,9 +101,9 @@ struct SwipeLingoApp: App {
                     databseErrorView
                 }
             }
-            // Syncs live Firestore content into SwiftData (idempotent via firestoreId).
-            // Skip on first launch (onboarding not done yet — no UserProfile, level unknown).
-            // On first launch the sync is triggered by .onChange below after onboarding.
+            /// Синхронизирует актуальные данные из Firestore в SwiftData (операция идемпотентна благодаря firestoreId).
+            /// Пропускается при первом запуске (онбординг еще не пройден: отсутствует UserProfile, уровень неизвестен).
+            /// При первом запуске синхронизация инициируется ниже, в блоке .onChange, после завершения онбординга.
             .task {
                 if appSyncStateService.hasCompletedOnboarding { await firestoreSync() }
             }
@@ -119,8 +120,8 @@ struct SwipeLingoApp: App {
                 }
             }
         }
-        // Single entry point for all Firestore writes after a verified session.
-        // Fires on app launch (after verifySession passes) and after every fresh sign-in.
+        /// Единая точка входа для всех операций записи в Firestore после подтверждения сеанса.
+        /// Срабатывает при запуске приложения (после успешной проверки сеанса) и после каждого нового входа в систему.
         .onChange(of: authService.isSessionVerified) { _, verified in
             guard verified, let user = authService.currentUser else { return }
             Task {
@@ -139,7 +140,7 @@ struct SwipeLingoApp: App {
                 if let container {
                     InboxDrainService().drain(container: container)
                 }
-                // Re-sync subscription on each foreground to catch server-side changes.
+                /// Повторно синхронизировать подписку при каждом переходе приложения на передний план, чтобы получить изменения со стороны сервера.
                 if let uid = authService.currentUser?.uid {
                     Task { await userService.syncSubscription(for: uid) }
                 }
@@ -149,8 +150,8 @@ struct SwipeLingoApp: App {
 
     // MARK: - Database Error
 
-    /// Shown when the SwiftData ModelContainer fails to initialize even after a store reset.
-    /// Displayed instead of the main app content — no SwiftData dependency.
+    /// Отображается, если инициализация SwiftData ModelContainer не удается даже после сброса хранилища.
+    /// Отображается вместо основного содержимого приложения — без зависимости от SwiftData..
     private var databseErrorView: some View {
         VStack(spacing: 24) {
             Image(systemName: "exclamationmark.triangle.fill")

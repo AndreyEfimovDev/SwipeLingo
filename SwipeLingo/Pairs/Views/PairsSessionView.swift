@@ -18,9 +18,9 @@ struct PairsSessionView: View {
     /// Передаются из composition root через PairsView — не через .environment().
     /// Сама PairsSessionView их не читает, только форвардит в PairsSetPlayerView.
     private let authService: AuthFBService
-    private let userService: FBUserService
+    private let userService: UserFBService
 
-    init(sets: [PairsSet], pileName: String, authService: AuthFBService, userService: FBUserService) {
+    init(sets: [PairsSet], pileName: String, authService: AuthFBService, userService: UserFBService) {
         self.sets = sets
         self.pileName = pileName
         self.authService = authService

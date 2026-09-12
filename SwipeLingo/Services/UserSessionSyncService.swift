@@ -27,7 +27,7 @@ struct UserSessionSyncService {
         user: FirebaseAuth.User,
         container: ModelContainer?,
         nativeLanguage: NativeLanguage,
-        userService: FBUserService
+        userService: UserFBService
     ) async -> Bool {
         let ctx = container?.mainContext
         let profiles = ctx?.fetchWithErrorHandling(FetchDescriptor<UserProfile>()) ?? []

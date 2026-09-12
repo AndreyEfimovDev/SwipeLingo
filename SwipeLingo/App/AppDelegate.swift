@@ -6,9 +6,8 @@ import GoogleSignIn
 class AppDelegate: NSObject, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // Required for CloudKit push notifications (real-time sync delivery).
-        // Without this CloudKit falls back to polling instead of push.
-        application.registerForRemoteNotifications()
+        // Требуется для push-уведомлений CloudKit (доставка обновлений в реальном времени).
+        // Без этого CloudKit переключается на механизм опроса вместо push-уведомлений.        application.registerForRemoteNotifications()
         return true
     }
 

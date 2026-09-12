@@ -3,7 +3,7 @@ import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
 
-// MARK: - FBUserService
+// MARK: - UserFBService
 //
 // Manages the Firestore user document (users/{uid}) and local subscription cache.
 //
@@ -22,7 +22,7 @@ import FirebaseFirestore
 
 @Observable
 @MainActor
-final class FBUserService {
+final class UserFBService {
 
     private(set) var isLoading = false
 

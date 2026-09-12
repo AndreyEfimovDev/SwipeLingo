@@ -10,9 +10,9 @@ struct CardsView: View {
     /// Передаются из composition root через AppView — не через .environment().
     private let appViewModel: AppViewModel
     private let authService: AuthFBService
-    private let userService: FBUserService
+    private let userService: UserFBService
 
-    init(appViewModel: AppViewModel, authService: AuthFBService, userService: FBUserService) {
+    init(appViewModel: AppViewModel, authService: AuthFBService, userService: UserFBService) {
         self.appViewModel = appViewModel
         self.authService = authService
         self.userService = userService

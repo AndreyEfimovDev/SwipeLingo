@@ -10,7 +10,7 @@ import Foundation
 // отдельные let-параметры конкретных потребителей — см. AppView.swift.
 struct AppDependencies {
     let authService: AuthFBService
-    let userService: FBUserService
+    let userService: UserFBService
     /// Нужен только SettingsView.
     let appSyncStateService: AppSyncStateService
     /// Активный таб, sheets — нужен всему дереву Cards/Pairs/Books.

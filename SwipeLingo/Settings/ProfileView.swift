@@ -19,11 +19,11 @@ struct ProfileView: View {
 
     /// Передаётся из composition root через SettingsView — не через .environment().
     private let authService: AuthFBService
-    private let userService: FBUserService
+    private let userService: UserFBService
 
     @AppStorage("appleRelayBannerDismissed") private var relayBannerDismissed = false
 
-    init(authService: AuthFBService, userService: FBUserService) {
+    init(authService: AuthFBService, userService: UserFBService) {
         self.authService = authService
         self.userService = userService
     }
@@ -788,5 +788,5 @@ private struct AppleDeletionSheet: View {
 }
 
 #Preview {
-    NavigationStack { ProfileView(authService: AuthFBService(), userService: FBUserService()) }
+    NavigationStack { ProfileView(authService: AuthFBService(), userService: UserFBService()) }
 }

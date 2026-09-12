@@ -44,11 +44,11 @@ struct PairsSetPlayerView: View {
     var initialAnimationMode: AnimationMode? = nil
     /// Передаются из composition root — не через .environment(). Только для PlansView.
     private let authService: AuthFBService
-    private let userService: FBUserService
+    private let userService: UserFBService
 
     @State private var vm: PairsSetPlayerViewModel
 
-    init(set: PairsSet, authService: AuthFBService, userService: FBUserService,
+    init(set: PairsSet, authService: AuthFBService, userService: UserFBService,
          onComplete: (() -> Void)? = nil, autoStart: Bool = false, initialAnimationMode: AnimationMode? = nil) {
         self.set = set
         self.authService = authService

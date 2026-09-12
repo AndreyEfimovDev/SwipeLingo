@@ -13,9 +13,9 @@ struct PlansView: View {
 
     /// Передаётся из composition root — не через .environment().
     private let authService: AuthFBService
-    private let userService: FBUserService
+    private let userService: UserFBService
 
-    init(authService: AuthFBService, userService: FBUserService) {
+    init(authService: AuthFBService, userService: UserFBService) {
         self.authService = authService
         self.userService = userService
     }
@@ -322,5 +322,5 @@ struct PlansView: View {
 }
 
 #Preview {
-    PlansView(authService: AuthFBService(), userService: FBUserService())
+    PlansView(authService: AuthFBService(), userService: UserFBService())
 }

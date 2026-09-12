@@ -17,12 +17,12 @@ struct SettingsView: View {
     private let syncState: AppSyncStateService
     /// Сама SettingsView их не читает — только форвардит в ProfileView.
     private let authService: AuthFBService
-    private let userService: FBUserService
+    private let userService: UserFBService
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
 
-    init(syncState: AppSyncStateService, authService: AuthFBService, userService: FBUserService) {
+    init(syncState: AppSyncStateService, authService: AuthFBService, userService: UserFBService) {
         self.syncState = syncState
         self.authService = authService
         self.userService = userService
@@ -258,5 +258,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView(syncState: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
-                 authService: AuthFBService(), userService: FBUserService())
+                 authService: AuthFBService(), userService: UserFBService())
 }
