@@ -8,11 +8,11 @@ import Combine
 final class ErrorManager: ObservableObject {
     static let shared = ErrorManager()
 
-    // Blocking alert
+    // Блокирующий алерт
     @Published var errorMessage: String?
     @Published var showAlert: Bool = false
 
-    // Non-blocking banner
+    // Неблокирующий баннер
     @Published var bannerMessage: String?
     private var bannerTask: Task<Void, Never>?
 
@@ -28,7 +28,7 @@ final class ErrorManager: ObservableObject {
         }
     }
 
-    /// Shows a non-blocking banner that auto-dismisses after 3 seconds.
+    /// Показывает неблокирующий баннер, автоматически скрывается через 3 секунды.
     func showBanner(_ message: String) {
         bannerTask?.cancel()
         bannerMessage = message
@@ -100,7 +100,7 @@ enum ImportError {
 // MARK: - ModelContext Extensions
 
 extension ModelContext {
-    /// Saves the context, routing any error through ErrorManager.
+    /// Сохраняет context, направляя любую ошибку через ErrorManager.
     func saveWithErrorHandling() {
         do {
             try save()
@@ -109,7 +109,7 @@ extension ModelContext {
         }
     }
 
-    /// Fetches objects, routing any error through ErrorManager. Returns [] on failure.
+    /// Загружает объекты, направляя любую ошибку через ErrorManager. При ошибке возвращает [].
     func fetchWithErrorHandling<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) -> [T] {
         do {
             return try fetch(descriptor)
@@ -119,7 +119,7 @@ extension ModelContext {
         }
     }
 
-    /// Counts objects, routing any error through ErrorManager. Returns 0 on failure.
+    /// Считает объекты, направляя любую ошибку через ErrorManager. При ошибке возвращает 0.
     func fetchCountWithErrorHandling<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) -> Int {
         do {
             return try fetchCount(descriptor)
@@ -133,12 +133,12 @@ extension ModelContext {
 // MARK: - View Extension
 
 extension View {
-    /// Attaches a global error alert driven by ErrorManager.shared.
+    /// Подключает глобальный алерт ошибок, управляемый ErrorManager.shared.
     func errorAlert() -> some View {
         modifier(ErrorAlertModifier())
     }
 
-    /// Attaches a global error banner driven by ErrorManager.shared.
+    /// Подключает глобальный баннер ошибок, управляемый ErrorManager.shared.
     func errorBanner() -> some View {
         modifier(BannerModifier())
     }

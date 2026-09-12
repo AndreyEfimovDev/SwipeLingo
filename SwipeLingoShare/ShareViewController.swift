@@ -8,8 +8,8 @@ import SwiftUI
 
 class ShareViewController: UIViewController {
 
-    private let appGroupID = "group.PELSH.SwipeLingo"
-    private let pendingKey = "pendingInboxWords"
+    private let appGroupID = Constants.appGroupID
+    private let pendingKey = Constants.StorageKey.pendingInboxWords
 
     override func viewDidLoad() {
         super.viewDidLoad()

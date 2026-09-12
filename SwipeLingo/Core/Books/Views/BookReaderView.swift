@@ -1,0 +1,412 @@
+import SwiftUI
+import SwiftData
+import WebKit
+
+// MARK: - IdentifiableString
+
+private struct IdentifiableString: Identifiable {
+    let id = UUID()
+    let value: String
+}
+
+// MARK: - BookImageFullscreenView
+
+private struct BookImageFullscreenView: View {
+
+    let urlString: String
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var scale:       CGFloat = 1.0
+    @State private var lastScale:   CGFloat = 1.0
+    @State private var offset:      CGSize  = .zero
+    @State private var lastOffset:  CGSize  = .zero
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+
+            if let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .scaleEffect(scale)
+                            .offset(offset)
+                            .gesture(
+                                MagnificationGesture()
+                                    .onChanged { value in
+                                        scale = max(1.0, lastScale * value)
+                                    }
+                                    .onEnded { _ in
+                                        lastScale = scale
+                                        if scale < 1.0 {
+                                            withAnimation(.spring()) {
+                                                scale = 1.0
+                                                offset = .zero
+                                            }
+                                            lastScale = 1.0
+                                            lastOffset = .zero
+                                        }
+                                    }
+                                    .simultaneously(with:
+                                        DragGesture()
+                                            .onChanged { value in
+                                                guard scale > 1.0 else { return }
+                                                offset = CGSize(
+                                                    width:  lastOffset.width  + value.translation.width,
+                                                    height: lastOffset.height + value.translation.height
+                                                )
+                                            }
+                                            .onEnded { _ in
+                                                lastOffset = offset
+                                            }
+                                    )
+                            )
+                            .onTapGesture(count: 2) {
+                                withAnimation(.spring()) {
+                                    if scale > 1.0 {
+                                        scale = 1.0
+                                        offset = .zero
+                                        lastScale = 1.0
+                                        lastOffset = .zero
+                                    } else {
+                                        scale = 2.5
+                                        lastScale = 2.5
+                                    }
+                                }
+                            }
+                    case .failure:
+                        VStack(spacing: 12) {
+                            Image(systemName: "photo.badge.exclamationmark")
+                                .font(.system(size: 48))
+                                .foregroundStyle(.white.opacity(0.5))
+                            Text("Failed to load image")
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                    default:
+                        ProgressView().tint(.white)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(20)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+// MARK: - BookReaderView
+
+struct BookReaderView: View {
+
+    let book: Book
+
+    @Environment(\.dismiss)      private var dismiss
+    @Environment(\.modelContext) private var context
+    @Environment(\.colorScheme)  private var colorScheme
+
+    @Query private var allProgress:  [BookProgress]
+    @Query private var allBookmarks: [BookBookmark]
+
+    @State private var vm: BookReaderViewModel
+    @State private var downloadTask: Task<Void, Never>? = nil
+    @State private var fullscreenImageURL: String? = nil
+
+    @AppStorage("bookFontSize") private var fontSize: Int = 18
+
+    private let fontSizeMin = 14
+    private let fontSizeMax = 26
+    private let fontSizeStep = 2
+
+    init(book: Book) {
+        self.book = book
+        _vm = State(initialValue: BookReaderViewModel(book: book, progress: nil))
+    }
+
+    private var progress: BookProgress? {
+        allProgress.first { $0.bookId == book.id }
+    }
+
+    private var bookmarks: [BookBookmark] {
+        allBookmarks.filter { $0.bookId == book.id }
+    }
+
+    private var hasBookmarkHere: Bool {
+        vm.hasBookmark(in: bookmarks)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                if vm.isChapterReady {
+                    readerContent
+                } else {
+                    downloadingView
+                }
+            }
+            .navigationTitle(vm.currentChapter?.title ?? book.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
+            .sheet(isPresented: $vm.showDictionary) {
+                if let word = vm.tappedWord {
+                    BookWordLookupView(word: word)
+                        .onAppear {
+                            AnalyticsFBService.wordLookedUp(word: word, source: .book)
+                        }
+                }
+            }
+            .sheet(isPresented: $vm.showChapterList) {
+                BookChapterListView(
+                    book: book,
+                    currentIndex: vm.chapterIndex
+                ) { index in
+                    vm.goToChapter(index)
+                    vm.showChapterList = false
+                }
+            }
+            .sheet(isPresented: $vm.showBookmarks) {
+                BookBookmarksView(
+                    bookmarks:    bookmarks,
+                    currentIndex: vm.chapterIndex,
+                    onSelect: { bookmark in
+                        vm.goToChapter(bookmark.chapterIndex)
+                        vm.showBookmarks = false
+                    },
+                    onDelete: { bookmark in
+                        vm.deleteBookmark(bookmark, context: context)
+                    }
+                )
+            }
+        }
+        .fullScreenCover(item: Binding(
+            get: { fullscreenImageURL.map { IdentifiableString(value: $0) } },
+            set: { if $0 == nil { fullscreenImageURL = nil } }
+        )) { item in
+            BookImageFullscreenView(urlString: item.value)
+        }
+        .onAppear {
+            if let p = progress, vm.chapterIndex == 0 && vm.scrollOffset == 0 {
+                vm = BookReaderViewModel(book: book, progress: p)
+            }
+            downloadTask = Task {
+                await vm.downloadAllIfNeeded(context: context)
+                await vm.downloadCurrentChapterIfNeeded()
+            }
+            AnalyticsFBService.bookOpened(bookId: book.id, bookTitle: book.title)
+        }
+        .onDisappear {
+            downloadTask?.cancel()
+            vm.saveProgress(context: context)
+        }
+    }
+
+    // MARK: - Reader content
+
+    private var readerContent: some View {
+        BookPagedReader(
+            book:         book,
+            chapterIndex: vm.chapterIndex,
+            colorScheme:  colorScheme,
+            fontSize:     fontSize,
+            onWordTap: { word in
+                vm.handleWordTap(word)
+            },
+            onImageTap: { src in
+                fullscreenImageURL = src
+            },
+            onPageChange: { newIndex in
+                // Вызывается UIPageViewController после завершения свайпа пользователем
+                vm.goToChapter(newIndex)
+                vm.saveProgress(context: context)
+                AnalyticsFBService.bookChapterRead(bookId: book.id, chapterIndex: newIndex, totalChapters: book.totalChapters)
+                // Заранее скачиваем следующие 2 главы, чтобы swipe всегда был доступен
+                downloadTask = Task {
+                    for offset in 1...2 {
+                        let idx = newIndex + offset
+                        guard idx < book.totalChapters else { break }
+                        try? await BookDownloadService.shared.downloadChapter(book: book, index: idx)
+                    }
+                }
+            }
+        )
+        .ignoresSafeArea(edges: .bottom)
+        .overlay(alignment: .bottom) {
+            bottomControls
+        }
+    }
+
+    // MARK: - Нижние контролы (плавающие, независимые капсулы)
+
+    private var bottomControls: some View {
+        HStack(alignment: .center) {
+            // ‹ Предыдущая глава
+            navButton(systemImage: "chevron.left", enabled: vm.hasPrevious) {
+                vm.goToPrevious()
+                vm.saveProgress(context: context)
+            }
+
+            Spacer()
+
+            // Центральная капсула: A− / счётчик / A+
+            HStack(spacing: 12) {
+                fontSizeButton(label: "A−", enabled: fontSize > fontSizeMin) {
+                    fontSize = max(fontSize - fontSizeStep, fontSizeMin)
+                }
+                Text("\(vm.chapterIndex + 1) / \(book.totalChapters)")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    .frame(minWidth: 52)
+                    .frame(height: 44)
+
+                fontSizeButton(label: "A+", enabled: fontSize < fontSizeMax) {
+                    fontSize = min(fontSize + fontSizeStep, fontSizeMax)
+                }
+            }
+            .padding(.horizontal, 5)
+            .background(.ultraThinMaterial, in: Capsule())
+
+            Spacer()
+
+            // › Следующая глава
+            navButton(systemImage: "chevron.right", enabled: vm.hasNext) {
+                vm.goToNext()
+                vm.saveProgress(context: context)
+                downloadTask = Task {
+                    let idx = vm.chapterIndex + 1
+                    guard idx < book.totalChapters else { return }
+                    try? await BookDownloadService.shared.downloadChapter(book: book, index: idx)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+    }
+
+    private func navButton(systemImage: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(enabled ? Color.myColors.myBlue : Color.myColors.myBlue.opacity(0.25))
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Capsule())
+//                .background(
+//                    Capsule()
+//                        .strokeBorder(
+//                            enabled ? Color.myColors.myBlue.opacity(0.5) : Color.myColors.myBlue.opacity(0.15),
+//                            lineWidth: 1.5
+//                        )
+//                )
+                .contentShape(Capsule())
+        }
+        .disabled(!enabled)
+        .buttonStyle(.plain)
+    }
+
+    private func fontSizeButton(label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(enabled ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myAccent.opacity(0.25))
+                .frame(width: 48, height: 36)
+                .background(
+                    Capsule()
+                        .strokeBorder(
+                            enabled ? Color.myColors.myAccent.opacity(0.2) : Color.myColors.myAccent.opacity(0.08),
+                            lineWidth: 1.2
+                        )
+                )
+                .contentShape(Capsule())
+        }
+        .disabled(!enabled)
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Download states
+
+    private var downloadingView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "icloud.and.arrow.down")
+                .font(.system(size: 48))
+                .foregroundStyle(Color.myColors.myBlue)
+
+            Text(vm.downloadFraction > 0 ? "Downloading… \(Int(vm.downloadFraction * 100))%" : "Preparing…")
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.7))
+
+            if vm.downloadFraction > 0 {
+                ProgressView(value: vm.downloadFraction)
+                    .tint(Color.myColors.myBlue)
+                    .frame(width: 200)
+            } else {
+                ProgressView()
+                    .tint(Color.myColors.myBlue)
+            }
+        }
+    }
+
+    // MARK: - Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                vm.saveProgress(context: context)
+                dismiss()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                    Text("Books")
+                }
+                .foregroundStyle(Color.myColors.myBlue)
+            }
+        }
+
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            // Тап → открыть список. Долгий тап → Add / Remove / Show All
+            Button {
+                vm.showBookmarks = true
+            } label: {
+                Image(systemName: hasBookmarkHere ? "bookmark.fill" : "bookmark")
+                    .foregroundStyle(Color.myColors.myBlue)
+                    .symbolEffect(.bounce, value: vm.bookmarkJustAdded)
+            }
+            .contextMenu {
+                if hasBookmarkHere {
+                    Button(role: .destructive) {
+                        vm.removeBookmark(from: bookmarks, context: context)
+                    } label: {
+                        Label("Remove Bookmark", systemImage: "bookmark.slash")
+                    }
+                } else {
+                    Button {
+                        vm.addBookmark(context: context)
+                    } label: {
+                        Label("Add Bookmark", systemImage: "bookmark")
+                    }
+                }
+                Divider()
+                Button {
+                    vm.showBookmarks = true
+                } label: {
+                    Label("Show All Bookmarks", systemImage: "bookmark.fill")
+                }
+            }
+
+            Button {
+                vm.showChapterList = true
+            } label: {
+                Image(systemName: "list.bullet")
+                    .foregroundStyle(Color.myColors.myBlue)
+            }
+        }
+    }
+}

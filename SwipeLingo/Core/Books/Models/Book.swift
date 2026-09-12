@@ -1,0 +1,87 @@
+import Foundation
+import SwiftData
+
+// MARK: - BookChapter
+
+struct BookChapter: Codable, Identifiable, Hashable {
+    var index: Int
+    var title: String
+    var id: Int { index }
+}
+
+// MARK: - Book
+
+@Model class Book {
+
+    var id:                UUID   = UUID()
+    var firestoreId:       String = ""
+    var title:             String = ""
+    var author:            String = ""
+    var bookDescription:   String?
+    var cefrLevelRaw:      String = CEFRLevel.a1.rawValue
+    var accessTierRaw:     String = AccessTier.free.rawValue
+    var coverStoragePath:   String = ""     // путь в Firebase Storage или полный HTTP URL
+    var chapterBaseURL:     String = ""     // "" = Firebase Storage; "https://..." = HTTP debug-заглушка
+    var totalChapters:      Int   = 0
+    var chaptersJSON:       String = "[]"   // [BookChapter], закодированный в JSON
+    var isNew:              Bool   = true   // true после импорта, false после первой полной загрузки
+    var createdAt:          Date  = Date()
+    var updatedAt:          Date  = Date()
+
+    init(
+        firestoreId:      String,
+        title:            String,
+        author:           String,
+        description:      String? = nil,
+        cefrLevel:        CEFRLevel,
+        accessTier:       AccessTier,
+        coverStoragePath: String,
+        chapterBaseURL:   String = "",
+        totalChapters:    Int,
+        chapters:         [BookChapter],
+        isNew:            Bool = true,
+        createdAt:        Date,
+        updatedAt:        Date
+    ) {
+        self.id               = UUID()
+        self.firestoreId      = firestoreId
+        self.title            = title
+        self.author           = author
+        self.bookDescription  = description
+        self.cefrLevelRaw     = cefrLevel.rawValue
+        self.accessTierRaw    = accessTier.rawValue
+        self.coverStoragePath = coverStoragePath
+        self.chapterBaseURL   = chapterBaseURL
+        self.totalChapters    = totalChapters
+        self.chaptersJSON     = Self.encode(chapters)
+        self.isNew            = isNew
+        self.createdAt        = createdAt
+        self.updatedAt        = updatedAt
+    }
+
+    // MARK: - Computed
+
+    var cefrLevel: CEFRLevel   { CEFRLevel(rawValue: cefrLevelRaw)   ?? .a1 }
+    var accessTier: AccessTier { AccessTier(rawValue: accessTierRaw) ?? .free }
+
+    var chapters: [BookChapter] {
+        guard let data = chaptersJSON.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode([BookChapter].self, from: data)
+        else { return [] }
+        return decoded
+    }
+
+    // MARK: - Helpers
+
+    private static func encode(_ chapters: [BookChapter]) -> String {
+        (try? JSONEncoder().encode(chapters))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+    }
+
+    func chapterStoragePath(at index: Int) -> String {
+        if chapterBaseURL.isEmpty {
+            return "books/\(firestoreId)/chapters/\(index).html"
+        }
+        return "\(chapterBaseURL)/\(index).html"
+    }
+}
