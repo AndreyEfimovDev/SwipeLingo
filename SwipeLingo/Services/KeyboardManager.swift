@@ -2,9 +2,9 @@ import UIKit
 
 // MARK: - KeyboardManager
 //
-// Detects software vs physical keyboard (iPad Magic Keyboard).
-// Physical keyboards report height < 100 pt — no need for a dismiss button there.
-// Use as @State inside a View: @State private var keyboard = KeyboardManager()
+// Определяет программную клавиатуру или физическую (iPad Magic Keyboard).
+// Физические клавиатуры сообщают высоту < 100pt — там кнопка скрытия не нужна.
+// Использовать как @State внутри View: @State private var keyboard = KeyboardManager()
 
 @Observable
 @MainActor
@@ -23,7 +23,7 @@ final class KeyboardManager {
             for await note in NotificationCenter.default.notifications(named: UIResponder.keyboardWillShowNotification) {
                 guard let self else { return }
                 guard let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { continue }
-                // Magic Keyboard (physical) reports height < 100 pt → no dismiss button needed
+                // Magic Keyboard (физическая) сообщает высоту < 100pt → кнопка скрытия не нужна
                 let isSoftwareKeyboard = frame.height >= 100
                 isKeyboardVisible    = true
                 shouldShowHideButton = isSoftwareKeyboard

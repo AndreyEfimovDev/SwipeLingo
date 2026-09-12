@@ -1,0 +1,262 @@
+import AVFoundation
+import SwiftUI
+import SwiftData
+
+// MARK: - SettingsView
+
+struct SettingsView: View {
+
+    @Environment(\.dismiss) private var dismiss
+
+    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant     = "en-US"
+    @AppStorage(Constants.StorageKey.colorScheme)        private var theme: Theme       = .system
+    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier = ""
+    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan: AccessTier = .free
+
+    /// Передаётся из composition root (SwipeLingoApp) через AppView — не через .environment().
+    private let syncState: AppSyncStateService
+    /// Сама SettingsView их не читает — только форвардит в ProfileView.
+    private let authService: AuthFBService
+    private let userService: UserFBService
+
+    private var titleFont: Font = .caption
+    private var textFont: Font = .body
+
+    init(syncState: AppSyncStateService, authService: AuthFBService, userService: UserFBService) {
+        self.syncState = syncState
+        self.authService = authService
+        self.userService = userService
+    }
+
+    private var currentVoiceName: String {
+        guard !ttsVoiceIdentifier.isEmpty,
+              let voice = AVSpeechSynthesisVoice(identifier: ttsVoiceIdentifier)
+        else { return "Default" }
+        return voice.name
+    }
+
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    accountSection
+                    studySection
+                    voiceSection
+                    appearanceSection
+                    dataSection
+                }
+                .padding(.vertical, 16)
+            }
+            .background(Color.myColors.myBackground.ignoresSafeArea())
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myBlue)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Account
+
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("ACCOUNT")
+                .font(titleFont)
+                .padding(.horizontal, 32)
+
+            NavigationLink { ProfileView(authService: authService, userService: userService) } label: {
+                HStack {
+                    Label("Your profile", systemImage: "person.circle")
+                        .labelStyle(.fixedIcon)
+                    // MONETIZATION_STUB: badge плана скрыт. Раскомментировать когда монетизация включена:
+                    // AccessTierBadge(tier: userPlan)
+
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                }
+                .font(textFont)
+                .frame(height: 52)
+                .padding(.horizontal, 16)
+                .contentShape(Rectangle())
+            }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Language
+
+    // MARK: - Study
+
+    private var studySection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("STUDY")
+                .font(titleFont)
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 0) {
+                // Переключатель SRS
+                @Bindable var bs = syncState
+                HStack {
+                    Label("Spaced Repetition (SRS)", systemImage: "brain")
+                        .labelStyle(.fixedIcon)
+                    Spacer()
+                    Toggle("", isOn: $bs.srsEnabled)
+                        .labelsHidden()
+                        .tint(Color.myColors.myBlue)
+                }
+                .font(textFont)
+                .frame(height: 52)
+                .padding(.horizontal, 16)
+
+                // "Due от" — только когда SRS включён
+                if syncState.srsEnabled {
+                    Divider().padding(.leading, 16)
+                    HStack {
+                        Label("Due from", systemImage: "clock")
+                            .labelStyle(.fixedIcon)
+                        Spacer()
+                        Picker("", selection: $bs.studyStartHour) {
+                            ForEach(0..<24, id: \.self) { hour in
+                                Text(hourLabel(hour)).tag(hour)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .tint(Color.myColors.myBlue)
+                    }
+                    .font(textFont)
+                    .frame(height: 52)
+                    .padding(.horizontal, 16)
+                }
+
+            }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private func hourLabel(_ hour: Int) -> String {
+        let h      = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
+        let period = hour < 12 ? "AM" : "PM"
+        return "\(h):00 \(period)"
+    }
+
+    // MARK: - Voice
+
+    private var voiceSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("VOICE")
+                .font(titleFont)
+                .padding(.horizontal, 32)
+
+            NavigationLink { VoiceSettingsView() } label: {
+                HStack {
+                    Label("Pronunciation Voice", systemImage: "waveform")
+                        .labelStyle(.fixedIcon)
+                    Spacer()
+                    Text(currentVoiceName)
+                        .font(.subheadline)
+                }
+                .font(textFont)
+                .frame(height: 52)
+                .padding(.horizontal, 16)
+                .contentShape(Rectangle())
+            }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Data
+
+    private var dataSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("MANAGING DATA")
+                .font(titleFont)
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 0) {
+                NavigationLink { ExportAndShareView() } label: {
+                    HStack {
+                        Label("Export / Backup", systemImage: "square.and.arrow.up")
+                            .labelStyle(.fixedIcon)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                    }
+                    .font(textFont)
+                    .frame(height: 52)
+                    .padding(.horizontal, 16)
+                    .contentShape(Rectangle())
+                }
+
+                Divider().padding(.leading, 46)
+
+                NavigationLink { RestoreBackupView() } label: {
+                    HStack {
+                        Label("Restore", systemImage: "tray.and.arrow.up")
+                            .labelStyle(.fixedIcon)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                    }
+                    .font(textFont)
+                    .frame(height: 52)
+                    .padding(.horizontal, 16)
+                    .contentShape(Rectangle())
+                }
+            }
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+
+    // MARK: - Appearance
+
+    private var appearanceSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("APPEARANCE")
+                .font(titleFont)
+                .padding(.horizontal, 32)
+
+            UnderlineSegmentedPickerNotOptional(
+                selection: $theme,
+                allItems: Theme.allCases,
+                titleForCase: { $0.displayName },
+                selectedFont: textFont
+            )
+            .frame(height: 52)
+            .padding(.horizontal, 16)
+            .background(Color.myColors.myBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .myShadow()
+            .padding(.horizontal, 16)
+        }
+    }
+}
+
+#Preview {
+    SettingsView(syncState: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
+                 authService: AuthFBService(), userService: UserFBService())
+}

@@ -1,8 +1,8 @@
 import Foundation
 
 // MARK: - PairsPileService
-// Resolves a PairsPile's PairsSets from a pre-fetched [PairsSet] slice.
-// Preserves the order defined in pile.setIds.
+// Определяет PairsSets для PairsPile из уже загруженного среза [PairsSet].
+// Сохраняет порядок, заданный в pile.setIds.
 
 struct PairsPileService {
 

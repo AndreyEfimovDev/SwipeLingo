@@ -5,27 +5,31 @@ import SwiftData
 
 struct AppView: View {
 
-    @State private var viewModel = AppViewModel()
     @AppStorage(Constants.StorageKey.colorScheme) private var theme: Theme = .system
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
     @Environment(\.modelContext) private var context
     @Query private var profiles: [UserProfile]
 
-    init() {
+    /// Передаётся из composition root (SwipeLingoApp) — прокидывается дальше через init,
+    /// не через .environment(), чтобы каждый потребитель был виден в сигнатуре явно.
+    private let dependencies: AppDependencies
+    private var vm: AppViewModel { dependencies.appViewModel }
+
+    init(dependencies: AppDependencies) {
+        self.dependencies = dependencies
         configureNavigationBarAppearance()
     }
 
     var body: some View {
         studyContent
-            .fullScreenCover(item: Bindable(viewModel).activeSheet) { sheet in
+            .fullScreenCover(item: Bindable(vm).activeSheet) { sheet in
                 sheetView(for: sheet)
             }
-            .environment(viewModel)
             .preferredColorScheme(theme.colorScheme)
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
-            // Re-sync when user raises their CEFR level.
+            // Ре-синхронизация при повышении CEFR-уровня пользователя.
             // При ПОНИЖЕНИИ уровня данные уже есть локально — UI фильтрует по уровню мгновенно,
             // sync не нужен.
             // При ПОВЫШЕНИИ — нужен forceFullSync: true чтобы скачать контент нового уровня.
@@ -36,7 +40,7 @@ struct AppView: View {
                 guard newLevel > oldLevel else { return }   // понижение — sync не нужен
                 let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
                 Task {
-                    await FirestoreImportService().syncFromFirestore(
+                    await ImportFSService().syncFromFirestore(
                         into: context,
                         language: language,
                         upToLevel: newLevel,
@@ -50,10 +54,17 @@ struct AppView: View {
 
     @ViewBuilder
     private var studyContent: some View {
-        switch viewModel.studyMode {
-        case .cards: FlashCardsView()
-        case .pairs: PairsView()
-        case .books: BooksView()
+        switch vm.studyMode {
+        case .cards:
+            CardsView(appViewModel: dependencies.appViewModel,
+                            authService: dependencies.authFBService,
+                            userService: dependencies.userFBService)
+        case .pairs:
+            PairsView(appViewModel: dependencies.appViewModel,
+                       authService: dependencies.authFBService,
+                       userService: dependencies.userFBService)
+        case .books:
+            BooksView(appViewModel: dependencies.appViewModel)
         }
     }
 
@@ -62,10 +73,23 @@ struct AppView: View {
     @ViewBuilder
     private func sheetView(for sheet: AppViewModel.AppSheet) -> some View {
         switch sheet {
-        case .cardsLibrary: LibraryView()                          .errorBanner()
-        case .pairsLibrary: NavigationStack { PairsLibraryView() } .errorBanner()
-        case .statistics:   StatisticsView()
-        case .settings:     SettingsView()
+        case .cardsLibrary:
+            LibraryView(appViewModel: dependencies.appViewModel,
+                        authService: dependencies.authFBService,
+                        userService: dependencies.userFBService)
+                .errorBanner()
+        case .pairsLibrary:
+            NavigationStack {
+                PairsLibraryView(authService: dependencies.authFBService,
+                                  userService: dependencies.userFBService)
+            }
+            .errorBanner()
+        case .statistics:
+            StatisticsView()
+        case .settings:
+            SettingsView(syncState: dependencies.appSyncStateService,
+                         authService: dependencies.authFBService,
+                         userService: dependencies.userFBService)
         }
     }
 

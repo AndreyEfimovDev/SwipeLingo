@@ -1,0 +1,405 @@
+
+import SwiftUI
+import SwiftData
+import Translation
+
+
+// MARK: - DictionaryLookupView
+
+struct DictionaryLookupView: View {
+
+    let card: Card
+
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var vm = DictionaryLookupViewModel()
+
+    // Читает родной язык из того же ключа AppStorage, что используется по всему приложению.
+    @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
+    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
+    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
+
+    // Translation session — готовится один раз (или пересобирается при смене языка) через .translationTask.
+    // Симулятор не поддерживает Translation — config остаётся nil, чтобы подавить диалог ошибки.
+    @State private var translationSession: TranslationSession?
+    @State private var translationConfig: TranslationSession.Configuration?
+
+    /// Перевод card.en, показываемый в состоянии ошибки (фраза не найдена в словаре).
+    @State private var phraseTranslation: String? = nil
+
+    private func buildTranslationConfig() {
+        #if !targetEnvironment(simulator)
+        translationConfig = TranslationSession.Configuration(
+            source: Locale.Language(identifier: "en"),
+            target: Locale.Language(identifier: nativeLanguage.langId)
+        )
+        #endif
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                switch vm.phase {
+                case .loading:
+                    loadingView
+                case .loaded(let entry):
+                    entryScrollView(entry)
+                case .error(let message):
+                    errorView(message)
+                }
+            }
+            .navigationTitle(card.en.capitalized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .task {
+            // Показываем закэшированную транскрипцию сразу, пока загружается полная запись
+            if !card.dictTranscription.isEmpty {
+                vm.showCached(
+                    DictionaryEntry(
+                        word: card.en,
+                        transcription: card.dictTranscription,
+                        audioURL: card.dictAudioURL,
+                        meanings: card.dictDefinition.isEmpty ? [] : [
+                            DictionaryMeaning(
+                                partOfSpeech: "",
+                                definitions: [DictionaryDefinition(text: card.dictDefinition, example: nil)],
+                                synonyms: []
+                            )
+                        ]
+                    )
+                )
+            }
+            // Всегда подгружаем свежие данные
+            await vm.load(word: card.en)
+        }
+        .onChange(of: vm.didLoad) { _, loaded in
+            if loaded, case .loaded(let entry) = vm.phase {
+                cacheEntry(entry)
+            }
+        }
+        .onAppear {
+            buildTranslationConfig()
+        }
+        .onChange(of: nativeLanguage) { _, _ in
+            // Пересобираем session, когда пользователь меняет родной язык в Settings.
+            translationSession = nil
+            buildTranslationConfig()
+        }
+        .onDisappear {
+            vm.audioService.stop()
+        }
+        // Готовим translation session для выбранного целевого языка.
+        .translationTask(translationConfig) { session in
+            translationSession = session
+        }
+        // Если мы в состоянии ошибки и session только что стала готова — переводим фразу.
+        .onChange(of: translationSession == nil) { _, isNil in
+            guard !isNil, case .error = vm.phase, phraseTranslation == nil else { return }
+            Task { phraseTranslation = await translateText(card.en, clientId: "phrase") }
+        }
+    }
+
+    // MARK: - Translation helpers
+
+    /// Переводит одну строку. Молча откатывается, если session недоступна или перевод не удался.
+    private func translateText(_ text: String, clientId: String = "t") async -> String? {
+        guard let session = translationSession else { return nil }
+        do {
+            let responses = try await session.translations(from: [
+                TranslationSession.Request(sourceText: text, clientIdentifier: clientId)
+            ])
+            return responses.first?.targetText
+        } catch {
+            log("Translation failed: \(error)", level: .warning)
+            return nil
+        }
+    }
+
+    // MARK: - Loading
+
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+            Text("Looking up \"\(card.en)\"…")
+                .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Error
+
+    private func errorView(_ message: String) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 48))
+                .foregroundStyle(.orange)
+            Text("Not found")
+                .font(.title3.bold())
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            // Показываем перевод, если он доступен (полезно для фраз, сохранённых из Books)
+            if let translation = phraseTranslation {
+                VStack(spacing: 6) {
+                    Text(card.en)
+                        .font(.body.bold())
+                        .multilineTextAlignment(.center)
+                    Text(translation)
+                        .font(.body)
+                        .foregroundStyle(Color.myColors.mySecondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 32)
+            }
+
+            Button("Try Again") {
+                phraseTranslation = nil
+                Task { await vm.load(word: card.en) }
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task(id: message) {
+            // Автоматически переводим фразу, если поиск в словаре не удался
+            phraseTranslation = await translateText(card.en, clientId: "phrase")
+        }
+    }
+
+    // MARK: - Entry scroll view
+
+    private func entryScrollView(_ entry: DictionaryEntry) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                headerCard(entry)
+                ForEach(entry.meanings.indices, id: \.self) { idx in
+                    meaningSection(entry.meanings[idx])
+                }
+            }
+            .padding()
+        }
+    }
+
+    // MARK: - Header: word + transcription + audio
+
+    private func headerCard(_ entry: DictionaryEntry) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.word)
+                    .font(.largeTitle.bold())
+                if !entry.transcription.isEmpty {
+                    Text(entry.transcription)
+                        .font(.title3)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                }
+            }
+            Spacer()
+            Button {
+                if vm.audioService.isPlaying {
+                    vm.audioService.stop()
+                } else {
+                    vm.audioService.speak(
+                        text: entry.word,
+                        voiceIdentifier: ttsVoiceIdentifier,
+                        language: englishVariant
+                    )
+                }
+            } label: {
+                Image(systemName: vm.audioService.isPlaying
+                      ? "stop.circle"
+                      : "speaker.wave.2.circle")
+                    .font(.system(size: 40))
+                    .foregroundStyle(Color.accentColor)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(vm.audioService.isPlaying ? "Stop audio" : "Play pronunciation")
+        }
+        .padding()
+        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    // MARK: - Meaning section
+
+    private func meaningSection(_ meaning: DictionaryMeaning) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if !meaning.partOfSpeech.isEmpty {
+                Text(meaning.partOfSpeech)
+                    .font(.caption.uppercaseSmallCaps())
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.accentColor.opacity(0.1), in: Capsule())
+            }
+
+            ForEach(meaning.definitions.prefix(3).indices, id: \.self) { idx in
+                definitionRow(meaning.definitions[idx])
+            }
+
+            if !meaning.synonyms.isEmpty {
+                synonymsSection(meaning.synonyms)
+            }
+
+            Divider()
+        }
+    }
+
+    // MARK: - Definition row
+
+    private func definitionRow(_ definition: DictionaryDefinition) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(definition.text)
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let example = definition.example, !card.allSampleEN.contains(example) {
+                let alreadyAdded = vm.addedItems.contains(example)
+                exampleRow(example: example, definition: definition, alreadyAdded: alreadyAdded)
+            }
+        }
+        .padding(.leading, 4)
+    }
+
+    @ViewBuilder
+    private func exampleRow(example: String, definition: DictionaryDefinition, alreadyAdded: Bool) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("\"\(example)\"")
+                .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                .italic()
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 4)
+
+            Button {
+                Task {
+                    let translatedExample = await translateText(example, clientId: "ex")
+                    vm.addDefinition(definition, to: card, context: context, translatedExample: translatedExample)
+                }
+            } label: {
+                Image(systemName: alreadyAdded ? "checkmark.circle" : "plus.circle")
+                    .font(.title3)
+                    .foregroundStyle(alreadyAdded ? Color.green : Color.accentColor)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(alreadyAdded ? "Added" : "Add example to card")
+        }
+    }
+
+    // MARK: - Synonyms section
+
+    private func synonymsSection(_ synonyms: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Synonyms")
+                .font(.caption)
+            DictionaryFlowLayout(spacing: 8) {
+                ForEach(synonyms, id: \.self) { synonym in
+                    synonymChip(synonym)
+                }
+            }
+        }
+    }
+
+    private func synonymChip(_ synonym: String) -> some View {
+        HStack(spacing: 4) {
+            Text(synonym)
+                .font(.subheadline)
+            let synonymAdded = card.synonyms.contains(synonym)
+            Button {
+                vm.addSynonym(synonym, to: card, context: context)
+            } label: {
+                Image(systemName: synonymAdded ? "checkmark.circle" : "plus.circle")
+                    .font(.caption)
+                    .foregroundStyle(synonymAdded ? Color.green : Color.accentColor)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(synonymAdded ? "Added" : "Add \(synonym) to card")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    // MARK: - Cache entry to Card
+
+    private func cacheEntry(_ entry: DictionaryEntry) {
+        card.dictTranscription = entry.transcription
+        card.dictAudioURL      = entry.audioURL
+        card.dictDefinition    = entry.meanings.first?.definitions.first?.text ?? ""
+        context.saveWithErrorHandling()
+        log("cached to card '\(card.en)':")
+        log("  transcription : '\(card.dictTranscription)'")
+        log("  audioURL      : '\(card.dictAudioURL)'")
+        log("  definition    : '\(card.dictDefinition.prefix(60))…'")
+        log("  audioButton visible: \(!card.dictAudioURL.isEmpty)")
+    }
+}
+
+// MARK: - DictionaryFlowLayout
+//
+// Переносит чипы на новую строку, когда текущая строка заполнена.
+// Назван с префиксом "Dictionary", чтобы избежать коллизии с другими типами Layout.
+
+private struct DictionaryFlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) -> CGSize {
+        let maxWidth = proposal.width ?? 0
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth, x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return CGSize(width: maxWidth, height: y + rowHeight)
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.maxX, x > bounds.minX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+    }
+}
