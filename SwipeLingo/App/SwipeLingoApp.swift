@@ -1,8 +1,5 @@
 import SwiftUI
 import SwiftData
-import FirebaseCore
-import FirebaseCrashlytics
-import GoogleSignIn
 import FirebaseAuth
 
 @main
@@ -10,7 +7,8 @@ struct SwipeLingoApp: App {
     /// читаем системное состояние сцены (.active/.background/.inactive), нужно ниже для повторной синхронизации при возврате в foreground.
     @Environment(\.scenePhase) private var scenePhase
 
-    /// родной язык пользователя, читается прямо из UserDefaults по ключу Constants.StorageKey.nativeLanguage. Обрати внимание: это не тот же источник правды, что AppSyncStateService.nativeLanguageRaw (см. ниже) — тот пишет в тот же ключ UserDefaults параллельно с CloudKit-записью, так что оба значения синхронизированы
+    /// Hодной язык пользователя, читается прямо из UserDefaults по ключу Constants.StorageKey.nativeLanguage.
+    /// Важно:  это не тот же источник правды, что AppSyncStateService.nativeLanguageRaw (см. ниже) — тот пишет в тот же ключ UserDefaults параллельно с CloudKit-записью, так что оба значения синхронизированы
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
     private let startup: Startup
@@ -25,33 +23,8 @@ struct SwipeLingoApp: App {
 
     init() {
         /// Firebase необходимо настроить до того, как AuthService инициализирует Auth.auth().
-        if FirebaseApp.app() == nil {
-            if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
-                FirebaseApp.configure()
-                if let clientID = FirebaseApp.app()?.options.clientID {
-                    GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
-                }
-                // В DEBUG крашлитика отключена — тестовые креши из симулятора/отладки не должны засорять прод-дашборд.
-                #if DEBUG
-                Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
-                #else
-                Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
-                #endif
-                log("App configured", level: .info)
-            } else {
-                log("GoogleService-Info.plist not found — Firebase disabled", level: .warning)
-            }
-        }
-
-        // Определение чистой установки: при переустановке UserDefaults очищается, а Keychain — нет.
-        // Если это самый первый запуск, удаляем устаревший токен из Keychain,
-        // чтобы пользователь заново прошел онбординг и аутентификацию.
-        let launchedBefore = UserDefaults.standard.bool(forKey: Constants.StorageKey.appEverLaunched)
-        if !launchedBefore {
-            try? Auth.auth().signOut()
-            UserDefaults.standard.set(true, forKey: Constants.StorageKey.appEverLaunched)
-            log("Fresh install detected — Keychain token cleared", level: .info)
-        }
+        FBBootstrap.configure()
+        FreshInstallGuard.clearStaleSessionIfNeeded()
 
         if let container = ModelContainerFactory.make() {
             SystemSeeder.ensureSystemCollections(into: container.mainContext)
@@ -125,6 +98,7 @@ struct SwipeLingoApp: App {
                 Task { await ImportFSService().syncForCurrentUser(container: container, language: nativeLanguage) }
             }
         }
+        /// держим привязку id пользователя в системе аналитики синхронизированной с фактическим состоянием auth
         .onChange(of: authService.currentUser) { _, user in
             if let user {
                 AnalyticsFBService.setUser(id: user.uid)
@@ -134,13 +108,16 @@ struct SwipeLingoApp: App {
         }
         /// Единая точка входа для всех операций записи в Firestore после подтверждения сеанса.
         /// Срабатывает при запуске приложения (после успешной проверки сеанса) и после каждого нового входа в систему.
+        /// isSessionVerified: становится true либо после подтверждённого reload() при старте (закэшированный юзер подтверждён сервером), либо сразу после успешного signIn/signInAnonymously/createAccount — то есть блок реагирует и на "холодный старт с валидной сессией", и на "только что залогинился"
         .onChange(of: authService.isSessionVerified) { _, verified in
+            /// двойная защита: реагируем только на переход в true (не на false, т.е. не на logout — тут .onChange тоже сработает при verified → false, но guard молча выходит), и требуем реального currentUser (на случай гонки, если он уже стал nil к моменту срабатывания).
             guard verified, let user = authService.currentUser else { return }
             Task {
                 let isReturningUser = await UserSessionSyncService().syncAfterVerifiedSession(
                     user: user, container: container, nativeLanguage: nativeLanguage, userService: userService
                 )
-                // Второе устройство: документ Firebase уже содержит cefrLevel → пропускаем онбординг
+                /// Второе устройство: документ Firebase уже содержит cefrLevel → пропускаем онбординг:
+                /// узкий, специфичный сценарий: пользователь залогинился на новом устройстве, но его Firestore-документ уже содержит cefrLevel (значит, онбординг пройден на другом устройстве) — тогда просто помечаем hasCompletedOnboarding = true локально, минуя UI-онбординг целиком (роутинг в readyContent сразу переключится на AppView)
                 if isReturningUser && !appSyncStateService.hasCompletedOnboarding {
                     appSyncStateService.hasCompletedOnboarding = true
                     log("Returning user detected — skipping onboarding", level: .info)

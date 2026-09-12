@@ -49,6 +49,8 @@
 		4757D5D730555C7C0064F5F0 /* AuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5D630555C7C0064F5F0 /* AuthClient.swift */; };
 		4757D5D930555E100064F5F0 /* FirestoreClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5D830555E100064F5F0 /* FirestoreClient.swift */; };
 		4757D5E03055C7DA0064F5F0 /* DatabaseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */; };
+		4757D5E43055CAAD0064F5F0 /* FBBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E23055CAAD0064F5F0 /* FBBootstrap.swift */; };
+		4757D5E53055CAAD0064F5F0 /* FreshInstallGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */; };
 		4758E074431285AD6E3CADF1 /* AddEditCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474529BD8FAC3FD67A8654CC /* AddEditCardViewModel.swift */; };
 		47631B022F86941C002F1666 /* CEFRLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783A2F794487005FBDFE /* CEFRLevel.swift */; };
 		47631B032F86949F002F1666 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78462F794487005FBDFE /* DictionaryService.swift */; };
@@ -281,6 +283,8 @@
 		4757D5D630555C7C0064F5F0 /* AuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthClient.swift; sourceTree = "<group>"; };
 		4757D5D830555E100064F5F0 /* FirestoreClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreClient.swift; sourceTree = "<group>"; };
 		4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseErrorView.swift; sourceTree = "<group>"; };
+		4757D5E23055CAAD0064F5F0 /* FBBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBBootstrap.swift; sourceTree = "<group>"; };
+		4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreshInstallGuard.swift; sourceTree = "<group>"; };
 		475E5BE6DDCDBD62D051061F /* OnboardingLevelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelViewModel.swift; sourceTree = "<group>"; };
 		47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingConfirmView.swift; sourceTree = "<group>"; };
 		47631B582F86B82F002F1666 /* NativeLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLanguage.swift; sourceTree = "<group>"; };
@@ -533,6 +537,7 @@
 			isa = PBXGroup;
 			children = (
 				47A8BAEAD0AAF572BD2E8862 /* ModelContainerFactory.swift */,
+				4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */,
 			);
 			path = SwiftData;
 			sourceTree = "<group>";
@@ -544,13 +549,6 @@
 				4712E9172FEC02310014DB01 /* AppSyncStateService.swift */,
 			);
 			path = AppSync;
-			sourceTree = "<group>";
-		};
-		4757D5D5305559C80064F5F0 /* Core */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Core;
 			sourceTree = "<group>";
 		};
 		4757D5DA30555E4D0064F5F0 /* Core */ = {
@@ -587,6 +585,8 @@
 		4757D5DD30555F700064F5F0 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				4757D5E23055CAAD0064F5F0 /* FBBootstrap.swift */,
+				4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */,
 				47A281A77E53A8D87F21514D /* InboxDrainService.swift */,
 				478C78492F794487005FBDFE /* SystemSeeder.swift */,
 				4723A9468F60C7C2DB7889DB /* UserSessionSyncService.swift */,
@@ -825,7 +825,6 @@
 				474D28BB2F9B734400BC11FF /* AppView.swift */,
 				4739F3F5518B2F24B631870A /* AppDependencies.swift */,
 				477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */,
-				4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */,
 				4757D5E13055C7F50064F5F0 /* ViewModels */,
 				4757D5DD30555F700064F5F0 /* Services */,
 			);
@@ -967,7 +966,6 @@
 				47DFAAAD305328C900FDD455 /* Models */,
 				47DFAAAC305328BF00FDD455 /* ViewModels */,
 				47DFAAAB305328B400FDD455 /* Views */,
-				4757D5D5305559C80064F5F0 /* Core */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -1290,6 +1288,8 @@
 				4700CD832FBA27B1003EA2B1 /* BookReaderView.swift in Sources */,
 				4700CD842FBA27B1003EA2B1 /* BooksView.swift in Sources */,
 				4700CD852FBA27B1003EA2B1 /* BooksViewModel.swift in Sources */,
+				4757D5E43055CAAD0064F5F0 /* FBBootstrap.swift in Sources */,
+				4757D5E53055CAAD0064F5F0 /* FreshInstallGuard.swift in Sources */,
 				4700CD862FBA27B1003EA2B1 /* BookWordLookupView.swift in Sources */,
 				4700CD872FBA27B1003EA2B1 /* BookReaderViewModel.swift in Sources */,
 				478C78552F794487005FBDFE /* Colors.swift in Sources */,

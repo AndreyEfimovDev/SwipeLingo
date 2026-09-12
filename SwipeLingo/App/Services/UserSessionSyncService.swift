@@ -25,17 +25,17 @@ struct UserSessionSyncService {
     @discardableResult
     func syncAfterVerifiedSession(
         user: FirebaseAuth.User,
-        container: ModelContainer?,
+        container: ModelContainer,
         nativeLanguage: NativeLanguage,
         userService: UserFBService
     ) async -> Bool {
-        let ctx = container?.mainContext
-        let profiles = ctx?.fetchWithErrorHandling(FetchDescriptor<UserProfile>()) ?? []
+        let ctx = container.mainContext
+        let profiles = ctx.fetchWithErrorHandling(FetchDescriptor<UserProfile>())
         var profile = profiles.first
 
         if profile == nil {
             let p = UserProfile()
-            ctx?.insert(p)
+            ctx.insert(p)
             profile = p
         }
 
@@ -55,7 +55,7 @@ struct UserSessionSyncService {
         } else if let email = user.email, !email.isEmpty {
             profile?.name = String(email.prefix(while: { $0 != "@" }))
         }
-        ctx?.saveWithErrorHandling()
+        ctx.saveWithErrorHandling()
 
         let cefrRaw = profile?.cefrLevel.rawValue ?? ""
         let isReturningUser = await userService.createOrUpdateUser(user, nativeLanguage: nativeLanguage.rawValue, cefrLevel: cefrRaw)
