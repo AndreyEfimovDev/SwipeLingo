@@ -1,12 +1,12 @@
 import SwiftUI
 
 // MARK: - AccessTierBadge
-// Reusable badge for subscription plan indicators.
-// Plans: Free (green gradient) / Go (purple→blue gradient) / Pro (yellow→orange gradient)
+// Переиспользуемый бейдж для индикаторов плана подписки.
+// Планы: Free (зелёный градиент) / Go (фиолетовый→синий градиент) / Pro (жёлтый→оранжевый градиент)
 //
-// Usage:
-//   AccessTierBadge(tier: set.accessTier)            // regular size
-//   AccessTierBadge(tier: set.accessTier, isSmall: true)  // superscript size
+// Использование:
+//   AccessTierBadge(tier: set.accessTier)            // обычный размер
+//   AccessTierBadge(tier: set.accessTier, isSmall: true)  // уменьшенный размер
 
 struct AccessTierBadge: View {
     let tier: AccessTier

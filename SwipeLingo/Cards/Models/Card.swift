@@ -4,10 +4,10 @@ import SwiftData
 
 // MARK: - Array ↔ String helpers
 //
-// SwiftData + CloudKit cannot materialise Array<String> as an Objective-C
-// attribute type. We persist each [String] field as a single String with
-// U+001F (ASCII Unit Separator) as the delimiter — a control character
-// that never appears in natural text.
+// SwiftData + CloudKit не могут материализовать Array<String> как атрибут
+// Objective-C типа. Каждое поле [String] храним как одну String с
+// разделителем U+001F (ASCII Unit Separator) — управляющий символ,
+// который никогда не встречается в обычном тексте.
 
 private let kSep = "\u{001F}"
 
@@ -28,10 +28,10 @@ final class Card {
     var en: String = ""
     var item: String = ""
 
-    // Backing stores — String is fully CloudKit-compatible
+    // Хранилище — String полностью совместим с CloudKit
     private var sampleENRaw:       String = ""
     private var sampleItemRaw:     String = ""
-    private var userSampleENRaw:   String = ""  // user-added examples (preserved on Firestore sync)
+    private var userSampleENRaw:   String = ""  // примеры, добавленные пользователем (сохраняются при Firestore-синке)
     private var userSampleItemRaw: String = ""
     private var tagsRaw:           String = ""
     private var synonymsRaw:       String = ""
@@ -39,19 +39,19 @@ final class Card {
     var status: CardStatus = CardStatus.active
     var isFavorite: Bool = false
 
-    // SRS fields (SM-2)
+    // Поля SRS (SM-2)
     var easeFactor:  Double = 2.5
     var interval:    Int    = 1
     var repetitions: Int    = 0
     var dueDate:     Date   = Date.farFuture  // новая карточка не в Due до первой оценки
     var lastReviewed: Date  = Date.epoch
 
-    // Dictionary cache — plain String, CloudKit compatible (empty = not yet fetched)
+    // Кэш словаря — обычная String, совместимая с CloudKit (пусто = ещё не загружено)
     var dictTranscription: String = ""
     var dictAudioURL:      String = ""
     var dictDefinition:    String = ""
 
-    // CEFR level — stored as String for CloudKit/SwiftData compatibility
+    // CEFR-уровень — хранится как String для совместимости с CloudKit/SwiftData
     var level: String = CEFRLevel.a1.rawValue
 
     var cefrLevel: CEFRLevel {
@@ -59,15 +59,15 @@ final class Card {
         set { level = newValue.rawValue }
     }
 
-    // Metadata
+    // Метаданные
     var createdAt:  Date  = Date.now
     var updatedAt:  Date  = Date.epoch  // обновляется Admin Tool при публикации
     var importedAt: Date? = nil
     var setId:      UUID  = UUID()
-    var firestoreId: String? = nil      // Firestore document ID for sync deduplication
-    var isNew:      Bool  = false       // true = imported from Firestore but not yet seen in study session
+    var firestoreId: String? = nil      // ID документа Firestore для дедупликации при синке
+    var isNew:      Bool  = false       // true = импортирована из Firestore, но ещё не показана в сессии обучения
 
-    // MARK: Computed [String] accessors (same public API as before)
+    // MARK: Вычисляемые доступы к [String] (тот же публичный API, что и раньше)
 
     var sampleEN: [String] {
         get { decodeArray(sampleENRaw) }
@@ -79,7 +79,7 @@ final class Card {
         set { sampleItemRaw = encodeArray(newValue) }
     }
 
-    /// User-added examples from DictionaryLookupView — preserved on Firestore sync.
+    /// Примеры, добавленные пользователем из DictionaryLookupView — сохраняются при Firestore-синке.
     var userSampleEN: [String] {
         get { decodeArray(userSampleENRaw) }
         set { userSampleENRaw = encodeArray(newValue) }
@@ -90,7 +90,7 @@ final class Card {
         set { userSampleItemRaw = encodeArray(newValue) }
     }
 
-    /// Combined Firestore + user examples for display.
+    /// Примеры Firestore + пользовательские вместе, для отображения.
     var allSampleEN: [String]   { sampleEN + userSampleEN }
     var allSampleItem: [String] { sampleItem + userSampleItem }
 

@@ -5,17 +5,17 @@ import FirebaseFirestore
 
 // MARK: - BookFBService
 //
-// Syncs books from Firestore /books collection into SwiftData.
+// Синхронизирует книги из коллекции Firestore /books в SwiftData.
 //
-// Firestore schema:
+// Схема Firestore:
 //   /books/{id}
 //     title, author, description, cefrLevel, accessTier,
 //     coverStoragePath, totalChapters,
 //     chapters: [{index, title}],
 //     updatedAt, createdAt
 //
-// Upsert logic: matches by firestoreId. Never deletes local books
-// (user may have reading progress).
+// Логика upsert: сопоставление по firestoreId. Никогда не удаляет локальные книги
+// (у пользователя может быть прогресс чтения).
 
 struct BookFBService {
 

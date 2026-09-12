@@ -4,9 +4,9 @@ import Translation
 
 // MARK: - BookWordLookupView
 //
-// Dictionary lookup triggered by word tap in BookReaderView.
-// Unlike DictionaryLookupView (which mutates an existing Card),
-// this view can save the word as a new Card into the Inbox CardSet.
+// Поиск в словаре, запускаемый тапом по слову в BookReaderView.
+// В отличие от DictionaryLookupView (который мутирует существующую Card),
+// этот View может сохранить слово как новую Card в Inbox CardSet.
 
 struct BookWordLookupView: View {
 
@@ -83,15 +83,15 @@ struct BookWordLookupView: View {
     private func entryView(_ entry: DictionaryEntry) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Transcription + audio
+                // Транскрипция + аудио
                 headerView(entry)
 
-                // Definitions
+                // Определения
                 if !entry.meanings.isEmpty {
                     definitionsSection(entry)
                 }
 
-                // Save to Inbox button
+                // Кнопка "Save to Inbox"
                 saveButton
             }
             .padding(20)

@@ -77,13 +77,13 @@ extension View {
 }
 
 // MARK: - FixedIconLabelStyle
-// Standard for all Labels in vertical stacks.
-// Fixes the icon width—text always starts on a single vertical line
-// regardless of the SF Symbol width.
+// Стандарт для всех Label в вертикальных стеках.
+// Фиксирует ширину иконки — текст всегда начинается на одной вертикальной линии,
+// независимо от ширины SF Symbol.
 //
-// Usage:
+// Использование:
 // Label("Title", systemImage: "icon").labelStyle(.fixedIcon)
-// or on a container:
+// или на контейнере:
 // VStack { ... }.labelStyle(.fixedIcon)
 
 struct FixedIconLabelStyle: LabelStyle {

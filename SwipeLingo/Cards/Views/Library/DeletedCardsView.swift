@@ -27,7 +27,7 @@ struct DeletedCardsView: View {
     @State private var isHeaderVisible:          Bool      = true
     @State private var showOnTopButton:          Bool      = false
     
-    /// Scroll-aware behaviour kicks in only when there are enough cards to scroll.
+    /// Scroll-aware поведение включается только когда карточек достаточно, чтобы скроллить.
     private let scrollAwareThreshold = 11
     
     // MARK: - Computed (делегируют в VM, добавляя @Query-результаты и фильтры)
@@ -43,12 +43,12 @@ struct DeletedCardsView: View {
         )
     }
 
-    /// Collections that have at least one deleted card
+    /// Коллекции, в которых есть хотя бы одна удалённая карточка
     private var availableCollections: [Collection] {
         vm.availableCollections(allCards: allCards, allCardSets: allCardSets, allCollections: allCollections)
     }
 
-    /// Sets that have at least one deleted card; restricted by selected collection if active
+    /// Сеты, в которых есть хотя бы одна удалённая карточка; сужаются выбранной коллекцией, если она активна
     private var availableSets: [CardSet] {
         vm.availableSets(allCards: allCards, allCardSets: allCardSets, selectedCollectionId: selectedCollectionId)
     }
@@ -78,13 +78,13 @@ struct DeletedCardsView: View {
     
     private var isLandscape: Bool { verticalSizeClass == .compact }
     
-    /// Header is only relevant when there are enough cards to warrant filtering/searching.
+    /// Хедер актуален только когда карточек достаточно, чтобы оправдать фильтрацию/поиск.
     private var headerRelevant: Bool {
         deletedCards.count >= scrollAwareThreshold
     }
-    
-    /// Force-show when search is active or in edit mode; otherwise follow scroll state.
-    /// When there are few cards (< threshold) the header is always visible.
+
+    /// Принудительно показываем при активном поиске или в режиме редактирования; иначе следуем за скроллом.
+    /// Когда карточек мало (< threshold), хедер всегда виден.
     private var showHeader: Bool {
         guard headerRelevant else { return true }
         return isHeaderVisible || !searchText.isEmpty || editMode == .active
@@ -142,18 +142,18 @@ struct DeletedCardsView: View {
                 .onScrollGeometryChange(for: CGFloat.self) { geo in
                     geo.contentOffset.y.rounded()
                 } action: { old, new in
-                    // OnTopButton always works, regardless of filters and searches.
+                    // OnTopButton работает всегда, независимо от фильтров и поиска.
                     let shouldShowOnTop = new > 300
                     if showOnTopButton != shouldShowOnTop { showOnTopButton = shouldShowOnTop }
 
-                    // Hide/show header - only if there is no search and there are enough cards
+                    // Скрыть/показать хедер — только если нет поиска и карточек достаточно
                     guard headerRelevant, searchText.isEmpty else { return }
                     if new < 10 {
-                        isHeaderVisible = true          // at the top - always show
+                        isHeaderVisible = true          // наверху — всегда показываем
                     } else if new > old + 11 {
-                        isHeaderVisible = false         // scrolled down → hide
+                        isHeaderVisible = false         // проскроллили вниз → скрыть
                     } else if new < old - 11 {
-                        isHeaderVisible = true          // scrolled up → show
+                        isHeaderVisible = true          // проскроллили вверх → показать
                     }
                 }
                 OnTopButton(isVisible: showOnTopButton) {
@@ -275,7 +275,7 @@ struct DeletedCardsView: View {
     
     private var filterPillsRow: some View {
         HStack(spacing: 8) {
-            // All
+            // Все
             Button {
                 selectedCollectionId = nil
                 selectedSetId = nil
@@ -284,8 +284,8 @@ struct DeletedCardsView: View {
             }
             .buttonStyle(.plain)
             .fixedSize()
-            
-            // Collection
+
+            // Коллекция
             Menu {
                 ForEach(availableCollections) { col in
                     Button {
@@ -325,7 +325,7 @@ struct DeletedCardsView: View {
             .opacity(availableCollections.isEmpty ? 0.45 : 1)
             .disabled(availableCollections.isEmpty)
             
-            // Set
+            // Сет
             Menu {
                 if selectedCollectionId == nil && availableCollections.count > 1 {
                     ForEach(availableCollections) { col in
@@ -367,7 +367,7 @@ struct DeletedCardsView: View {
                 selectedSetId = nil
             } else {
                 selectedSetId = set.id
-                // Auto-fill Collection if not already selected
+                // Автоматически заполняем Collection, если ещё не выбрана
                 if selectedCollectionId == nil {
                     selectedCollectionId = set.collectionId
                 }

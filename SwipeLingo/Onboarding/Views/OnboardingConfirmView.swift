@@ -21,7 +21,7 @@ struct OnboardingConfirmView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            // Header
+            // Заголовок
             VStack(spacing: 12) {
                 Text("✅")
                     .font(.system(size: 64))
@@ -39,7 +39,7 @@ struct OnboardingConfirmView: View {
 
             Spacer().frame(height: 40)
 
-            // Settings summary
+            // Сводка настроек
             VStack(spacing: 0) {
                 settingRow(
                     icon: nativeLanguage.flag,
@@ -57,7 +57,7 @@ struct OnboardingConfirmView: View {
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal, 24)
 
-            // Language lock warning
+            // Предупреждение о блокировке языка
             HStack(spacing: 5) {
                 Image(systemName: "lock")
                     .font(.caption2.weight(.semibold))
@@ -70,7 +70,7 @@ struct OnboardingConfirmView: View {
 
             Spacer()
 
-            // Buttons
+            // Кнопки
             VStack(spacing: 12) {
                 Button {
                     AnalyticsFBService.onboardingCompleted(

@@ -1,7 +1,7 @@
 import SwiftUI
 
 
-// Set the date encoding/decoding strategy to ISO8601 (string)
+// Устанавливаем стратегию кодирования/декодирования дат в ISO8601 (строка)
 
 extension JSONDecoder {
     static var appDecoder: JSONDecoder {

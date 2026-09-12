@@ -2,7 +2,7 @@
 //  OnTopButton.swift
 //  StartToSwiftUI
 //
-//  Created by Andrey Efimov on 20.03.2026.
+//  Создано Andrey Efimov 20.03.2026.
 //
 
 import SwiftUI

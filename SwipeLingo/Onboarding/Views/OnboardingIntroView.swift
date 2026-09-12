@@ -12,7 +12,7 @@ struct OnboardingIntroView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            // Logo / illustration
+            // Лого / иллюстрация
             VStack(spacing: 20) {
                 Image(systemName: "rectangle.stack.fill")
                     .font(.system(size: 64))
@@ -36,7 +36,7 @@ struct OnboardingIntroView: View {
 
             Spacer()
 
-            // Feature highlights
+            // Основные функции
             VStack(spacing: 16) {
                 featureRow(icon: "rectangle.stack",
                            color: Color.myColors.myBlue,
@@ -58,7 +58,7 @@ struct OnboardingIntroView: View {
 
             Spacer()
 
-            // Setup hint
+            // Подсказка о настройке
             Text("Before we start, let's set up your profile.\nIt will only take a minute.")
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
@@ -66,7 +66,7 @@ struct OnboardingIntroView: View {
                 .padding(.horizontal, 32)
                 .padding(.bottom, 24)
 
-            // CTA
+            // Кнопка призыва к действию
             Button(action: onNext) {
                 HStack(spacing: 8) {
                     Text("Let's go")

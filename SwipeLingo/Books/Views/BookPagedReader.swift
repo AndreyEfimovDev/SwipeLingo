@@ -4,18 +4,18 @@ import WebKit
 
 // MARK: - BookPagedReader
 //
-// UIViewControllerRepresentable wrapping UIPageViewController with .pageCurl transition.
-// Each chapter is a BookChapterVC containing its own WKWebView.
-// Adjacent chapter VCs are created lazily and cached (±3 around current).
-// Swipe navigation is handled natively by UIPageViewController.
-// Programmatic navigation (buttons, TOC) goes through setViewControllers(_:direction:animated:).
+// UIViewControllerRepresentable, оборачивающий UIPageViewController с переходом .pageCurl.
+// Каждая глава — это BookChapterVC с собственным WKWebView.
+// Соседние chapter VC создаются лениво и кэшируются (±3 вокруг текущей).
+// Swipe-навигация обрабатывается нативно средствами UIPageViewController.
+// Программная навигация (кнопки, оглавление) идёт через setViewControllers(_:direction:animated:).
 
 struct BookPagedReader: UIViewControllerRepresentable {
 
     let book:         Book
-    let chapterIndex: Int          // driven by BookReaderViewModel
+    let chapterIndex: Int          // управляется BookReaderViewModel
     let colorScheme:  ColorScheme
-    let fontSize:     Int          // user-adjustable, persisted in AppStorage
+    let fontSize:     Int          // настраивается пользователем, хранится в AppStorage
     let onWordTap:    (String) -> Void
     let onImageTap:   (String) -> Void
     let onPageChange: (Int) -> Void
@@ -52,7 +52,7 @@ struct BookPagedReader: UIViewControllerRepresentable {
         coord.onPageChange = onPageChange
         pageVC.view.backgroundColor = background(for: colorScheme)
 
-        // Propagate font size change to all cached chapter VCs
+        // Распространить изменение размера шрифта на все закэшированные chapter VC
         if fontSize != coord.currentFontSize {
             coord.currentFontSize = fontSize
             coord.applyFontSizeToAllCached(fontSize)
@@ -69,7 +69,7 @@ struct BookPagedReader: UIViewControllerRepresentable {
     private func background(for scheme: ColorScheme) -> UIColor {
         scheme == .dark
             ? UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1)
-            : UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1) // warm paper
+            : UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1) // тёплая бумага
     }
 
     // MARK: - Coordinator
@@ -176,7 +176,7 @@ final class BookChapterVC: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
 
-    /// Live font-size update — called by coordinator when user taps A− / A+.
+    /// Обновление размера шрифта «на лету» — вызывается координатором при тапе на A− / A+.
     func applyFontSize(_ size: Int) {
         fontSize = size
         webView?.evaluateJavaScript(
@@ -190,8 +190,8 @@ final class BookChapterVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Page background matches the webview background so the curl
-        // always shows a solid page — even before HTML finishes rendering.
+        // Фон страницы совпадает с фоном webview, чтобы curl-переход
+        // всегда показывал сплошную страницу — даже до рендеринга HTML.
         let dark = traitCollection.userInterfaceStyle == .dark
         let pageBg: UIColor = dark
             ? UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1)
@@ -210,7 +210,7 @@ final class BookChapterVC: UIViewController {
         wv.isOpaque = true
         wv.scrollView.showsVerticalScrollIndicator = false
         wv.navigationDelegate = self
-        wv.alpha = 0  // hidden until CSS injected; view.backgroundColor fills the curl visually
+        wv.alpha = 0  // скрыт, пока не внедрён CSS; view.backgroundColor визуально заполняет curl
         view.addSubview(wv)
         NSLayoutConstraint.activate([
             wv.topAnchor.constraint(equalTo: view.topAnchor),
@@ -232,8 +232,8 @@ extension BookChapterVC: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         injectCSS(into: webView)
         injectJS(into: webView)
-        // Fade-in is triggered by JS "pageReady" message (fires after all images loaded/failed).
-        // Fallback: JS also posts pageReady after 3s timeout.
+        // Fade-in запускается JS-сообщением "pageReady" (срабатывает после загрузки/ошибки всех картинок).
+        // Fallback: JS также отправляет pageReady по таймауту в 3с.
     }
 }
 
@@ -308,7 +308,7 @@ private extension BookChapterVC {
     func injectJS(into wv: WKWebView) {
         wv.evaluateJavaScript("""
         (function(){
-            // Word tap
+            // Тап по слову
             function wrapWords(node) {
                 if (node.nodeType === 3) {
                     var parts = node.textContent.split(/(\\s+)/);
@@ -334,7 +334,7 @@ private extension BookChapterVC {
             }
             wrapWords(document.body);
 
-            // Image tap → fullscreen
+            // Тап по картинке → полноэкранный режим
             document.querySelectorAll('img').forEach(function(img) {
                 img.style.cursor = 'pointer';
                 img.addEventListener('click', function(e) {
@@ -343,7 +343,7 @@ private extension BookChapterVC {
                 });
             });
 
-            // Signal ready after all images are loaded or failed
+            // Сигнализировать готовность после загрузки/ошибки всех картинок
             var imgs     = Array.from(document.querySelectorAll('img[src]'));
             var total    = imgs.length;
             var done     = 0;
@@ -367,14 +367,14 @@ private extension BookChapterVC {
                 }
             });
 
-            // Hard timeout in case some images never respond
+            // Жёсткий таймаут на случай, если какие-то картинки не ответят
             setTimeout(signal, 3000);
         })();
         """, completionHandler: nil)
     }
 }
 
-// MARK: - WeakScriptHandler (breaks retain cycle with WKUserContentController)
+// MARK: - WeakScriptHandler (разрывает retain cycle с WKUserContentController)
 
 private final class WeakScriptHandler: NSObject, WKScriptMessageHandler {
     weak var target: WKScriptMessageHandler?

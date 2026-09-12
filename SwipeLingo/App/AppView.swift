@@ -29,7 +29,7 @@ struct AppView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
-            // Re-sync when user raises their CEFR level.
+            // Ре-синхронизация при повышении CEFR-уровня пользователя.
             // При ПОНИЖЕНИИ уровня данные уже есть локально — UI фильтрует по уровню мгновенно,
             // sync не нужен.
             // При ПОВЫШЕНИИ — нужен forceFullSync: true чтобы скачать контент нового уровня.

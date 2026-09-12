@@ -322,7 +322,7 @@ struct PairsLibraryView: View {
         let items = sets(for: collection)
 
         VStack(spacing: 0) {
-            // Collection header
+            // Заголовок коллекции
             HStack(spacing: 0) {
                 Label(collection.name, systemImage: collection.icon ?? "folder")
                     .font(.subheadline.weight(.semibold))
@@ -396,7 +396,7 @@ struct PairsLibraryView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                // Deleted Sets row (only when there are deleted sets)
+                // Строка Deleted Sets (только когда есть удалённые сеты)
                 if !deletedSets.isEmpty {
                     deletedSetsRow
 

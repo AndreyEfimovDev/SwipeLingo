@@ -1,11 +1,11 @@
 import Foundation
 import SwiftData
 
-// MARK: - UUID array helpers
+// MARK: - Вспомогательные функции массива UUID
 //
-// SwiftData + CloudKit cannot materialise Array<UUID>.
-// Same pattern as Card's [String] fields: persist as a
-// U+001F-delimited String of uuidString values.
+// SwiftData + CloudKit не могут материализовать Array<UUID>.
+// Тот же паттерн, что и у полей [String] у Card: храним как
+// String со значениями uuidString, разделёнными U+001F.
 
 private let kUUIDSep = "\u{001F}"
 
@@ -20,8 +20,8 @@ private func decodeUUIDs(_ raw: String) -> [UUID] {
 
 // MARK: - Pile
 
-// cards is a computed property — not stored in the database.
-// Resolved in service layer via:
+// cards — вычисляемое свойство, в базе не хранится.
+// Определяется в service-слое через:
 //   sets.filter { setIds.contains($0.id) }
 //       .flatMap { fetch Cards where setId == $0.id }
 //       .filter { $0.status == .active }
@@ -30,7 +30,7 @@ private func decodeUUIDs(_ raw: String) -> [UUID] {
 final class Pile {
     var id: UUID = UUID()
     var name: String = ""
-    /// Backing store — plain String is CloudKit-compatible.
+    /// Хранилище — обычная String совместима с CloudKit.
     private var setIdsRaw: String = ""
     var isActive: Bool = false
     var shuffleMethodRaw: String = ShuffleMethod.random.rawValue

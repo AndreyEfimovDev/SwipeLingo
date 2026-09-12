@@ -20,7 +20,7 @@ enum AccessTier: String, Codable, CaseIterable {
         }
     }
 
-    /// Returns true if this plan covers the required tier.
+    /// Возвращает true, если этот план покрывает требуемый уровень.
     // MONETIZATION_STUB: всегда true — монетизация отключена до получения ИП/ООО и External Purchase Entitlement.
     // Когда монетизация будет готова: вернуть `rank >= required.rank`
     func canAccess(_ required: AccessTier) -> Bool { true }
@@ -54,11 +54,11 @@ enum AccessTier: String, Codable, CaseIterable {
         return String(format: "$%.2f %@", p, period)
     }
 
-    /// Placeholder prices — replace when StoreKit is integrated.
+    /// Временные цены — заменить, когда будет подключён StoreKit.
     var priceLabel: String { priceString(for: .yearly) }
 
-    /// Calculates the charge for upgrading to `target`.
-    /// Applies proration (credit for unused days) only when upgrading tier from a paid plan.
+    /// Вычисляет сумму к оплате при апгрейде до `target`.
+    /// Применяет proration (зачёт за неиспользованные дни) только при апгрейде уровня с платного плана.
     static func chargeAmount(
         from current: AccessTier,
         currentCycle: BillingCycle,
@@ -67,7 +67,7 @@ enum AccessTier: String, Codable, CaseIterable {
         targetCycle: BillingCycle
     ) -> Double {
         let fullPrice = target.price(for: targetCycle)
-        // Proration only for tier upgrade from an active paid plan with known expiry
+        // Proration только при апгрейде уровня с активного платного плана с известной датой истечения
         guard target.rank > current.rank,
               current != .free,
               currentCycle != .none,

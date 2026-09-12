@@ -20,11 +20,11 @@ struct BookChapter: Codable, Identifiable, Hashable {
     var bookDescription:   String?
     var cefrLevelRaw:      String = CEFRLevel.a1.rawValue
     var accessTierRaw:     String = AccessTier.free.rawValue
-    var coverStoragePath:   String = ""     // Firebase Storage path or full HTTP URL
-    var chapterBaseURL:     String = ""     // "" = Firebase Storage; "https://..." = HTTP debug stub
+    var coverStoragePath:   String = ""     // путь в Firebase Storage или полный HTTP URL
+    var chapterBaseURL:     String = ""     // "" = Firebase Storage; "https://..." = HTTP debug-заглушка
     var totalChapters:      Int   = 0
-    var chaptersJSON:       String = "[]"   // JSON-encoded [BookChapter]
-    var isNew:              Bool   = true   // true after import, false after first full download
+    var chaptersJSON:       String = "[]"   // [BookChapter], закодированный в JSON
+    var isNew:              Bool   = true   // true после импорта, false после первой полной загрузки
     var createdAt:          Date  = Date()
     var updatedAt:          Date  = Date()
 

@@ -1,11 +1,11 @@
 import SwiftUI
 
 // MARK: - CEFRBadgeView
-// Universal CEFR level badge. Pass nil to hide (e.g. user-created sets have no level).
+// Универсальный бейдж CEFR-уровня. Передай nil, чтобы скрыть (напр. у пользовательских сетов уровня нет).
 //
-// Usage:
-//   CEFRBadgeView(level: cardSet.cefrLevel)   // developer set
-//   CEFRBadgeView(level: nil)                 // user-created set — renders nothing
+// Использование:
+//   CEFRBadgeView(level: cardSet.cefrLevel)   // сет от разработчика
+//   CEFRBadgeView(level: nil)                 // пользовательский сет — ничего не рендерит
 
 struct CEFRBadgeView: View {
     let level: CEFRLevel?

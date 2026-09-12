@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - PaymentHistoryView
-// Shows payment history loaded from Firestore: users/{uid}/paymentHistory
+// Показывает историю платежей, загруженную из Firestore: users/{uid}/paymentHistory
 
 struct PaymentHistoryView: View {
 

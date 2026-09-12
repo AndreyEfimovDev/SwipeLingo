@@ -9,32 +9,26 @@ import FirebaseAuth
 struct SwipeLingoApp: App {
     /// читаем системное состояние сцены (.active/.background/.inactive), нужно ниже для повторной синхронизации при возврате в foreground.
     @Environment(\.scenePhase) private var scenePhase
-    
+
     /// родной язык пользователя, читается прямо из UserDefaults по ключу Constants.StorageKey.nativeLanguage. Обрати внимание: это не тот же источник правды, что AppSyncStateService.nativeLanguageRaw (см. ниже) — тот пишет в тот же ключ UserDefaults параллельно с CloudKit-записью, так что оба значения синхронизированы
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
-    /// опциональный, потому что бывает, что SwiftData вообще не поднимается (см. databseErrorView)
-    let container: ModelContainer?
+    /// Результат сборки composition root: либо готовый SwiftData ModelContainer
+    /// + сервисы, либо фатальный сбой запуска (сейчас единственная причина —
+    /// не поднялся ModelContainer даже после сброса стора). Не откатываемся
+    /// молча на in-memory заглушку (это показало бы «рабочее» приложение без
+    /// данных, без признака ошибки) — вместо этого рисуем databseErrorView.
+    /// Обычный let, не @State: init() выполняется один раз за жизнь процесса
+    /// и startup нигде не переприсваивается после конструирования, а
+    /// реактивность сервисов внутри dependencies обеспечивает сам @Observable
+    /// независимо от того, как на них ссылаются сверху.
+    private let startup: Startup
 
-    /// composition root: FireBaseAuthService, FBUserService, AppSyncStateService, AppViewModel создаются один раз здесь и больше нигде. @State в App-структуре — валидный способ держать reference-type с identity, переживающей re-init структуры SwipeLingoApp (SwiftUI пересоздаёт саму struct на каждый re-render, но @State-storage персистентен)
-    @State private var authService: AuthFBService
-    @State private var userService: UserFBService
-    @State private var appSyncStateService: AppSyncStateService
-    @State private var appViewModel: AppViewModel
-
-    /// Собирается заново на каждый body-evaluation — дёшево, поля просто
-    /// переупаковывают уже существующие @State-инстансы (reference types),
-    /// сами сервисы не пересоздаются.
-    private var dependencies: AppDependencies {
-        AppDependencies(
-            authService: authService,
-            userService: userService,
-            appSyncStateService: appSyncStateService,
-            appViewModel: appViewModel
-        )
+    private enum Startup {
+        case ready(container: ModelContainer, dependencies: AppDependencies)
+        case failed
     }
 
-    /// Зарегистрировать делегат приложения для настройки Firebase
     /// Подключает AppDelegate (CloudKit push, Google Sign-In URL handling) к жизненному циклу SwiftUI-приложения
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
@@ -63,61 +57,82 @@ struct SwipeLingoApp: App {
             log("Fresh install detected — Keychain token cleared", level: .info)
         }
 
-        _authService = State(initialValue: AuthFBService())
-        _userService = State(initialValue: UserFBService())
-        _appViewModel = State(initialValue: AppViewModel())
-        
-        let builtContainer = ModelContainerFactory.make()
-        container = builtContainer
-        if let ctx = builtContainer?.mainContext {
-            SystemSeeder.ensureSystemCollections(into: ctx)
-            _appSyncStateService = State(initialValue: AppSyncStateService(modelContext: ctx))
+        if let container = ModelContainerFactory.make() {
+            SystemSeeder.ensureSystemCollections(into: container.mainContext)
+            let dependencies = AppDependencies(
+                authService: AuthFBService(),
+                userService: UserFBService(),
+                appSyncStateService: AppSyncStateService(modelContext: container.mainContext),
+                appViewModel: AppViewModel()
+            )
+            startup = .ready(container: container, dependencies: dependencies)
         } else {
-            _appSyncStateService = State(initialValue: AppSyncStateService(modelContext: ModelContext(try! ModelContainer(for: AppSyncState.self))))
+            startup = .failed
         }
     }
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if authService.isLoading {
-                    Color.myColors.myBackground.ignoresSafeArea()
-                } else if let container {
-                    if !authService.isAuthenticated {
-                        /// Авторизация: Войти / Зарегистрироваться / Продолжить как гость
-                        AuthView(showGuestOption: true, authService: authService)
-                    } else if !appSyncStateService.hasCompletedOnboarding {
-                        /// Новый пользователь: выбор языка и уровня (без этапа аутентификации —
-                        /// аутентификация уже выполнена выше, до начала онбординга).
-                        OnboardingView {
-                            appSyncStateService.hasCompletedOnboarding = true
-                        }
-                        .modelContainer(container)
-                    } else {
-                        AppView(dependencies: dependencies)
-                            .modelContainer(container)
-                    }
-                } else {
-                    databseErrorView
-                }
+            switch startup {
+            case .ready(let container, let dependencies):
+                readyContent(container: container, dependencies: dependencies)
+            case .failed:
+                databseErrorView
             }
-            /// Синхронизирует актуальные данные из Firestore в SwiftData (операция идемпотентна благодаря firestoreId).
-            /// Пропускается при первом запуске (онбординг еще не пройден: отсутствует UserProfile, уровень неизвестен).
-            /// При первом запуске синхронизация инициируется ниже, в блоке .onChange, после завершения онбординга.
-            .task {
-                if appSyncStateService.hasCompletedOnboarding { await firestoreSync() }
-            }
-            .onChange(of: appSyncStateService.hasCompletedOnboarding) { _, completed in
-                if completed {
-                    Task { await firestoreSync() }
+        }
+    }
+
+    // MARK: - Ready content
+
+    /// Экран авторизации/онбординга/приложения плюс все side-effect подписки
+    /// (Firestore sync, аналитика, foreground-триггеры). Вынесен из body
+    /// отдельной функцией, потому что доступен только внутри .ready-ветки
+    /// Startup — там, где есть реальный container и dependencies.
+    @ViewBuilder
+    private func readyContent(
+        container: ModelContainer,
+        dependencies: AppDependencies
+    ) -> some View {
+        let authService = dependencies.authService
+        let appSyncStateService = dependencies.appSyncStateService
+        let userService = dependencies.userService
+
+        Group {
+            if authService.isLoading {
+                Color.myColors.myBackground.ignoresSafeArea()
+            } else if !authService.isAuthenticated {
+                /// Авторизация: Войти / Зарегистрироваться / Продолжить как гость
+                AuthView(showGuestOption: true, authService: authService)
+            } else if !appSyncStateService.hasCompletedOnboarding {
+                /// Новый пользователь: выбор языка и уровня (без этапа аутентификации —
+                /// аутентификация уже выполнена выше, до начала онбординга).
+                OnboardingView {
+                    appSyncStateService.hasCompletedOnboarding = true
                 }
+                .modelContainer(container)
+            } else {
+                AppView(dependencies: dependencies)
+                    .modelContainer(container)
             }
-            .onChange(of: authService.currentUser) { _, user in
-                if let user {
-                    AnalyticsFBService.setUser(id: user.uid)
-                } else {
-                    AnalyticsFBService.clearUser()
-                }
+        }
+        /// Синхронизирует актуальные данные из Firestore в SwiftData (операция идемпотентна благодаря firestoreId).
+        /// Пропускается при первом запуске (онбординг еще не пройден: отсутствует UserProfile, уровень неизвестен).
+        /// При первом запуске синхронизация инициируется ниже, в блоке .onChange, после завершения онбординга.
+        .task {
+            if appSyncStateService.hasCompletedOnboarding {
+                await firestoreSync(container: container)
+            }
+        }
+        .onChange(of: appSyncStateService.hasCompletedOnboarding) { _, completed in
+            if completed {
+                Task { await firestoreSync(container: container) }
+            }
+        }
+        .onChange(of: authService.currentUser) { _, user in
+            if let user {
+                AnalyticsFBService.setUser(id: user.uid)
+            } else {
+                AnalyticsFBService.clearUser()
             }
         }
         /// Единая точка входа для всех операций записи в Firestore после подтверждения сеанса.
@@ -128,7 +143,7 @@ struct SwipeLingoApp: App {
                 let isReturningUser = await UserSessionSyncService().syncAfterVerifiedSession(
                     user: user, container: container, nativeLanguage: nativeLanguage, userService: userService
                 )
-                // Second device: Firebase doc exists with cefrLevel → skip onboarding
+                // Второе устройство: документ Firebase уже содержит cefrLevel → пропускаем онбординг
                 if isReturningUser && !appSyncStateService.hasCompletedOnboarding {
                     appSyncStateService.hasCompletedOnboarding = true
                     log("Returning user detected — skipping onboarding", level: .info)
@@ -137,9 +152,7 @@ struct SwipeLingoApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                if let container {
-                    InboxDrainService().drain(container: container)
-                }
+                InboxDrainService().drain(container: container)
                 /// Повторно синхронизировать подписку при каждом переходе приложения на передний план, чтобы получить изменения со стороны сервера.
                 if let uid = authService.currentUser?.uid {
                     Task { await userService.syncSubscription(for: uid) }
@@ -151,7 +164,7 @@ struct SwipeLingoApp: App {
     // MARK: - Database Error
 
     /// Отображается, если инициализация SwiftData ModelContainer не удается даже после сброса хранилища.
-    /// Отображается вместо основного содержимого приложения — без зависимости от SwiftData..
+    /// Отображается вместо основного содержимого приложения — без зависимости от SwiftData.
     private var databseErrorView: some View {
         VStack(spacing: 24) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -172,8 +185,8 @@ struct SwipeLingoApp: App {
 
     // MARK: - Firestore sync
 
-    private func firestoreSync() async {
-        guard let ctx = container?.mainContext else { return }
+    private func firestoreSync(container: ModelContainer) async {
+        let ctx = container.mainContext
 
         let language = nativeLanguage
 

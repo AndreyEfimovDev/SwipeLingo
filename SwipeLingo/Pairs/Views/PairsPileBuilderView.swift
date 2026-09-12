@@ -2,8 +2,8 @@ import SwiftUI
 import SwiftData
 
 // MARK: - PairsPileBuilderView
-// Sheet for creating or editing a PairsPile.
-// Save activates the pile and dismisses.
+// Sheet для создания или редактирования PairsPile.
+// Save активирует пайл и закрывает экран.
 
 struct PairsPileBuilderView: View {
 

@@ -13,30 +13,30 @@ final class TinderCardsViewModel {
     // MARK: Data
 
     private(set) var cards: [Card]
-    /// Full original card list — used by restart() to restore all active cards.
+    /// Полный исходный список карточек — используется в restart() для восстановления всех активных карточек.
     private let originalCards: [Card]
-    /// setId → display label shown below the word, e.g. "Daily Words · Travel"
+    /// setId → отображаемый лейбл под словом, напр. "Daily Words · Travel"
     let contextLabels: [UUID: String]
-    /// Called when the user taps "Done" on the session completion screen.
+    /// Вызывается, когда пользователь тапает "Done" на экране завершения сессии.
     let onDone: (() -> Void)?
 
-    // MARK: Weak cards (rated Forgot or Hard this session)
+    // MARK: Слабые карточки (оценены Forgot или Hard в этой сессии)
 
     private(set) var weakCards: [Card] = []
     var weakCount: Int { weakCards.count }
 
-    // MARK: In-session stats
+    // MARK: Статистика внутри сессии
 
-    /// Cards rated Easy this session (used for "Learnt N" in progress stats row).
+    /// Карточки, оценённые Easy в этой сессии (используется для "Learnt N" в строке прогресса).
     private(set) var learntInSession: Int = 0
 
-    // MARK: UI State
+    // MARK: UI-состояние
 
     private(set) var currentIndex: Int = 0
     var dragOffset: CGSize = .zero
     var isFlipped: Bool = false
-    /// True while a drag is active OR while the card is still animating back to centre.
-    /// Tap-to-flip is blocked when this flag is set.
+    /// True, пока активен drag ИЛИ пока карточка ещё анимируется обратно к центру.
+    /// Тап-для-флипа блокируется, пока установлен этот флаг.
     var isDragging: Bool = false
 
     // MARK: Derived
@@ -50,13 +50,13 @@ final class TinderCardsViewModel {
 
     var remaining: Int { max(0, cards.count - currentIndex) }
 
-    /// Rotation angle driven by horizontal drag (-1…+1 range mapped to ±15°)
+    /// Угол поворота, управляемый горизонтальным drag (диапазон -1…+1 отображается на ±15°)
     var dragRotation: Angle {
         .degrees(Double(dragOffset.width) / 22.0)
     }
 
-    /// Normalised swipe progress: negative = left (again), positive = right (learnt)
-    /// Clamped to -1…+1 for colour interpolation.
+    /// Нормализованный прогресс свайпа: отрицательный = влево (again), положительный = вправо (learnt)
+    /// Ограничен диапазоном -1…+1 для интерполяции цвета.
     var swipeProgress: Double {
         min(max(Double(dragOffset.width) / 130.0, -1.0), 1.0)
     }
@@ -66,9 +66,9 @@ final class TinderCardsViewModel {
         return contextLabels[card.setId] ?? ""
     }
 
-    // MARK: Session completion stats
+    // MARK: Статистика завершения сессии
 
-    /// Cards whose dueDate falls on calendar tomorrow.
+    /// Карточки, чей dueDate приходится на календарное завтра.
     var dueTomorrowCount: Int {
         let cal      = Calendar.current
         let tomorrow = cal.startOfDay(for: .now + 86400)
@@ -76,7 +76,7 @@ final class TinderCardsViewModel {
         return originalCards.filter { $0.dueDate >= tomorrow && $0.dueDate < dayAfter }.count
     }
 
-    /// Cards whose dueDate falls 2–4 calendar days from now.
+    /// Карточки, чей dueDate приходится на 2–4 календарных дня от сейчас.
     var dueIn3DaysCount: Int {
         let cal      = Calendar.current
         let dayAfter = cal.startOfDay(for: .now + 86400 * 2)
@@ -97,22 +97,22 @@ final class TinderCardsViewModel {
         self.onDone = onDone
     }
 
-    // MARK: Actions
+    // MARK: Действия
 
-    /// Flips front → back.
+    /// Переворачивает лицом → рубашкой.
     func flipToBack() {
         guard !isFlipped else { return }
         isFlipped = true
     }
 
-    /// Toggles flip in both directions. Tap anywhere on the card calls this.
+    /// Переключает флип в обе стороны. Вызывается тапом в любом месте карточки.
     func flipToggle() {
         isFlipped.toggle()
     }
 
-    /// Called when a drag gesture ends beyond the swipe threshold.
-    ///   left  → card stays .active (keep studying)
-    ///   right → card becomes .learnt
+    /// Вызывается, когда drag-жест завершается за порогом свайпа.
+    ///   влево  → карточка остаётся .active (продолжаем учить)
+    ///   вправо → карточка становится .learnt
     func commitSwipe(direction: SwipeDirection, context: ModelContext) {
         guard let card = currentCard else { return }
         card.isNew = false
@@ -124,7 +124,7 @@ final class TinderCardsViewModel {
         advance()
     }
 
-    /// Sends the current card to .deleted and advances.
+    /// Отправляет текущую карточку в .deleted и переходит к следующей.
     func commitDelete(context: ModelContext) {
         guard let card = currentCard else { return }
         card.isNew = false
@@ -133,7 +133,7 @@ final class TinderCardsViewModel {
         advance()
     }
 
-    /// Applies SM-2, records weak cards (Forgot/Hard), saves, and advances.
+    /// Применяет SM-2, записывает слабые карточки (Forgot/Hard), сохраняет и переходит к следующей.
     func evaluate(rating: SRSRating, context: ModelContext) {
         guard let card = currentCard else { return }
         card.isNew = false
@@ -146,7 +146,7 @@ final class TinderCardsViewModel {
         advance()
     }
 
-    /// Study Again — restarts with all .active original cards. .learnt cards are NOT reset.
+    /// Study Again — перезапускает со всеми исходными .active карточками. .learnt карточки НЕ сбрасываются.
     func restart() {
         cards            = originalCards.filter { $0.status == .active }
         weakCards        = []
@@ -156,7 +156,7 @@ final class TinderCardsViewModel {
         isFlipped        = false
     }
 
-    /// Weak cards — restarts with only cards rated Forgot/Hard this session.
+    /// Weak cards — перезапускает только карточками, оценёнными Forgot/Hard в этой сессии.
     func restartWeak() {
         let active = weakCards.filter { $0.status == .active }
         if !active.isEmpty { cards = active }

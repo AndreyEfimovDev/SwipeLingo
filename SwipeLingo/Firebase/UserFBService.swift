@@ -5,20 +5,20 @@ import FirebaseFirestore
 
 // MARK: - UserFBService
 //
-// Manages the Firestore user document (users/{uid}) and local subscription cache.
+// Управляет документом пользователя в Firestore (users/{uid}) и локальным кэшем подписки.
 //
-// Responsibilities:
-//  • createOrUpdateUser — upsert on first sign-in / provider link
-//  • syncSubscription   — fetch Firestore subscription and update local cache
-//  • effectivePlan      — offline-safe plan resolution with grace period
+// Обязанности:
+//  • createOrUpdateUser — upsert при первом входе / привязке провайдера
+//  • syncSubscription   — получает подписку из Firestore и обновляет локальный кэш
+//  • effectivePlan      — определение плана офлайн-safe способом, с учётом grace period
 //
-// Subscription logic:
-//  • Free → Paid : 30-day Pro trial (Constants.trialDurationDays), status=trial, no grace period
-//  • Paid → Paid : direct activation, status=active, endDate=now+1yr
-//  • Paid → Free : cancel — status=cancelled, plan+endDate unchanged, grace period applies
+// Логика подписки:
+//  • Free → Paid : 30-дневный Pro-триал (Constants.trialDurationDays), status=trial, без grace period
+//  • Paid → Paid : прямая активация, status=active, endDate=сейчас+1год
+//  • Paid → Free : отмена — status=cancelled, plan+endDate не меняются, действует grace period
 //
-// Local cache keys → Constants.StorageKey
-// Grace period: Constants.subscriptionGracePeriodDays days (paid only, not trial).
+// Ключи локального кэша → Constants.StorageKey
+// Grace period: Constants.subscriptionGracePeriodDays дней (только для платных, не для триала).
 
 @Observable
 @MainActor
@@ -30,10 +30,10 @@ final class UserFBService {
 
     // MARK: - Upsert user document
 
-    /// Creates the Firestore user document on first sign-in.
-    /// On subsequent sign-ins updates provider + displayName + updatedAt only (preserves subscription).
-    /// Returns `true` if the user document already existed with cefrLevel set —
-    /// used by SwipeLingoApp to skip onboarding on a second device (returning user).
+    /// Создаёт документ пользователя в Firestore при первом входе.
+    /// При повторных входах обновляет только provider + displayName + updatedAt (подписка сохраняется).
+    /// Возвращает `true`, если документ пользователя уже существовал с установленным cefrLevel —
+    /// используется SwipeLingoApp, чтобы пропустить онбординг на втором устройстве (возвращающийся пользователь).
     @discardableResult
     func createOrUpdateUser(
         _ firebaseUser: FirebaseAuth.User,
@@ -45,8 +45,8 @@ final class UserFBService {
             let snapshot = try await ref.getDocument()
             if snapshot.exists {
                 let isReturningUser = (snapshot.data()?["cefrLevel"] as? String)?.isEmpty == false
-                // Update mutable fields only — do NOT overwrite subscription.
-                // nativeLanguage backfills accounts created before onboarding set the preference.
+                // Обновляем только изменяемые поля — НЕ перезаписываем subscription.
+                // nativeLanguage backfill'ит аккаунты, созданные до того, как онбординг стал задавать настройку.
                 var updates: [String: Any] = [
                     "authProvider": AuthProviderID.from(firebaseUser),
                     "displayName":  firebaseUser.displayName ?? "",
@@ -58,7 +58,7 @@ final class UserFBService {
                 log("User document updated: \(firebaseUser.uid) returningUser:\(isReturningUser)", level: .info)
                 return isReturningUser
             } else {
-                // First sign-in — create full document
+                // Первый вход — создаём полный документ
                 let doc = UserFSDocument.make(
                     from: firebaseUser,
                     nativeLanguage: nativeLanguage,
@@ -66,7 +66,7 @@ final class UserFBService {
                 )
                 try ref.setData(from: doc)
                 log("User document created: \(firebaseUser.uid)", level: .info)
-                // Cache Free plan as default
+                // Кэшируем план Free по умолчанию
                 cachePlan(.free, status: .active, expiry: nil)
                 return false
             }
@@ -78,8 +78,8 @@ final class UserFBService {
 
     // MARK: - Sync subscription
 
-    /// Fetches subscription from Firestore and updates local AppStorage cache.
-    /// Call on app launch (when network is available) and after plan changes.
+    /// Получает подписку из Firestore и обновляет локальный кэш AppStorage.
+    /// Вызывать при запуске приложения (когда есть сеть) и после изменений плана.
     func syncSubscription(for uid: String) async {
         guard FirebaseApp.app() != nil else { return }
         isLoading = true
@@ -95,7 +95,7 @@ final class UserFBService {
             let plan         = AccessTier(rawValue: sub.plan)          ?? .free
             let status       = SubscriptionStatus(rawValue: sub.status) ?? .active
             let billingCycle = BillingCycle(rawValue: sub.billingCycle) ?? .none
-            // Trial uses trialEndDate as expiry; paid uses endDate
+            // Триал использует trialEndDate как срок истечения; платная — endDate
             let expiry = status == .trial ? sub.trialEndDate : sub.endDate
 
             cachePlan(plan, status: status, expiry: expiry, billingCycle: billingCycle)
@@ -116,9 +116,9 @@ final class UserFBService {
 
     // MARK: - Effective plan (offline-safe)
 
-    /// Resolves the user's current plan from local cache, applying grace period.
-    /// - If cached plan has expired + grace period passed → returns .free
-    /// - Otherwise returns cached plan (works offline)
+    /// Определяет текущий план пользователя из локального кэша, с учётом grace period.
+    /// - Если закэшированный план истёк и grace period прошёл → возвращает .free
+    /// - Иначе возвращает закэшированный план (работает офлайн)
     func effectivePlan() -> AccessTier {
         let cached = UserDefaults.standard.string(forKey: Constants.StorageKey.userPlan)
             .flatMap { AccessTier(rawValue: $0) } ?? .free
@@ -129,12 +129,12 @@ final class UserFBService {
         let isTrial   = statusRaw == SubscriptionStatus.trial.rawValue
 
         let expiryTS = UserDefaults.standard.double(forKey: Constants.StorageKey.cachedPlanExpiry)
-        guard expiryTS > 0 else { return cached } // no expiry → subscription active indefinitely
+        guard expiryTS > 0 else { return cached } // нет срока истечения → подписка активна бессрочно
 
         let expiry = Date(timeIntervalSince1970: expiryTS)
 
         if isTrial {
-            // Trial: hard cutoff at trialEndDate, no grace period
+            // Триал: жёсткая граница на trialEndDate, без grace period
             if Date() > expiry {
                 cachePlan(.free, status: .expired, expiry: nil)
                 log("Trial expired → downgraded to Free", level: .info)
@@ -143,7 +143,7 @@ final class UserFBService {
             return cached
         }
 
-        // Paid subscription: apply grace period
+        // Платная подписка: применяем grace period
         let graceCutoff = expiry.addingTimeInterval(
             Double(Constants.subscriptionGracePeriodDays) * 86_400
         )
@@ -160,8 +160,8 @@ final class UserFBService {
 
     // MARK: - Update subscription
 
-    /// Simulated purchase: activates subscription, writes PaymentRecord + PlanHistoryRecord to Firestore.
-    /// cardLast4 — last 4 digits of the fake card.
+    /// Симулированная покупка: активирует подписку, пишет PaymentRecord + PlanHistoryRecord в Firestore.
+    /// cardLast4 — последние 4 цифры фейковой карты.
     @discardableResult
     func purchaseSubscription(
         plan: AccessTier,
@@ -228,7 +228,7 @@ final class UserFBService {
         }
     }
 
-    /// Loads payment history from Firestore, sorted newest first.
+    /// Загружает историю платежей из Firestore, сортировка от новых к старым.
     func loadPaymentHistory(for uid: String) async -> [PaymentRecord] {
         do {
             let snap = try await db.collection("users").document(uid)
@@ -242,7 +242,7 @@ final class UserFBService {
         }
     }
 
-    /// Schedules a downgrade — keeps current plan active until endDate, sets pending to new plan/cycle.
+    /// Планирует понижение плана — текущий план остаётся активным до endDate, pending устанавливается на новый план/цикл.
     func scheduleDowngrade(plan: AccessTier, billingCycle: BillingCycle, for uid: String) async {
         let data: [String: Any] = [
             "subscription.pendingPlan":         plan.rawValue,
@@ -258,7 +258,7 @@ final class UserFBService {
         }
     }
 
-    /// Cancels subscription — keeps access until endDate, updates status to cancelled.
+    /// Отменяет подписку — доступ сохраняется до endDate, статус меняется на cancelled.
     func cancelSubscription(for uid: String) async {
         let currentPlanRaw = UserDefaults.standard.string(forKey: Constants.StorageKey.userPlan) ?? AccessTier.free.rawValue
         let currentPlan    = AccessTier(rawValue: currentPlanRaw) ?? .free
@@ -280,9 +280,9 @@ final class UserFBService {
         return true
     }
 
-    // Trial always gives Pro access to showcase full feature set.
-    // pendingPlan records what the user intends to pay for after trial.
-    // Returns false if trial was already used (trialEndDate exists in Firestore).
+    // Триал всегда даёт доступ Pro, чтобы показать полный набор фич.
+    // pendingPlan фиксирует, за что пользователь планирует платить после триала.
+    // Возвращает false, если триал уже был использован (trialEndDate есть в Firestore).
     func startTrial(pendingPlan: AccessTier, for uid: String) async -> Bool {
         let ref = db.collection("users").document(uid)
         do {
@@ -342,8 +342,8 @@ final class UserFBService {
     }
 
     func cancelSubscription(for uid: String, currentPlan: AccessTier) async {
-        // Keep plan + endDate intact — user retains access until expiry.
-        // Only update status and pendingPlan.
+        // Оставляем plan + endDate без изменений — пользователь сохраняет доступ до истечения срока.
+        // Обновляем только status и pendingPlan.
         let data: [String: Any] = [
             "subscription.status":            SubscriptionStatus.cancelled.rawValue,
             "subscription.pendingPlan":       AccessTier.free.rawValue,
@@ -352,7 +352,7 @@ final class UserFBService {
         ]
         do {
             try await db.collection("users").document(uid).updateData(data)
-            // Keep current plan in local cache, only update status
+            // Оставляем текущий план в локальном кэше, обновляем только status
             let expiryTS = UserDefaults.standard.double(forKey: Constants.StorageKey.cachedPlanExpiry)
             let expiry   = expiryTS > 0 ? Date(timeIntervalSince1970: expiryTS) : nil
             cachePlan(currentPlan, status: .cancelled, expiry: expiry)

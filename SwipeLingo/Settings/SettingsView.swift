@@ -107,7 +107,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                // SRS toggle
+                // Переключатель SRS
                 @Bindable var bs = syncState
                 HStack {
                     Label("Spaced Repetition (SRS)", systemImage: "brain")
@@ -121,7 +121,7 @@ struct SettingsView: View {
                 .frame(height: 52)
                 .padding(.horizontal, 16)
 
-                // Due cards from — only when SRS is on
+                // "Due от" — только когда SRS включён
                 if syncState.srsEnabled {
                     Divider().padding(.leading, 16)
                     HStack {

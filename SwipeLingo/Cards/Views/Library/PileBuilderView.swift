@@ -2,8 +2,8 @@ import SwiftUI
 import SwiftData
 
 // MARK: - PileBuilderView
-// Sheet for creating or editing a Pile.
-// Save activates the pile and switches to the Study tab.
+// Sheet для создания или редактирования Pile.
+// Save активирует пайл и переключает на таб Study.
 
 struct PileBuilderView: View {
 
@@ -154,7 +154,7 @@ struct PileBuilderView: View {
 
     private var setsFilterHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Level pills
+            // Пилюли уровней
             HStack(spacing: 8) {
                 levelPill(nil, label: "All")
                 ForEach(availableLevels, id: \.self) { level in
@@ -166,7 +166,7 @@ struct PileBuilderView: View {
             .padding(.top, 8)
             .padding(.bottom, 4)
 
-            // Search bar
+            // Строка поиска
             SearchBar(text: $searchText, prompt: "Search sets")
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)
@@ -282,7 +282,7 @@ struct PileBuilderView: View {
 
     private var filteredSetGroups: [SetGroup] {
         setGroups.compactMap { group in
-            // User-created collections (My Sets etc.) always shown, no filtering
+            // Пользовательские коллекции (My Sets и т.д.) показываются всегда, без фильтрации
             if group.isUserCreated { return group }
             let sets = group.sets.filter { set in
                 let matchesLevel  = selectedLevel == nil || set.level == selectedLevel

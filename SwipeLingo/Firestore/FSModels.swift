@@ -34,7 +34,7 @@ enum SetDeployStatus: String, Codable, CaseIterable {
 struct FSCollection: Codable, Identifiable, Hashable {
     var id:        String
     var name:      String
-    var icon:      String?         // SF Symbol name or emoji
+    var icon:      String?         // имя SF Symbol или эмодзи
     var type:      CollectionType
     var isSynced:  Bool            // false = New (локальная), true = из/в Firebase
     var updatedAt: Date
@@ -58,7 +58,7 @@ struct FSCardSet: Codable, Identifiable, Hashable {
     var id:                   String
     var collectionId:         String
     var name:                 String
-    var description:          String?        // optional set description shown in library
+    var description:          String?        // опциональное описание сета, показывается в библиотеке
     var cefrLevel:            CEFRLevel
     var accessTier:           AccessTier
     var deployStatus:         SetDeployStatus
@@ -128,7 +128,7 @@ struct FSPairsSet: Codable, Identifiable {
     var id:                   String
     var collectionId:         String
     var title:                String?
-    var description:          String?        // optional set description shown in library
+    var description:          String?        // опциональное описание сета, показывается в библиотеке
     var cefrLevel:            CEFRLevel
     var accessTier:           AccessTier
     var deployStatus:         SetDeployStatus
@@ -219,10 +219,10 @@ struct FSBook: Codable, Identifiable {
     var description:          String?
     var cefrLevel:            CEFRLevel
     var accessTier:           AccessTier
-    var coverStoragePath:     String          // Firebase Storage path, e.g. "books/{id}/cover.jpg"
+    var coverStoragePath:     String          // путь в Firebase Storage, напр. "books/{id}/cover.jpg"
     var totalChapters:        Int
     var chapters:             [FSBookChapter]
-    // Admin-only — not written to Firestore
+    // Только для Admin — не пишется в Firestore
     var deployStatus:         SetDeployStatus
     var previousDeployStatus: SetDeployStatus?
     var updatedAt:            Date

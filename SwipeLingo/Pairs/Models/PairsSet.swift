@@ -13,7 +13,7 @@ import SwiftData
 final class PairsSet {
     var id: UUID = UUID()
     var title: String?
-    var setDescription: String?      // optional longer description shown in content view
+    var setDescription: String?      // опциональное развёрнутое описание, показывается в content view
     var cefrLevelRaw:    String = CEFRLevel.b2.rawValue   // хранится как String (CloudKit-safe)
     var accessTierRaw:   String = AccessTier.free.rawValue // хранится как String (CloudKit-safe)
     var deployStatusRaw: String = SetDeployStatus.new.rawValue // хранится как String (CloudKit-safe)
@@ -21,9 +21,9 @@ final class PairsSet {
     var collectionId: UUID?          // nil = локальный/мок; UUID = Firebase-коллекция
     var updatedAt: Date = Date.epoch // обновляется Admin Tool при публикации
     var createdAt: Date = Date()
-    var firestoreId: String? = nil   // Firestore document ID for sync deduplication
+    var firestoreId: String? = nil   // ID документа Firestore для дедупликации при синке
     var isSoftDeleted: Bool  = false // soft-delete: скрыт в UI, не удаляется из SwiftData
-    var isNew:       Bool    = false // true = imported from Firestore but not yet opened
+    var isNew:       Bool    = false // true = импортирован из Firestore, но ещё не открыт
 
     // MARK: SRS fields (SM-2) — оценка всего сета целиком
     var dueDate:      Date   = Date.farFuture  // новый сет не в Due до первой оценки

@@ -4,7 +4,7 @@ import FirebaseAuth
 import AuthenticationServices
 
 // MARK: - ProfileView
-// User profile: name, auth state, subscription plan, English level.
+// Профиль пользователя: имя, состояние авторизации, план подписки, уровень английского.
 
 struct ProfileView: View {
 
@@ -434,7 +434,7 @@ struct ProfileView: View {
     private var pendingPlan: AccessTier? {
         guard !pendingPlanRaw.isEmpty else { return nil }
         let plan = AccessTier(rawValue: pendingPlanRaw) ?? .free
-        // Only meaningful if it differs from current plan or cycle
+        // Имеет смысл, только если отличается от текущего плана или цикла
         let pendingCycle = BillingCycle(rawValue: pendingCycleRaw) ?? .none
         if plan == userPlan && pendingCycle == subscriptionCycle { return nil }
         return plan
@@ -451,7 +451,7 @@ struct ProfileView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                // Plan + cycle row
+                // Строка план + цикл
                 HStack(spacing: 10) {
                     AccessTierBadge(tier: userPlan)
                     if userPlan != .free && subscriptionCycle != .none {
@@ -468,7 +468,7 @@ struct ProfileView: View {
                 .frame(height: 52)
                 .padding(.horizontal, 16)
 
-                // Status row (expiry / next billing) — only for paid plans
+                // Строка статуса (срок / следующее списание) — только для платных планов
                 if userPlan != .free, let expiry = cachedExpiry {
                     Divider().padding(.leading, 16)
                     HStack(spacing: 10) {
@@ -510,7 +510,7 @@ struct ProfileView: View {
                         }
                         Spacer()
                         if let pending = pendingPlan {
-                            // Show new plan's price
+                            // Показываем цену нового плана
                             let pCycle = pendingCycle == .none ? subscriptionCycle : pendingCycle
                             if pending != .free {
                                 Text(String(format: "$%.2f", pending.price(for: pCycle)))
@@ -550,7 +550,7 @@ struct ProfileView: View {
                 // }
                 // .buttonStyle(.plain)
 
-                // Payment History — only for paid/former-paid users
+                // История платежей — только для текущих/бывших платных пользователей
                 if userPlan != .free || subscriptionStatus == .cancelled, let uid = authService.currentUser?.uid {
                     Divider().padding(.leading, 16)
                     NavigationLink {

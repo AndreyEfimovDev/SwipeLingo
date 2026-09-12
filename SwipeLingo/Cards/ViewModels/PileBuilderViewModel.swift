@@ -14,7 +14,7 @@ final class PileBuilderViewModel {
 
     // MARK: Metadata
 
-    /// Non-nil when editing an existing Pile; nil when creating.
+    /// Не nil при редактировании существующего Pile; nil при создании.
     let editingPile: Pile?
 
     private let initialName: String
@@ -25,8 +25,8 @@ final class PileBuilderViewModel {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !selectedSetIds.isEmpty
     }
 
-    /// True when the form values differ from the saved state.
-    /// For new piles always true (any filled form is a change).
+    /// True, когда значения формы отличаются от сохранённого состояния.
+    /// Для новых пайлов всегда true (любая заполненная форма — это изменение).
     var hasChanges: Bool {
         guard editingPile != nil else { return true }
         return name != initialName
@@ -58,7 +58,7 @@ final class PileBuilderViewModel {
         }
     }
 
-    /// Persists the Pile (insert or update). Does NOT activate.
+    /// Сохраняет Pile (insert или update). НЕ активирует.
     @discardableResult
     func save(context: ModelContext) -> Pile {
         if let pile = editingPile {
@@ -81,7 +81,7 @@ final class PileBuilderViewModel {
         }
     }
 
-    /// Saves the Pile, then makes it the only active one.
+    /// Сохраняет Pile, затем делает его единственным активным.
     func saveAndActivate(context: ModelContext, allPiles: [Pile]) {
         let pile = save(context: context)
         for p in allPiles { p.isActive = false }

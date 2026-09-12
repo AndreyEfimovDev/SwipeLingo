@@ -21,7 +21,7 @@ struct TinderCardsView: View {
     @State private var editExamplesCard: Card?
     @State private var audioService  = AudioPlayerService()
     @State private var examplePageIndex: Int = 0
-    /// Automatically resets to false when DragGesture ends OR is cancelled (e.g. second finger).
+    /// Автоматически сбрасывается в false, когда DragGesture завершается ИЛИ отменяется (напр. второй палец).
     @GestureState private var dragIsActive = false
 
     private let swipeThreshold:   CGFloat = 110
@@ -29,18 +29,18 @@ struct TinderCardsView: View {
     private let lockedCardIds: Set<UUID>
     private let pileTagsLine: String
     private let cefrLabels: [UUID: CEFRLevel]
-    /// True when study session shows only due cards — changes "Active" label to "Due".
+    /// True, когда сессия показывает только due-карточки — меняет лейбл "Active" на "Due".
     private let isDueMode: Bool
-    /// Cards already in .learnt status in the pile at session start (added to learntInSession).
+    /// Карточки, уже находящиеся в статусе .learnt в pile на старте сессии (добавляется к learntInSession).
     private let pileLearntCount: Int
-    /// Called when the user taps the mode toggle in the progress row.
+    /// Вызывается, когда пользователь тапает переключатель режима в строке прогресса.
     private let onToggleMode: (() -> Void)?
-    /// False when no due cards exist — triggers caught-up overlay in Due mode.
+    /// False, когда due-карточек нет — включает оверлей "всё пройдено" в режиме Due.
     private let hasDueCards: Bool
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
-    /// 0…1 upward-drag progress for trash animation. Zero when card is flipped.
+    /// Прогресс 0…1 для drag-жеста вверх, для анимации корзины. Ноль, когда карточка перевёрнута.
     private var upSwipeProgress: Double {
         guard !vm.isFlipped,
               vm.dragOffset.height < -10,
@@ -148,7 +148,7 @@ struct TinderCardsView: View {
         let progress    = effTotal > 0 ? CGFloat(max(0, vm.currentIndex - deletedSoFar)) / CGFloat(effTotal) : 0
 
         return HStack(spacing: 0) {
-            // Stats content
+            // Содержимое статистики
             VStack(spacing: 0) {
                 Spacer()
                 statLabel("Learnt", value: learnt, status: .learnt)
@@ -162,7 +162,7 @@ struct TinderCardsView: View {
                     .frame(maxWidth: .infinity)
                 Spacer()
             }
-            // Vertical progress bar — right edge, replaces Divider with meaning
+            // Вертикальный прогресс-бар — правый край, заменяет Divider осмысленным элементом
             GeometryReader { geo in
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 1.5)
@@ -180,7 +180,7 @@ struct TinderCardsView: View {
         .frame(maxWidth: 60)
     }
 
-    /// Centre of the progress row: "1 / 14" when no toggle, or vertical stack Due/All + count with ⇅ when tappable.
+    /// Центр строки прогресса: "1 / 14" без переключателя, либо вертикальный стек Due/All + счётчик с ⇅, если кликабельно.
     @ViewBuilder
     private func modeVCenterButton(current: Int, effTotal: Int) -> some View {
         if let toggle = onToggleMode {
@@ -299,7 +299,7 @@ struct TinderCardsView: View {
                         Text("Learnt")
                     }.font(.caption2)
                     
-                    // Progress bar
+                    // Прогресс-бар
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             RoundedRectangle(cornerRadius: 2)
@@ -325,7 +325,7 @@ struct TinderCardsView: View {
 
     // MARK: - Breadcrumb
 
-    /// "Collection › Set" label for the *current* card — per-card, not pile-level.
+    /// Лейбл "Collection › Set" для *текущей* карточки — по карточке, не по pile.
     private var cardBreadcrumb: String {
         guard let card = vm.currentCard else { return "" }
         return vm.contextLabels[card.setId] ?? ""
@@ -391,7 +391,7 @@ struct TinderCardsView: View {
                     .zIndex(1)
             }
 
-            // Trash icon — upward drag on front face
+            // Иконка корзины — drag вверх на лицевой стороне
             if upSwipeProgress > 0 {
                 VStack {
                     ZStack {
@@ -430,16 +430,17 @@ struct TinderCardsView: View {
             .scaleEffect(scale)
             .simultaneousGesture(dragGesture)
             .onTapGesture {
-                // Block tap while drag is active OR while card is spring-animating back.
+                // Блокируем тап, пока активен drag ИЛИ пока карточка анимируется обратно.
                 guard !dragIsActive, !vm.isDragging else { return }
                 vm.flipToggle()
             }
             .onChange(of: dragIsActive) { _, isActive in
                 guard !isActive else { return }
-                // Drag ended or was cancelled (e.g. second finger tap).
-                // onEnded sets dragOffset to ±600 / -800 only when a swipe is fully
-                // committed. Any smaller value means the gesture was cancelled mid-drag
-                // and the card must return to centre regardless of swipeThreshold.
+                // Drag завершён или был отменён (напр. тап вторым пальцем).
+                // onEnded устанавливает dragOffset в ±600 / -800 только когда свайп
+                // полностью зафиксирован. Любое меньшее значение означает, что жест
+                // был отменён посреди drag, и карточка должна вернуться в центр
+                // независимо от swipeThreshold.
                 let isFlying = abs(vm.dragOffset.width) > 400
                             || vm.dragOffset.height < -400
 
@@ -448,7 +449,7 @@ struct TinderCardsView: View {
                         vm.dragOffset = .zero
                     }
                 }
-                // Clear isDragging after spring settles (covers both normal & cancel paths)
+                // Сбрасываем isDragging после того как spring успокоится (покрывает и обычный, и отменённый путь)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
                     vm.isDragging = false
                 }
@@ -476,7 +477,7 @@ struct TinderCardsView: View {
         VStack(spacing: 0) {
             breadcrumbRow
             flipContent(card: card).frame(maxHeight: .infinity)
-            // SRS pinned to bottom — hidden when SRS is disabled in Settings
+            // SRS прижат к низу — скрыт, когда SRS отключён в Settings
             if srsEnabled {
                 srsButtonsRow
                     .padding(12)
@@ -495,7 +496,7 @@ struct TinderCardsView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // SRS column — only present on back side, no reserved space on front
+            // Колонка SRS — присутствует только на обратной стороне, на лицевой места не резервируется
             if srsEnabled && vm.isFlipped {
                 srsButtonsColumn
                     .frame(width: 90)
@@ -528,10 +529,10 @@ struct TinderCardsView: View {
 
     // MARK: - Audio Button
 
-    /// Reusable audio button: myBlue when idle, myRed when this specific audio is playing.
+    /// Переиспользуемая кнопка аудио: myBlue в покое, myRed когда играет именно этот аудио.
     /// - Parameters:
-    ///   - text:  URL string for network audio, or plain text for TTS.
-    ///   - isTTS: `true` → uses AVSpeechSynthesizer; `false` → uses AVPlayer.
+    ///   - text:  строка URL для сетевого аудио, либо обычный текст для TTS.
+    ///   - isTTS: `true` → использует AVSpeechSynthesizer; `false` → использует AVPlayer.
     @ViewBuilder
     private func audioButton(for text: String, isTTS: Bool = false) -> some View {
         let key = isTTS ? "tts:\(text)" : text
@@ -593,7 +594,7 @@ struct TinderCardsView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(spacing: 14) {
 
-                    // 1. Translation — large
+                    // 1. Перевод — крупно
                     Text(card.item)
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.semibold)
@@ -601,7 +602,7 @@ struct TinderCardsView: View {
                         .minimumScaleFactor(0.4)
                         .padding(.horizontal, 20)
 
-                    // 2. EN word + 🔊 audio
+                    // 2. Слово на EN + 🔊 аудио
                     HStack(spacing: 6) {
                         Text(card.en)
                             .font(.subheadline)
@@ -609,8 +610,8 @@ struct TinderCardsView: View {
                             .font(.subheadline)
                     }
 
-                    // 3. Examples — paged with arrow navigation
-                    // allSampleEN = Firestore examples + user-added examples combined
+                    // 3. Примеры — постранично, с навигацией стрелками
+                    // allSampleEN = примеры из Firestore + добавленные пользователем, вместе
                     if !card.allSampleEN.isEmpty {
                         let count = card.allSampleEN.count
                         let page = min(examplePageIndex, count - 1)
@@ -619,7 +620,7 @@ struct TinderCardsView: View {
                         Divider().padding(.horizontal, 20)
 
                         HStack(spacing: 0) {
-                            // Left arrow — invisible on first page, keeps space always
+                            // Левая стрелка — невидима на первой странице, но место всегда резервируется
                             Button {
                                 withAnimation(.spring(duration: 0.3)) {
                                     examplePageIndex -= 1
@@ -633,7 +634,7 @@ struct TinderCardsView: View {
                             .opacity(hasMany && page > 0 ? 1 : 0)
                             .disabled(!hasMany || page == 0)
 
-                            // Example content
+                            // Содержимое примера
                             // simultaneousGesture: long press открывает редактор,
                             // короткий тап на аудио-кнопке внутри не блокируется
                             VStack(spacing: 5) {
@@ -662,7 +663,7 @@ struct TinderCardsView: View {
                             ))
                             .animation(.spring(duration: 0.3), value: page)
 
-                            // Right arrow — invisible on last page, keeps space always
+                            // Правая стрелка — невидима на последней странице, но место всегда резервируется
                             Button {
                                 withAnimation(.spring(duration: 0.3)) {
                                     examplePageIndex += 1
@@ -679,7 +680,7 @@ struct TinderCardsView: View {
                         .padding(.horizontal, 4)
                     }
 
-                    // 4. Synonyms chips
+                    // 4. Чипы синонимов
                     if !card.synonyms.isEmpty {
                         Divider().padding(.horizontal, 20)
                         VStack(alignment: .leading, spacing: 6) {
@@ -705,12 +706,12 @@ struct TinderCardsView: View {
             }
             .frame(maxHeight: .infinity)
             
-            // Tap to back hint — back side
+            // Подсказка "Tap to back" — обратная сторона
             Text("Tap to back")
                 .font(.caption2)
                 .opacity(0.75)
 
-            // Dictionary lookup
+            // Поиск в словаре
             Button { lookupCard = card } label: {
                 Label("Look up in dictionary", systemImage: "book.pages")
                     .font(.subheadline)
@@ -764,11 +765,11 @@ struct TinderCardsView: View {
         let color: Color
         let opacity: Double
         if upSwipeProgress > 0 {
-            // Swipe up = delete
+            // Свайп вверх = удалить
             color = CardStatus.deleted.color; opacity = upSwipeProgress * 0.4
         } else {
             let p = vm.swipeProgress
-            // Swipe right = learnt (green), swipe left = active/again (blue)
+            // Свайп вправо = learnt (зелёный), свайп влево = active/again (синий)
             color = p > 0 ? CardStatus.learnt.color : CardStatus.active.color
             opacity = abs(p) * 0.45
         }
@@ -781,7 +782,7 @@ struct TinderCardsView: View {
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 15)
-            // updating fires on every change AND resets automatically on end OR cancel
+            // updating срабатывает при каждом изменении И автоматически сбрасывается по завершении ИЛИ отмене
             .updating($dragIsActive) { _, state, _ in state = true }
             .onChanged { value in
                 guard !vm.isFlipped else { return }
@@ -815,14 +816,14 @@ struct TinderCardsView: View {
                         vm.commitDelete(context: context)
                     }
                 }
-                // Return-to-centre is handled by onChange(of: dragIsActive) below —
-                // this covers both normal release AND gesture cancellation (second finger).
+                // Возврат в центр обрабатывается через onChange(of: dragIsActive) ниже —
+                // это покрывает и обычное отпускание, И отмену жеста (второй палец).
             }
     }
 
     // MARK: - SRS Buttons
 
-    /// Portrait — horizontal row.
+    /// Portrait — горизонтальная строка.
     private var srsButtonsRow: some View {
         HStack(spacing: 8) {
             srsButton(title: "Forgot", color: Color.myColors.myPurple, rating: .again)
@@ -831,7 +832,7 @@ struct TinderCardsView: View {
         }
     }
 
-    /// Landscape — vertical column, buttons evenly distributed top-to-bottom.
+    /// Landscape — вертикальная колонка, кнопки равномерно распределены сверху вниз.
     private var srsButtonsColumn: some View {
         VStack(spacing: 0) {
             Spacer()

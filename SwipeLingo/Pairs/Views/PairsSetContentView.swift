@@ -2,15 +2,15 @@ import SwiftUI
 
 // MARK: - PairsSetContentView
 //
-// Static content view for a PairsSet shown in the library.
-// Displays set description, then all pairs grouped by tag.
+// Статичный экран содержимого PairsSet, показывается в библиотеке.
+// Отображает описание сета, затем все пары, сгруппированные по tag.
 //
-// Row layout per pair:
-//   left + right  → one line, two columns  (right is always short)
-//   description   → new line, full width   (definition / explanation)
-//   sample        → new line, full width   (example sentence, italic)
+// Раскладка строки на пару:
+//   left + right  → одна строка, две колонки  (right всегда короткий)
+//   description   → новая строка, полная ширина   (определение / объяснение)
+//   sample        → новая строка, полная ширина   (пример-предложение, курсив)
 //
-// Paywall: first previewPairCount pairs (by original position) are free.
+// Paywall: первые previewPairCount пар (по исходной позиции) бесплатны.
 
 struct PairsSetContentView: View {
 
@@ -30,7 +30,7 @@ struct PairsSetContentView: View {
 
     private var isPaywalled: Bool { !userPlan.canAccess(set.accessTier) }
 
-    // Groups preserving first-appearance order of tags
+    // Группы с сохранением порядка первого появления тегов
     private var groupedContent: [(tag: String, pairs: [Pair])] {
         var seenTags: [String] = []
         for pair in set.items where !seenTags.contains(pair.tag) {
@@ -49,10 +49,10 @@ struct PairsSetContentView: View {
         ScrollView {
             VStack(spacing: 16) {
 
-                // ── CEFR + description ────────────────────────
+                // ── CEFR + описание ────────────────────────
                 metadataCard
 
-                // ── Content ───────────────────────────────────
+                // ── Содержимое ───────────────────────────────────
                 if set.items.isEmpty {
                     emptyState
                 } else {
@@ -95,7 +95,7 @@ struct PairsSetContentView: View {
     private var contentTable: some View {
         VStack(spacing: 0) {
 
-            // Rows — grouped or flat
+            // Строки — сгруппированные или плоские
             if hasGroups {
                 ForEach(groupedContent, id: \.tag) { group in
                     groupHeaderRow(group.tag, pairs: group.pairs)
@@ -169,7 +169,7 @@ struct PairsSetContentView: View {
                 pairRow(pair)
             }
 
-            // Divider — not after last in group, not before next group header
+            // Divider — не после последней в группе, не перед заголовком следующей группы
             let isLastInGroup = localIndex == pairs.count - 1
             if !isLastInGroup {
                 Divider().padding(.leading, 16)
@@ -180,14 +180,14 @@ struct PairsSetContentView: View {
     // MARK: Pair row
     //
     // left + right → two columns on one line
-    // left only    → full width, medium weight
+    // только left  → полная ширина, средняя насыщенность
     // description  → new line, full width, secondary style
     // sample       → new line, full width, italic
 
     private func pairRow(_ pair: Pair) -> some View {
         VStack(alignment: .leading, spacing: 5) {
 
-            // Line 1: left [+ right]
+            // Строка 1: left [+ right]
             if let right = pair.right {
                 HStack(spacing: 0) {
                     Text(pair.left ?? "—")
@@ -215,7 +215,7 @@ struct PairsSetContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            // Line 2: description
+            // Строка 2: description
             if let desc = pair.description, !desc.isEmpty {
                 Text(desc)
                     .font(.subheadline)
@@ -223,7 +223,7 @@ struct PairsSetContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            // Line 3: sample
+            // Строка 3: sample
             if let sample = pair.sample, !sample.isEmpty {
                 Text(sample)
                     .font(.subheadline.italic())

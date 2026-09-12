@@ -2,7 +2,7 @@
 //  CircleButtonView.swift
 //  StartToSwiftUI
 //
-//  Created by Andrey Efimov on 08.09.2025.
+//  Создано Andrey Efimov 08.09.2025.
 //
 
 

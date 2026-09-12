@@ -23,7 +23,7 @@ final class BooksViewModel {
                 return matchesSearch && matchesLevel
             }
             .sorted {
-                // Free first, then by CEFR level
+                // Сначала бесплатные, затем по CEFR-уровню
                 if $0.accessTier.rank != $1.accessTier.rank {
                     return $0.accessTier.rank < $1.accessTier.rank
                 }

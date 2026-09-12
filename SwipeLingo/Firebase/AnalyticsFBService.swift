@@ -4,14 +4,14 @@ import FirebaseCrashlytics
 
 // MARK: - AnalyticsFBService
 //
-// Centralised wrapper for Firebase Analytics + Crashlytics.
-// Call from anywhere in the app — all event names and param keys are typed.
+// Централизованная обёртка над Firebase Analytics + Crashlytics.
+// Вызывается откуда угодно в приложении — все имена событий и ключи параметров типизированы.
 
 enum AnalyticsFBService {
 
-    // MARK: - User identity
+    // MARK: - Идентичность пользователя
 
-    /// Call after successful sign-in so Crashlytics and Analytics link events to a user.
+    /// Вызывать после успешного входа, чтобы Crashlytics и Analytics привязывали события к пользователю.
     static func setUser(id: String) {
         Analytics.setUserID(id)
         Crashlytics.crashlytics().setUserID(id)
@@ -163,9 +163,9 @@ enum AnalyticsFBService {
 // MARK: - Supporting enums
 
 enum CardSwipeDirection: String {
-    case right  // learnt / keep
-    case left   // skip / later
-    case up     // delete
+    case right  // learnt / оставить
+    case left   // пропустить / позже
+    case up     // удалить
 }
 
 enum WordLookupSource: String {

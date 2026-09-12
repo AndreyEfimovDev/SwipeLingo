@@ -39,8 +39,8 @@ enum ModelContainerFactory {
         } catch {
 #warning("STUB: Replace with SchemaMigrationPlan before App Store release.")
 
-            // NSCocoaErrorDomain Code=134110 → schema mismatch.
-            // TODO: Replace with SchemaMigrationPlan before App Store release.
+            // NSCocoaErrorDomain Code=134110 → расхождение схемы.
+            // TODO: заменить на SchemaMigrationPlan перед релизом в App Store.
             log("ModelContainer failed: \(error)", level: .error)
             log("🗑 Deleting store at: \(storeURL.path)", level: .warning)
             deleteStoreFiles(at: storeURL)
@@ -59,15 +59,15 @@ enum ModelContainerFactory {
 
     // MARK: - Dev helper
 
-    /// Deletes the SQLite store and its WAL/SHM siblings at the given URL.
+    /// Удаляет SQLite-стор и сопутствующие ему WAL/SHM-файлы по указанному URL.
     ///
-    /// SwiftData uses three files per store:
-    ///   default.store        ← main database
+    /// SwiftData использует три файла на стор:
+    ///   default.store        ← основная база данных
     ///   default.store-wal    ← write-ahead log
-    ///   default.store-shm    ← shared-memory index
+    ///   default.store-shm    ← shared-memory индекс
     ///
-    /// We must remove all three, otherwise SQLite refuses to open
-    /// a new empty store when orphaned WAL/SHM files still exist.
+    /// Нужно удалить все три, иначе SQLite откажется открыть
+    /// новый пустой стор, пока остаются осиротевшие WAL/SHM-файлы.
     private static func deleteStoreFiles(at storeURL: URL) {
         let fm   = FileManager.default
         let base = storeURL.deletingPathExtension()      // …/default

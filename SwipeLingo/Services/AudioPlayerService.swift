@@ -3,15 +3,15 @@ import Foundation
 
 // MARK: - AudioPlayerService
 //
-// @Observable class for remote audio playback (AVPlayer) and TTS (AVSpeechSynthesizer).
-// Implicitly @MainActor via SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor.
+// @Observable класс для сетевого аудио-воспроизведения (AVPlayer) и TTS (AVSpeechSynthesizer).
+// Неявно @MainActor через SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor.
 //
-// currentURL tracks what is playing:
-//   • regular URL string  — audio from network
-//   • "tts:<text>"        — speech synthesis
-//   • ""                  — nothing playing
+// currentURL отслеживает, что сейчас играет:
+//   • обычная строка URL  — сетевое аудио
+//   • "tts:<text>"        — синтез речи
+//   • ""                  — ничего не играет
 //
-// Diagnostics: all key events are logged via log() from Logger.swift.
+// Диагностика: все ключевые события логируются через log() из Logger.swift.
 
 @Observable
 final class AudioPlayerService: NSObject {
@@ -35,7 +35,7 @@ final class AudioPlayerService: NSObject {
 
     // MARK: Public API — URL audio
 
-    /// Starts playback of the audio at `urlString`.
+    /// Запускает воспроизведение аудио по `urlString`.
     func play(urlString: String) {
         stop()
 
@@ -134,10 +134,10 @@ final class AudioPlayerService: NSObject {
 
     // MARK: Public API — TTS
 
-    /// Speaks `text` via AVSpeechSynthesizer.
+    /// Озвучивает `text` через AVSpeechSynthesizer.
     /// - Parameters:
-    ///   - voiceIdentifier: `AVSpeechSynthesisVoice.identifier`; falls back to `language` if empty or not found.
-    ///   - language: BCP-47 language tag used when no valid `voiceIdentifier` is provided.
+    ///   - voiceIdentifier: `AVSpeechSynthesisVoice.identifier`; при пустом значении или если не найден — откат на `language`.
+    ///   - language: BCP-47 языковой тег, используется, когда валидный `voiceIdentifier` не передан.
     func speak(text: String, voiceIdentifier: String = "", language: String = "en-US") {
         stop()
         guard !text.isEmpty else { return }
@@ -167,7 +167,7 @@ final class AudioPlayerService: NSObject {
 
     // MARK: Public API — Stop
 
-    /// Stops all playback (both AVPlayer and TTS) and resets state.
+    /// Останавливает всё воспроизведение (и AVPlayer, и TTS) и сбрасывает состояние.
     func stop() {
         player?.pause()
         player = nil

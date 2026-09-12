@@ -39,14 +39,14 @@ struct UserSessionSyncService {
             profile = p
         }
 
-        // UID mismatch → different user signed in, reset the profile.
+        // Несовпадение UID → вошёл другой пользователь, сбрасываем профиль.
         if let p = profile, !p.firebaseUID.isEmpty, p.firebaseUID != user.uid {
             log("Firebase UID changed — resetting UserProfile", level: .info)
             p.name = ""
             p.cefrLevel = .a1
         }
 
-        // Stamp UID and sync name from Firebase.
+        // Проставляем UID и синхронизируем имя из Firebase.
         profile?.firebaseUID = user.uid
         if user.isAnonymous {
             if profile?.name.isEmpty == true { profile?.name = "Anonymous" }

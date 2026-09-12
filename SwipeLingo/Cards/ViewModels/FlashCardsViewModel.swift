@@ -4,9 +4,9 @@ import SwiftData
 // MARK: - StudyMode
 
 enum StudyMode {
-    /// Only cards whose dueDate ≤ now (active after studyStartHour).
+    /// Только карточки, у которых dueDate ≤ сейчас (активны после studyStartHour).
     case due
-    /// All active cards regardless of dueDate.
+    /// Все активные карточки независимо от dueDate.
     case all
 }
 
@@ -18,25 +18,25 @@ final class FlashCardsViewModel {
     // MARK: Published state
 
     private(set) var studyCards: [Card] = []
-    /// Card IDs that show locked back (paywall preview exceeded).
+    /// ID карточек, показывающих заблокированную обратную сторону (превышен лимит paywall-превью).
     private(set) var lockedCardIds: Set<UUID> = []
     private(set) var contextLabels: [UUID: String] = [:]
     private(set) var cefrLabels: [UUID: CEFRLevel] = [:]
     private(set) var activePileName: String = ""
     private(set) var pileTagsLine: String = ""
-    /// Changes on every new session → forces TinderCardsView to reinitialise via .id()
+    /// Меняется на каждую новую сессию → заставляет TinderCardsView переинициализироваться через .id()
     private(set) var sessionID: UUID = UUID()
 
     // MARK: Study mode
 
     private(set) var studyMode: StudyMode = .all
-    /// True only when the user has completed an All-mode session (truly done for today).
+    /// True, только когда пользователь завершил сессию в режиме All (действительно закончил на сегодня).
     private(set) var isCaughtUp: Bool = false
-    /// "tomorrow · 9 cards" — subtitle on the caught-up screen.
+    /// "tomorrow · 9 cards" — подзаголовок на экране "всё пройдено".
     private(set) var nextReviewLabel: String = ""
-    /// Total active cards in the current pile — shown as left stat in progress row.
+    /// Всего активных карточек в текущем pile — показывается как левая статистика в строке прогресса.
     private(set) var allActiveCount: Int = 0
-    /// Cards already in .learnt status in the current pile at session start.
+    /// Карточки, уже находящиеся в статусе .learnt в текущем pile на старте сессии.
     private(set) var pileLearntCount: Int = 0
 
     // MARK: Private
@@ -45,7 +45,7 @@ final class FlashCardsViewModel {
 
     // MARK: Session control
 
-    /// Loads a session if one isn't already running.
+    /// Загружает сессию, если она ещё не запущена.
     func startSessionIfNeeded(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
         collections: [Collection], dueHour: Int, srsEnabled: Bool = true,
@@ -57,7 +57,7 @@ final class FlashCardsViewModel {
              userPlan: userPlan)
     }
 
-    /// Discards the current session and starts a fresh session (respects dueHour).
+    /// Отбрасывает текущую сессию и запускает новую (учитывает dueHour).
     func startNewSession(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
         collections: [Collection], dueHour: Int, srsEnabled: Bool = true,
@@ -69,14 +69,14 @@ final class FlashCardsViewModel {
              userPlan: userPlan)
     }
 
-    /// Switches display to Due mode without reloading cards or resetting sessionID.
-    /// Used when user taps Due toggle but no due cards exist — shows caught-up overlay
-    /// without disrupting the current card position.
+    /// Переключает отображение в режим Due без перезагрузки карточек и сброса sessionID.
+    /// Используется, когда пользователь тапает переключатель Due, но due-карточек нет —
+    /// показывает оверлей "всё пройдено", не сбивая текущую позицию карточки.
     func switchToDueDisplay() {
         studyMode = .due
     }
 
-    /// "Study anyway" — loads ALL active cards ignoring dueDate and hour threshold.
+    /// "Study anyway" — загружает ВСЕ активные карточки, игнорируя dueDate и часовой порог.
     func studyAll(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
         collections: [Collection], userPlan: AccessTier = .free
@@ -87,20 +87,20 @@ final class FlashCardsViewModel {
              userPlan: userPlan)
     }
 
-    /// Called by TinderCardsView when all session cards are swiped/rated.
-    /// - Due mode done → auto-switch to All mode.
-    /// - All mode done → show caught-up screen.
+    /// Вызывается TinderCardsView, когда все карточки сессии просвайпаны/оценены.
+    /// - Режим Due завершён → автопереключение на режим All.
+    /// - Режим All завершён → показать экран "всё пройдено".
     func onSessionComplete(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
         collections: [Collection], dueHour: Int
     ) {
         switch studyMode {
         case .due:
-            // Due session finished → continue with all active cards
+            // Сессия Due завершена → продолжаем всеми активными карточками
             load(piles: piles, allCards: allCards, cardSets: cardSets,
                  collections: collections, dueHour: dueHour, dueOnly: false)
         case .all:
-            // All-mode session finished → user is truly caught up for today
+            // Сессия All завершена → пользователь действительно закончил на сегодня
             let pileCards: [Card]
             if let pile = piles.first(where: { $0.isActive }) {
                 pileCards = pileService.activeCards(for: pile, from: allCards)
@@ -125,7 +125,7 @@ final class FlashCardsViewModel {
         dueOnly: Bool = true,
         userPlan: AccessTier = .free
     ) {
-        // Context labels: setId → "Collection › SetName"
+        // Контекстные лейблы: setId → "Collection › SetName"
         contextLabels = Dictionary(uniqueKeysWithValues: cardSets.map { set in
             let collName = collections.first(where: { $0.id == set.collectionId })?.name
             let label    = collName.map { "\($0) › \(set.name)" } ?? set.name
@@ -140,7 +140,7 @@ final class FlashCardsViewModel {
         // в сессию попадали бы карточки выше текущего уровня пользователя.
         let allowedSetIds = Set(cardSets.map(\.id))
 
-        // Resolve active cards and shuffle method for the current pile.
+        // Определяем активные карточки и метод перемешивания для текущего pile.
         let activeCards: [Card]
         let shuffleMethod: ShuffleMethod
 
@@ -171,11 +171,11 @@ final class FlashCardsViewModel {
             let now  = Date.now
             let hour = Calendar.current.component(.hour, from: now)
 
-            // Only offer Due mode after the configured start hour
+            // Предлагаем режим Due только после настроенного стартового часа
             if hour >= dueHour {
                 let dueCards = activeCards.filter { $0.dueDate <= now }
                 if !dueCards.isEmpty {
-                    // Due cards available → Due mode
+                    // Есть due-карточки → режим Due
                     studyCards = pileService.apply(shuffleMethod, to: dueCards)
                     studyMode  = .due
                     sessionID  = UUID()
@@ -183,10 +183,10 @@ final class FlashCardsViewModel {
                     return
                 }
             }
-            // Before start hour OR no due cards → All mode directly (no caught-up screen)
+            // До стартового часа ИЛИ нет due-карточек → сразу режим All (без экрана "всё пройдено")
         }
 
-        // All mode
+        // Режим All
         studyCards = pileService.apply(shuffleMethod, to: activeCards)
         studyMode  = .all
         sessionID  = UUID()
@@ -208,7 +208,7 @@ final class FlashCardsViewModel {
 
     // MARK: - Labels
 
-    /// "tomorrow · 9 cards" or "in 3 days · 4 cards" for the caught-up screen.
+    /// "tomorrow · 9 cards" или "in 3 days · 4 cards" для экрана "всё пройдено".
     private func makeNextReviewLabel(from cards: [Card]) -> String {
         let upcoming = cards.filter { $0.dueDate > Date.now }
         guard let earliest = upcoming.min(by: { $0.dueDate < $1.dueDate }) else { return "" }
@@ -227,7 +227,7 @@ final class FlashCardsViewModel {
         return "\(dayText) · \(count) \(count == 1 ? "card" : "cards")"
     }
 
-    /// "Collection › Set1 · Set2 · +N (X cards)" below the card stack.
+    /// "Collection › Set1 · Set2 · +N (X cards)" под стопкой карточек.
     private func makePileTagsLine(pile: Pile, cardSets: [CardSet],
                                   allCards: [Card], collections: [Collection]) -> String {
         let sets       = cardSets.filter { pile.setIds.contains($0.id) }

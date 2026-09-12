@@ -2,25 +2,25 @@ import Foundation
 import SwiftData
 
 // MARK: - AppSyncState
-// Singleton SwiftData model synced via CloudKit.
-// Stores settings that must be identical across all user devices.
-// One record per device, merged on conflict (see AppSyncStateManager).
+// Singleton-модель SwiftData, синхронизируемая через CloudKit.
+// Хранит настройки, которые должны быть одинаковыми на всех устройствах пользователя.
+// Одна запись на устройство, при конфликте объединяются (см. AppSyncStateManager).
 
 @Model
 final class AppSyncState {
     var id: String = "app_state_singleton"
 
-    // Onboarding
+    // Онбординг
     var hasCompletedOnboarding: Bool = false
 
-    // Study settings
+    // Настройки обучения
     var srsEnabled: Bool = true
     var studyStartHour: Int = 6
 
-    // Localisation
+    // Локализация
     var nativeLanguageRaw: String = NativeLanguage.russian.rawValue
 
-    // Conflict resolution: keep the record with the latest settingsUpdatedAt
+    // Разрешение конфликтов: оставляем запись с самым свежим settingsUpdatedAt
     var settingsUpdatedAt: Date = Date()
 
     init(

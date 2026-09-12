@@ -20,14 +20,14 @@ struct InboxDrainService {
             !pending.isEmpty
         else { return }
 
-        // Clear the queue immediately so a second foreground transition can't
-        // re-import the same words if SwiftData save is slow.
+        // Сразу чистим очередь, чтобы второй переход в foreground не заимпортил
+        // те же слова повторно, если сохранение SwiftData идёт медленно.
         defaults?.removeObject(forKey: pendingKey)
 
         let context = ModelContext(container)
 
-        // Resolve the Inbox CardSet — it is guaranteed to exist after
-        // MockDataSeeder runs, but guard defensively.
+        // Резолвим Inbox CardSet — он гарантированно существует после запуска
+        // MockDataSeeder, но подстраховываемся guard'ом.
         let allSets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
         guard let inboxSet = allSets.first(where: { $0.name == "Inbox" }) else {
             log("Inbox CardSet not found — re-queuing \(pending.count) word(s)", level: .warning)

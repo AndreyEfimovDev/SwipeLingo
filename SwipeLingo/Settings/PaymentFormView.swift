@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - PaymentFormView
 //
-// Directs the user to the SwipeLingo website to complete payment.
-// In-app payment is intentionally not implemented — all billing is handled
-// on the website to comply with App Store Reader App guidelines.
+// Направляет пользователя на сайт SwipeLingo для завершения оплаты.
+// Оплата внутри приложения намеренно не реализована — весь биллинг идёт
+// через сайт, чтобы соответствовать App Store Reader App guidelines.
 
 struct PaymentFormView: View {
 
@@ -23,10 +23,10 @@ struct PaymentFormView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Plan summary
+                    // Сводка по плану
                     planSummaryCard
 
-                    // Explanation
+                    // Пояснение
                     VStack(spacing: 12) {
                         Image(systemName: "safari")
                             .font(.system(size: 48))
@@ -44,7 +44,7 @@ struct PaymentFormView: View {
                     }
                     .padding(.horizontal, 8)
 
-                    // CTA button
+                    // Кнопка призыва к действию
                     Button {
                         openURL(subscribeURL)
                     } label: {
@@ -62,7 +62,7 @@ struct PaymentFormView: View {
                     }
                     .buttonStyle(.plain)
 
-                    // After payment note
+                    // Примечание после оплаты
                     VStack(spacing: 6) {
                         Label("After payment, your plan updates automatically within a few minutes.", systemImage: "checkmark.circle")
                             .font(.caption)

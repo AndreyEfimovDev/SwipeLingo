@@ -174,13 +174,13 @@ struct VoiceSettingsView: View {
         let isPreviewing     = previewingVoiceId  == voice.identifier && previewService.isPlaying
 
         return HStack(spacing: 12) {
-            // Selection indicator
+            // Индикатор выбора
             Image(systemName: isSelected ? "checkmark.circle" : "circle")
                 .foregroundStyle(isSelected ? Color.myColors.myBlue : Color.myColors.myAccent)
                 .font(.title3)
                 .frame(width: 28)
 
-            // Name + language
+            // Имя + язык
             VStack(alignment: .leading, spacing: 2) {
                 Text(voice.name)
                     .font(.body)
@@ -190,7 +190,7 @@ struct VoiceSettingsView: View {
 
             Spacer()
 
-            // Preview button
+            // Кнопка предпрослушивания
             Button {
                 if isPreviewing {
                     previewService.stop()

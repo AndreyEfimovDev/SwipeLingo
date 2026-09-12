@@ -1,21 +1,21 @@
 import Foundation
 import SwiftData
 
-// Sets belonging to this collection are queried via: #Predicate<CardSet> { $0.collectionId == collection.id }
-// PairsSets belonging to this collection are queried via: #Predicate<PairsSet> { $0.collectionId == collection.id }
+// Сеты, принадлежащие этой коллекции, запрашиваются через: #Predicate<CardSet> { $0.collectionId == collection.id }
+// PairsSets, принадлежащие этой коллекции, запрашиваются через: #Predicate<PairsSet> { $0.collectionId == collection.id }
 @Model
 final class Collection {
     var id: UUID = UUID()
     var name: String = ""
-    var icon: String?       // SF Symbol name or emoji
-    var isOwned: Bool = true       // true = user owns (not paywalled); false = premium/Firebase
-    // true  → created by the user (My Sets, Inbox, custom collections) — no CEFR badge, no Firebase sync
-    // false → developer-seeded content (IELTS, Psychology) — show CEFR badge in set list
+    var icon: String?       // имя SF Symbol или эмодзи
+    var isOwned: Bool = true       // true = принадлежит пользователю (не paywalled); false = премиум/Firebase
+    // true  → создана пользователем (My Sets, Inbox, пользовательские коллекции) — без бейджа CEFR, без синка с Firebase
+    // false → контент от разработчика (IELTS, Psychology) — показывать бейдж CEFR в списке сетов
     var isUserCreated: Bool = true
     var typeRaw: String     = CollectionType.cards.rawValue  // "cards" | "pairs" — CloudKit-safe
     var updatedAt: Date     = Date.epoch                // обновляется Admin Tool при публикации
     var createdAt: Date = Date()
-    var firestoreId: String? = nil                      // Firestore document ID for sync deduplication
+    var firestoreId: String? = nil                      // ID документа Firestore для дедупликации при синке
 
     var collectionType: CollectionType {
         get { CollectionType(rawValue: typeRaw) ?? .cards }

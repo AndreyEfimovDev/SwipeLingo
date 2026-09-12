@@ -1,8 +1,8 @@
 import Foundation
 import SwiftData
 
-// Named CardSet because "Set" is reserved in the Swift standard library.
-// Cards belonging to this set are queried via: #Predicate<Card> { $0.setId == cardSet.id }
+// Названо CardSet, потому что "Set" зарезервировано в стандартной библиотеке Swift.
+// Карточки, принадлежащие этому сету, запрашиваются через: #Predicate<Card> { $0.setId == cardSet.id }
 @Model
 final class CardSet {
     var id: UUID = UUID()
@@ -10,22 +10,22 @@ final class CardSet {
     var collectionId: UUID = UUID()
     var createdAt: Date = Date()
 
-    // false = developer content (IELTS sets, Psychology sets)
-    // true  = user-created content (sets inside My Sets)
+    // false = контент от разработчика (IELTS-сеты, Psychology-сеты)
+    // true  = пользовательский контент (сеты внутри My Sets)
     var isUserCreated: Bool = true
 
-    // optional longer description shown in the set detail view
+    // опциональное развёрнутое описание, показывается в экране деталей сета
     var setDescription: String? = nil
 
-    // CEFR level — stored as String for CloudKit/SwiftData compatibility
+    // CEFR-уровень — хранится как String для совместимости с CloudKit/SwiftData
     var level: String = CEFRLevel.a1.rawValue
 
-    // Access tier — stored as String for CloudKit/SwiftData compatibility
+    // Уровень доступа — хранится как String для совместимости с CloudKit/SwiftData
     var accessTierRaw: String = AccessTier.free.rawValue
 
     var updatedAt: Date = Date.epoch  // обновляется Admin Tool при публикации
-    var firestoreId: String? = nil   // Firestore document ID for sync deduplication
-    var isSoftDeleted: Bool = false  // soft-delete: скрыт в UI, не удаляется из SwiftData; блокирует sync
+    var firestoreId: String? = nil   // ID документа Firestore для дедупликации при синке
+    var isSoftDeleted: Bool = false  // мягкое удаление: скрыт в UI, не удаляется из SwiftData; блокирует sync
 
     var cefrLevel: CEFRLevel {
         get { CEFRLevel(rawValue: level) ?? .a1 }

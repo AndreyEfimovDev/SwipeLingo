@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-// MARK: - UUID helpers (same pattern as Pile)
+// MARK: - Вспомогательные функции UUID (тот же паттерн, что в Pile)
 
 private let kUUIDSep = "\u{001F}"
 

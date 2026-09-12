@@ -113,21 +113,21 @@ final class DeletedCardsViewModel {
         let affectedSetIds = Set(allCards.filter { erasingIds.contains($0.id) }.map { $0.setId })
 
         for setId in affectedSetIds {
-            // Cards in the set that will remain after erasing
+            // Карточки в сете, которые останутся после стирания
             let remaining = allCards.filter { $0.setId == setId && !erasingIds.contains($0.id) }
             guard remaining.isEmpty,
                   let set = allCardSets.first(where: { $0.id == setId }),
-                  set.isUserCreated,                              // curated sets остаются как tombstone
+                  set.isUserCreated,                              // кураторские сеты остаются как tombstone
                   let collection = allCollections.first(where: { $0.id == set.collectionId }),
                   collection.name != "Inbox" else { continue }  // Inbox set никогда не удаляем
 
             let collectionId = set.collectionId
             context.delete(set)
 
-            // check if there are any other sets left in the collection.
+            // проверяем, остались ли в коллекции другие сеты.
             let remainingSets = allCardSets.filter { $0.collectionId == collectionId && $0.id != setId }
             guard remainingSets.isEmpty,
-                  collection.name != "My Sets" else { continue }  // My Sets never deleted
+                  collection.name != "My Sets" else { continue }  // My Sets никогда не удаляется
             context.delete(collection)
         }
     }

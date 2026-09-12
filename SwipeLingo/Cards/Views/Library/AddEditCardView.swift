@@ -3,18 +3,18 @@ import SwiftData
 import Translation
 
 // MARK: - AddEditCardView
-// Unified add / edit sheet for a Card.
+// Единый sheet добавления / редактирования Card.
 //
-// Add mode  (card == nil):
-//   • preselectedSetId — optional, pre-fills the set picker
-//   • userSets empty   — inline "create set" field; set is created on save inside My Sets
-//   • userSets present — Menu picker; "New set…" option at the bottom
+// Режим добавления (card == nil):
+//   • preselectedSetId — опционален, предзаполняет выбор сета
+//   • userSets пуст   — инлайн-поле "создать сет"; сет создаётся при сохранении внутри My Sets
+//   • userSets непуст — Menu-пикер; опция "New set…" внизу
 //
-// Edit mode (card != nil):
-//   • Working copy compared to original snapshot
-//   • checkmark active only when changes exist
-//   • xmark shows confirmation only when changes exist
-//   • SET section available — card can be moved to another set
+// Режим редактирования (card != nil):
+//   • Working copy сравнивается с исходным снимком
+//   • checkmark активен только при наличии изменений
+//   • xmark показывает подтверждение только при наличии изменений
+//   • Секция SET доступна — карточку можно перенести в другой сет
 //
 // Вся бизнес-логика (working copy, валидация, auto-fill) живёт в AddEditCardViewModel.
 // Здесь остаётся разметка и то, что физически не может жить вне View: @Query, @FocusState,
@@ -88,7 +88,7 @@ struct AddEditCardView: View {
             .toolbar { toolbarContent }
             .overlay { if isShowingExitConfirm { exitConfirmOverlay } }
             .onAppear {
-                focused = nil // prevent popup keyboard when started
+                focused = nil // предотвращаем всплытие клавиатуры при старте
                 if !vm.isEditMode && userSets.isEmpty {
                     vm.isCreatingNewSet = true
                 }
@@ -231,7 +231,7 @@ struct AddEditCardView: View {
         }
     }
 
-    /// Menu with existing user sets + "New set…" at the bottom
+    /// Menu с существующими пользовательскими сетами + "New set…" внизу
     private var existingSetMenu: some View {
         Menu {
             ForEach(userSets) { set in
@@ -274,7 +274,7 @@ struct AddEditCardView: View {
         }
     }
 
-    /// Inline new-set name field
+    /// Инлайн-поле имени нового сета
     @ViewBuilder
     private var newSetField: some View {
         VStack(spacing: 0) {
@@ -320,7 +320,7 @@ struct AddEditCardView: View {
         if !vm.en.trimmingCharacters(in: .whitespaces).isEmpty
             && (vm.isAutoFilling || vm.hasEmptyAutoFillFields) {
             Button {
-                focused = nil // dismiss keyboard before filling
+                focused = nil // скрываем клавиатуру перед заполнением
                 vm.startAutoFill()
             } label: {
                 Group {

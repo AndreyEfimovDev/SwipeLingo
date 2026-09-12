@@ -14,14 +14,14 @@ final class BookReaderViewModel {
     var downloadFraction: Double = 0
     var isChapterReady:  Bool    = false
 
-    // Word tap → dictionary lookup
+    // Тап по слову → поиск в словаре
     var tappedWord:      String? = nil
     var showDictionary:  Bool    = false
 
-    // Chapter/bookmark sheet
+    // Sheet главы/закладок
     var showChapterList:  Bool = false
     var showBookmarks:    Bool = false
-    // Drives bookmark icon animation: true for 0.6s after adding
+    // Управляет анимацией иконки закладки: true на 0.6с после добавления
     var bookmarkJustAdded: Bool = false
 
     private let downloader = BookDownloadService.shared
@@ -172,7 +172,7 @@ final class BookReaderViewModel {
         context.saveWithErrorHandling()
         log("Bookmark added: \(title)", level: .info)
 
-        // Animate icon briefly
+        // Кратко анимировать иконку
         bookmarkJustAdded = true
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.8))
@@ -180,14 +180,14 @@ final class BookReaderViewModel {
         }
     }
 
-    /// Delete a specific bookmark (called from the list via swipe).
+    /// Удаляет конкретную закладку (вызывается из списка через swipe).
     func deleteBookmark(_ bookmark: BookBookmark, context: ModelContext) {
         context.delete(bookmark)
         context.saveWithErrorHandling()
         log("Bookmark deleted: \(bookmark.chapterTitle)", level: .info)
     }
 
-    /// Remove all bookmarks on the current chapter (context menu → Remove Bookmark).
+    /// Удаляет все закладки на текущей главе (контекстное меню → Remove Bookmark).
     func removeBookmark(from bookmarks: [BookBookmark], context: ModelContext) {
         bookmarks
             .filter { $0.chapterIndex == chapterIndex }
@@ -196,7 +196,7 @@ final class BookReaderViewModel {
         log("Bookmark removed for chapter \(chapterIndex)", level: .info)
     }
 
-    /// True if the current chapter already has at least one bookmark.
+    /// True, если у текущей главы уже есть хотя бы одна закладка.
     func hasBookmark(in bookmarks: [BookBookmark]) -> Bool {
         bookmarks.contains { $0.chapterIndex == chapterIndex }
     }

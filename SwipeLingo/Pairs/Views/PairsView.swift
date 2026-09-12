@@ -162,7 +162,7 @@ struct PairsView: View {
     @ViewBuilder
     private func previewRow(_ pair: Pair) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            // Line 1: left [+ right]
+            // Строка 1: left [+ right]
             HStack(spacing: 0) {
                 Text(pair.left ?? "—")
                     .font(.body)
@@ -183,7 +183,7 @@ struct PairsView: View {
                 }
             }
 
-            // Line 2: description
+            // Строка 2: description
             if let desc = pair.description, !desc.isEmpty {
                 Text(desc)
                     .font(.subheadline)
@@ -191,7 +191,7 @@ struct PairsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            // Line 3: sample
+            // Строка 3: sample
             if let sample = pair.sample, !sample.isEmpty {
                 Text(sample)
                     .font(.subheadline.italic())

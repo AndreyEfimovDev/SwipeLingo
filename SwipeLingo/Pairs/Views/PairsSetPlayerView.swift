@@ -115,7 +115,7 @@ struct PairsSetPlayerView: View {
                             .myShadow()
                             .padding(.horizontal, 16)
 
-                            // SRS buttons + replay — только в standalone режиме (без onComplete)
+                            // Кнопки SRS + replay — только в standalone режиме (без onComplete)
                             if vm.showCompletion && onComplete == nil {
                                 if srsEnabled { srsRatingButtons.padding(.top, 24) }
                                 replayButton
@@ -221,7 +221,7 @@ struct PairsSetPlayerView: View {
     }
 
     private var subtitleLine: some View {
-        // Count + tier badge + mode switcher — закреплена над ScrollView
+        // Счётчик + бейдж тарифа + переключатель режима — закреплена над ScrollView
         HStack(alignment: .center, spacing: 8) {
             HStack(alignment: .top, spacing: 2) {
                 let count = set.items.count
@@ -333,10 +333,10 @@ struct PairsSetPlayerView: View {
 
         VStack(alignment: .leading, spacing: 0) {
 
-            // Line 1: left [+ right]
+            // Строка 1: left [+ right]
             HStack(alignment: .top, spacing: 0) {
                 if pair.right != nil {
-                    // Two-column layout
+                    // Двухколоночная раскладка
                     cellText(pair.left, visible: leftVisible)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -353,13 +353,13 @@ struct PairsSetPlayerView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 } else {
-                    // Full-width left
+                    // Left на всю ширину
                     cellText(pair.left, visible: leftVisible, weight: .medium)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 
-            // Line 2: description
+            // Строка 2: description
             if pair.description != nil {
                 if isLocked {
                     lockedCellSecondary(visible: descVisible)
@@ -368,7 +368,7 @@ struct PairsSetPlayerView: View {
                 }
             }
 
-            // Line 3: sample
+            // Строка 3: sample
             if pair.sample != nil {
                 if isLocked {
                     lockedCellSecondary(visible: sampleVisible)

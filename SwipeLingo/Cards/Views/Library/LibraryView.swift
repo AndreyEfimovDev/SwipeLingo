@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 // MARK: - LibraryView
-// Root of the Library tab: Piles + Collections → Sets → Cards (NavigationStack)
+// Корень таба Library: Piles + Collections → Sets → Cards (NavigationStack)
 
 struct LibraryView: View {
 
@@ -33,7 +33,7 @@ struct LibraryView: View {
     @State private var pileSheet:             PileSheet?
     @State private var collectionToDelete:    Collection?
     @State private var showAddSetSheet     = false
-    @State private var addSetCollectionId: UUID  = UUID()   // set before showAddSetSheet = true
+    @State private var addSetCollectionId: UUID  = UUID()   // устанавливается перед showAddSetSheet = true
     @State private var setToDelete:           CardSet?
     @State private var setForNewPile:         CardSet?
     @State private var newPileName            = ""
@@ -314,12 +314,12 @@ struct LibraryView: View {
         }
     }
 
-    // MARK: - Sets Section (flat list with collection groups)
+    // MARK: - Секция Sets (плоский список с группами по коллекциям)
 
     private var setsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
 
-            // ── Header ─────────────────────────────────────────
+            // ── Заголовок ─────────────────────────────────────────
             HStack {
                 Text("MY SETS")
                     .font(.footnote.weight(.semibold))
@@ -334,7 +334,7 @@ struct LibraryView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .padding(.horizontal, 32)
 
-            // ── User collections ────────────────────────────────
+            // ── Пользовательские коллекции ────────────────────────────────
             if myCollections.isEmpty {
                 Text("No collections yet — tap + to create one")
                     .font(.subheadline)
@@ -351,7 +351,7 @@ struct LibraryView: View {
                 }
             }
 
-            // ── Curated collections ─────────────────────────────
+            // ── Кураторские коллекции ─────────────────────────────
             if !curatedCollections.isEmpty {
                 Text("CURATED")
                     .font(.footnote.weight(.semibold))
@@ -373,7 +373,7 @@ struct LibraryView: View {
         let sets = vm.setsForCollection(collection, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
 
         VStack(spacing: 0) {
-            // Collection header
+            // Заголовок коллекции
             HStack(spacing: 0) {
                 Label(collection.name, systemImage: collection.icon ?? "folder")
                     .font(.subheadline.weight(.semibold))
@@ -416,7 +416,7 @@ struct LibraryView: View {
                 }
             }
 
-            // Set rows
+            // Строки сетов
             if sets.isEmpty {
                 Divider().padding(.leading, 16)
                 Text("No sets yet")
@@ -576,12 +576,12 @@ struct LibraryView: View {
 
     }
 
-    // Inbox + My Sets + other user-created collections
+    // Inbox + My Sets + остальные пользовательские коллекции
     private var myCollections: [Collection] {
         vm.myCollections(from: collections, cardSets: cardSets, allCards: allCards)
     }
 
-    // Curated (Firestore) collections — показываем только если есть хотя бы один сет.
+    // Кураторские (Firestore) коллекции — показываем только если есть хотя бы один сет.
     // Скрываем пустые: они появляются кратковременно пока sync ещё не выполнил cleanup,
     // и могут оставаться если у пользователя нет контента на его уровне CEFR.
     private var curatedCollections: [Collection] {

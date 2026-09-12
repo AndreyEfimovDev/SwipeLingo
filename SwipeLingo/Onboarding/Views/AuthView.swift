@@ -2,16 +2,16 @@ import SwiftUI
 import AuthenticationServices
 
 // MARK: - AuthView
-// Used in three contexts:
-//   • First launch — before onboarding (showGuestOption: true)
-//   • Standalone — shown after sign-out (no cancel, no guest option)
-//   • Sheet from ProfileView — isDismissible: true (Cancel button, no guest option)
+// Используется в трёх контекстах:
+//   • Первый запуск — до онбординга (showGuestOption: true)
+//   • Отдельно — показывается после выхода из аккаунта (без cancel, без опции гостя)
+//   • Sheet из ProfileView — isDismissible: true (кнопка Cancel, без опции гостя)
 
 struct AuthView: View {
 
     var isDismissible: Bool = false
     var showGuestOption: Bool = false
-    /// Передаётся из composition root — не через .environment().
+ 
     private let authService: AuthFBService
 
     init(isDismissible: Bool = false, showGuestOption: Bool = false, authService: AuthFBService) {

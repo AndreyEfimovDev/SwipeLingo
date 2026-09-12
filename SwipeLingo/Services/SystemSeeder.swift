@@ -3,13 +3,13 @@ import SwiftData
 
 // MARK: - SystemSeeder
 //
-// Ensures system collections (My Sets, Inbox) always exist on every launch.
-// Curated content (Collections → CardSets → Cards) comes from Firestore via ImportFSService.
+// Гарантирует, что системные коллекции (My Sets, Inbox) всегда существуют при каждом запуске.
+// Кураторский контент (Collections → CardSets → Cards) приходит из Firestore через ImportFSService.
 
 struct SystemSeeder {
 
-    /// Creates "My Sets" and "Inbox" if they are missing.
-    /// Safe to call on every launch — only inserts what is absent.
+    /// Создаёт "My Sets" и "Inbox", если их нет.
+    /// Безопасно вызывать при каждом запуске — вставляет только отсутствующее.
     static func ensureSystemCollections(into context: ModelContext) {
         let existing = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
         let names = Set(existing.map { $0.name })

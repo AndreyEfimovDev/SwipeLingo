@@ -2,7 +2,7 @@
 //  UnderlineSegmentedPickerNotOptional.swift
 //  StartToSwiftUI
 //
-//  Created by Andrey Efimov on 13.09.2025.
+//  Создано Andrey Efimov 13.09.2025.
 //
 
 import SwiftUI

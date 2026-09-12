@@ -1,33 +1,33 @@
 import Foundation
 
 // MARK: - Constants
-// Non-sensitive app-wide constants.
-// Sensitive values (API keys, URLs) → Secrets.swift (gitignored)
+// Несекретные константы уровня всего приложения.
+// Секретные значения (API-ключи, URL) → Secrets.swift (в .gitignore)
 
 enum Constants {
 
     // MARK: - Paywall
 
-    /// Number of paid items (cards or pairs) shown with full content per session
-    /// before switching to degraded preview (front-only for cards, left-word-only for pairs).
+    /// Количество платных элементов (карточек или пар), показываемых с полным контентом за сессию,
+    /// прежде чем переключиться на урезанный превью-режим (только лицо у карточек, только левое слово у пар).
     static let paywallPreviewLimit = 5
 
     // MARK: - Subscription
 
-    /// Grace period after subscription expiry before downgrading to Free (in days).
+    /// Grace period после истечения подписки перед понижением до Free (в днях).
     static let subscriptionGracePeriodDays = 3
 
-    /// Trial duration in days for new Go/Pro subscribers.
+    /// Длительность триала в днях для новых подписчиков Go/Pro.
     static let trialDurationDays = 30
 
-    /// Days before expiry to send first renewal reminder notification.
+    /// Дней до истечения для отправки первого напоминания о продлении.
     static let notificationReminderDays1 = 7
 
-    /// Days before expiry to send second renewal reminder notification.
+    /// Дней до истечения для отправки второго напоминания о продлении.
     static let notificationReminderDays2 = 1
 
-    // MARK: - Pricing (EUR / USD / RUB)
-    // Placeholder — replace with real StoreKit product IDs when billing is integrated.
+    // MARK: - Цены (EUR / USD / RUB)
+    // Заглушка — заменить на реальные StoreKit product ID, когда будет подключён биллинг.
 
     enum Price {
         static let goYearlyEUR:  Double = 20
@@ -38,7 +38,7 @@ enum Constants {
         static let proYearlyUSD: Double = 40
         static let proYearlyRUB: Double = 3999
 
-        // Monthly = yearly / 12 (placeholder until real monthly tiers are defined)
+        // Monthly = yearly / 12 (заглушка, пока не определены реальные месячные тарифы)
         static let goMonthlyEUR:  Double = goYearlyEUR  / 12
         static let goMonthlyUSD:  Double = goYearlyUSD  / 12
         static let goMonthlyRUB:  Double = goYearlyRUB  / 12
@@ -55,32 +55,32 @@ enum Constants {
     // MARK: - AppStorage Keys
 
     enum StorageKey {
-        static let appEverLaunched        = "appEverLaunched"        // Bool — fresh install detection, clears stale Keychain token
-        static let hasCompletedOnboarding = "hasCompletedOnboarding" // Bool — controls onboarding vs main app flow
-        static let userPlan               = "userPlan"               // AccessTier.rawValue — current subscription tier
-        static let cachedPlanStatus       = "cachedPlanStatus"       // SubscriptionStatus.rawValue — last known subscription status from Firestore
-        static let cachedPlanExpiry       = "cachedPlanExpiry"       // TimeInterval — subscription expiry date cached locally
-        static let nativeLanguage         = "nativeLanguage"         // NativeLanguage.rawValue — user's native language (ISO 639-1)
+        static let appEverLaunched        = "appEverLaunched"        // Bool — определение чистой установки, чистит устаревший токен Keychain
+        static let hasCompletedOnboarding = "hasCompletedOnboarding" // Bool — управляет онбордингом vs основным флоу приложения
+        static let userPlan               = "userPlan"               // AccessTier.rawValue — текущий план подписки
+        static let cachedPlanStatus       = "cachedPlanStatus"       // SubscriptionStatus.rawValue — последний известный статус подписки из Firestore
+        static let cachedPlanExpiry       = "cachedPlanExpiry"       // TimeInterval — дата истечения подписки, закэширована локально
+        static let nativeLanguage         = "nativeLanguage"         // NativeLanguage.rawValue — родной язык пользователя (ISO 639-1)
         static let colorScheme            = "colorScheme"            // Theme.rawValue — light / dark / system
-        static let ttsVoiceIdentifier     = "ttsVoiceIdentifier"     // String — AVSpeechSynthesisVoice identifier, empty = system default
-        static let englishVariant         = "englishVariant"         // String — BCP-47 locale for TTS, e.g. "en-US" / "en-GB"
-        static let srsEnabled             = "srsEnabled"             // Bool — spaced repetition scheduling on/off
-        static let studyStartHour         = "studyStartHour"         // Int — hour of day when SRS "new day" resets (0–23)
-        static let studyMode              = "studyMode"              // StudyMode.label — last active tab: Cards or Pairs
-        static let pairsAnimationMode     = "pairsAnimationMode"     // AnimationMode.rawValue — manual / auto flip in Pairs
-        static let pairsAudioEnabled      = "pairsAudioEnabled"      // Bool — auto-play TTS in Pairs sessions
-        static let cachedBillingCycle     = "cachedBillingCycle"     // BillingCycle.rawValue — billing cycle of active subscription
-        static let cachedPendingPlan      = "cachedPendingPlan"      // AccessTier.rawValue — plan scheduled after current period ends
-        static let cachedPendingCycle     = "cachedPendingCycle"     // BillingCycle.rawValue — cycle of pending plan
-        static let pendingInboxWords      = "pendingInboxWords"      // [String] — words queued by Share Extension, read via App Group UserDefaults (not @AppStorage — shared between SwipeLingo and SwipeLingoShare)
+        static let ttsVoiceIdentifier     = "ttsVoiceIdentifier"     // String — идентификатор AVSpeechSynthesisVoice, пусто = системный по умолчанию
+        static let englishVariant         = "englishVariant"         // String — BCP-47 локаль для TTS, напр. "en-US" / "en-GB"
+        static let srsEnabled             = "srsEnabled"             // Bool — интервальное повторение включено/выключено
+        static let studyStartHour         = "studyStartHour"         // Int — час суток, когда сбрасывается "новый день" SRS (0–23)
+        static let studyMode              = "studyMode"              // StudyMode.label — последний активный таб: Cards или Pairs
+        static let pairsAnimationMode     = "pairsAnimationMode"     // AnimationMode.rawValue — ручной / авто переход в Pairs
+        static let pairsAudioEnabled      = "pairsAudioEnabled"      // Bool — автовоспроизведение TTS в сессиях Pairs
+        static let cachedBillingCycle     = "cachedBillingCycle"     // BillingCycle.rawValue — цикл оплаты активной подписки
+        static let cachedPendingPlan      = "cachedPendingPlan"      // AccessTier.rawValue — план, запланированный после окончания текущего периода
+        static let cachedPendingCycle     = "cachedPendingCycle"     // BillingCycle.rawValue — цикл ожидающего плана
+        static let pendingInboxWords      = "pendingInboxWords"      // [String] — слова в очереди от Share Extension, читаются через App Group UserDefaults (не @AppStorage — общий между SwipeLingo и SwipeLingoShare)
     }
 
-    // MARK: - Website
+    // MARK: - Сайт
 
-    /// Base URL of the SwipeLingo website. Replace with production URL before release.
+    /// Базовый URL сайта SwipeLingo. Заменить на продакшен-URL перед релизом.
     static let websiteBaseURL = "https://swipelingo.app"
 
-    /// Subscription management page — opened when user taps "Subscribe" or "Manage Plan".
+    /// Страница управления подпиской — открывается, когда пользователь тапает "Subscribe" или "Manage Plan".
     static func subscribeURL(plan: String, cycle: String) -> URL {
         URL(string: "\(websiteBaseURL)/subscribe?plan=\(plan)&cycle=\(cycle)")!
     }

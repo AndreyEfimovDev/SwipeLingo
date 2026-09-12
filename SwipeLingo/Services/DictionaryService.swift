@@ -2,9 +2,9 @@ import Foundation
 
 // MARK: - DictionaryService
 //
-// Tries Merriam-Webster Learner's Dictionary first (better definitions + examples).
-// Falls back to Free Dictionary API (dictionaryapi.dev) if MW fails.
-// Safe to call from @MainActor context — URLSession.data suspends off-MainActor internally.
+// Сначала пробует Merriam-Webster Learner's Dictionary (лучше определения + примеры).
+// Если MW не сработал — откатывается на Free Dictionary API (dictionaryapi.dev).
+// Безопасно вызывать из контекста @MainActor — URLSession.data внутри приостанавливается вне MainActor.
 
 struct DictionaryService {
 
@@ -74,8 +74,8 @@ struct DictionaryService {
         } catch let e as DictionaryError { throw e
         } catch { throw DictionaryError.networkError(error) }
 
-        // MW response is [Any]: real entries are objects, suggestions are strings.
-        // Filter to objects only, then decode.
+        // Ответ MW — это [Any]: реальные записи это объекты, а предложения-подсказки — строки.
+        // Фильтруем только объекты, затем декодируем.
         guard
             let rawArray  = try? JSONSerialization.jsonObject(with: data) as? [Any],
             let objects   = rawArray.compactMap({ $0 as? [String: Any] }) as [[String: Any]]?,
@@ -90,7 +90,7 @@ struct DictionaryService {
             throw DictionaryError.decodingError(error)
         }
 
-        // Use the first entry that has at least one definition.
+        // Берём первую запись, у которой есть хотя бы одно определение.
         guard let entry = entries.first(where: { !$0.shortdef.isEmpty }) else {
             throw DictionaryError.notFound
         }
@@ -114,8 +114,8 @@ struct DictionaryService {
                                meanings: [meaning])
     }
 
-    /// Constructs the MW audio CDN URL from a sound filename.
-    /// Subdirectory rules: https://dictionaryapi.com/products/json#sec-2.prs
+    /// Строит URL MW audio CDN по имени звукового файла.
+    /// Правила поддиректорий: https://dictionaryapi.com/products/json#sec-2.prs
     private func mwAudioURL(_ audio: String) -> String {
         let subdir: String
         if audio.hasPrefix("bix")           { subdir = "bix" }
@@ -125,8 +125,8 @@ struct DictionaryService {
         return "https://media.merriam-webster.com/audio/prons/en/us/mp3/\(subdir)/\(audio).mp3"
     }
 
-    /// Extracts the first verbal illustration (example sentence) from MW `def/sseq/dt/vis`.
-    /// Uses JSONSerialization because `sseq` is a deeply-nested mixed-type array.
+    /// Извлекает первый пример-иллюстрацию (example sentence) из MW `def/sseq/dt/vis`.
+    /// Использует JSONSerialization, потому что `sseq` — глубоко вложенный массив со смешанными типами.
     private func extractFirstExample(from rawArray: [Any]) -> String? {
         for item in rawArray {
             guard let entry = item as? [String: Any],
@@ -153,8 +153,8 @@ struct DictionaryService {
         return nil
     }
 
-    /// Strips MW inline markup, leaving clean readable text.
-    /// e.g. "{it}word{/it}" → "word", "{bc}" → ": ", "{d_link|word|id}" → "word"
+    /// Убирает инлайн-разметку MW, оставляя чистый читаемый текст.
+    /// напр. "{it}word{/it}" → "word", "{bc}" → ": ", "{d_link|word|id}" → "word"
     private func stripMWMarkup(_ text: String) -> String {
         var result = text
         result = result.replacingOccurrences(of: "{bc}",    with: ": ")
@@ -162,7 +162,7 @@ struct DictionaryService {
         result = result.replacingOccurrences(of: "{rdquo}", with: "\u{201D}")
         result = result.replacingOccurrences(of: "{amp}",   with: "&")
 
-        // {tag|display|id} or {tag|display} → display text (first pipe-segment)
+        // {tag|display|id} или {tag|display} → отображаемый текст (первый сегмент до |)
         let pipePattern = "\\{[a-z_]+\\|([^|{}]+)(?:\\|[^{}]*)?\\}"
         if let regex = try? NSRegularExpression(pattern: pipePattern) {
             let range = NSRange(result.startIndex..., in: result)
@@ -170,7 +170,7 @@ struct DictionaryService {
                                                     withTemplate: "$1")
         }
 
-        // Remove remaining {tags}
+        // Убираем оставшиеся {tags}
         let tagPattern = "\\{[^{}]*\\}"
         if let regex = try? NSRegularExpression(pattern: tagPattern) {
             let range = NSRange(result.startIndex..., in: result)
@@ -181,7 +181,7 @@ struct DictionaryService {
         return result.trimmingCharacters(in: .whitespaces)
     }
 
-    // MARK: - Free Dictionary (fallback)
+    // MARK: - Free Dictionary (резервный вариант)
 
     private func fetchFreeDictionary(word: String) async throws -> DictionaryEntry {
         guard

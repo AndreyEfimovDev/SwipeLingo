@@ -2,7 +2,7 @@
 //  HorizontalSermentedSmoothPicker.swift
 //  StartToSwiftUI
 //
-//  Created by Andrey Efimov on 31.08.2025.
+//  Создано Andrey Efimov 31.08.2025.
 //
 
 import SwiftUI
@@ -13,14 +13,14 @@ struct UnderlineSermentedPicker<T: Hashable>: View {
     let allItems: [T]
     let titleForCase: (T) -> String
     
-    // Colors
+    // Цвета
     var selectedFont: Font = .footnote
     var selectedTextColor: Color = Color.myColors.myBlue
     var unselectedTextColor: Color = Color.myColors.myAccent
     var selectedBackground: Color = Color.myColors.myBlue.opacity(0.1)
     var unselectedBackground: Color = .clear
-    
-    // parameters for optional values
+
+    // параметры для опциональных значений
     var showNilOption: Bool = true
     var nilTitle: String = "None"
     
@@ -28,7 +28,7 @@ struct UnderlineSermentedPicker<T: Hashable>: View {
 
     var body: some View {
         HStack(alignment: .top) {
-            // Optional nil button
+            // Опциональная nil-кнопка
             if showNilOption {
                 VStack(spacing: 5) {
                     Text(nilTitle)
@@ -50,7 +50,7 @@ struct UnderlineSermentedPicker<T: Hashable>: View {
                 }
             }
             
-            // Regular buttons for enum's values
+            // Обычные кнопки для значений enum
             ForEach(allItems, id: \.self) { item in
                 VStack(spacing: 5) {
                     Text(titleForCase(item))

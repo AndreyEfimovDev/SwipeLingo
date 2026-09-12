@@ -434,14 +434,14 @@ final class PairsSetPlayerViewModel {
             let isLocked = isPaywalled && index >= previewPairCount
 
             if thresh.leftStep == revealedSteps {
-                // Left step (sequential) OR shared left+right step (parallel)
+                // Left-шаг (sequential) ИЛИ общий left+right шаг (parallel)
                 primaryText = pair.left
-                // Parallel: leftStep == rightStep → queue right as secondary
+                // Parallel: leftStep == rightStep → ставим right в очередь как secondary
                 if thresh.rightStep == revealedSteps, !isLocked {
                     secondaryText = pair.right
                 }
             } else if thresh.rightStep == revealedSteps, !isLocked {
-                // Sequential: right on its own step
+                // Sequential: right на своём отдельном шаге
                 primaryText = pair.right
             } else if thresh.descStep == revealedSteps, !isLocked {
                 primaryText = pair.description
@@ -496,14 +496,14 @@ final class PairsSetPlayerViewModel {
             var sampleStep: Int? = nil
 
             if pair.right != nil && pair.displayMode == .parallel {
-                // Parallel: left + right appear together on one step
+                // Parallel: left + right появляются вместе на одном шаге
                 step += 1
                 if pair.left  != nil { leftStep  = step }
                 rightStep = step
                 if pair.description != nil { step += 1; descStep   = step }
                 if pair.sample      != nil { step += 1; sampleStep = step }
             } else {
-                // Sequential (or no right): each field is a separate step
+                // Sequential (или нет right): каждое поле — отдельный шаг
                 if pair.left        != nil { step += 1; leftStep   = step }
                 if pair.right       != nil { step += 1; rightStep  = step }
                 if pair.description != nil { step += 1; descStep   = step }

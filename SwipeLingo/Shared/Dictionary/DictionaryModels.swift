@@ -1,7 +1,7 @@
 import Foundation
 
-// MARK: - Raw API Codable structs
-// Mirror the Free Dictionary API JSON exactly.
+// MARK: - Сырые Codable-структуры API
+// Точно отражают JSON Free Dictionary API.
 // https://api.dictionaryapi.dev/api/v2/entries/en/{word}
 
 struct APIEntry: Codable {
@@ -26,19 +26,19 @@ struct APIDefinitionItem: Codable {
     let example: String?
 }
 
-// MARK: - Merriam-Webster Learner's Dictionary raw models
+// MARK: - Сырые модели Merriam-Webster Learner's Dictionary
 // https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={key}
 //
-// The response is [Any] — real entries are objects, "did-you-mean" suggestions are strings.
-// We filter to objects only before decoding.
-// The `def/sseq` structure is deeply nested mixed-type arrays — parsed via
-// JSONSerialization in DictionaryService rather than Codable.
+// Ответ — это [Any]: реальные записи это объекты, а подсказки "did-you-mean" — строки.
+// Перед декодированием фильтруем только объекты.
+// Структура `def/sseq` — глубоко вложенные массивы со смешанными типами, парсится через
+// JSONSerialization в DictionaryService, а не через Codable.
 
 struct MWEntry: Decodable {
     let hwi: MWHeadwordInfo?
-    /// Functional label — part of speech, e.g. "noun", "verb".
+    /// Функциональная метка — часть речи, напр. "noun", "verb".
     let fl: String?
-    /// Pre-formatted short definitions — already stripped of most markup.
+    /// Предформатированные краткие определения — из них уже убрана большая часть разметки.
     let shortdef: [String]
 
     enum CodingKeys: String, CodingKey { case hwi, fl, shortdef }
@@ -49,24 +49,24 @@ struct MWHeadwordInfo: Decodable {
 }
 
 struct MWPronunciation: Decodable {
-    /// MW-notation transcription, e.g. "ˈwərd".
+    /// Транскрипция в нотации MW, напр. "ˈwərd".
     let mw: String?
     let sound: MWSound?
 }
 
 struct MWSound: Decodable {
-    /// Base filename used to construct the audio URL.
+    /// Базовое имя файла, используется для построения URL аудио.
     let audio: String?
 }
 
-// MARK: - App-layer clean structs
-// Used by DictionaryService and the UI — decoupled from API details.
+// MARK: - Чистые структуры уровня приложения
+// Используются DictionaryService и UI — отвязаны от деталей API.
 
 struct DictionaryEntry {
     let word: String
-    /// IPA transcription, e.g. "/həˈloʊ/", empty string if unavailable.
+    /// IPA-транскрипция, напр. "/həˈloʊ/", пустая строка, если недоступна.
     let transcription: String
-    /// HTTPS audio URL string, empty string if unavailable.
+    /// Строка HTTPS-URL аудио, пустая строка, если недоступна.
     let audioURL: String
     let meanings: [DictionaryMeaning]
 }
@@ -74,7 +74,7 @@ struct DictionaryEntry {
 struct DictionaryMeaning {
     let partOfSpeech: String
     let definitions: [DictionaryDefinition]
-    /// First 5 synonyms from the API.
+    /// Первые 5 синонимов из API.
     let synonyms: [String]
 }
 
@@ -87,18 +87,18 @@ struct DictionaryDefinition {
 
 extension APIEntry {
     func toDictionaryEntry() -> DictionaryEntry {
-        // Log raw phonetics so we can verify what the API returns
+        // Логируем сырые phonetics, чтобы можно было проверить, что реально вернул API
         log("'\(word)' — \(phonetics.count) phonetic(s):")
         for (i, p) in phonetics.enumerated() {
             log("[\(i)] text: \(p.text ?? "nil")  audio: \(p.audio ?? "nil")")
         }
 
-        // First non-empty transcription text
+        // Первый непустой текст транскрипции
         let transcription = phonetics
             .compactMap(\.text)
             .first(where: { !$0.isEmpty }) ?? ""
 
-        // First non-empty HTTPS audio URL (protocol-relative "//" is normalised)
+        // Первый непустой HTTPS-URL аудио (protocol-relative "//" нормализуется)
         let audioURL: String = phonetics
             .compactMap(\.audio)
             .compactMap { raw -> String? in

@@ -3,8 +3,8 @@ import Foundation
 import SwiftData
 
 // MARK: - AppSyncStateManager
-// Handles SwiftData CRUD and duplicate merging for the AppSyncState singleton.
-// CloudKit can create duplicates when two devices both insert before sync completes.
+// Обрабатывает CRUD в SwiftData и слияние дубликатов для singleton'а AppSyncState.
+// CloudKit может создавать дубликаты, если два устройства вставляют запись до завершения синка.
 
 final class AppSyncStateManager {
 
@@ -30,7 +30,7 @@ final class AppSyncStateManager {
                 return existing
             }
 
-            // No record yet — migrate defaults from UserDefaults (existing @AppStorage values)
+            // Записи ещё нет — переносим дефолты из UserDefaults (существующие значения @AppStorage)
             let migrated = AppSyncState(
                 srsEnabled:            UserDefaults.standard.object(forKey: "srsEnabled") as? Bool ?? true,
                 studyStartHour:        {
@@ -64,16 +64,16 @@ final class AppSyncStateManager {
     // MARK: - Private
 
     private func mergeDuplicates(_ states: [AppSyncState]) -> AppSyncState {
-        // Primary = most recently updated (wins on conflict)
+        // Primary = самая недавно обновлённая (побеждает при конфликте)
         let sorted = states.sorted { $0.settingsUpdatedAt > $1.settingsUpdatedAt }
         guard let primary = sorted.first else { return AppSyncState() }
 
-        // hasCompletedOnboarding: true wins (once completed, always completed)
+        // hasCompletedOnboarding: true побеждает (раз завершено — значит завершено навсегда)
         primary.hasCompletedOnboarding = states.contains { $0.hasCompletedOnboarding }
 
-        // srsEnabled / studyStartHour / nativeLanguageRaw: primary already has newest values
+        // srsEnabled / studyStartHour / nativeLanguageRaw: у primary уже самые свежие значения
 
-        // Delete duplicates
+        // Удаляем дубликаты
         for duplicate in sorted.dropFirst() {
             modelContext.delete(duplicate)
         }
@@ -92,9 +92,9 @@ final class AppSyncStateManager {
 }
 
 // MARK: - AppSyncStateService
-// @Observable service exposing synced settings throughout the app.
-// Writes to both SwiftData (CloudKit sync) and UserDefaults (immediate @AppStorage compat).
-// Listens for NSPersistentStoreRemoteChange to react to CloudKit-delivered updates.
+// @Observable-сервис, раздающий синхронизированные настройки по всему приложению.
+// Пишет и в SwiftData (CloudKit-синк), и в UserDefaults (немедленная совместимость с @AppStorage).
+// Слушает NSPersistentStoreRemoteChange, чтобы реагировать на обновления, доставленные CloudKit.
 
 @Observable
 @MainActor
@@ -104,10 +104,10 @@ final class AppSyncStateService {
     private let manager: AppSyncStateManager
     private var appState: AppSyncState
 
-    // MARK: - Synced properties
-    // Each setter writes to both UserDefaults (@AppStorage compat) and SwiftData (CloudKit).
+    // MARK: - Синхронизируемые свойства
+    // Каждый setter пишет и в UserDefaults (совместимость с @AppStorage), и в SwiftData (CloudKit).
 
-    // isReloading suppresses didSet saves during CloudKit-triggered reload
+    // isReloading подавляет сохранения в didSet во время перезагрузки, инициированной CloudKit
     private var isReloading = false
 
     var srsEnabled: Bool {
@@ -162,12 +162,12 @@ final class AppSyncStateService {
         observeCloudKitChanges()
     }
 
-    // MARK: - CloudKit observer
+    // MARK: - Наблюдатель CloudKit
 
-    // NSPersistentStoreRemoteChange fires for BOTH local saves AND remote CloudKit changes.
-    // Without debounce, a single sync burst (CloudKit delivering many records) triggers
-    // dozens of reloads, each of which saves (cleanupDuplicates) → triggering more notifications.
-    // Debounce collapses the burst into one reload 300ms after the last notification.
+    // NSPersistentStoreRemoteChange срабатывает И на локальные сохранения, И на удалённые изменения CloudKit.
+    // Без debounce один sync-пакет (CloudKit доставляет много записей) вызвал бы
+    // десятки перезагрузок, каждая из которых сохраняет (cleanupDuplicates) → порождая ещё уведомления.
+    // Debounce схлопывает пакет в одну перезагрузку через 300мс после последнего уведомления.
     private var reloadTask: Task<Void, Never>?
 
     private func observeCloudKitChanges() {
@@ -176,7 +176,7 @@ final class AppSyncStateService {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            // queue: .main guarantees main thread — asserting MainActor isolation explicitly
+            // queue: .main гарантирует главный поток — явно подтверждаем изоляцию MainActor
             MainActor.assumeIsolated { self?.scheduleReload() }
         }
     }
@@ -194,8 +194,8 @@ final class AppSyncStateService {
         manager.cleanupDuplicates()
         let state = manager.getOrCreateAppState()
 
-        // NSPersistentStoreRemoteChange fires for every model type (Card, CardSet, etc.).
-        // Skip the reload if AppSyncState values haven't actually changed to avoid unnecessary UI updates.
+        // NSPersistentStoreRemoteChange срабатывает на каждый тип модели (Card, CardSet и т.д.).
+        // Пропускаем перезагрузку, если значения AppSyncState реально не изменились — избегаем лишних UI-обновлений.
         let changed = state.srsEnabled            != srsEnabled
                    || state.studyStartHour        != studyStartHour
                    || state.hasCompletedOnboarding != hasCompletedOnboarding

@@ -23,7 +23,7 @@ struct OnboardingLevelView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            // Заголовок
             VStack(spacing: 12) {
                 Text("📚")
                     .font(.system(size: 56))
@@ -41,7 +41,7 @@ struct OnboardingLevelView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
 
-            // Level list
+            // Список уровней
             VStack(spacing: 0) {
                 ForEach(Array(CEFRLevel.allCases.enumerated()), id: \.offset) { index, level in
                     if index > 0 {
@@ -57,7 +57,7 @@ struct OnboardingLevelView: View {
 
             Spacer()
 
-            // Continue
+            // Продолжить
             Button(action: onNext) {
                 Text("Continue")
                     .font(.body.weight(.semibold))
@@ -82,7 +82,7 @@ struct OnboardingLevelView: View {
             vm.selectLevel(level, profile: profile)
         } label: {
             HStack(spacing: 14) {
-                // CEFR badge
+                // Бейдж CEFR
                 Text(level.displayCode)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white)

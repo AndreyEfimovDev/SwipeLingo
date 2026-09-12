@@ -2,9 +2,9 @@ import Foundation
 import SwiftData
 
 // MARK: - ExportService
-// Handles JSON export and import of user-created cards and pairs SRS state.
-// Cards: full content (user-created sets only).
-// Pairs: SRS state only — content comes from Firestore and re-syncs automatically.
+// Обрабатывает JSON-экспорт и импорт пользовательских карточек и SRS-состояния pairs.
+// Cards: полный контент (только пользовательские сеты).
+// Pairs: только SRS-состояние — контент приходит из Firestore и синхронизируется автоматически.
 
 final class ExportService {
 
@@ -143,7 +143,7 @@ final class ExportService {
             if existingSetIds.contains(backupSet.id) {
                 setId = backupSet.id
             } else {
-                // Find target collection: prefer original collectionId if it exists, else My Sets
+                // Определяем целевую коллекцию: предпочитаем исходный collectionId, если он существует, иначе My Sets
                 let targetCollectionId = existingSets.first { _ in
                     collections.contains { $0.id == backupSet.id }
                 }.map { _ in backupSet.id } ?? (myCollection?.id ?? UUID())

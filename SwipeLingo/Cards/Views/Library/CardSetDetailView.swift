@@ -2,9 +2,9 @@ import SwiftUI
 import SwiftData
 
 // MARK: - CardSetDetailView
-// Third level: list of Cards inside a CardSet.
+// Третий уровень: список Cards внутри CardSet.
 
-// PreferenceKey: measures actual CardRow height after first layout
+// PreferenceKey: измеряет реальную высоту CardRow после первого layout
 private struct CardRowHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -41,7 +41,7 @@ struct CardSetDetailView: View {
 
     private var isPaywalled: Bool { !userPlan.canAccess(cardSet.accessTier) }
 
-    // Fallback covers first render; updated by PreferenceKey after layout
+    // Fallback покрывает первый рендер; обновляется через PreferenceKey после layout
     @State private var rowHeight: CGFloat = 68
 
     // MARK: Filtered sections
@@ -60,13 +60,13 @@ struct CardSetDetailView: View {
         ScrollView {
             VStack(spacing: 16) {
 
-                // MARK: Metadata card (CEFR + description)
+                // MARK: Карточка метаданных (CEFR + описание)
                 metadataCard
 
-                // MARK: Active section
+                // MARK: Секция Active
                 if !activeCards.isEmpty {
                     if isInbox {
-                        // Inbox: flat list, no section header, pencil visible
+                        // Inbox: плоский список, без заголовка секции, карандаш виден
                         cardList(cards: activeCards, showRestore: false)
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
@@ -85,7 +85,7 @@ struct CardSetDetailView: View {
                     }
                 }
 
-                // MARK: Learnt section (not shown for Inbox)
+                // MARK: Секция Learnt (не показывается для Inbox)
                 if !isInbox && !learntCards.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         collapsibleHeader(

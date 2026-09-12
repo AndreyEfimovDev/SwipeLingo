@@ -51,7 +51,7 @@ struct ExpandableSection: View {
                     )
                 }
                 .overlay(alignment: .topLeading) {
-                    // Measure full height
+                    // Измеряем полную высоту
                     Text(text)
                         .font(font)
                         .lineSpacing(lineSpacing)
@@ -59,7 +59,7 @@ struct ExpandableSection: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .hidden()
                         .getSize { fullHeight = $0.height }
-                    // Measure limited height
+                    // Измеряем ограниченную высоту
                     Text(text)
                         .font(font)
                         .lineSpacing(lineSpacing)

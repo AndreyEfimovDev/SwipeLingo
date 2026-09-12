@@ -249,31 +249,31 @@ struct PlansView: View {
     }
 
     private var buttonConfig: ButtonConfig {
-        // Cancel subscription
+        // Отмена подписки
         if selectedPlan == .free && userPlan != .free {
             return ButtonConfig(label: "Cancel Subscription", action: .cancel, isDestructive: true)
         }
-        // Nothing changed (active paid user, same plan+cycle)
+        // Ничего не изменилось (активный платный пользователь, тот же план+цикл)
         if selectedPlan == userPlan && selectedCycle == currentCycle && currentStatus == .active {
             return ButtonConfig(label: "Current Plan", action: .none, isDisabled: true)
         }
-        // Free plan selected (already free)
+        // Выбран план Free (уже free)
         if selectedPlan == .free && userPlan == .free {
             return ButtonConfig(label: "Current Plan", action: .none, isDisabled: true)
         }
-        // Free user → trial available
+        // Free-пользователь → доступен триал
         if userPlan == .free && currentStatus != .trial && selectedPlan != .free {
             return ButtonConfig(label: "Start Free Trial", action: .startTrial)
         }
-        // On trial → convert to paid
+        // На триале → конвертация в платную подписку
         if currentStatus == .trial && selectedPlan != .free {
             return ButtonConfig(label: "Subscribe Now", action: .subscribe)
         }
-        // Downgrade (lower tier or Annual→Monthly) — scheduled, no payment
+        // Понижение (ниже уровень или Annual→Monthly) — запланировано, оплата не требуется
         if isDowngrade {
             return ButtonConfig(label: "Schedule Downgrade", action: .scheduleDowngrade)
         }
-        // Upgrade (higher tier or Monthly→Annual) — requires payment
+        // Повышение (выше уровень или Monthly→Annual) — требует оплаты
         return ButtonConfig(label: "Upgrade Plan", action: .change)
     }
 

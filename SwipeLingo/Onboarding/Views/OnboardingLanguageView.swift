@@ -15,7 +15,7 @@ struct OnboardingLanguageView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            // Заголовок
             VStack(spacing: 12) {
                 Text("🌍")
                     .font(.system(size: 56))
@@ -33,7 +33,7 @@ struct OnboardingLanguageView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
 
-            // Language grid
+            // Сетка языков
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(NativeLanguage.allCases, id: \.self) { lang in
                     languageCard(lang)
@@ -43,7 +43,7 @@ struct OnboardingLanguageView: View {
 
             Spacer()
 
-            // Warning
+            // Предупреждение
             HStack(spacing: 6) {
                 Image(systemName: "lock")
                     .font(.caption2.weight(.semibold))
@@ -53,7 +53,7 @@ struct OnboardingLanguageView: View {
             .foregroundStyle(Color.myColors.myRed.opacity(0.8))
             .padding(.bottom, 12)
 
-            // Continue button
+            // Кнопка продолжения
             continueButton
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)

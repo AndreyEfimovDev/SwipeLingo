@@ -47,7 +47,7 @@ struct StatisticsMockData {
 
         for daysAgo in 0..<365 {
             guard let date = cal.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
-            // Some days have zero activity
+            // В некоторые дни активности нет
             let studied = daysAgo % 3 == 0 ? 0 : Int.random(in: 1...45, using: &rng)
             if studied == 0 {
                 result.append(DailyActivity(date: date, cardsStudied: 0, easy: 0, hard: 0, forgot: 0))
@@ -260,7 +260,7 @@ private struct CardsStudiedCard: View {
                 .font(.system(size: 52, weight: .bold, design: .rounded))
 
             if total > 0 {
-                // Proportional bar
+                // Пропорциональный бар
                 GeometryReader { geo in
                     HStack(spacing: 2) {
                         let w = geo.size.width
@@ -277,7 +277,7 @@ private struct CardsStudiedCard: View {
                     .frame(height: 12)
             }
 
-            // Legend
+            // Легенда
             HStack(spacing: 20) {
                 legendDot(color: .green,  label: "Easy",   count: easy)
                 legendDot(color: .orange, label: "Hard",   count: hard)
@@ -328,7 +328,7 @@ private struct ActivityCalendarCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header
+            // Заголовок
             HStack {
                 Text("Activity — \(yearString)")
                     .font(.subheadline.weight(.semibold))
@@ -359,7 +359,7 @@ private struct ActivityCalendarCard: View {
                     ))
             }
 
-            // Intensity legend
+            // Легенда интенсивности
             HStack(spacing: 6) {
                 Text("Less")
                     .font(.system(size: 9))
@@ -380,7 +380,7 @@ private struct ActivityCalendarCard: View {
         .myShadow()
     }
 
-    // MARK: Intensity
+    // MARK: Интенсивность
 
     private func intensityColor(cards: Int) -> Color {
         switch cards {
@@ -395,7 +395,7 @@ private struct ActivityCalendarCard: View {
         Date().formatted(.dateTime.year())
     }
 
-    // MARK: Monthly Grid (4-col)
+    // MARK: Сетка по месяцам (4 колонки)
 
     private var monthlyGridView: some View {
         LazyVGrid(
@@ -413,7 +413,7 @@ private struct ActivityCalendarCard: View {
         let cal   = Calendar.current
         let days  = cal.range(of: .day, in: .month, for: monthStart)?.count ?? 30
         let weekday = cal.component(.weekday, from: monthStart)
-        let offset  = (weekday - 2 + 7) % 7   // Monday = 0
+        let offset  = (weekday - 2 + 7) % 7   // Понедельник = 0
         let total   = offset + days
         let rows    = Int(ceil(Double(total) / 7.0))
         let name    = monthStart.formatted(.dateTime.month(.abbreviated))
@@ -447,7 +447,7 @@ private struct ActivityCalendarCard: View {
         }
     }
 
-    // MARK: Compact 52-week View
+    // MARK: Компактный вид на 52 недели
 
     private var compactView: some View {
         let weeks      = last52Weeks()
@@ -455,9 +455,9 @@ private struct ActivityCalendarCard: View {
         let cell: CGFloat    = 12
         let gap:  CGFloat    = 2
         let monthRowH: CGFloat = 16
-        let labelColW: CGFloat = 22   // width reserved for sticky day labels
+        let labelColW: CGFloat = 22   // ширина, зарезервированная под прилипающие лейблы дней
 
-        // Day-label overlay — sticky on the left, white background hides cells scrolling behind
+        // Оверлей с лейблами дней — прилипает слева, фон скрывает ячейки, прокручивающиеся под ним
         let dayLabelColumn = VStack(alignment: .leading, spacing: gap) {
             Color.clear.frame(height: monthRowH)
             ForEach(dayLabels.indices, id: \.self) { i in
@@ -467,16 +467,16 @@ private struct ActivityCalendarCard: View {
             }
         }
         .frame(width: labelColW)
-        .background(Color.myColors.myBackground)  // mask scrolled-behind content
+        .background(Color.myColors.myBackground)  // маскирует контент, прокручивающийся под лейблами
 
         return ScrollViewReader { proxy in
-            // ScrollView occupies the FULL card width
+            // ScrollView занимает ВСЮ ширину карточки
             ScrollView(.horizontal, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: gap) {
 
-                    // Month labels row — offset right by labelColW so they align with grid
+                    // Строка лейблов месяцев — смещена вправо на labelColW, чтобы совпадать с сеткой
                     HStack(alignment: .bottom, spacing: gap) {
-                        Color.clear.frame(width: labelColW, height: monthRowH) // spacer under label column
+                        Color.clear.frame(width: labelColW, height: monthRowH) // отступ под колонку лейблов
                         ForEach(weeks.indices, id: \.self) { wi in
                             Group {
                                 if shouldShowMonthLabel(for: weeks[wi]) {
@@ -491,9 +491,9 @@ private struct ActivityCalendarCard: View {
                         }
                     }
 
-                    // Day grid row — starts after label column spacer
+                    // Строка сетки дней — начинается после отступа под колонку лейблов
                     HStack(alignment: .top, spacing: 0) {
-                        Color.clear.frame(width: labelColW) // spacer under label column
+                        Color.clear.frame(width: labelColW) // отступ под колонку лейблов
                         HStack(alignment: .top, spacing: gap) {
                             ForEach(weeks.indices, id: \.self) { wi in
                                 VStack(spacing: gap) {
@@ -516,7 +516,7 @@ private struct ActivityCalendarCard: View {
                 .padding(.trailing, 4)
             }
             .background(Color.myColors.myBackground)
-            .overlay(alignment: .leading) { dayLabelColumn }  // sticky day labels
+            .overlay(alignment: .leading) { dayLabelColumn }  // прилипающие лейблы дней
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     proxy.scrollTo(weeks.count - 1, anchor: .trailing)
@@ -526,7 +526,7 @@ private struct ActivityCalendarCard: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: Helpers
+    // MARK: Вспомогательные функции
 
     private func cardsCount(for date: Date) -> Int {
         activityMap[Self.dayKey.string(from: date)] ?? 0
@@ -564,7 +564,7 @@ private struct ActivityCalendarCard: View {
     private func monthLabel(for week: [Date?]) -> String {
         guard let date = week.compactMap({ $0 }).first else { return "" }
         let cal  = Calendar.current
-        let yr   = cal.component(.year, from: date) % 100   // last 2 digits
+        let yr   = cal.component(.year, from: date) % 100   // последние 2 цифры
         let mon  = date.formatted(.dateTime.month(.abbreviated))
         return "\(mon)-\(String(format: "%02d", yr))"
     }

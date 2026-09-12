@@ -1,16 +1,16 @@
 // MARK: - CardLengthValidator
 //
-// Shared validation logic for card text fields (en, item).
-// Cards are designed for words and short phrases, not sentences.
+// Общая логика валидации текстовых полей карточки (en, item).
+// Карточки рассчитаны на слова и короткие фразы, а не предложения.
 //
-// Used by:
-//   • AddEditCardView  (SwipeLingo target)
-//   • ShareExtensionView (SwipeLingoShare target)
+// Используется:
+//   • AddEditCardView  (таргет SwipeLingo)
+//   • ShareExtensionView (таргет SwipeLingoShare)
 //
-// Limits:
-//   ≤ 50 chars  — OK
-//   51–150 chars — warning (can still save / add)
-//   > 150 chars  — tooLong (save / add blocked)
+// Лимиты:
+//   ≤ 50 символов  — OK
+//   51–150 символов — warning (сохранить / добавить ещё можно)
+//   > 150 символов  — tooLong (сохранение / добавление заблокировано)
 
 import Foundation
 

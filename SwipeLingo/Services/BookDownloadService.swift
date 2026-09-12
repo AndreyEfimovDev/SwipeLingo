@@ -4,20 +4,20 @@ import FirebaseCore
 
 // MARK: - BookDownloadService
 //
-// Downloads and caches book chapters (HTML) and cover images from Firebase Storage.
+// Скачивает и кэширует главы книг (HTML) и обложки из Firebase Storage.
 //
-// Cache layout on disk (Documents/books/):
+// Раскладка кэша на диске (Documents/books/):
 //   {firestoreId}/cover.jpg
 //   {firestoreId}/chapters/0.html
 //   {firestoreId}/chapters/1.html
 //   ...
 //
-// Public API:
-//   downloadChapter(book:index:)          → caches single chapter
-//   downloadAllChapters(book:progress:)   → bulk download with progress callback
-//   downloadCover(book:)                  → caches cover image
-//   localChapterURL(book:index:)          → file:// URL for WKWebView
-//   localCoverURL(book:)                  → file:// URL for AsyncImage
+// Публичный API:
+//   downloadChapter(book:index:)          → кэширует одну главу
+//   downloadAllChapters(book:progress:)   → массовая загрузка с колбэком прогресса
+//   downloadCover(book:)                  → кэширует обложку
+//   localChapterURL(book:index:)          → file:// URL для WKWebView
+//   localCoverURL(book:)                  → file:// URL для AsyncImage
 //   isChapterDownloaded(book:index:)
 //   allChaptersDownloaded(book:)
 
@@ -26,7 +26,7 @@ final class BookDownloadService {
 
     static let shared = BookDownloadService()
 
-    // bookId → 0.0-1.0
+    // bookId → 0.0-1.0 (прогресс скачивания)
     var downloadProgress: [String: Double] = [:]
 
     private let fm = FileManager.default
@@ -115,7 +115,7 @@ final class BookDownloadService {
     // MARK: - Fetch (HTTP or Firebase Storage)
 
     private func fetchFromStorage(path: String) async throws -> Data {
-        // Debug stub: if path is a full HTTP URL, download directly
+        // Debug-заглушка: если path — полный HTTP URL, скачиваем напрямую
         if path.hasPrefix("http://") || path.hasPrefix("https://") {
             guard let url = URL(string: path) else {
                 throw BookDownloadError.invalidPath(path)
@@ -126,12 +126,12 @@ final class BookDownloadService {
             }
             return data
         }
-        // Firebase Storage path
+        // Путь Firebase Storage
         guard FirebaseApp.app() != nil else {
             throw BookDownloadError.firebaseNotConfigured
         }
         let ref = Storage.storage().reference(withPath: path)
-        // 10 MB max per chapter
+        // максимум 10 МБ на главу
         return try await ref.data(maxSize: 10 * 1024 * 1024)
     }
 

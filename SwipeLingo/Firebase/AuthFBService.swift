@@ -13,8 +13,8 @@ final class AuthFBService {
 
     private(set) var currentUser: FirebaseAuth.User? = nil
     private(set) var isLoading = true
-    /// True only after the cached session has been confirmed with Firebase (or after a fresh sign-in).
-    /// Firebase calls that write data must be guarded by this flag to prevent stale-token writes.
+    /// True только после того, как закэшированная сессия подтверждена Firebase (либо после свежего входа).
+    /// Firebase-вызовы, пишущие данные, должны быть защищены этим флагом, чтобы избежать записей по протухшему токену.
     private(set) var isSessionVerified = false
 
     var isAuthenticated: Bool { currentUser != nil }
@@ -27,8 +27,8 @@ final class AuthFBService {
         _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 self?.currentUser = user
-                // Keep isLoading = true until session is verified so the UI
-                // never renders AppView with an unverified (possibly deleted) user.
+                // Держим isLoading = true, пока сессия не подтверждена, чтобы UI
+                // никогда не отрисовал AppView с непроверенным (возможно удалённым) пользователем.
                 await self?.verifyAndFinishLoading()
             }
         }
@@ -66,7 +66,7 @@ final class AuthFBService {
             throw AuthError.emailAlreadyInUse
         }
         isSessionVerified = true
-        // Use provided name or fall back to email prefix
+        // Используем переданное имя, либо откатываемся на префикс email
         let resolvedName = name.trimmingCharacters(in: .whitespaces).isEmpty
             ? String(email.prefix(while: { $0 != "@" }))
             : name.trimmingCharacters(in: .whitespaces)
@@ -90,7 +90,7 @@ final class AuthFBService {
         log("displayName updated to '\(name)'", level: .info)
     }
 
-    /// Sets displayName to the email prefix if it is currently empty.
+    /// Устанавливает displayName в префикс email, если он сейчас пуст.
     private func ensureDisplayName() async {
         guard let user = Auth.auth().currentUser,
               (user.displayName ?? "").isEmpty,
@@ -100,30 +100,30 @@ final class AuthFBService {
         try? await updateDisplayName(name)
     }
 
-    /// Reloads Firebase user to pick up fresh isEmailVerified status.
+    /// Перезагружает пользователя Firebase, чтобы получить свежий статус isEmailVerified.
     func reloadUser() async {
         guard Auth.auth().currentUser != nil else { return }
         do {
             try await Auth.auth().currentUser?.reload()
             currentUser = Auth.auth().currentUser
         } catch {
-            // Transient error (network, token refresh) — keep existing session intact
+            // Временная ошибка (сеть, обновление токена) — оставляем текущую сессию как есть
             log("reloadUser failed, keeping session: \(error.localizedDescription)", level: .warning)
         }
     }
 
-    /// Called once from the auth state listener on initial app launch.
-    /// Keeps isLoading = true until Firebase confirms the session is valid.
-    /// All user types (including anonymous) are verified — deleted accounts are signed out.
-    /// Network errors are ignored so the user can work offline.
+    /// Вызывается один раз из auth-state листенера при первом запуске приложения.
+    /// Держит isLoading = true, пока Firebase не подтвердит валидность сессии.
+    /// Проверяются все типы пользователей (включая анонимных) — удалённые аккаунты выходят из системы.
+    /// Сетевые ошибки игнорируются, чтобы пользователь мог работать офлайн.
     private func verifyAndFinishLoading() async {
         guard isLoading else { return }
         defer { isLoading = false }
         guard let user = Auth.auth().currentUser else { return }
         do {
-            // Cap reload() at 8 seconds. Genuine "no internet" (-1009) fails immediately
-            // so the timeout only fires when the network exists but the auth server stalls
-            // (e.g. a deleted Apple user causing a token-refresh hang of up to 30 s).
+            // Ограничиваем reload() 8 секундами. При реальном "нет интернета" (-1009) ошибка
+            // приходит сразу, так что таймаут срабатывает только когда сеть есть, но auth-сервер
+            // зависает (напр. удалённый Apple-пользователь вызывает зависание обновления токена до 30 с).
             try await withThrowingTaskGroup(of: Void.self) { group in
                 group.addTask { @MainActor in try await user.reload() }
                 group.addTask {
@@ -136,15 +136,15 @@ final class AuthFBService {
             isSessionVerified = true
             currentUser = Auth.auth().currentUser
         } catch let error as NSError {
-            // Firebase wraps underlying NSURLErrors as AuthErrorCode.networkError (17020).
-            // Any network/timeout error → keep session (retry on next launch).
-            // Only sign out on explicit auth errors (invalid credential, user disabled, etc.).
+            // Firebase оборачивает исходные NSURLError в AuthErrorCode.networkError (17020).
+            // Любая сетевая ошибка/таймаут → сохраняем сессию (повтор при следующем запуске).
+            // Выход из системы — только по явным auth-ошибкам (невалидный credential, пользователь отключён и т.д.).
             let keepSessionCodes: Set<Int> = [
-                NSURLErrorNotConnectedToInternet,  // -1009 no internet
-                NSURLErrorNetworkConnectionLost,   // -1005 connection dropped
-                NSURLErrorDataNotAllowed,          // -1020 cellular blocked
-                NSURLErrorTimedOut,                // -1001 server slow / proxy / VPN
-                NSURLErrorCannotConnectToHost,     // -1004 host unreachable
+                NSURLErrorNotConnectedToInternet,  // -1009 нет интернета
+                NSURLErrorNetworkConnectionLost,   // -1005 соединение прервано
+                NSURLErrorDataNotAllowed,          // -1020 заблокировано в сотовой сети
+                NSURLErrorTimedOut,                // -1001 сервер медленный / прокси / VPN
+                NSURLErrorCannotConnectToHost,     // -1004 хост недоступен
             ]
             let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError
             let isNetworkError = keepSessionCodes.contains(error.code)
@@ -222,8 +222,8 @@ final class AuthFBService {
 
     func deleteAccount() async throws {
         guard let user = Auth.auth().currentUser else { return }
-        // Delete Firestore document first while auth token is still valid.
-        // user.delete() removes the Auth record but leaves Firestore data intact.
+        // Сначала удаляем документ Firestore, пока auth-токен ещё валиден.
+        // user.delete() удаляет запись Auth, но оставляет данные Firestore нетронутыми.
         try? await Firestore.firestore().collection("users").document(user.uid).delete()
         try await user.delete()
         currentUser = nil
@@ -231,9 +231,9 @@ final class AuthFBService {
         log("Account deleted: \(user.uid)", level: .info)
     }
 
-    // App Store Guidelines 5.1.1: Apple requires token revocation when deleting an account.
-    // Without this, the Apple ID stays "linked" to the app on Apple's side, and the next
-    // Sign in with Apple creates a new Firebase account instead of signing into the old one.
+    // App Store Guidelines 5.1.1: Apple требует отзыва токена при удалении аккаунта.
+    // Без этого Apple ID остаётся "привязанным" к приложению на стороне Apple, и следующий
+    // Sign in with Apple создаст новый Firebase-аккаунт вместо входа в старый.
     func deleteAccountWithApple(authorization: ASAuthorization) async throws {
         guard let user = Auth.auth().currentUser else { return }
         guard
@@ -260,8 +260,8 @@ final class AuthFBService {
 
     // MARK: - Private helpers
 
-    /// If the current user is anonymous, links the credential to preserve the UID.
-    /// Otherwise performs a regular sign-in.
+    /// Если текущий пользователь анонимный, привязывает credential, сохраняя UID.
+    /// Иначе выполняет обычный вход.
     private func signInOrLink(with credential: AuthCredential) async throws -> AuthDataResult {
         if isAnonymous, let user = Auth.auth().currentUser {
             do {

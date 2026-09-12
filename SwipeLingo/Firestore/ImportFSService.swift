@@ -6,22 +6,22 @@ import FirebaseFirestore
 
 // MARK: - ImportFSService
 //
-// Syncs developer-curated content from Firestore into SwiftData.
+// Синхронизирует авторский контент из Firestore в SwiftData.
 //
-// syncFromFirestore(into:language:upToLevel:forceFullSync:) — async, fetches content from Firestore.
-//   • Idempotent: uses firestoreId for upsert matching.
-//   • Preserves user SRS state on card updates.
-//   • Filters by CEFR level — only loads sets ≤ upToLevel.
-//   • Cleans up local sets above the user's level and empty collections.
-//   • Delta sync: queries only sets with updatedAt > lastSyncAt (stored in UserDefaults).
-//     Pass forceFullSync: true (e.g., on level change) to ignore lastSyncAt and re-download everything.
-//   • Requires composite Firestore indexes on (cefrLevel, updatedAt) for cardSets & pairsSets collections.
+// syncFromFirestore(into:language:upToLevel:forceFullSync:) — async, загружает контент из Firestore.
+//   • Идемпотентен: сопоставление upsert через firestoreId.
+//   • Сохраняет пользовательское SRS-состояние при обновлении карточек.
+//   • Фильтрует по CEFR-уровню — загружает только сеты ≤ upToLevel.
+//   • Убирает локальные сеты выше уровня пользователя и пустые коллекции.
+//   • Delta sync: запрашивает только сеты с updatedAt > lastSyncAt (хранится в UserDefaults).
+//     Передай forceFullSync: true (напр. при смене уровня), чтобы игнорировать lastSyncAt и перекачать всё заново.
+//   • Требует составные Firestore-индексы на (cefrLevel, updatedAt) для коллекций cardSets и pairsSets.
 //
-// ⚠️  Requires FirebaseApp.configure() and GoogleService-Info.plist. Skips gracefully if absent.
+// ⚠️  Требует FirebaseApp.configure() и GoogleService-Info.plist. При их отсутствии корректно пропускает.
 
 struct ImportFSService {
 
-    // MARK: - Sync from Firestore (real content)
+    // MARK: - Синхронизация из Firestore (реальный контент)
     //
     // Плоская схема Firestore:
     //   /collections/{id}       ← метаданные (name, icon, type)
@@ -33,10 +33,10 @@ struct ImportFSService {
     // Upsert: сопоставление SwiftData ↔ Firestore по полю firestoreId.
     // SRS-состояние карточек не перезаписывается при обновлении.
 
-    // UserDefaults key where the last successful sync timestamp is stored.
+    // Ключ UserDefaults, под которым хранится метка времени последнего успешного синка.
     private static let lastSyncAtKey = "firestoreLastSyncAt"
 
-    // MARK: - Network check
+    // MARK: - Проверка сети
 
     /// Быстрая проверка наличия сетевого соединения через NWPathMonitor.
     /// Firestore offline-режим молча возвращает пустые результаты из кеша —
@@ -72,8 +72,8 @@ struct ImportFSService {
         let db     = Firestore.firestore()
         let levels = upToLevel.andBelow.map { $0.rawValue }   // ["a1", "a2", …, upToLevel]
 
-        // Delta sync: only fetch sets updated after the last successful sync.
-        // forceFullSync = true resets the baseline (used when CEFR level changes — need all content).
+        // Delta sync: загружаем только сеты, обновлённые после последнего успешного синка.
+        // forceFullSync = true сбрасывает точку отсчёта (используется при смене CEFR-уровня — нужен весь контент).
         let lastSyncAt: Date = forceFullSync
             ? .distantPast
             : (UserDefaults.standard.object(forKey: Self.lastSyncAtKey) as? Date ?? .distantPast)
@@ -82,7 +82,7 @@ struct ImportFSService {
         log("Sync started (up to \(upToLevel.displayCode), \(levels.count) levels, \(isDelta ? "delta since \(lastSyncAt)" : "full"))", level: .info)
 
         do {
-            // ── 1. Pre-load SwiftData caches ──────────────────────────────
+            // ── 1. Предзагрузка кэшей SwiftData ──────────────────────────────
             let allCollections = context.fetchWithErrorHandling(
                 FetchDescriptor<Collection>(predicate: #Predicate { !$0.isUserCreated })
             )
@@ -455,7 +455,7 @@ struct ImportFSService {
         }
     }
 
-    // MARK: - Parse Pair from Firestore dict
+    // MARK: - Парсинг Pair из словаря Firestore
 
     private func parsePair(from d: [String: Any]) -> Pair? {
         guard let idStr = d["id"] as? String,
@@ -478,9 +478,9 @@ struct ImportFSService {
         )
     }
 
-    // MARK: - FSCard → Card conversion
+    // MARK: - Конвертация FSCard → Card
 
-    /// Converts an FSCard (Firestore model) into a SwiftData Card.
+    /// Конвертирует FSCard (модель Firestore) в SwiftData Card.
     func card(from fsCard: FSCard, swiftDataSetId: UUID, language: NativeLanguage) -> Card {
         Card(
             en:                fsCard.en,

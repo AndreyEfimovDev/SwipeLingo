@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Card search helper
 
 extension Array where Element == Card {
-    /// Filters by English word or translation; returns all cards when query is empty.
+    /// Фильтрует по английскому слову или переводу; при пустом запросе возвращает все карточки.
     func filtered(by query: String) -> [Card] {
         guard !query.isEmpty else { return self }
         return filter {
@@ -14,7 +14,7 @@ extension Array where Element == Card {
 }
 
 // MARK: - SearchEmptyState
-// Shown when a search query returns zero results.
+// Показывается, когда поисковый запрос не даёт результатов.
 
 struct SearchEmptyState: View {
     let query: String
@@ -35,8 +35,8 @@ struct SearchEmptyState: View {
 }
 
 // MARK: - SearchBar
-// Universal search bar used across LibraryViews.
-// Usage:
+// Универсальная строка поиска, используется во всех LibraryViews.
+// Использование:
 //   SearchBar(text: $searchText)
 //   SearchBar(text: $searchText, prompt: "Search cards")
 

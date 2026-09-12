@@ -1,13 +1,13 @@
 import Foundation
 
 // MARK: - SwipeLingoBackup
-// Top-level export envelope written to JSON.
+// Верхнеуровневый конверт экспорта, записывается в JSON.
 
 struct SwipeLingoBackup: Codable {
     let version: Int
     let exportedAt: Date
     let cardSets: [BackupCardSet]
-    let pairsSRS: [BackupPairsSRS]   // SRS state only — content re-syncs from Firestore
+    let pairsSRS: [BackupPairsSRS]   // только SRS-состояние — контент пересинхронизируется из Firestore
 
     init(cardSets: [BackupCardSet], pairsSRS: [BackupPairsSRS]) {
         self.version    = 1
@@ -54,7 +54,7 @@ struct BackupCard: Codable {
 
 struct BackupPairsSRS: Codable {
     let id: UUID
-    let firestoreId: String?   // fallback match key on restore
+    let firestoreId: String?   // резервный ключ сопоставления при восстановлении
     let title: String?
     let cefrLevel: String
     let dueDate: Date

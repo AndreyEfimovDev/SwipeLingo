@@ -225,11 +225,11 @@ struct BookReaderView: View {
                 fullscreenImageURL = src
             },
             onPageChange: { newIndex in
-                // Called by UIPageViewController after user swipe completes
+                // Вызывается UIPageViewController после завершения свайпа пользователем
                 vm.goToChapter(newIndex)
                 vm.saveProgress(context: context)
                 AnalyticsFBService.bookChapterRead(bookId: book.id, chapterIndex: newIndex, totalChapters: book.totalChapters)
-                // Proactively download the next 2 chapters so swipe is always available
+                // Заранее скачиваем следующие 2 главы, чтобы swipe всегда был доступен
                 downloadTask = Task {
                     for offset in 1...2 {
                         let idx = newIndex + offset
@@ -245,11 +245,11 @@ struct BookReaderView: View {
         }
     }
 
-    // MARK: - Bottom controls (floating, independent capsules)
+    // MARK: - Нижние контролы (плавающие, независимые капсулы)
 
     private var bottomControls: some View {
         HStack(alignment: .center) {
-            // ‹ Previous chapter
+            // ‹ Предыдущая глава
             navButton(systemImage: "chevron.left", enabled: vm.hasPrevious) {
                 vm.goToPrevious()
                 vm.saveProgress(context: context)
@@ -257,7 +257,7 @@ struct BookReaderView: View {
 
             Spacer()
 
-            // Center pill: A− / counter / A+
+            // Центральная капсула: A− / счётчик / A+
             HStack(spacing: 12) {
                 fontSizeButton(label: "A−", enabled: fontSize > fontSizeMin) {
                     fontSize = max(fontSize - fontSizeStep, fontSizeMin)
@@ -277,7 +277,7 @@ struct BookReaderView: View {
 
             Spacer()
 
-            // › Next chapter
+            // › Следующая глава
             navButton(systemImage: "chevron.right", enabled: vm.hasNext) {
                 vm.goToNext()
                 vm.saveProgress(context: context)
@@ -371,7 +371,7 @@ struct BookReaderView: View {
         }
 
         ToolbarItemGroup(placement: .topBarTrailing) {
-            // Tap → open list. Long press → Add / Remove / Show All
+            // Тап → открыть список. Долгий тап → Add / Remove / Show All
             Button {
                 vm.showBookmarks = true
             } label: {

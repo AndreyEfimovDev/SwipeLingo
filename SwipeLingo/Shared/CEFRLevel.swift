@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-// Common European Framework of Reference for Languages
+// Общеевропейская шкала уровней владения иностранным языком (CEFR)
 enum CEFRLevel: String, CaseIterable, Codable {
     case a1
     case a2

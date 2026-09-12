@@ -227,7 +227,7 @@ final class AddEditCardViewModel {
 
         log("handleAutoFill: word='\(word)', session=\(translationSession == nil ? "nil ❌" : "ready ✓")", level: .info)
 
-        // Step 1: translate the word itself → fill item if empty
+        // Шаг 1: перевести само слово → заполнить item, если пусто
         if item.trimmingCharacters(in: .whitespaces).isEmpty,
            let session = translationSession {
             do {
@@ -243,12 +243,12 @@ final class AddEditCardViewModel {
 
         guard !Task.isCancelled else { return }
 
-        // Step 2: fetch EN examples from dictionary if empty
+        // Шаг 2: получить EN-примеры из словаря, если пусто
         let isENEmpty = samplesEN.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
         if isENEmpty {
             do {
                 let entry = try await DictionaryService().lookup(word: word)
-                // Prefer example sentences; fall back to definition text if none available.
+                // Предпочитаем примеры-предложения; если их нет — берём текст определения.
                 var examples: [String] = []
                 for meaning in entry.meanings {
                     for def in meaning.definitions {
@@ -268,8 +268,8 @@ final class AddEditCardViewModel {
 
         guard !Task.isCancelled else { return }
 
-        // Step 3: translate EN examples → fill native examples if empty
-        // Runs whether EN examples were just fetched or already existed
+        // Шаг 3: перевести EN-примеры → заполнить примеры на родном языке, если пусто
+        // Выполняется независимо от того, были ли EN-примеры только что получены или уже существовали
         let isNativeEmpty = samplesItem.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
         let enExamples = samplesEN.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         guard isNativeEmpty, !enExamples.isEmpty, let session = translationSession else { return }

@@ -2,7 +2,7 @@
 //  DictionaryLookupViewModel.swift
 //  SwipeLingo
 //
-//  Created by Andrey Efimov on 10.09.2026.
+//  Создано Andrey Efimov 10.09.2026.
 //
 
 import SwiftUI
@@ -26,13 +26,13 @@ final class DictionaryLookupViewModel {
 
     private(set) var phase: Phase = .loading
 
-    /// Shows a cached entry immediately (called from the View's .task before the network fetch).
+    /// Показывает закэшированную запись сразу (вызывается из .task View до сетевого запроса).
     func showCached(_ entry: DictionaryEntry) {
         phase = .loaded(entry)
     }
     let audioService = AudioPlayerService()
 
-    /// Flips true the moment a successful entry is loaded — used for caching trigger.
+    /// Переключается в true в момент успешной загрузки записи — используется как триггер кэширования.
     private(set) var didLoad = false
 
     // MARK: Service
@@ -63,10 +63,10 @@ final class DictionaryLookupViewModel {
 
     // MARK: - Card mutation
     //
-    // Context and card are passed explicitly — same pattern as SRSService / PileBuilderViewModel.
-    // Using do-catch instead of try? so errors are visible in the console.
+    // Context и card передаются явно — тот же паттерн, что в SRSService / PileBuilderViewModel.
+    // do-catch вместо try?, чтобы ошибки были видны в консоли.
 
-    /// Keys of examples already added in this session — drives the ✓ indicator in the UI.
+    /// Ключи примеров, уже добавленных в этой сессии — управляет индикатором ✓ в UI.
     var addedItems: Set<String> = []
 
     func addDefinition(

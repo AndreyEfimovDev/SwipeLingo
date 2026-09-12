@@ -15,17 +15,17 @@ struct DictionaryLookupView: View {
 
     @State private var vm = DictionaryLookupViewModel()
 
-    // Reads native language from the same AppStorage key used across the app.
+    // Читает родной язык из того же ключа AppStorage, что используется по всему приложению.
     @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
 
-    // Translation session — prepared once (or re-prepared if language changes) via .translationTask.
-    // Simulator does not support Translation — config stays nil to suppress the error dialog.
+    // Translation session — готовится один раз (или пересобирается при смене языка) через .translationTask.
+    // Симулятор не поддерживает Translation — config остаётся nil, чтобы подавить диалог ошибки.
     @State private var translationSession: TranslationSession?
     @State private var translationConfig: TranslationSession.Configuration?
 
-    /// Translation of card.en shown in the error state (phrase not found in dictionary).
+    /// Перевод card.en, показываемый в состоянии ошибки (фраза не найдена в словаре).
     @State private var phraseTranslation: String? = nil
 
     private func buildTranslationConfig() {
@@ -58,7 +58,7 @@ struct DictionaryLookupView: View {
             }
         }
         .task {
-            // Show cached transcription instantly while fetching full entry
+            // Показываем закэшированную транскрипцию сразу, пока загружается полная запись
             if !card.dictTranscription.isEmpty {
                 vm.showCached(
                     DictionaryEntry(
@@ -75,7 +75,7 @@ struct DictionaryLookupView: View {
                     )
                 )
             }
-            // Always fetch fresh data
+            // Всегда подгружаем свежие данные
             await vm.load(word: card.en)
         }
         .onChange(of: vm.didLoad) { _, loaded in
@@ -87,18 +87,18 @@ struct DictionaryLookupView: View {
             buildTranslationConfig()
         }
         .onChange(of: nativeLanguage) { _, _ in
-            // Rebuild session when user changes native language in Settings.
+            // Пересобираем session, когда пользователь меняет родной язык в Settings.
             translationSession = nil
             buildTranslationConfig()
         }
         .onDisappear {
             vm.audioService.stop()
         }
-        // Prepare translation session for selected target language.
+        // Готовим translation session для выбранного целевого языка.
         .translationTask(translationConfig) { session in
             translationSession = session
         }
-        // If we're in error state and session just became ready, translate the phrase.
+        // Если мы в состоянии ошибки и session только что стала готова — переводим фразу.
         .onChange(of: translationSession == nil) { _, isNil in
             guard !isNil, case .error = vm.phase, phraseTranslation == nil else { return }
             Task { phraseTranslation = await translateText(card.en, clientId: "phrase") }
@@ -107,7 +107,7 @@ struct DictionaryLookupView: View {
 
     // MARK: - Translation helpers
 
-    /// Translates a single string. Falls back silently if session unavailable or translation fails.
+    /// Переводит одну строку. Молча откатывается, если session недоступна или перевод не удался.
     private func translateText(_ text: String, clientId: String = "t") async -> String? {
         guard let session = translationSession else { return nil }
         do {
@@ -148,7 +148,7 @@ struct DictionaryLookupView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
-            // Show translation when available (useful for phrases saved from Books)
+            // Показываем перевод, если он доступен (полезно для фраз, сохранённых из Books)
             if let translation = phraseTranslation {
                 VStack(spacing: 6) {
                     Text(card.en)
@@ -173,7 +173,7 @@ struct DictionaryLookupView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task(id: message) {
-            // Auto-translate the phrase when dictionary lookup fails
+            // Автоматически переводим фразу, если поиск в словаре не удался
             phraseTranslation = await translateText(card.en, clientId: "phrase")
         }
     }
@@ -351,8 +351,8 @@ struct DictionaryLookupView: View {
 
 // MARK: - DictionaryFlowLayout
 //
-// Wraps chips to a new row when the current row is full.
-// Named with "Dictionary" prefix to avoid collision with other Layout types.
+// Переносит чипы на новую строку, когда текущая строка заполнена.
+// Назван с префиксом "Dictionary", чтобы избежать коллизии с другими типами Layout.
 
 private struct DictionaryFlowLayout: Layout {
     var spacing: CGFloat = 8

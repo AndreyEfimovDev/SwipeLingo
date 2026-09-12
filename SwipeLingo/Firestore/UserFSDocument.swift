@@ -6,7 +6,7 @@ import FirebaseAuth
 
 struct UserFSDocument: Codable {
     var uid:               String
-    var email:             String?   // provider email (Google/Apple/Email) — не редактируется
+    var email:             String?   // email провайдера (Google/Apple/Email) — не редактируется
     var notificationEmail: String?   // email для рассылки — редактируется пользователем
     var displayName:       String
     var nativeLanguage:    String
@@ -94,10 +94,10 @@ struct PaymentRecord: Codable {
     var plan:          String
     var billingCycle:  String
     var paymentMethod: String   // "card" | "sbp" | "ru_card"
-    var last4:         String?  // last 4 digits of card
+    var last4:         String?  // последние 4 цифры карты
     var status:        String   // PaymentStatus.rawValue
     var failReason:    String?
-    var receiptRef:    String?  // Firebase Storage path
+    var receiptRef:    String?  // путь в Firebase Storage
 }
 
 enum PaymentStatus: String, Codable {

@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - BookBookmarksView
 //
-// Sheet showing all bookmarks for the current book.
-// Tap a row → navigate to that chapter.
-// Swipe to delete or use Edit mode.
+// Sheet со всеми закладками текущей книги.
+// Тап по строке → переход к этой главе.
+// Swipe для удаления или режим Edit.
 
 struct BookBookmarksView: View {
 
@@ -54,7 +54,7 @@ struct BookBookmarksView: View {
 
     private func bookmarkRow(_ bookmark: BookBookmark) -> some View {
         HStack(spacing: 12) {
-            // Icon
+            // Иконка
             Image(systemName: "bookmark.fill")
                 .font(.system(size: 15))
                 .foregroundStyle(
@@ -64,7 +64,7 @@ struct BookBookmarksView: View {
                 )
                 .frame(width: 24)
 
-            // Text
+            // Текст
             VStack(alignment: .leading, spacing: 3) {
                 Text(bookmark.chapterTitle)
                     .font(.system(size: 15))
@@ -87,7 +87,7 @@ struct BookBookmarksView: View {
 
             Spacer()
 
-            // Current indicator
+            // Индикатор текущей позиции
             if bookmark.chapterIndex == currentIndex {
                 Image(systemName: "eye.fill")
                     .font(.system(size: 13))
@@ -101,9 +101,9 @@ struct BookBookmarksView: View {
                 ? Color.myColors.myBlue.opacity(0.06)
                 : Color(.systemBackground)
         )
-        // Tap → navigate
+        // Тап → переход
         .onTapGesture { onSelect(bookmark) }
-        // Swipe to delete — works because parent is List
+        // Swipe для удаления — работает, потому что родитель — List
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
                 onDelete(bookmark)
