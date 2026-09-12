@@ -10,8 +10,8 @@ import SwiftData
 struct InboxDrainService {
 
     /// Разгружает очередь pending-слов (записанную SwipeLingoShare) в Inbox CardSet.
-    /// No-op, если очередь пуста. Если Inbox CardSet не резолвится — слова
-    /// возвращаются обратно в очередь, а не теряются.
+    /// No-op, если очередь пуста. Если Inbox CardSet не резолвится, или не удалось
+    /// проверить дубли — слова возвращаются обратно в очередь, а не теряются.
     func drain(container: ModelContainer) {
         let defaults = UserDefaults(suiteName: Constants.appGroupID)
         let pendingKey = Constants.StorageKey.pendingInboxWords
@@ -24,23 +24,40 @@ struct InboxDrainService {
         // те же слова повторно, если сохранение SwiftData идёт медленно.
         defaults?.removeObject(forKey: pendingKey)
 
+        /// Возвращает слова обратно в начало очереди — используется при любом сбое,
+        /// после которого продолжать разгрузку небезопасно (слова не должны теряться).
+        func requeue(_ reason: String) {
+            log("\(reason) — re-queuing \(pending.count) word(s)", level: .warning)
+            var current = defaults?.stringArray(forKey: pendingKey) ?? []
+            current.insert(contentsOf: pending, at: 0)
+            defaults?.set(current, forKey: pendingKey)
+        }
+
         let context = ModelContext(container)
 
         // Резолвим Inbox CardSet — он гарантированно существует после запуска
         // MockDataSeeder, но подстраховываемся guard'ом.
         let allSets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
         guard let inboxSet = allSets.first(where: { $0.name == "Inbox" }) else {
-            log("Inbox CardSet not found — re-queuing \(pending.count) word(s)", level: .warning)
-            var current = defaults?.stringArray(forKey: pendingKey) ?? []
-            current.insert(contentsOf: pending, at: 0)
-            defaults?.set(current, forKey: pendingKey)
+            requeue("Inbox CardSet not found")
             return
         }
 
         let inboxSetId = inboxSet.id
-        let existingCards = context.fetchWithErrorHandling(
-            FetchDescriptor<Card>(predicate: #Predicate { $0.setId == inboxSetId })
-        )
+        // Явный try/catch, а не fetchWithErrorHandling: та при сбое молча вернула бы
+        // [], что здесь означало бы "дублей нет" и привело бы к повторной вставке
+        // слов, уже лежащих в Inbox — безопаснее вернуть слова в очередь и повторить
+        // при следующем foreground, чем создать дубль карточки.
+        let existingCards: [Card]
+        do {
+            existingCards = try context.fetch(
+                FetchDescriptor<Card>(predicate: #Predicate { $0.setId == inboxSetId })
+            )
+        } catch {
+            ErrorManager.shared.handle(error, message: SwiftDataError.fetchFailed.message)
+            requeue("Failed to check Inbox for duplicates")
+            return
+        }
 
         for word in pending {
             let wordLower = word.lowercased()

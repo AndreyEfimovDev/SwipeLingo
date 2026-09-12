@@ -455,6 +455,18 @@ struct ImportFSService {
         }
     }
 
+    // MARK: - Синхронизация для текущего пользователя
+
+    /// Определяет CEFR-уровень текущего пользователя из `UserProfile` и синхронизирует
+    /// контент из Firestore до этого уровня. Обёртка над `syncFromFirestore` для вызова
+    /// из точки входа приложения — вызывающему коду не нужно самому знать про `UserProfile`.
+    func syncForCurrentUser(container: ModelContainer, language: NativeLanguage) async {
+        let ctx = container.mainContext
+        let profiles  = ctx.fetchWithErrorHandling(FetchDescriptor<UserProfile>())
+        let userLevel = profiles.first?.cefrLevel ?? .c2  // c2 = загрузить всё, если профиль не задан
+        await syncFromFirestore(into: ctx, language: language, upToLevel: userLevel)
+    }
+
     // MARK: - Парсинг Pair из словаря Firestore
 
     private func parsePair(from d: [String: Any]) -> Pair? {

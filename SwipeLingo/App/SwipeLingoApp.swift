@@ -13,15 +13,6 @@ struct SwipeLingoApp: App {
     /// родной язык пользователя, читается прямо из UserDefaults по ключу Constants.StorageKey.nativeLanguage. Обрати внимание: это не тот же источник правды, что AppSyncStateService.nativeLanguageRaw (см. ниже) — тот пишет в тот же ключ UserDefaults параллельно с CloudKit-записью, так что оба значения синхронизированы
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
-    /// Результат сборки composition root: либо готовый SwiftData ModelContainer
-    /// + сервисы, либо фатальный сбой запуска (сейчас единственная причина —
-    /// не поднялся ModelContainer даже после сброса стора). Не откатываемся
-    /// молча на in-memory заглушку (это показало бы «рабочее» приложение без
-    /// данных, без признака ошибки) — вместо этого рисуем databseErrorView.
-    /// Обычный let, не @State: init() выполняется один раз за жизнь процесса
-    /// и startup нигде не переприсваивается после конструирования, а
-    /// реактивность сервисов внутри dependencies обеспечивает сам @Observable
-    /// независимо от того, как на них ссылаются сверху.
     private let startup: Startup
 
     private enum Startup {
@@ -65,8 +56,8 @@ struct SwipeLingoApp: App {
         if let container = ModelContainerFactory.make() {
             SystemSeeder.ensureSystemCollections(into: container.mainContext)
             let dependencies = AppDependencies(
-                authService: AuthFBService(),
-                userService: UserFBService(),
+                authFBService: AuthFBService(),
+                userFBService: UserFBService(),
                 appSyncStateService: AppSyncStateService(modelContext: container.mainContext),
                 appViewModel: AppViewModel()
             )
@@ -82,7 +73,7 @@ struct SwipeLingoApp: App {
             case .ready(let container, let dependencies):
                 readyContent(container: container, dependencies: dependencies)
             case .failed:
-                databseErrorView
+                DatabaseErrorView()
             }
         }
     }
@@ -98,13 +89,14 @@ struct SwipeLingoApp: App {
         container: ModelContainer,
         dependencies: AppDependencies
     ) -> some View {
-        let authService = dependencies.authService
+        let authService = dependencies.authFBService
         let appSyncStateService = dependencies.appSyncStateService
-        let userService = dependencies.userService
+        let userService = dependencies.userFBService
 
         Group {
             if authService.isLoading {
                 Color.myColors.myBackground.ignoresSafeArea()
+                    .overlay { ProgressView() }
             } else if !authService.isAuthenticated {
                 /// Авторизация: Войти / Зарегистрироваться / Продолжить как гость
                 AuthView(showGuestOption: true, authService: authService)
@@ -125,12 +117,12 @@ struct SwipeLingoApp: App {
         /// При первом запуске синхронизация инициируется ниже, в блоке .onChange, после завершения онбординга.
         .task {
             if appSyncStateService.hasCompletedOnboarding {
-                await firestoreSync(container: container)
+                await ImportFSService().syncForCurrentUser(container: container, language: nativeLanguage)
             }
         }
         .onChange(of: appSyncStateService.hasCompletedOnboarding) { _, completed in
             if completed {
-                Task { await firestoreSync(container: container) }
+                Task { await ImportFSService().syncForCurrentUser(container: container, language: nativeLanguage) }
             }
         }
         .onChange(of: authService.currentUser) { _, user in
@@ -164,46 +156,6 @@ struct SwipeLingoApp: App {
                 }
             }
         }
-    }
-
-    // MARK: - Database Error
-
-    /// Отображается, если инициализация SwiftData ModelContainer не удается даже после сброса хранилища.
-    /// Отображается вместо основного содержимого приложения — без зависимости от SwiftData.
-    private var databseErrorView: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(.orange)
-
-            Text("Database Error")
-                .font(.title.bold())
-
-            Text("The app could not initialize its database.\nPlease reinstall the app.")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 32)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: - Firestore sync
-
-    private func firestoreSync(container: ModelContainer) async {
-        let ctx = container.mainContext
-
-        let language = nativeLanguage
-
-        // Уровень пользователя из UserProfile — определяет какие сеты загружать
-        let profiles  = ctx.fetchWithErrorHandling(FetchDescriptor<UserProfile>())
-        let userLevel = profiles.first?.cefrLevel ?? .c2  // c2 = загрузить всё если профиль не задан
-
-        await ImportFSService().syncFromFirestore(
-            into: ctx,
-            language: language,
-            upToLevel: userLevel
-        )
     }
 
 }

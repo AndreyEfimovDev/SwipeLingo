@@ -57,12 +57,12 @@ struct AppView: View {
         switch vm.studyMode {
         case .cards:
             CardsView(appViewModel: dependencies.appViewModel,
-                            authService: dependencies.authService,
-                            userService: dependencies.userService)
+                            authService: dependencies.authFBService,
+                            userService: dependencies.userFBService)
         case .pairs:
             PairsView(appViewModel: dependencies.appViewModel,
-                       authService: dependencies.authService,
-                       userService: dependencies.userService)
+                       authService: dependencies.authFBService,
+                       userService: dependencies.userFBService)
         case .books:
             BooksView(appViewModel: dependencies.appViewModel)
         }
@@ -75,21 +75,21 @@ struct AppView: View {
         switch sheet {
         case .cardsLibrary:
             LibraryView(appViewModel: dependencies.appViewModel,
-                        authService: dependencies.authService,
-                        userService: dependencies.userService)
+                        authService: dependencies.authFBService,
+                        userService: dependencies.userFBService)
                 .errorBanner()
         case .pairsLibrary:
             NavigationStack {
-                PairsLibraryView(authService: dependencies.authService,
-                                  userService: dependencies.userService)
+                PairsLibraryView(authService: dependencies.authFBService,
+                                  userService: dependencies.userFBService)
             }
             .errorBanner()
         case .statistics:
             StatisticsView()
         case .settings:
             SettingsView(syncState: dependencies.appSyncStateService,
-                         authService: dependencies.authService,
-                         userService: dependencies.userService)
+                         authService: dependencies.authFBService,
+                         userService: dependencies.userFBService)
         }
     }
 

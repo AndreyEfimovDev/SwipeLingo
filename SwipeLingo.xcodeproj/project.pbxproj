@@ -47,6 +47,8 @@
 		475070652FBA37FF00350F5C /* AdminAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475070642FBA37FF00350F5C /* AdminAuthView.swift */; };
 		4750706A2FBB31ED00350F5C /* HTMLSplitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475070692FBB31ED00350F5C /* HTMLSplitter.swift */; };
 		4757D5D730555C7C0064F5F0 /* AuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5D630555C7C0064F5F0 /* AuthClient.swift */; };
+		4757D5D930555E100064F5F0 /* FirestoreClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5D830555E100064F5F0 /* FirestoreClient.swift */; };
+		4757D5E03055C7DA0064F5F0 /* DatabaseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */; };
 		4758E074431285AD6E3CADF1 /* AddEditCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474529BD8FAC3FD67A8654CC /* AddEditCardViewModel.swift */; };
 		47631B022F86941C002F1666 /* CEFRLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783A2F794487005FBDFE /* CEFRLevel.swift */; };
 		47631B032F86949F002F1666 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78462F794487005FBDFE /* DictionaryService.swift */; };
@@ -277,6 +279,8 @@
 		475070662FBA38D000350F5C /* SwipeLingoAdmin.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwipeLingoAdmin.entitlements; sourceTree = "<group>"; };
 		475070692FBB31ED00350F5C /* HTMLSplitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLSplitter.swift; sourceTree = "<group>"; };
 		4757D5D630555C7C0064F5F0 /* AuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthClient.swift; sourceTree = "<group>"; };
+		4757D5D830555E100064F5F0 /* FirestoreClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreClient.swift; sourceTree = "<group>"; };
+		4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseErrorView.swift; sourceTree = "<group>"; };
 		475E5BE6DDCDBD62D051061F /* OnboardingLevelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelViewModel.swift; sourceTree = "<group>"; };
 		47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingConfirmView.swift; sourceTree = "<group>"; };
 		47631B582F86B82F002F1666 /* NativeLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLanguage.swift; sourceTree = "<group>"; };
@@ -457,6 +461,7 @@
 				4761E60D3052EF7300906F1F /* Models */,
 				4761E6183052F45600906F1F /* Views */,
 				47575FB1C5D460A8873D1EED /* ViewModels */,
+				4757D5DC30555F260064F5F0 /* Services */,
 			);
 			path = Pairs;
 			sourceTree = "<group>";
@@ -535,6 +540,7 @@
 		4757D5D4305559540064F5F0 /* AppSync */ = {
 			isa = PBXGroup;
 			children = (
+				4712E9192FEC030C0014DB01 /* AppSyncState.swift */,
 				4712E9172FEC02310014DB01 /* AppSyncStateService.swift */,
 			);
 			path = AppSync;
@@ -545,6 +551,64 @@
 			children = (
 			);
 			path = Core;
+			sourceTree = "<group>";
+		};
+		4757D5DA30555E4D0064F5F0 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				47C099F52F84F0B80049858B /* Onboarding */,
+				479A16683649D2A453AC2A8B /* Cards */,
+				470628DDEFFB80FE3C49F6AE /* Pairs */,
+				4761E60E3052EF8700906F1F /* Books */,
+				478C782C2F794487005FBDFE /* Settings */,
+				478C782E2F794487005FBDFE /* Statistics */,
+				4761E6173052F27B00906F1F /* Shared */,
+				478C781F2F794487005FBDFE /* CustomFeatures */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		4757D5DB30555EF00064F5F0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				4750704F2FBA2A4000350F5C /* BookDownloadService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		4757D5DC30555F260064F5F0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				478C78452F794487005FBDFE /* AudioPlayerService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		4757D5DD30555F700064F5F0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				47A281A77E53A8D87F21514D /* InboxDrainService.swift */,
+				478C78492F794487005FBDFE /* SystemSeeder.swift */,
+				4723A9468F60C7C2DB7889DB /* UserSessionSyncService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		4757D5DE305561520064F5F0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				4785898F2FF3DD4800BF3C8F /* BackupModels.swift */,
+				478589902FF3DD4800BF3C8F /* ExportService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		4757D5E13055C7F50064F5F0 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				478C78112F794487005FBDFE /* AppViewModel.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		4761E60C3052EF5F00906F1F /* Models */ = {
@@ -573,6 +637,7 @@
 				4761E60F3052EF9400906F1F /* Models */,
 				4761E6123052F03400906F1F /* Views */,
 				4761E6133052F03F00906F1F /* ViewModels */,
+				4757D5DB30555EF00064F5F0 /* Services */,
 			);
 			path = Books;
 			sourceTree = "<group>";
@@ -626,7 +691,7 @@
 				478729442FAA0DD4001282EF /* Constants.swift */,
 				478C78402F794487005FBDFE /* ShuffleMethod.swift */,
 				478C783A2F794487005FBDFE /* CEFRLevel.swift */,
-				47DFAAAA3053270700FDD455 /* Dictionary */,
+				478C783C2F794487005FBDFE /* DictionaryModels.swift */,
 				47DE7EED2F8000E500F6BCF3 /* AccessTier.swift */,
 				478C783B2F794487005FBDFE /* Collection.swift */,
 				47631B582F86B82F002F1666 /* NativeLanguage.swift */,
@@ -656,6 +721,7 @@
 				47C09A852F853B940049858B /* FSModels.swift */,
 				478729462FAB7331001282EF /* UserFSDocument.swift */,
 				478C78472F794487005FBDFE /* ImportFSService.swift */,
+				4757D5D830555E100064F5F0 /* FirestoreClient.swift */,
 			);
 			path = Firestore;
 			sourceTree = "<group>";
@@ -757,10 +823,11 @@
 			children = (
 				478C78122F794487005FBDFE /* SwipeLingoApp.swift */,
 				474D28BB2F9B734400BC11FF /* AppView.swift */,
-				478C78112F794487005FBDFE /* AppViewModel.swift */,
 				4739F3F5518B2F24B631870A /* AppDependencies.swift */,
 				477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */,
-				4712E9192FEC030C0014DB01 /* AppSyncState.swift */,
+				4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */,
+				4757D5E13055C7F50064F5F0 /* ViewModels */,
+				4757D5DD30555F700064F5F0 /* Services */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -832,6 +899,7 @@
 				4700CD762FB9D986003EA2B1 /* PaymentHistoryView.swift */,
 				478589972FF3EA5A00BF3C8F /* ExportAndShareView.swift */,
 				478589982FF3EA5A00BF3C8F /* RestoreBackupView.swift */,
+				4757D5DE305561520064F5F0 /* Services */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -855,20 +923,13 @@
 		478C784C2F794487005FBDFE /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				4785898F2FF3DD4800BF3C8F /* BackupModels.swift */,
-				478589902FF3DD4800BF3C8F /* ExportService.swift */,
-				4750704F2FBA2A4000350F5C /* BookDownloadService.swift */,
 				47DE7F852F83CB0300F6BCF3 /* PairsPileService.swift */,
 				474F1FE02F7BB11800128E83 /* ErrorManager.swift */,
-				478C78452F794487005FBDFE /* AudioPlayerService.swift */,
 				478C78462F794487005FBDFE /* DictionaryService.swift */,
 				478C78482F794487005FBDFE /* KeyboardManager.swift */,
-				478C78492F794487005FBDFE /* SystemSeeder.swift */,
 				478C784A2F794487005FBDFE /* PileService.swift */,
 				478C784B2F794487005FBDFE /* SRSService.swift */,
 				4713B87FCC6D18B942D94ED7 /* PileManagementService.swift */,
-				47A281A77E53A8D87F21514D /* InboxDrainService.swift */,
-				4723A9468F60C7C2DB7889DB /* UserSessionSyncService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -881,14 +942,7 @@
 				4757D5D3305558C90064F5F0 /* SwiftData */,
 				47D2803E2F96A97300BBD66B /* Firebase */,
 				4785898C2FF3D86C00BF3C8F /* Firestore */,
-				47C099F52F84F0B80049858B /* Onboarding */,
-				479A16683649D2A453AC2A8B /* Cards */,
-				470628DDEFFB80FE3C49F6AE /* Pairs */,
-				4761E60E3052EF8700906F1F /* Books */,
-				478C782E2F794487005FBDFE /* Statistics */,
-				478C782C2F794487005FBDFE /* Settings */,
-				4761E6173052F27B00906F1F /* Shared */,
-				478C781F2F794487005FBDFE /* CustomFeatures */,
+				4757D5DA30555E4D0064F5F0 /* Core */,
 				478C784C2F794487005FBDFE /* Services */,
 				478C78442F794487005FBDFE /* Resources */,
 				478C784D2F794487005FBDFE /* SwipeLingo.entitlements */,
@@ -936,14 +990,6 @@
 				478728FA2FA9D3FD001282EF /* AuthFBService.swift */,
 			);
 			path = Firebase;
-			sourceTree = "<group>";
-		};
-		47DFAAAA3053270700FDD455 /* Dictionary */ = {
-			isa = PBXGroup;
-			children = (
-				478C783C2F794487005FBDFE /* DictionaryModels.swift */,
-			);
-			path = Dictionary;
 			sourceTree = "<group>";
 		};
 		47DFAAAB305328B400FDD455 /* Views */ = {
@@ -1255,6 +1301,7 @@
 				478589922FF3DD4800BF3C8F /* BackupModels.swift in Sources */,
 				475070502FBA2A4000350F5C /* BookDownloadService.swift in Sources */,
 				478C78592F794487005FBDFE /* Views.swift in Sources */,
+				4757D5E03055C7DA0064F5F0 /* DatabaseErrorView.swift in Sources */,
 				47DE7F862F83CB0300F6BCF3 /* PairsPileService.swift in Sources */,
 				478C785A2F794487005FBDFE /* AddCardSetView.swift in Sources */,
 				478589962FF3DF3000BF3C8F /* DocumentPicker.swift in Sources */,
@@ -1297,6 +1344,7 @@
 				478C78692F794487005FBDFE /* CardsView.swift in Sources */,
 				478C786A2F794487005FBDFE /* FlashCardsViewModel.swift in Sources */,
 				478728FB2FA9D3FD001282EF /* AuthFBService.swift in Sources */,
+				4757D5D930555E100064F5F0 /* FirestoreClient.swift in Sources */,
 				478C786B2F794487005FBDFE /* Card.swift in Sources */,
 				47DE7F842F83CAF500F6BCF3 /* PairsPile.swift in Sources */,
 				478C786C2F794487005FBDFE /* CardSet.swift in Sources */,
