@@ -7,9 +7,9 @@ struct PaymentHistoryView: View {
 
     let uid: String
     /// Передаётся из composition root — не через .environment().
-    private let userService: UserService
+    private let userService: FBUserService
 
-    init(uid: String, userService: UserService) {
+    init(uid: String, userService: FBUserService) {
         self.uid = uid
         self.userService = userService
     }

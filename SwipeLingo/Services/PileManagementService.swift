@@ -23,7 +23,7 @@ extension PairsPile: PileLike {}
 // в обоих View — теперь это единственный источник истины для неё.
 //
 // Сервис без состояния: ModelContext передаётся параметром на каждый вызов, а не
-// хранится внутри — так же, как уже сделано с FirestoreImportService().syncFromFirestore(into: context, ...).
+// хранится внутри — так же, как уже сделано с ImportFSService().syncFromFirestore(into: context, ...).
 
 struct PileManagementService {
 

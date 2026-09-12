@@ -7,15 +7,18 @@ import FirebaseAuth
 
 @main
 struct SwipeLingoApp: App {
-
+    /// читаем системное состояние сцены (.active/.background/.inactive), нужно ниже для повторной синхронизации при возврате в foreground.
     @Environment(\.scenePhase) private var scenePhase
     
+    /// родной язык пользователя, читается прямо из UserDefaults по ключу Constants.StorageKey.nativeLanguage. Обрати внимание: это не тот же источник правды, что AppSyncStateService.nativeLanguageRaw (см. ниже) — тот пишет в тот же ключ UserDefaults параллельно с CloudKit-записью, так что оба значения синхронизированы
     @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
+    /// опциональный, потому что бывает, что SwiftData вообще не поднимается (см. databseErrorView)
     let container: ModelContainer?
 
-    @State private var authService: FireBaseAuthService
-    @State private var userService: UserService
+    /// composition root: FireBaseAuthService, FBUserService, AppSyncStateService, AppViewModel создаются один раз здесь и больше нигде. @State в App-структуре — валидный способ держать reference-type с identity, переживающей re-init структуры SwipeLingoApp (SwiftUI пересоздаёт саму struct на каждый re-render, но @State-storage персистентен)
+    @State private var authService: AuthFBService
+    @State private var userService: FBUserService
     @State private var appSyncStateService: AppSyncStateService
     @State private var appViewModel: AppViewModel
 
@@ -32,6 +35,7 @@ struct SwipeLingoApp: App {
     }
 
     // register app delegate for Firebase setup
+    // Подключает AppDelegate (CloudKit push, Google Sign-In URL handling — по CLAUDE.md) к жизненному циклу SwiftUI-приложения
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
@@ -43,9 +47,9 @@ struct SwipeLingoApp: App {
                     GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
                 }
                 Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
-                log("[Firebase] App configured", level: .info)
+                log("App configured", level: .info)
             } else {
-                log("[Firebase] GoogleService-Info.plist not found — Firebase disabled", level: .warning)
+                log("GoogleService-Info.plist not found — Firebase disabled", level: .warning)
             }
         }
 
@@ -56,11 +60,11 @@ struct SwipeLingoApp: App {
         if !launchedBefore {
             try? Auth.auth().signOut()
             UserDefaults.standard.set(true, forKey: Constants.StorageKey.appEverLaunched)
-            log("[App] Fresh install detected — Keychain token cleared", level: .info)
+            log("Fresh install detected — Keychain token cleared", level: .info)
         }
 
-        _authService = State(initialValue: FireBaseAuthService())
-        _userService = State(initialValue: UserService())
+        _authService = State(initialValue: AuthFBService())
+        _userService = State(initialValue: FBUserService())
         _appViewModel = State(initialValue: AppViewModel())
         let builtContainer = ModelContainerFactory.make()
         container = builtContainer
@@ -103,11 +107,16 @@ struct SwipeLingoApp: App {
                 if appSyncStateService.hasCompletedOnboarding { await firestoreSync() }
             }
             .onChange(of: appSyncStateService.hasCompletedOnboarding) { _, completed in
-                if completed { Task { await firestoreSync() } }
+                if completed {
+                    Task { await firestoreSync() }
+                }
             }
             .onChange(of: authService.currentUser) { _, user in
-                if let user { AnalyticsService.setUser(id: user.uid) }
-                else { AnalyticsService.clearUser() }
+                if let user {
+                    AnalyticsFBService.setUser(id: user.uid)
+                } else {
+                    AnalyticsFBService.clearUser()
+                }
             }
         }
         // Single entry point for all Firestore writes after a verified session.
@@ -121,13 +130,15 @@ struct SwipeLingoApp: App {
                 // Second device: Firebase doc exists with cefrLevel → skip onboarding
                 if isReturningUser && !appSyncStateService.hasCompletedOnboarding {
                     appSyncStateService.hasCompletedOnboarding = true
-                    log("[App] Returning user detected — skipping onboarding", level: .info)
+                    log("Returning user detected — skipping onboarding", level: .info)
                 }
             }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                if let container { InboxDrainService().drain(container: container) }
+                if let container {
+                    InboxDrainService().drain(container: container)
+                }
                 // Re-sync subscription on each foreground to catch server-side changes.
                 if let uid = authService.currentUser?.uid {
                     Task { await userService.syncSubscription(for: uid) }
@@ -169,7 +180,7 @@ struct SwipeLingoApp: App {
         let profiles  = ctx.fetchWithErrorHandling(FetchDescriptor<UserProfile>())
         let userLevel = profiles.first?.cefrLevel ?? .c2  // c2 = загрузить всё если профиль не задан
 
-        await FirestoreImportService().syncFromFirestore(
+        await ImportFSService().syncFromFirestore(
             into: ctx,
             language: language,
             upToLevel: userLevel

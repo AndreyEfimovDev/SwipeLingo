@@ -4,7 +4,7 @@ import SwiftData
 // MARK: - SystemSeeder
 //
 // Ensures system collections (My Sets, Inbox) always exist on every launch.
-// Curated content (Collections → CardSets → Cards) comes from Firestore via FirestoreImportService.
+// Curated content (Collections → CardSets → Cards) comes from Firestore via ImportFSService.
 
 struct SystemSeeder {
 

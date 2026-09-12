@@ -2,12 +2,12 @@ import Foundation
 import FirebaseAnalytics
 import FirebaseCrashlytics
 
-// MARK: - AnalyticsService
+// MARK: - AnalyticsFBService
 //
 // Centralised wrapper for Firebase Analytics + Crashlytics.
 // Call from anywhere in the app — all event names and param keys are typed.
 
-enum AnalyticsService {
+enum AnalyticsFBService {
 
     // MARK: - User identity
 
@@ -28,7 +28,7 @@ enum AnalyticsService {
         var info: [String: Any] = [:]
         if let context { info["context"] = context }
         Crashlytics.crashlytics().record(error: error, userInfo: info)
-        SwipeLingo.log("[Crashlytics] recorded error: \(error) context=\(context ?? "-")", level: .error)
+        SwipeLingo.log("recorded error: \(error) context=\(context ?? "-")", level: .error)
     }
 
     static func log(_ message: String) {

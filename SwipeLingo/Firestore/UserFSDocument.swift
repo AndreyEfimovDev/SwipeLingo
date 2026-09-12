@@ -1,10 +1,10 @@
 import Foundation
 import FirebaseAuth
 
-// MARK: - UserFirestoreDocument
+// MARK: - UserFSDocument
 // Firestore: users/{uid}
 
-struct UserFirestoreDocument: Codable {
+struct UserFSDocument: Codable {
     var uid:               String
     var email:             String?   // provider email (Google/Apple/Email) — не редактируется
     var notificationEmail: String?   // email для рассылки — редактируется пользователем
@@ -41,8 +41,8 @@ struct UserFirestoreDocument: Codable {
 
     // MARK: - Factory
 
-    static func make(from user: FirebaseAuth.User, nativeLanguage: String, cefrLevel: String) -> UserFirestoreDocument {
-        UserFirestoreDocument(
+    static func make(from user: FirebaseAuth.User, nativeLanguage: String, cefrLevel: String) -> UserFSDocument {
+        UserFSDocument(
             uid:               user.uid,
             email:             user.isAnonymous ? nil : user.email,
             notificationEmail: nil,

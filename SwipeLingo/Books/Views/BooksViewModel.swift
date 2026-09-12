@@ -37,6 +37,6 @@ final class BooksViewModel {
         guard !isSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
-        await BookFirestoreService().syncBooks(into: context)
+        await BookFBService().syncBooks(into: context)
     }
 }

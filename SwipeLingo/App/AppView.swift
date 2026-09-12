@@ -40,7 +40,7 @@ struct AppView: View {
                 guard newLevel > oldLevel else { return }   // понижение — sync не нужен
                 let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
                 Task {
-                    await FirestoreImportService().syncFromFirestore(
+                    await ImportFSService().syncFromFirestore(
                         into: context,
                         language: language,
                         upToLevel: newLevel,

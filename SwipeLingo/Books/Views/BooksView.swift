@@ -165,7 +165,7 @@ struct BooksView: View {
                 await importSingleBook(from: metaURL)
             }
         } catch {
-            log("[BookDebug] Index load failed: \(error)", level: .error)
+            log("Index load failed: \(error)", level: .error)
         }
     }
 
@@ -211,9 +211,9 @@ struct BooksView: View {
             )
             context.insert(book)
             try context.save()
-            log("[BookDebug] Imported '\(title)' (\(totalChapters) chapters)", level: .info)
+            log("Imported '\(title)' (\(totalChapters) chapters)", level: .info)
         } catch {
-            log("[BookDebug] Import '\(metaURL.lastPathComponent)' failed: \(error)", level: .error)
+            log("Import '\(metaURL.lastPathComponent)' failed: \(error)", level: .error)
         }
     }
 }

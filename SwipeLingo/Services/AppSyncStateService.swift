@@ -22,7 +22,7 @@ final class AppSyncStateManager {
             let results = try modelContext.fetch(descriptor)
 
             if results.count > 1 {
-                log("[AppSync] Detected \(results.count) AppSyncState duplicates — merging", level: .warning)
+                log("Detected \(results.count) AppSyncState duplicates — merging", level: .warning)
                 return mergeDuplicates(results)
             }
 
@@ -42,11 +42,11 @@ final class AppSyncStateManager {
             )
             modelContext.insert(migrated)
             saveContext()
-            log("[AppSync] AppSyncState created (migrated from UserDefaults)", level: .info)
+            log("AppSyncState created (migrated from UserDefaults)", level: .info)
             return migrated
 
         } catch {
-            log("[AppSync] getOrCreateAppState fetch failed: \(error)", level: .error)
+            log("getOrCreateAppState fetch failed: \(error)", level: .error)
             let fallback = AppSyncState()
             modelContext.insert(fallback)
             return fallback
@@ -78,7 +78,7 @@ final class AppSyncStateManager {
             modelContext.delete(duplicate)
         }
         saveContext()
-        log("[AppSync] Merged \(states.count) duplicates → 1 AppSyncState", level: .info)
+        log("Merged \(states.count) duplicates → 1 AppSyncState", level: .info)
         return primary
     }
 
@@ -86,7 +86,7 @@ final class AppSyncStateManager {
         do {
             try modelContext.save()
         } catch {
-            log("[AppSync] Save failed: \(error)", level: .error)
+            log("Save failed: \(error)", level: .error)
         }
     }
 }
@@ -203,7 +203,7 @@ final class AppSyncStateService {
                    || state.settingsUpdatedAt      != appState.settingsUpdatedAt
 
         guard changed else {
-            log("[AppSync] CloudKit ping — AppSyncState unchanged, skipping reload", level: .info)
+            log("CloudKit ping — AppSyncState unchanged, skipping reload", level: .info)
             return
         }
 
@@ -220,7 +220,7 @@ final class AppSyncStateService {
         UserDefaults.standard.set(state.hasCompletedOnboarding, forKey: "hasCompletedOnboarding")
         UserDefaults.standard.set(state.nativeLanguageRaw, forKey: "nativeLanguage")
 
-        log("[AppSync] Reloaded from CloudKit — hasOnboarding:\(state.hasCompletedOnboarding) srs:\(state.srsEnabled)", level: .info)
+        log("Reloaded from CloudKit — hasOnboarding:\(state.hasCompletedOnboarding) srs:\(state.srsEnabled)", level: .info)
     }
 
     // MARK: - Private

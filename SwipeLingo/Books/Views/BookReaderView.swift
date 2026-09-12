@@ -161,7 +161,7 @@ struct BookReaderView: View {
                 if let word = vm.tappedWord {
                     BookWordLookupView(word: word)
                         .onAppear {
-                            AnalyticsService.wordLookedUp(word: word, source: .book)
+                            AnalyticsFBService.wordLookedUp(word: word, source: .book)
                         }
                 }
             }
@@ -202,7 +202,7 @@ struct BookReaderView: View {
                 await vm.downloadAllIfNeeded(context: context)
                 await vm.downloadCurrentChapterIfNeeded()
             }
-            AnalyticsService.bookOpened(bookId: book.id, bookTitle: book.title)
+            AnalyticsFBService.bookOpened(bookId: book.id, bookTitle: book.title)
         }
         .onDisappear {
             downloadTask?.cancel()
@@ -228,7 +228,7 @@ struct BookReaderView: View {
                 // Called by UIPageViewController after user swipe completes
                 vm.goToChapter(newIndex)
                 vm.saveProgress(context: context)
-                AnalyticsService.bookChapterRead(bookId: book.id, chapterIndex: newIndex, totalChapters: book.totalChapters)
+                AnalyticsFBService.bookChapterRead(bookId: book.id, chapterIndex: newIndex, totalChapters: book.totalChapters)
                 // Proactively download the next 2 chapters so swipe is always available
                 downloadTask = Task {
                     for offset in 1...2 {

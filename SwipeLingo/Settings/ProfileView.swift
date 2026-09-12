@@ -18,12 +18,12 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var context
 
     /// Передаётся из composition root через SettingsView — не через .environment().
-    private let authService: FireBaseAuthService
-    private let userService: UserService
+    private let authService: AuthFBService
+    private let userService: FBUserService
 
     @AppStorage("appleRelayBannerDismissed") private var relayBannerDismissed = false
 
-    init(authService: FireBaseAuthService, userService: UserService) {
+    init(authService: AuthFBService, userService: FBUserService) {
         self.authService = authService
         self.userService = userService
     }
@@ -692,7 +692,7 @@ struct ProfileView: View {
             try await authService.sendEmailVerification()
             withAnimation { verificationSent = true }
         } catch {
-            log("[ProfileView] sendEmailVerification failed: \(error)", level: .error)
+            log("sendEmailVerification failed: \(error)", level: .error)
         }
     }
 
@@ -702,7 +702,7 @@ struct ProfileView: View {
         do {
             try await authService.deleteAccount()
         } catch let error as NSError {
-            log("[ProfileView] deleteAccount failed: \(error)", level: .error)
+            log("deleteAccount failed: \(error)", level: .error)
             if error.code == AuthErrorCode.requiresRecentLogin.rawValue {
                 deleteErrorMessage = "For security, please sign out and sign in again before deleting your account."
             } else {
@@ -717,7 +717,7 @@ struct ProfileView: View {
         do {
             try await authService.deleteAccountWithApple(authorization: authorization)
         } catch let error as NSError {
-            log("[ProfileView] deleteAccountWithApple failed: \(error)", level: .error)
+            log("deleteAccountWithApple failed: \(error)", level: .error)
             if error.code == AuthErrorCode.requiresRecentLogin.rawValue {
                 deleteErrorMessage = "For security, please sign out and sign in again before deleting your account."
             } else {
@@ -736,7 +736,7 @@ private struct AppleDeletionSheet: View {
     /// fileprivate, не private: AppleDeletionSheet конструируется из ProfileView —
     /// другого типа в том же файле, а `private` в Swift ограничен своим типом
     /// (+ same-file extensions), не всем файлом.
-    fileprivate let authService: FireBaseAuthService
+    fileprivate let authService: AuthFBService
     let onAuthorization: (ASAuthorization) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -788,5 +788,5 @@ private struct AppleDeletionSheet: View {
 }
 
 #Preview {
-    NavigationStack { ProfileView(authService: FireBaseAuthService(), userService: UserService()) }
+    NavigationStack { ProfileView(authService: AuthFBService(), userService: FBUserService()) }
 }

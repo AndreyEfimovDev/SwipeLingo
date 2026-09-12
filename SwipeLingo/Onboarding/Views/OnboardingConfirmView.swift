@@ -73,7 +73,7 @@ struct OnboardingConfirmView: View {
             // Buttons
             VStack(spacing: 12) {
                 Button {
-                    AnalyticsService.onboardingCompleted(
+                    AnalyticsFBService.onboardingCompleted(
                         nativeLanguage: nativeLanguage.rawValue,
                         cefrLevel: cefrLevel.rawValue
                     )

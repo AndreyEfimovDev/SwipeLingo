@@ -78,7 +78,7 @@ final class BookDownloadService {
         let path = book.chapterStoragePath(at: index)
         let data = try await fetchFromStorage(path: path)
         try data.write(to: dest)
-        log("[Books] Downloaded chapter \(index) of '\(book.title)'")
+        log("Downloaded chapter \(index) of '\(book.title)'")
     }
 
     // MARK: - Download all chapters
@@ -96,7 +96,7 @@ final class BookDownloadService {
             progress?(fraction)
         }
         downloadProgress.removeValue(forKey: book.firestoreId)
-        log("[Books] All chapters downloaded for '\(book.title)'", level: .info)
+        log("All chapters downloaded for '\(book.title)'", level: .info)
     }
 
     // MARK: - Download cover
@@ -140,7 +140,7 @@ final class BookDownloadService {
     func clearCache(firestoreId: String) {
         let dir = booksRoot().appendingPathComponent(firestoreId, isDirectory: true)
         try? fm.removeItem(at: dir)
-        log("[Books] Cleared cache for \(firestoreId)", level: .info)
+        log("Cleared cache for \(firestoreId)", level: .info)
     }
 
     // MARK: - Helpers

@@ -30,7 +30,7 @@ struct InboxDrainService {
         // MockDataSeeder runs, but guard defensively.
         let allSets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
         guard let inboxSet = allSets.first(where: { $0.name == "Inbox" }) else {
-            log("[InboxDrain] Inbox CardSet not found — re-queuing \(pending.count) word(s)", level: .warning)
+            log("Inbox CardSet not found — re-queuing \(pending.count) word(s)", level: .warning)
             var current = defaults?.stringArray(forKey: pendingKey) ?? []
             current.insert(contentsOf: pending, at: 0)
             defaults?.set(current, forKey: pendingKey)
@@ -45,16 +45,16 @@ struct InboxDrainService {
         for word in pending {
             let wordLower = word.lowercased()
             guard !existingCards.contains(where: { $0.en.lowercased() == wordLower }) else {
-                log("[InboxDrain] skipped duplicate '\(word)'", level: .info)
+                log("skipped duplicate '\(word)'", level: .info)
                 continue
             }
             let card = Card(en: word, item: "", setId: inboxSet.id)
             context.insert(card)
-            log("[InboxDrain] inserted '\(word)' → Inbox")
+            log("inserted '\(word)' → Inbox")
         }
 
         context.saveWithErrorHandling()
-        AnalyticsService.wordSavedFromShareExtension(wordCount: pending.count)
-        log("[InboxDrain] saved \(pending.count) card(s) to Inbox", level: .info)
+        AnalyticsFBService.wordSavedFromShareExtension(wordCount: pending.count)
+        log("saved \(pending.count) card(s) to Inbox", level: .info)
     }
 }

@@ -4,7 +4,7 @@ import Foundation
 //
 // Codable-структуры для слоя Firestore. Используются в двух местах:
 //   1. SwipeLingoAdmin — создание/редактирование/публикация контента
-//   2. FirestoreImportService (основное приложение) — загрузка и конвертация в SwiftData-модели
+//   2. ImportFSService (основное приложение) — загрузка и конвертация в SwiftData-модели
 //
 // Все enum-поля хранятся напрямую (Codable сериализует через rawValue автоматически).
 

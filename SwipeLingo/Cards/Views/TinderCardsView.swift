@@ -9,8 +9,8 @@ struct TinderCardsView: View {
     @Environment(\.verticalSizeClass)  private var verticalSizeClass
     /// Передаются из composition root через CardsView — не через .environment().
     private let appViewModel: AppViewModel
-    private let authService:  FireBaseAuthService
-    private let userService:  UserService
+    private let authService:  AuthFBService
+    private let userService:  FBUserService
 
     @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
     @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
@@ -50,8 +50,8 @@ struct TinderCardsView: View {
 
     init(cards: [Card],
          appViewModel: AppViewModel,
-         authService: FireBaseAuthService,
-         userService: UserService,
+         authService: AuthFBService,
+         userService: FBUserService,
          lockedCardIds: Set<UUID> = [],
          contextLabels: [UUID: String] = [:],
          cefrLabels: [UUID: CEFRLevel] = [:],
@@ -945,8 +945,8 @@ private struct LockedCardBackView: View {
     /// fileprivate, не private: LockedCardBackView конструируется из TinderCardsView —
     /// другого типа в том же файле, а `private` в Swift ограничен своим типом
     /// (+ same-file extensions), не всем файлом.
-    fileprivate let authService: FireBaseAuthService
-    fileprivate let userService: UserService
+    fileprivate let authService: AuthFBService
+    fileprivate let userService: FBUserService
     @State private var showPlans = false
 
     var body: some View {
@@ -1034,8 +1034,8 @@ private struct CardFlowLayout: Layout {
     [c1, c2, c3].forEach { ctx.insert($0) }
     return TinderCardsView(cards: [c1, c2, c3],
                            appViewModel: AppViewModel(),
-                           authService: FireBaseAuthService(),
-                           userService: UserService(),
+                           authService: AuthFBService(),
+                           userService: FBUserService(),
                            contextLabels: [setId: "IELTS Vocabulary · Academic Words"],
                            pileTagsLine:  "IELTS Vocabulary › Academic Words (8 cards)")
         .modelContainer(container)

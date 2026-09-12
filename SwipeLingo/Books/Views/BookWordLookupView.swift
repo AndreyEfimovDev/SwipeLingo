@@ -215,7 +215,7 @@ struct BookWordLookupView: View {
 
     private func saveToInbox() {
         guard let inboxSet = cardSets.first(where: { $0.name == "Inbox" }) else {
-            log("[BookLookup] Inbox not found", level: .warning)
+            log("Inbox not found", level: .warning)
             return
         }
 
@@ -228,7 +228,7 @@ struct BookWordLookupView: View {
             let card = Card(en: word, item: translatedWord, setId: inboxSet.id)
             context.insert(card)
             context.saveWithErrorHandling()
-            log("[BookLookup] Saved '\(word)' to Inbox", level: .info)
+            log("Saved '\(word)' to Inbox", level: .info)
         }
 
         savedToInbox = true
@@ -257,7 +257,7 @@ struct BookWordLookupView: View {
             let responses = try await session.translations(from: [request])
             translatedWord = responses.first?.targetText ?? ""
         } catch {
-            log("[BookLookup] Translation failed: \(error)", level: .warning)
+            log("Translation failed: \(error)", level: .warning)
         }
     }
 }

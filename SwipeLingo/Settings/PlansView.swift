@@ -12,10 +12,10 @@ struct PlansView: View {
     @Environment(\.dismiss)        private var dismiss
 
     /// Передаётся из composition root — не через .environment().
-    private let authService: FireBaseAuthService
-    private let userService: UserService
+    private let authService: AuthFBService
+    private let userService: FBUserService
 
-    init(authService: FireBaseAuthService, userService: UserService) {
+    init(authService: AuthFBService, userService: FBUserService) {
         self.authService = authService
         self.userService = userService
     }
@@ -72,7 +72,7 @@ struct PlansView: View {
             .onAppear {
                 selectedPlan  = userPlan
                 selectedCycle = currentCycle == .none ? .yearly : currentCycle
-                AnalyticsService.plansScreenOpened()
+                AnalyticsFBService.plansScreenOpened()
             }
             .confirmationDialog(
                 selectedPlan == .free ? "Cancel Subscription" : "Schedule Downgrade",
@@ -301,7 +301,7 @@ struct PlansView: View {
         defer { isSaving = false }
         let started = await userService.startTrial(pendingPlan: selectedPlan, for: uid)
         if started {
-            AnalyticsService.trialStarted(plan: selectedPlan.rawValue)
+            AnalyticsFBService.trialStarted(plan: selectedPlan.rawValue)
             dismiss()
         } else {
             showTrialUsedAlert = true
@@ -322,5 +322,5 @@ struct PlansView: View {
 }
 
 #Preview {
-    PlansView(authService: FireBaseAuthService(), userService: UserService())
+    PlansView(authService: AuthFBService(), userService: FBUserService())
 }

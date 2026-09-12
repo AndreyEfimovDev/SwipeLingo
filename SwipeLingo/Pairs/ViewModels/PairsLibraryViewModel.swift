@@ -62,7 +62,7 @@ final class PairsLibraryViewModel {
         isSyncing = true
         defer { isSyncing = false }
         let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
-        await FirestoreImportService().syncFromFirestore(into: context, language: language, upToLevel: level, forceFullSync: true)
+        await ImportFSService().syncFromFirestore(into: context, language: language, upToLevel: level, forceFullSync: true)
     }
 
     // MARK: - Pile-мутации (делегируются в PileManagementService)

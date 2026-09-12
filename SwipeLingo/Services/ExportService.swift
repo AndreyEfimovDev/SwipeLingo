@@ -91,10 +91,10 @@ final class ExportService {
             let name = "SwipeLingo_backup_\(fmt.string(from: .now)).json"
             let url  = FileManager.default.temporaryDirectory.appendingPathComponent(name)
             try data.write(to: url)
-            log("[Backup] Exported \(backup.cardSets.count) sets, \(backup.pairsSRS.count) pairs SRS → \(name)", level: .info)
+            log("Exported \(backup.cardSets.count) sets, \(backup.pairsSRS.count) pairs SRS → \(name)", level: .info)
             return .success(url)
         } catch {
-            log("[Backup] Export failed: \(error)", level: .error)
+            log("Export failed: \(error)", level: .error)
             return .failure(error)
         }
     }
@@ -119,10 +119,10 @@ final class ExportService {
             try context.save()
 
             let result = ImportResult(newSets: sets, newCards: cards, pairsSRSRestored: pairsCount)
-            log("[Backup] Imported: \(sets) sets, \(cards) cards, \(pairsCount) pairs SRS", level: .info)
+            log("Imported: \(sets) sets, \(cards) cards, \(pairsCount) pairs SRS", level: .info)
             return result
         } catch {
-            log("[Backup] Import failed: \(error)", level: .error)
+            log("Import failed: \(error)", level: .error)
             return ImportResult(newSets: 0, newCards: 0, pairsSRSRestored: 0)
         }
     }
@@ -223,9 +223,9 @@ final class ExportService {
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         do {
             try FileManager.default.removeItem(at: url)
-            log("[Backup] Cleaned up temp file: \(url.lastPathComponent)", level: .info)
+            log("Cleaned up temp file: \(url.lastPathComponent)", level: .info)
         } catch {
-            log("[Backup] Failed to cleanup temp file: \(error)", level: .warning)
+            log("Failed to cleanup temp file: \(error)", level: .warning)
         }
     }
 }

@@ -3,7 +3,7 @@ import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
 
-// MARK: - UserService
+// MARK: - FBUserService
 //
 // Manages the Firestore user document (users/{uid}) and local subscription cache.
 //
@@ -22,7 +22,7 @@ import FirebaseFirestore
 
 @Observable
 @MainActor
-final class UserService {
+final class FBUserService {
 
     private(set) var isLoading = false
 
@@ -55,7 +55,7 @@ final class UserService {
                 ]
                 if !nativeLanguage.isEmpty { updates["nativeLanguage"] = nativeLanguage }
                 try await ref.updateData(updates)
-                log("[UserService] User document updated: \(firebaseUser.uid) returningUser:\(isReturningUser)", level: .info)
+                log("[FBUserService] User document updated: \(firebaseUser.uid) returningUser:\(isReturningUser)", level: .info)
                 return isReturningUser
             } else {
                 // First sign-in — create full document
@@ -65,13 +65,13 @@ final class UserService {
                     cefrLevel: cefrLevel
                 )
                 try ref.setData(from: doc)
-                log("[UserService] User document created: \(firebaseUser.uid)", level: .info)
+                log("[FBUserService] User document created: \(firebaseUser.uid)", level: .info)
                 // Cache Free plan as default
                 cachePlan(.free, status: .active, expiry: nil)
                 return false
             }
         } catch {
-            log("[UserService] createOrUpdateUser failed: \(error)", level: .error)
+            log("[FBUserService] createOrUpdateUser failed: \(error)", level: .error)
             return false
         }
     }
@@ -107,10 +107,10 @@ final class UserService {
                 clearPending()
             }
 
-            log("[UserService] Subscription synced: \(plan.rawValue) / \(status.rawValue)", level: .info)
+            log("[FBUserService] Subscription synced: \(plan.rawValue) / \(status.rawValue)", level: .info)
 
         } catch {
-            log("[UserService] syncSubscription failed: \(error)", level: .error)
+            log("[FBUserService] syncSubscription failed: \(error)", level: .error)
         }
     }
 
@@ -137,7 +137,7 @@ final class UserService {
             // Trial: hard cutoff at trialEndDate, no grace period
             if Date() > expiry {
                 cachePlan(.free, status: .expired, expiry: nil)
-                log("[UserService] Trial expired → downgraded to Free", level: .info)
+                log("[FBUserService] Trial expired → downgraded to Free", level: .info)
                 return .free
             }
             return cached
@@ -149,11 +149,11 @@ final class UserService {
         )
         if Date() > graceCutoff {
             cachePlan(.free, status: .expired, expiry: nil)
-            log("[UserService] Subscription expired + grace period over → downgraded to Free", level: .info)
+            log("[FBUserService] Subscription expired + grace period over → downgraded to Free", level: .info)
             return .free
         }
         if Date() > expiry {
-            log("[UserService] Subscription expired, grace period active (\(Constants.subscriptionGracePeriodDays)d remaining)", level: .info)
+            log("[FBUserService] Subscription expired, grace period active (\(Constants.subscriptionGracePeriodDays)d remaining)", level: .info)
         }
         return cached
     }
@@ -220,10 +220,10 @@ final class UserService {
             try ref.collection("planHistory").document(historyId).setData(from: history)
             cachePlan(plan, status: .active, expiry: endDate, billingCycle: billingCycle)
             clearPending()
-            log("[UserService] Subscription purchased: \(plan.rawValue)/\(billingCycle.rawValue)", level: .info)
+            log("[FBUserService] Subscription purchased: \(plan.rawValue)/\(billingCycle.rawValue)", level: .info)
             return true
         } catch {
-            log("[UserService] purchaseSubscription failed: \(error)", level: .error)
+            log("[FBUserService] purchaseSubscription failed: \(error)", level: .error)
             return false
         }
     }
@@ -237,7 +237,7 @@ final class UserService {
                 .getDocuments()
             return snap.documents.compactMap { try? $0.data(as: PaymentRecord.self) }
         } catch {
-            log("[UserService] loadPaymentHistory failed: \(error)", level: .error)
+            log("[FBUserService] loadPaymentHistory failed: \(error)", level: .error)
             return []
         }
     }
@@ -252,9 +252,9 @@ final class UserService {
         do {
             try await db.collection("users").document(uid).updateData(data)
             cachePending(plan: plan, billingCycle: billingCycle)
-            log("[UserService] Downgrade scheduled → \(plan.rawValue)/\(billingCycle.rawValue)", level: .info)
+            log("[FBUserService] Downgrade scheduled → \(plan.rawValue)/\(billingCycle.rawValue)", level: .info)
         } catch {
-            log("[UserService] scheduleDowngrade failed: \(error)", level: .error)
+            log("[FBUserService] scheduleDowngrade failed: \(error)", level: .error)
         }
     }
 
@@ -289,7 +289,7 @@ final class UserService {
             let snapshot = try await ref.getDocument()
             if let doc = try? snapshot.data(as: UserFirestoreDocument.self),
                doc.subscription.trialEndDate != nil {
-                log("[UserService] startTrial blocked — trial already used for \(uid)", level: .info)
+                log("[FBUserService] startTrial blocked — trial already used for \(uid)", level: .info)
                 return false
             }
 
@@ -309,10 +309,10 @@ final class UserService {
             ]
             try await ref.updateData(data)
             cachePlan(.pro, status: .trial, expiry: trialEnd)
-            log("[UserService] Trial started → Pro until \(trialEnd), pending: \(pendingPlan.rawValue)", level: .info)
+            log("[FBUserService] Trial started → Pro until \(trialEnd), pending: \(pendingPlan.rawValue)", level: .info)
             return true
         } catch {
-            log("[UserService] startTrial failed: \(error)", level: .error)
+            log("[FBUserService] startTrial failed: \(error)", level: .error)
             return false
         }
     }
@@ -335,9 +335,9 @@ final class UserService {
         do {
             try await db.collection("users").document(uid).updateData(data)
             cachePlan(plan, status: .active, expiry: endDate)
-            log("[UserService] Subscription activated → \(plan.rawValue)", level: .info)
+            log("[FBUserService] Subscription activated → \(plan.rawValue)", level: .info)
         } catch {
-            log("[UserService] activateSubscription failed: \(error)", level: .error)
+            log("[FBUserService] activateSubscription failed: \(error)", level: .error)
         }
     }
 
@@ -357,9 +357,9 @@ final class UserService {
             let expiry   = expiryTS > 0 ? Date(timeIntervalSince1970: expiryTS) : nil
             cachePlan(currentPlan, status: .cancelled, expiry: expiry)
             cachePending(plan: .free, billingCycle: .none)
-            log("[UserService] Subscription cancelled — access until \(expiry?.description ?? "unknown")", level: .info)
+            log("[FBUserService] Subscription cancelled — access until \(expiry?.description ?? "unknown")", level: .info)
         } catch {
-            log("[UserService] cancelSubscription failed: \(error)", level: .error)
+            log("[FBUserService] cancelSubscription failed: \(error)", level: .error)
         }
     }
 
@@ -371,9 +371,9 @@ final class UserService {
                 "notificationEmail": email.isEmpty ? NSNull() : email,
                 "updatedAt":         Timestamp(date: Date())
             ])
-            log("[UserService] Notification email updated", level: .info)
+            log("[FBUserService] Notification email updated", level: .info)
         } catch {
-            log("[UserService] updateNotificationEmail failed: \(error)", level: .error)
+            log("[FBUserService] updateNotificationEmail failed: \(error)", level: .error)
         }
     }
 

@@ -12,9 +12,9 @@ struct AuthView: View {
     var isDismissible: Bool = false
     var showGuestOption: Bool = false
     /// Передаётся из composition root — не через .environment().
-    private let authService: FireBaseAuthService
+    private let authService: AuthFBService
 
-    init(isDismissible: Bool = false, showGuestOption: Bool = false, authService: FireBaseAuthService) {
+    init(isDismissible: Bool = false, showGuestOption: Bool = false, authService: AuthFBService) {
         self.isDismissible = isDismissible
         self.showGuestOption = showGuestOption
         self.authService = authService
@@ -308,7 +308,7 @@ struct AuthView: View {
             }
         } catch {
             errorMessage = error.localizedDescription
-            log("[Auth] Email/Password failed: \(error)", level: .error)
+            log("Email/Password failed: \(error)", level: .error)
         }
     }
 
@@ -320,7 +320,7 @@ struct AuthView: View {
             try await authService.signInWithGoogle()
         } catch {
             errorMessage = error.localizedDescription
-            log("[Auth] Google Sign-In failed: \(error)", level: .error)
+            log("Google Sign-In failed: \(error)", level: .error)
         }
     }
 
@@ -332,7 +332,7 @@ struct AuthView: View {
             try await authService.signInAnonymously()
         } catch {
             errorMessage = error.localizedDescription
-            log("[Auth] Anonymous sign-in failed: \(error)", level: .error)
+            log("Anonymous sign-in failed: \(error)", level: .error)
         }
     }
 
@@ -355,7 +355,7 @@ struct AuthView: View {
             try await authService.signInWithApple(authorization: authorization)
         } catch {
             errorMessage = error.localizedDescription
-            log("[Auth] Apple Sign-In failed: \(error)", level: .error)
+            log("Apple Sign-In failed: \(error)", level: .error)
         }
     }
 }

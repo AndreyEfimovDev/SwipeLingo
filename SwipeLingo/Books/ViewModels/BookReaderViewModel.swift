@@ -77,7 +77,7 @@ final class BookReaderViewModel {
             try await downloader.downloadChapter(book: book, index: chapterIndex)
             isChapterReady = true
         } catch {
-            log("[Reader] Download failed: \(error)", level: .error)
+            log("Download failed: \(error)", level: .error)
         }
     }
 
@@ -96,7 +96,7 @@ final class BookReaderViewModel {
             }
             clearNewFlag(context: context)
         } catch {
-            log("[Reader] Bulk download failed: \(error)", level: .error)
+            log("Bulk download failed: \(error)", level: .error)
         }
     }
 
@@ -170,7 +170,7 @@ final class BookReaderViewModel {
         )
         context.insert(bookmark)
         context.saveWithErrorHandling()
-        log("[Reader] Bookmark added: \(title)", level: .info)
+        log("Bookmark added: \(title)", level: .info)
 
         // Animate icon briefly
         bookmarkJustAdded = true
@@ -184,7 +184,7 @@ final class BookReaderViewModel {
     func deleteBookmark(_ bookmark: BookBookmark, context: ModelContext) {
         context.delete(bookmark)
         context.saveWithErrorHandling()
-        log("[Reader] Bookmark deleted: \(bookmark.chapterTitle)", level: .info)
+        log("Bookmark deleted: \(bookmark.chapterTitle)", level: .info)
     }
 
     /// Remove all bookmarks on the current chapter (context menu → Remove Bookmark).
@@ -193,7 +193,7 @@ final class BookReaderViewModel {
             .filter { $0.chapterIndex == chapterIndex }
             .forEach { context.delete($0) }
         context.saveWithErrorHandling()
-        log("[Reader] Bookmark removed for chapter \(chapterIndex)", level: .info)
+        log("Bookmark removed for chapter \(chapterIndex)", level: .info)
     }
 
     /// True if the current chapter already has at least one bookmark.

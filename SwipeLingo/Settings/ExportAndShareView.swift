@@ -25,7 +25,7 @@ struct ExportAndShareView: View {
             if let url = shareURL {
                 ActivityView(activityItems: [url], applicationActivities: nil) { result in
                     if result.completed {
-                        log("[Backup] Shared via: \(result.activityName)", level: .info)
+                        log("Shared via: \(result.activityName)", level: .info)
                     }
                     service.cleanupTempFile(url)
                     shareURL = nil
@@ -90,7 +90,7 @@ struct ExportAndShareView: View {
                     shareURL = url
                     showShareSheet = true
                 case .failure(let error):
-                    log("[Backup] Export error: \(error)", level: .error)
+                    log("Export error: \(error)", level: .error)
                 }
             }
         }

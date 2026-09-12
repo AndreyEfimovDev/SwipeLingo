@@ -109,7 +109,7 @@ final class LibraryViewModel {
         isSyncing = true
         defer { isSyncing = false }
         let language = NativeLanguage(rawValue: nativeLangRaw) ?? .russian
-        await FirestoreImportService().syncFromFirestore(
+        await ImportFSService().syncFromFirestore(
             into: context, language: language, upToLevel: level, forceFullSync: true
         )
     }

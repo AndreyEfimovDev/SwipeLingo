@@ -27,7 +27,7 @@ struct UserSessionSyncService {
         user: FirebaseAuth.User,
         container: ModelContainer?,
         nativeLanguage: NativeLanguage,
-        userService: UserService
+        userService: FBUserService
     ) async -> Bool {
         let ctx = container?.mainContext
         let profiles = ctx?.fetchWithErrorHandling(FetchDescriptor<UserProfile>()) ?? []
@@ -41,7 +41,7 @@ struct UserSessionSyncService {
 
         // UID mismatch → different user signed in, reset the profile.
         if let p = profile, !p.firebaseUID.isEmpty, p.firebaseUID != user.uid {
-            log("[App] Firebase UID changed — resetting UserProfile", level: .info)
+            log("Firebase UID changed — resetting UserProfile", level: .info)
             p.name = ""
             p.cefrLevel = .a1
         }

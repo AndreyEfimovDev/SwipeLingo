@@ -19,11 +19,11 @@ struct CardSetDetailView: View {
     var allowsEditing: Bool = false
     var backTitle: String = "Library"
     /// Передаются из composition root — не через .environment(). Только для PlansView.
-    private let authService: FireBaseAuthService
-    private let userService: UserService
+    private let authService: AuthFBService
+    private let userService: FBUserService
 
     init(cardSet: CardSet, allowsEditing: Bool = false, backTitle: String = "Library",
-         authService: FireBaseAuthService, userService: UserService) {
+         authService: AuthFBService, userService: FBUserService) {
         self.cardSet = cardSet
         self.allowsEditing = allowsEditing
         self.backTitle = backTitle

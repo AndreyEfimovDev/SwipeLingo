@@ -3,7 +3,7 @@ import SwiftData
 import FirebaseCore
 import FirebaseFirestore
 
-// MARK: - BookFirestoreService
+// MARK: - BookFBService
 //
 // Syncs books from Firestore /books collection into SwiftData.
 //
@@ -17,7 +17,7 @@ import FirebaseFirestore
 // Upsert logic: matches by firestoreId. Never deletes local books
 // (user may have reading progress).
 
-struct BookFirestoreService {
+struct BookFBService {
 
     private static let lastSyncAtKey = "booksLastSyncAt"
 
@@ -25,7 +25,7 @@ struct BookFirestoreService {
 
     func syncBooks(into context: ModelContext, forceFullSync: Bool = false) async {
         guard FirebaseApp.app() != nil else {
-            log("[Books] Firebase not configured — skipping sync", level: .warning)
+            log("Firebase not configured — skipping sync", level: .warning)
             return
         }
 
@@ -55,10 +55,10 @@ struct BookFirestoreService {
 
             try? context.save()
             UserDefaults.standard.set(Date.now, forKey: Self.lastSyncAtKey)
-            log("[Books] Synced \(snapshot.documents.count) book(s)", level: .info)
+            log("Synced \(snapshot.documents.count) book(s)", level: .info)
 
         } catch {
-            log("[Books] Sync failed: \(error)", level: .error)
+            log("Sync failed: \(error)", level: .error)
         }
     }
 

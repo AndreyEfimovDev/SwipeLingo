@@ -4,7 +4,7 @@ import Network
 import FirebaseCore
 import FirebaseFirestore
 
-// MARK: - FirestoreImportService
+// MARK: - ImportFSService
 //
 // Syncs developer-curated content from Firestore into SwiftData.
 //
@@ -19,7 +19,7 @@ import FirebaseFirestore
 //
 // ⚠️  Requires FirebaseApp.configure() and GoogleService-Info.plist. Skips gracefully if absent.
 
-struct FirestoreImportService {
+struct ImportFSService {
 
     // MARK: - Sync from Firestore (real content)
     //
@@ -59,12 +59,12 @@ struct FirestoreImportService {
         forceFullSync: Bool = false
     ) async {
         guard FirebaseApp.app() != nil else {
-            log("[Firestore] Firebase not configured — skipping content sync", level: .warning)
+            log("Firebase not configured — skipping content sync", level: .warning)
             return
         }
 
         guard await isNetworkReachable() else {
-            log("[Firestore] No network — skipping sync", level: .warning)
+            log("No network — skipping sync", level: .warning)
             await MainActor.run { ErrorManager.shared.showBanner(AppNetworkError.noConnection.message) }
             return
         }
@@ -79,7 +79,7 @@ struct FirestoreImportService {
             : (UserDefaults.standard.object(forKey: Self.lastSyncAtKey) as? Date ?? .distantPast)
         let isDelta = lastSyncAt > .distantPast
 
-        log("[Firestore] Sync started (up to \(upToLevel.displayCode), \(levels.count) levels, \(isDelta ? "delta since \(lastSyncAt)" : "full"))", level: .info)
+        log("Sync started (up to \(upToLevel.displayCode), \(levels.count) levels, \(isDelta ? "delta since \(lastSyncAt)" : "full"))", level: .info)
 
         do {
             // ── 1. Pre-load SwiftData caches ──────────────────────────────
@@ -145,7 +145,7 @@ struct FirestoreImportService {
                    .whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
                    .getDocuments() {
                 setSnap = deltaSnap
-                log("[Firestore] CardSets fetched: \(setSnap.documents.count) (delta, all levels)", level: .info)
+                log("CardSets fetched: \(setSnap.documents.count) (delta, all levels)", level: .info)
 
                 // Сеты, которые вышли за пределы диапазона пользователя → удалить локально
                 for doc in setSnap.documents {
@@ -162,12 +162,12 @@ struct FirestoreImportService {
                     localCards.forEach { context.delete($0) }
                     context.delete(localSet)
                     cardSetsByFsId.removeValue(forKey: fsId)
-                    log("[Firestore] Set '\(localSet.name)' moved out of user range — removed locally", level: .info)
+                    log("Set '\(localSet.name)' moved out of user range — removed locally", level: .info)
                 }
             } else {
-                if isDelta { log("[Firestore] CardSets delta failed, using full", level: .warning) }
+                if isDelta { log("CardSets delta failed, using full", level: .warning) }
                 setSnap = try await cardSetsBaseQuery.getDocuments()
-                log("[Firestore] CardSets fetched: \(setSnap.documents.count) (full\(isDelta ? " fallback" : ""))", level: .info)
+                log("CardSets fetched: \(setSnap.documents.count) (full\(isDelta ? " fallback" : ""))", level: .info)
             }
 
             // ── 4. Cards — параллельная загрузка всех subcollections ───────
@@ -195,7 +195,7 @@ struct FirestoreImportService {
                 for try await (id, snap) in group { result[id] = snap }
                 return result
             }
-            log("[Firestore] Card subcollections fetched: \(cardSnapsBySetId.count)", level: .info)
+            log("Card subcollections fetched: \(cardSnapsBySetId.count)", level: .info)
 
             // Upsert CardSets + Cards в SwiftData (последовательно — ModelContext не thread-safe)
             for setDoc in setSnap.documents {
@@ -297,7 +297,7 @@ struct FirestoreImportService {
                 let firestoreCardFsIds = Set(cardSnap.documents.compactMap { $0.data()["id"] as? String })
                 for (fsId, localCard) in cardsByFsId where !firestoreCardFsIds.contains(fsId) {
                     context.delete(localCard)
-                    log("[Firestore] Removed deleted card '\(localCard.en)' from '\(sdSet.name)'", level: .info)
+                    log("Removed deleted card '\(localCard.en)' from '\(sdSet.name)'", level: .info)
                 }
             }
 
@@ -319,7 +319,7 @@ struct FirestoreImportService {
                     )
                     orphanCards.forEach { context.delete($0) }
                     context.delete(localSet)
-                    log("[Firestore] Removed orphaned CardSet '\(localSet.name)' (deleted from FB)", level: .info)
+                    log("Removed orphaned CardSet '\(localSet.name)' (deleted from FB)", level: .info)
                 }
             }
 
@@ -331,7 +331,7 @@ struct FirestoreImportService {
                    .whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
                    .getDocuments() {
                 pairsSnap = deltaSnap
-                log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count) (delta, all levels)", level: .info)
+                log("PairsSets fetched: \(pairsSnap.documents.count) (delta, all levels)", level: .info)
 
                 // Сеты, которые вышли за пределы диапазона пользователя → удалить локально
                 for doc in pairsSnap.documents {
@@ -343,12 +343,12 @@ struct FirestoreImportService {
                     else { continue }
                     context.delete(localSet)
                     pairsSetsByFsId.removeValue(forKey: fsId)
-                    log("[Firestore] PairsSet '\(localSet.title ?? fsId)' moved out of user range — removed locally", level: .info)
+                    log("PairsSet '\(localSet.title ?? fsId)' moved out of user range — removed locally", level: .info)
                 }
             } else {
-                if isDelta { log("[Firestore] PairsSets delta failed, using full", level: .warning) }
+                if isDelta { log("PairsSets delta failed, using full", level: .warning) }
                 pairsSnap = try await pairsSetsBaseQuery.getDocuments()
-                log("[Firestore] PairsSets fetched: \(pairsSnap.documents.count) (full\(isDelta ? " fallback" : ""))", level: .info)
+                log("PairsSets fetched: \(pairsSnap.documents.count) (full\(isDelta ? " fallback" : ""))", level: .info)
             }
 
             for pairsDoc in pairsSnap.documents {
@@ -405,7 +405,7 @@ struct FirestoreImportService {
                     // Tombstone (user soft-deleted) — оставляем как есть
                     guard !localSet.isSoftDeleted else { continue }
                     context.delete(localSet)
-                    log("[Firestore] Removed orphaned PairsSet '\(localSet.title ?? fsId)' (deleted from FB)", level: .info)
+                    log("Removed orphaned PairsSet '\(localSet.title ?? fsId)' (deleted from FB)", level: .info)
                 }
             }
 
@@ -433,7 +433,7 @@ struct FirestoreImportService {
                 guard c.firestoreId != nil else { continue }
                 if !loadedCollectionIds.contains(c.id) {
                     context.delete(c)
-                    log("[Firestore] Removed empty Collection '\(c.name)'", level: .info)
+                    log("Removed empty Collection '\(c.name)'", level: .info)
                 }
             }
 
@@ -441,10 +441,10 @@ struct FirestoreImportService {
 
             // Сохраняем метку времени успешного синка — следующий запрос будет delta.
             UserDefaults.standard.set(Date.now, forKey: Self.lastSyncAtKey)
-            log("[Firestore] Sync complete", level: .info)
+            log("Sync complete", level: .info)
 
         } catch {
-            log("[Firestore] Sync failed: \(error)", level: .error)
+            log("Sync failed: \(error)", level: .error)
             let nsError = error as NSError
             let isOffline = nsError.domain == NSURLErrorDomain
                          && nsError.code   == NSURLErrorNotConnectedToInternet
