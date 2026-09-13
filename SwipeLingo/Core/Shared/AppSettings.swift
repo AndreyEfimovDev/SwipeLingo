@@ -1,21 +1,16 @@
 import Foundation
 
 // MARK: - AppSettings
-//
-// Общие пользовательские настройки, читаемые в нескольких экранах сразу —
-// консолидированы в один @Observable объект вместо повторения
-// `@AppStorage(...)` в каждом View. Собирается один раз в composition root
-// (SwipeLingoApp), передаётся вниз через AppDependencies.
-//
-// @AppStorage не комбинируется с макросом @Observable (property wrapper поверх
-// stored-свойства, которое макрос сам трансформирует для трекинга) — поэтому
-// персистентность реализована вручную через didSet, как уже сделано для
-// AppViewModel.studyMode.
-//
-// nativeLanguage/srsEnabled/studyStartHour сюда НЕ переносились — для них уже был
-// canonical-сервис AppSyncStateService (SwiftData + CloudKit-синк), консолидация
-// свелась к чтению оттуда напрямую вместо параллельного @AppStorage. AppSettings —
-// для настроек, у которых такого сервиса нет (чисто локальные, без CloudKit-синка).
+///
+/// Общие пользовательские настройки, читаемые в нескольких экранах сразу —
+/// консолидированы в один @Observable объект вместо повторения
+/// `@AppStorage(...)` в каждом View. Собирается один раз в composition root
+/// (SwipeLingoApp), передаётся вниз через AppDependencies.
+///
+/// nativeLanguage/srsEnabled/studyStartHour сюда НЕ переносились — для них уже был
+/// canonical-сервис AppSyncStateService (SwiftData + CloudKit-синк), консолидация
+/// свелась к чтению оттуда напрямую вместо параллельного @AppStorage. AppSettings -
+/// для настроек, у которых такого сервиса нет (чисто локальные, без CloudKit-синка).
 
 @Observable
 final class AppSettings {

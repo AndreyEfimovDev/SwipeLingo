@@ -18,6 +18,10 @@ struct SwipeLingoApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
+        /// Глобальный внешний вид UITabBar/UINavigationBar — до появления первого экрана
+        /// (в т.ч. AuthView/OnboardingView, которые показываются раньше AppView).
+        UIAppearanceConfigurator.configure()
+
         /// Firebase необходимо настроить до того, как AuthService инициализирует Auth.auth().
         FBBootstrap.configure()
         
