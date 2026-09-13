@@ -15,4 +15,7 @@ struct AppDependencies {
     let appSyncStateService: AppSyncStateService
     /// Активный таб, sheets — нужен всему дереву Cards/Pairs/Books.
     let appViewModel: AppViewModel
+    /// Общие пользовательские настройки (тема и т.п.) — консолидированы, чтобы не
+    /// повторять `@AppStorage(...)` в каждом View, читающем то же самое значение.
+    let appSettings: AppSettings
 }

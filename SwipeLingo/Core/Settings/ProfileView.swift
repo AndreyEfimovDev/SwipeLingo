@@ -8,24 +8,30 @@ import AuthenticationServices
 
 struct ProfileView: View {
 
-    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan:      AccessTier    = .free
-    @AppStorage(Constants.StorageKey.cachedPlanStatus)   private var planStatus:    String        = SubscriptionStatus.active.rawValue
-    @AppStorage(Constants.StorageKey.cachedBillingCycle) private var planCycle:     String        = BillingCycle.none.rawValue
-    @AppStorage(Constants.StorageKey.cachedPendingPlan)  private var pendingPlanRaw: String       = ""
-    @AppStorage(Constants.StorageKey.cachedPendingCycle) private var pendingCycleRaw: String      = ""
-    @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
-    @Query private var profiles: [UserProfile]
     @Environment(\.modelContext) private var context
+    @Query private var profiles: [UserProfile]
+    
+    /// Единственный источник правды — UserFBService (см. UserFBService.swift).
+    private var userPlan: AccessTier { userService.userPlan }
 
     /// Передаётся из composition root через SettingsView — не через .environment().
     private let authService: AuthFBService
     private let userService: UserFBService
+    private let appSyncStateService: AppSyncStateService
+    private let appSettings: AppSettings
+    /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
+    private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
+    /// Единственный источник правды — AppSettings (см. AppSettings.swift).
+    private var relayBannerDismissed: Bool {
+        get { appSettings.appleRelayBannerDismissed }
+        nonmutating set { appSettings.appleRelayBannerDismissed = newValue }
+    }
 
-    @AppStorage("appleRelayBannerDismissed") private var relayBannerDismissed = false
-
-    init(authService: AuthFBService, userService: UserFBService) {
+    init(authService: AuthFBService, userService: UserFBService, appSyncStateService: AppSyncStateService, appSettings: AppSettings) {
         self.authService = authService
         self.userService = userService
+        self.appSyncStateService = appSyncStateService
+        self.appSettings = appSettings
     }
 
     @State private var nameInput  = ""
@@ -418,31 +424,18 @@ struct ProfileView: View {
 
     // MARK: - Plan
 
-    private var subscriptionStatus: SubscriptionStatus {
-        SubscriptionStatus(rawValue: planStatus) ?? .active
-    }
-
-    private var subscriptionCycle: BillingCycle {
-        BillingCycle(rawValue: planCycle) ?? .none
-    }
-
-    private var cachedExpiry: Date? {
-        let ts = UserDefaults.standard.double(forKey: Constants.StorageKey.cachedPlanExpiry)
-        return ts > 0 ? Date(timeIntervalSince1970: ts) : nil
-    }
+    private var subscriptionStatus: SubscriptionStatus { userService.subscriptionStatus }
+    private var subscriptionCycle: BillingCycle { userService.billingCycle }
+    private var cachedExpiry: Date? { userService.planExpiry }
 
     private var pendingPlan: AccessTier? {
-        guard !pendingPlanRaw.isEmpty else { return nil }
-        let plan = AccessTier(rawValue: pendingPlanRaw) ?? .free
+        guard let plan = userService.pendingPlan else { return nil }
         // Имеет смысл, только если отличается от текущего плана или цикла
-        let pendingCycle = BillingCycle(rawValue: pendingCycleRaw) ?? .none
         if plan == userPlan && pendingCycle == subscriptionCycle { return nil }
         return plan
     }
 
-    private var pendingCycle: BillingCycle {
-        BillingCycle(rawValue: pendingCycleRaw) ?? .none
-    }
+    private var pendingCycle: BillingCycle { userService.pendingBillingCycle }
 
     private var planSection: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -788,5 +781,9 @@ private struct AppleDeletionSheet: View {
 }
 
 #Preview {
-    NavigationStack { ProfileView(authService: AuthFBService(), userService: UserFBService()) }
+    NavigationStack {
+        ProfileView(authService: AuthFBService(), userService: UserFBService(),
+                    appSyncStateService: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
+                    appSettings: AppSettings())
+    }
 }

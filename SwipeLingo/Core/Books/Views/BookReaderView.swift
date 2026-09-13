@@ -110,6 +110,10 @@ private struct BookImageFullscreenView: View {
 struct BookReaderView: View {
 
     let book: Book
+    /// Передаются из composition root через BooksView — не через .environment().
+    /// appSyncStateService форвардится дальше в BookWordLookupView.
+    let appSyncStateService: AppSyncStateService
+    let appSettings: AppSettings
 
     @Environment(\.dismiss)      private var dismiss
     @Environment(\.modelContext) private var context
@@ -122,14 +126,20 @@ struct BookReaderView: View {
     @State private var downloadTask: Task<Void, Never>? = nil
     @State private var fullscreenImageURL: String? = nil
 
-    @AppStorage("bookFontSize") private var fontSize: Int = 18
+    /// Единственный источник правды — AppSettings (см. AppSettings.swift).
+    private var fontSize: Int {
+        get { appSettings.bookFontSize }
+        nonmutating set { appSettings.bookFontSize = newValue }
+    }
 
     private let fontSizeMin = 14
     private let fontSizeMax = 26
     private let fontSizeStep = 2
 
-    init(book: Book) {
+    init(book: Book, appSyncStateService: AppSyncStateService, appSettings: AppSettings) {
         self.book = book
+        self.appSyncStateService = appSyncStateService
+        self.appSettings = appSettings
         _vm = State(initialValue: BookReaderViewModel(book: book, progress: nil))
     }
 
@@ -159,7 +169,7 @@ struct BookReaderView: View {
             .toolbar { toolbarContent }
             .sheet(isPresented: $vm.showDictionary) {
                 if let word = vm.tappedWord {
-                    BookWordLookupView(word: word)
+                    BookWordLookupView(word: word, appSyncStateService: appSyncStateService)
                         .onAppear {
                             AnalyticsFBService.wordLookedUp(word: word, source: .book)
                         }

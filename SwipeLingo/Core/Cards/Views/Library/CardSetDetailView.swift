@@ -21,18 +21,22 @@ struct CardSetDetailView: View {
     /// Передаются из composition root — не через .environment(). Только для PlansView.
     private let authService: AuthFBService
     private let userService: UserFBService
+    /// Форвардится дальше в AddEditCardView.
+    private let appSyncStateService: AppSyncStateService
 
     init(cardSet: CardSet, allowsEditing: Bool = false, backTitle: String = "Library",
-         authService: AuthFBService, userService: UserFBService) {
+         authService: AuthFBService, userService: UserFBService, appSyncStateService: AppSyncStateService) {
         self.cardSet = cardSet
         self.allowsEditing = allowsEditing
         self.backTitle = backTitle
         self.authService = authService
         self.userService = userService
+        self.appSyncStateService = appSyncStateService
     }
 
     @Query(sort: \Card.createdAt) private var allCards: [Card]
-    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
+    /// Единственный источник правды — UserFBService (см. UserFBService.swift).
+    private var userPlan: AccessTier { userService.userPlan }
     @State private var isActiveExpanded  = true
     @State private var isLearntExpanded  = false
     @State private var isShowingAddCard  = false
@@ -121,10 +125,10 @@ struct CardSetDetailView: View {
             }
         }
         .sheet(isPresented: $isShowingAddCard) {
-            AddEditCardView(preselectedSetId: cardSet.id)
+            AddEditCardView(preselectedSetId: cardSet.id, appSyncStateService: appSyncStateService)
         }
         .sheet(item: $editingCard) { card in
-            AddEditCardView(card: card)
+            AddEditCardView(card: card, appSyncStateService: appSyncStateService)
         }
         .sheet(isPresented: $showPlans) {
             PlansView(authService: authService, userService: userService)

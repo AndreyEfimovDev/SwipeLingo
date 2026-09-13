@@ -8,10 +8,12 @@ import SwiftData
 
 struct OnboardingConfirmView: View {
 
+    let appSyncStateService: AppSyncStateService
     var onComplete: () -> Void
     var onBack: () -> Void
 
-    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
+    /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
+    private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
 
     @Query private var profiles: [UserProfile]
     private var profile: UserProfile? { profiles.first }

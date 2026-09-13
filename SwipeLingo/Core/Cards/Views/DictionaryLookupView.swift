@@ -9,16 +9,20 @@ import Translation
 struct DictionaryLookupView: View {
 
     let card: Card
+    /// Передаются из composition root — не через .environment().
+    let appSyncStateService: AppSyncStateService
+    let appSettings: AppSettings
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
     @State private var vm = DictionaryLookupViewModel()
 
-    // Читает родной язык из того же ключа AppStorage, что используется по всему приложению.
-    @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
-    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
-    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
+    // Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
+    private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
+    // Единственный источник правды — AppSettings (см. AppSettings.swift).
+    private var ttsVoiceIdentifier: String { appSettings.ttsVoiceIdentifier }
+    private var englishVariant: String { appSettings.englishVariant }
 
     // Translation session — готовится один раз (или пересобирается при смене языка) через .translationTask.
     // Симулятор не поддерживает Translation — config остаётся nil, чтобы подавить диалог ошибки.

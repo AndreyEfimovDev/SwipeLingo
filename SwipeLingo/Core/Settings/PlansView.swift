@@ -5,9 +5,8 @@ import FirebaseAuth
 
 struct PlansView: View {
 
-    @AppStorage(Constants.StorageKey.userPlan)          private var userPlan:    AccessTier = .free
-    @AppStorage(Constants.StorageKey.cachedPlanStatus)  private var planStatus:  String     = SubscriptionStatus.active.rawValue
-    @AppStorage(Constants.StorageKey.cachedBillingCycle) private var planCycle:  String     = BillingCycle.none.rawValue
+    /// Единственный источник правды — UserFBService (см. UserFBService.swift).
+    private var userPlan: AccessTier { userService.userPlan }
 
     @Environment(\.dismiss)        private var dismiss
 
@@ -28,12 +27,8 @@ struct PlansView: View {
     @State private var showAuthSheet      = false
     @State private var isSaving           = false
 
-    private var currentStatus: SubscriptionStatus {
-        SubscriptionStatus(rawValue: planStatus) ?? .active
-    }
-    private var currentCycle: BillingCycle {
-        BillingCycle(rawValue: planCycle) ?? .none
-    }
+    private var currentStatus: SubscriptionStatus { userService.subscriptionStatus }
+    private var currentCycle: BillingCycle { userService.billingCycle }
 
     var body: some View {
         NavigationStack {

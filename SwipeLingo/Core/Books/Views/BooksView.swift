@@ -8,10 +8,18 @@ struct BooksView: View {
     @Environment(\.modelContext) private var context
     /// Передаётся из composition root через AppView — не через .environment().
     private let appViewModel: AppViewModel
-    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
+    /// Форвардятся дальше в BookReaderView.
+    private let appSyncStateService: AppSyncStateService
+    private let appSettings: AppSettings
+    private let userService: UserFBService
+    /// Единственный источник правды — UserFBService (см. UserFBService.swift).
+    private var userPlan: AccessTier { userService.userPlan }
 
-    init(appViewModel: AppViewModel) {
+    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService) {
         self.appViewModel = appViewModel
+        self.appSyncStateService = appSyncStateService
+        self.appSettings = appSettings
+        self.userService = userService
     }
 
     @Query private var books: [Book]
@@ -42,7 +50,7 @@ struct BooksView: View {
             .searchable(text: $vm.searchText, prompt: "Search books")
             .toolbar { toolbarContent }
             .fullScreenCover(item: $readerBook) { book in
-                BookReaderView(book: book)
+                BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings)
             }
         }
         // BOOKS_SYNC_STUB: автосинк при входе отключён — книги на GitHub, не в Firestore.

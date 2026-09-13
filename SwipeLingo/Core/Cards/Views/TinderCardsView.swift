@@ -11,10 +11,14 @@ struct TinderCardsView: View {
     private let appViewModel: AppViewModel
     private let authService:  AuthFBService
     private let userService:  UserFBService
+    private let appSyncStateService: AppSyncStateService
+    private let appSettings: AppSettings
 
-    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier  = ""
-    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant      = "en-US"
-    @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool    = true
+    /// Единственный источник правды — AppSettings (см. AppSettings.swift).
+    private var ttsVoiceIdentifier: String { appSettings.ttsVoiceIdentifier }
+    private var englishVariant: String { appSettings.englishVariant }
+    /// Единственный источник правды — AppSyncStateService.srsEnabled (SwiftData + CloudKit-синк).
+    private var srsEnabled: Bool { appSyncStateService.srsEnabled }
 
     @State private var vm: TinderCardsViewModel
     @State private var lookupCard:    Card?
@@ -52,6 +56,8 @@ struct TinderCardsView: View {
          appViewModel: AppViewModel,
          authService: AuthFBService,
          userService: UserFBService,
+         appSyncStateService: AppSyncStateService,
+         appSettings: AppSettings,
          lockedCardIds: Set<UUID> = [],
          contextLabels: [UUID: String] = [:],
          cefrLabels: [UUID: CEFRLevel] = [:],
@@ -68,6 +74,8 @@ struct TinderCardsView: View {
         self.appViewModel      = appViewModel
         self.authService       = authService
         self.userService       = userService
+        self.appSyncStateService = appSyncStateService
+        self.appSettings       = appSettings
         self.lockedCardIds     = lockedCardIds
         self.cefrLabels        = cefrLabels
         self.pileTagsLine      = pileTagsLine
@@ -94,7 +102,7 @@ struct TinderCardsView: View {
                 cardsCaughtUpOverlay
             }
         }
-        .sheet(item: $lookupCard)       { DictionaryLookupView(card: $0) }
+        .sheet(item: $lookupCard)       { DictionaryLookupView(card: $0, appSyncStateService: appSyncStateService, appSettings: appSettings) }
         .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0) }
         .onDisappear { audioService.stop() }
         .onChange(of: vm.currentIndex) { _, _ in
@@ -1037,6 +1045,8 @@ private struct CardFlowLayout: Layout {
                            appViewModel: AppViewModel(),
                            authService: AuthFBService(),
                            userService: UserFBService(),
+                           appSyncStateService: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
+                           appSettings: AppSettings(),
                            contextLabels: [setId: "IELTS Vocabulary · Academic Words"],
                            pileTagsLine:  "IELTS Vocabulary › Academic Words (8 cards)")
         .modelContainer(container)
