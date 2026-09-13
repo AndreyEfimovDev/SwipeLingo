@@ -13,11 +13,13 @@ struct LibraryView: View {
     private let appViewModel: AppViewModel
     private let authService:  AuthFBService
     private let userService:  UserFBService
+    private let appSyncStateService: AppSyncStateService
 
-    init(appViewModel: AppViewModel, authService: AuthFBService, userService: UserFBService) {
+    init(appViewModel: AppViewModel, authService: AuthFBService, userService: UserFBService, appSyncStateService: AppSyncStateService) {
         self.appViewModel = appViewModel
         self.authService = authService
         self.userService = userService
+        self.appSyncStateService = appSyncStateService
     }
 
     @Query(sort: \Collection.createdAt) private var collections: [Collection]
@@ -25,7 +27,8 @@ struct LibraryView: View {
     @Query                              private var allCards:    [Card]
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
 
-    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
+    /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
+    private var nativeLangRaw: String { appSyncStateService.nativeLanguageRaw }
     @Query private var profiles: [UserProfile]
     @State private var vm = LibraryViewModel()
 
@@ -84,8 +87,8 @@ struct LibraryView: View {
             }
             .sheet(item: $pileSheet) { mode in
                 switch mode {
-                case .new:          PileBuilderView(editingPile: nil, appViewModel: appViewModel)
-                case .edit(let p):  PileBuilderView(editingPile: p, appViewModel: appViewModel)
+                case .new:          PileBuilderView(editingPile: nil, appViewModel: appViewModel, appSyncStateService: appSyncStateService)
+                case .edit(let p):  PileBuilderView(editingPile: p, appViewModel: appViewModel, appSyncStateService: appSyncStateService)
                 }
             }
 //            .overlay {
@@ -445,13 +448,15 @@ struct LibraryView: View {
         NavigationLink {
             if collection.name == "Inbox" {
                 CardSetDetailView(cardSet: cardSet, backTitle: "Library",
-                                   authService: authService, userService: userService)
+                                   authService: authService, userService: userService,
+                                   appSyncStateService: appSyncStateService)
             } else {
                 CardSetDetailView(
                     cardSet: cardSet,
                     allowsEditing: collection.isUserCreated,
                     backTitle: collection.name,
-                    authService: authService, userService: userService
+                    authService: authService, userService: userService,
+                    appSyncStateService: appSyncStateService
                 )
             }
         } label: {

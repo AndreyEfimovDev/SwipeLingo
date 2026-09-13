@@ -10,6 +10,9 @@ import SwiftUI
 
 struct OnboardingView: View {
 
+    /// Порядок свойств важен: onComplete должен остаться последним параметром
+    /// синтезированного memberwise init ради trailing closure на call site.
+    let appSyncStateService: AppSyncStateService
     var onComplete: () -> Void
 
     @State private var step: Int = 0
@@ -30,13 +33,13 @@ struct OnboardingView: View {
                         OnboardingIntroView { next() }
                             .transition(stepTransition)
                     case 1:
-                        OnboardingLanguageView { next() }
+                        OnboardingLanguageView(appSyncStateService: appSyncStateService) { next() }
                             .transition(stepTransition)
                     case 2:
                         OnboardingLevelView(onNext: { next() }, onBack: { back() })
                             .transition(stepTransition)
                     default:
-                        OnboardingConfirmView(onComplete: onComplete, onBack: { back() })
+                        OnboardingConfirmView(appSyncStateService: appSyncStateService, onComplete: onComplete, onBack: { back() })
                             .transition(stepTransition)
                     }
                 }

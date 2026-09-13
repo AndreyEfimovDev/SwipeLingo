@@ -146,6 +146,13 @@ final class AppSyncStateService {
         }
     }
 
+    /// Типизированная обёртка над `nativeLanguageRaw` — избавляет вызывающий код от
+    /// ручного `NativeLanguage(rawValue:) ?? .russian` на каждом чтении/записи.
+    var nativeLanguage: NativeLanguage {
+        get { NativeLanguage(rawValue: nativeLanguageRaw) ?? .russian }
+        set { nativeLanguageRaw = newValue.rawValue }
+    }
+
     // MARK: - Init
 
     init(modelContext: ModelContext) {

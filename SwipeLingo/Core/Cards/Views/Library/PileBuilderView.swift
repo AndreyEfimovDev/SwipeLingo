@@ -9,8 +9,9 @@ struct PileBuilderView: View {
 
     @Environment(\.modelContext)  private var context
     @Environment(\.dismiss)       private var dismiss
-    /// Передаётся из composition root через LibraryView — не через .environment().
+    /// Передаются из composition root через LibraryView — не через .environment().
     private let appViewModel: AppViewModel
+    private let appSyncStateService: AppSyncStateService
 
     @Query(sort: \Collection.createdAt) private var collections: [Collection]
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
@@ -19,13 +20,15 @@ struct PileBuilderView: View {
 
     @State private var vm: PileBuilderViewModel
     @State private var isShowingDeleteConfirm = false
-    @AppStorage(Constants.StorageKey.srsEnabled) private var srsEnabled: Bool = true
+    /// Единственный источник правды — AppSyncStateService.srsEnabled (SwiftData + CloudKit-синк).
+    private var srsEnabled: Bool { appSyncStateService.srsEnabled }
     @State private var searchText   = ""
     @State private var selectedLevel: String? = nil
 
-    init(editingPile: Pile? = nil, appViewModel: AppViewModel) {
+    init(editingPile: Pile? = nil, appViewModel: AppViewModel, appSyncStateService: AppSyncStateService) {
         _vm = State(initialValue: PileBuilderViewModel(editingPile: editingPile))
         self.appViewModel = appViewModel
+        self.appSyncStateService = appSyncStateService
     }
 
     var body: some View {

@@ -11,15 +11,19 @@ import Translation
 struct BookWordLookupView: View {
 
     let word: String
+    /// Передаётся из composition root — не через .environment().
+    let appSyncStateService: AppSyncStateService
 
     @Environment(\.dismiss)      private var dismiss
     @Environment(\.modelContext) private var context
 
     @Query private var cardSets: [CardSet]
 
-    @AppStorage(Constants.StorageKey.nativeLanguage)     private var nativeLanguage: NativeLanguage = .russian
-    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier = ""
-    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant = "en-US"
+    // Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
+    private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
+    // ttsVoiceIdentifier/englishVariant были объявлены здесь, но никогда не читались —
+    // единственная озвучка в этом экране (vm.toggleAudio) играет сетевой URL произношения,
+    // TTS тут не вызывается. Удалены как мёртвый код при разборе @AppStorage-дублирования.
 
     @State private var vm = DictionaryLookupViewModel()
     @State private var savedToInbox  = false

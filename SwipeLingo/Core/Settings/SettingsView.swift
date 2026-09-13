@@ -8,29 +8,27 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant     = "en-US"
-    @AppStorage(Constants.StorageKey.colorScheme)        private var theme: Theme       = .system
-    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier = ""
-    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan: AccessTier = .free
-
     /// Передаётся из composition root (SwipeLingoApp) через AppView — не через .environment().
     private let syncState: AppSyncStateService
     /// Сама SettingsView их не читает — только форвардит в ProfileView.
     private let authService: AuthFBService
     private let userService: UserFBService
+    /// Тема/голос — консолидированы в AppSettings вместо собственного @AppStorage (см. AppSettings.swift).
+    private let appSettings: AppSettings
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
 
-    init(syncState: AppSyncStateService, authService: AuthFBService, userService: UserFBService) {
+    init(syncState: AppSyncStateService, authService: AuthFBService, userService: UserFBService, appSettings: AppSettings) {
         self.syncState = syncState
         self.authService = authService
         self.userService = userService
+        self.appSettings = appSettings
     }
 
     private var currentVoiceName: String {
-        guard !ttsVoiceIdentifier.isEmpty,
-              let voice = AVSpeechSynthesisVoice(identifier: ttsVoiceIdentifier)
+        let id = appSettings.ttsVoiceIdentifier
+        guard !id.isEmpty, let voice = AVSpeechSynthesisVoice(identifier: id)
         else { return "Default" }
         return voice.name
     }
@@ -71,12 +69,12 @@ struct SettingsView: View {
                 .font(titleFont)
                 .padding(.horizontal, 32)
 
-            NavigationLink { ProfileView(authService: authService, userService: userService) } label: {
+            NavigationLink { ProfileView(authService: authService, userService: userService, appSyncStateService: syncState, appSettings: appSettings) } label: {
                 HStack {
                     Label("Your profile", systemImage: "person.circle")
                         .labelStyle(.fixedIcon)
                     // MONETIZATION_STUB: badge плана скрыт. Раскомментировать когда монетизация включена:
-                    // AccessTierBadge(tier: userPlan)
+                    // AccessTierBadge(tier: userService.effectivePlan())
 
                     Spacer()
                     
@@ -164,7 +162,7 @@ struct SettingsView: View {
                 .font(titleFont)
                 .padding(.horizontal, 32)
 
-            NavigationLink { VoiceSettingsView() } label: {
+            NavigationLink { VoiceSettingsView(appSettings: appSettings) } label: {
                 HStack {
                     Label("Pronunciation Voice", systemImage: "waveform")
                         .labelStyle(.fixedIcon)
@@ -240,8 +238,9 @@ struct SettingsView: View {
                 .font(titleFont)
                 .padding(.horizontal, 32)
 
+            @Bindable var settings = appSettings
             UnderlineSegmentedPickerNotOptional(
-                selection: $theme,
+                selection: $settings.theme,
                 allItems: Theme.allCases,
                 titleForCase: { $0.displayName },
                 selectedFont: textFont
@@ -258,5 +257,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView(syncState: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
-                 authService: AuthFBService(), userService: UserFBService())
+                 authService: AuthFBService(), userService: UserFBService(), appSettings: AppSettings())
 }

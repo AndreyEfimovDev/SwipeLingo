@@ -25,10 +25,12 @@ struct PairsLibraryView: View {
     /// Сама PairsLibraryView их не читает, только форвардит в PairsSetContentView.
     private let authService: AuthFBService
     private let userService: UserFBService
+    private let appSyncStateService: AppSyncStateService
 
-    init(authService: AuthFBService, userService: UserFBService) {
+    init(authService: AuthFBService, userService: UserFBService, appSyncStateService: AppSyncStateService) {
         self.authService = authService
         self.userService = userService
+        self.appSyncStateService = appSyncStateService
     }
 
     @Query(sort: \PairsSet.createdAt, order: .reverse)    private var allSets:         [PairsSet]
@@ -36,7 +38,8 @@ struct PairsLibraryView: View {
     @Query(filter: #Predicate<Collection> { $0.typeRaw == "pairs" },
            sort: \Collection.createdAt)                   private var pairsCollections: [Collection]
 
-    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLangRaw: String = ""
+    /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
+    private var nativeLangRaw: String { appSyncStateService.nativeLanguageRaw }
     @Query private var profiles: [UserProfile]
 
     @State private var vm = PairsLibraryViewModel()

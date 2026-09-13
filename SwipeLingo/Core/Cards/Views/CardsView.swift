@@ -11,11 +11,16 @@ struct CardsView: View {
     private let appViewModel: AppViewModel
     private let authService: AuthFBService
     private let userService: UserFBService
+    /// Форвардятся дальше в TinderCardsView.
+    private let appSyncStateService: AppSyncStateService
+    private let appSettings: AppSettings
 
-    init(appViewModel: AppViewModel, authService: AuthFBService, userService: UserFBService) {
+    init(appViewModel: AppViewModel, authService: AuthFBService, userService: UserFBService, appSyncStateService: AppSyncStateService, appSettings: AppSettings) {
         self.appViewModel = appViewModel
         self.authService = authService
         self.userService = userService
+        self.appSyncStateService = appSyncStateService
+        self.appSettings = appSettings
     }
 
     @Query private var piles:       [Pile]
@@ -32,9 +37,11 @@ struct CardsView: View {
     }
 
     @State private var vm = FlashCardsViewModel()
-    @AppStorage(Constants.StorageKey.studyStartHour) private var studyStartHour: Int = 6
-    @AppStorage(Constants.StorageKey.srsEnabled)     private var srsEnabled: Bool    = true
-    @AppStorage(Constants.StorageKey.userPlan)       private var userPlan: AccessTier = .free
+    /// Единственный источник правды — AppSyncStateService (SwiftData + CloudKit-синк).
+    private var studyStartHour: Int { appSyncStateService.studyStartHour }
+    private var srsEnabled: Bool { appSyncStateService.srsEnabled }
+    /// Единственный источник правды — UserFBService (см. UserFBService.swift).
+    private var userPlan: AccessTier { userService.userPlan }
 
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
@@ -147,6 +154,8 @@ struct CardsView: View {
                 appViewModel: appViewModel,
                 authService: authService,
                 userService: userService,
+                appSyncStateService: appSyncStateService,
+                appSettings: appSettings,
                 lockedCardIds: vm.lockedCardIds,
                 contextLabels: vm.contextLabels,
                 cefrLabels: vm.cefrLabels,

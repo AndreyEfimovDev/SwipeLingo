@@ -11,11 +11,17 @@ struct PairsView: View {
     private let appViewModel: AppViewModel
     private let authService:  AuthFBService
     private let userService:  UserFBService
+    /// Форвардятся дальше в PairsSessionView.
+    private let appSyncStateService: AppSyncStateService
+    private let appSettings: AppSettings
 
-    init(appViewModel: AppViewModel, authService: AuthFBService, userService: UserFBService) {
+    init(appViewModel: AppViewModel, authService: AuthFBService, userService: UserFBService,
+         appSyncStateService: AppSyncStateService, appSettings: AppSettings) {
         self.appViewModel = appViewModel
         self.authService = authService
         self.userService = userService
+        self.appSyncStateService = appSyncStateService
+        self.appSettings = appSettings
     }
 
     @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets:  [PairsSet]
@@ -29,8 +35,13 @@ struct PairsView: View {
         allSets.filter { $0.cefrLevel <= userLevel && !$0.isSoftDeleted }
     }
 
-    @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool = true
-    @AppStorage(Constants.StorageKey.pairsAnimationMode) private var animationMode: AnimationMode = .manual
+    /// Единственный источник правды — AppSyncStateService.srsEnabled (SwiftData + CloudKit-синк).
+    private var srsEnabled: Bool { appSyncStateService.srsEnabled }
+    /// Единственный источник правды — AppSettings (см. AppSettings.swift).
+    private var animationMode: AnimationMode {
+        get { appSettings.pairsAnimationMode }
+        nonmutating set { appSettings.pairsAnimationMode = newValue }
+    }
 
     @State private var isDueMode = false
 
@@ -305,7 +316,9 @@ struct PairsView: View {
                 sets: displayedSets,
                 pileName: activePile?.name ?? "Pairs",
                 authService: authService,
-                userService: userService
+                userService: userService,
+                appSyncStateService: appSyncStateService,
+                appSettings: appSettings
             )
         ) {
             VStack(spacing: 8) {
@@ -335,7 +348,9 @@ struct PairsView: View {
                     sets: candidateSets,
                     pileName: activePile?.name ?? "Pairs",
                     authService: authService,
-                    userService: userService
+                    userService: userService,
+                    appSyncStateService: appSyncStateService,
+                    appSettings: appSettings
                 )
             ) {
                 Text("Play All")

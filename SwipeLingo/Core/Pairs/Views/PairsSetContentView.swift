@@ -25,7 +25,8 @@ struct PairsSetContentView: View {
         self.userService = userService
     }
 
-    @AppStorage(Constants.StorageKey.userPlan) private var userPlan: AccessTier = .free
+    /// Единственный источник правды — UserFBService (см. UserFBService.swift).
+    private var userPlan: AccessTier { userService.userPlan }
     @State private var showPlans = false
 
     private var isPaywalled: Bool { !userPlan.canAccess(set.accessTier) }

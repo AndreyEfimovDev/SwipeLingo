@@ -2,14 +2,28 @@ import SwiftUI
 
 // MARK: - OnboardingLanguageView
 // Шаг 1: выбор родного языка пользователя.
-// Сохраняет выбор в @AppStorage("nativeLanguage") как ISO-код (NativeLanguage.rawValue).
+// Сохраняет выбор через AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
 // Язык выбирается однократно — сменить после онбординга нельзя.
 
 struct OnboardingLanguageView: View {
 
+    /// Порядок свойств важен: onNext должен остаться последним параметром
+    /// синтезированного memberwise init, чтобы call site мог использовать
+    /// trailing closure (`OnboardingLanguageView(appSyncStateService:) { next() }`).
+    let appSyncStateService: AppSyncStateService
     var onNext: () -> Void
 
-    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
+    /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
+    /// Раньше здесь был @AppStorage(nativeLanguage), который писал только в UserDefaults — выбор языка
+    /// на онбординге не долетал до CloudKit-синка (AppSyncStateService уже создан к этому моменту в
+    /// composition root и не узнавал о прямой записи в UserDefaults в обход себя).
+    private var nativeLanguage: NativeLanguage {
+        get { appSyncStateService.nativeLanguage }
+        // nonmutating: сеттер не трогает self (View-структуру) — только appSyncStateService,
+        // который сам класс (reference type). Без этого компилятор по умолчанию считает
+        // любой сеттер computed-свойства структуры mutating, даже если тело его не мутирует self.
+        nonmutating set { appSyncStateService.nativeLanguage = newValue }
+    }
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 

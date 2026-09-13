@@ -34,8 +34,11 @@ struct AddEditCardView: View {
     @State private var isShowingExitConfirm = false
     @FocusState private var focused: Field?
 
+    /// Передаётся из composition root — не через .environment().
+    private let appSyncStateService: AppSyncStateService
     // Auto-fill (dictionary + Apple Translation)
-    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
+    // Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
+    private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
 
     // Keyboard
     @State private var keyboard = KeyboardManager()
@@ -47,8 +50,9 @@ struct AddEditCardView: View {
 
     // MARK: - Init
 
-    init(card: Card? = nil, preselectedSetId: UUID? = nil) {
+    init(card: Card? = nil, preselectedSetId: UUID? = nil, appSyncStateService: AppSyncStateService) {
         _vm = State(initialValue: AddEditCardViewModel(card: card, preselectedSetId: preselectedSetId))
+        self.appSyncStateService = appSyncStateService
     }
 
     // MARK: - Computed (делегируют в VM, добавляя @Query-результаты)

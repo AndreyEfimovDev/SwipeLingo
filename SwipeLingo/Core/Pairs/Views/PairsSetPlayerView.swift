@@ -45,25 +45,40 @@ struct PairsSetPlayerView: View {
     /// Передаются из composition root — не через .environment(). Только для PlansView.
     private let authService: AuthFBService
     private let userService: UserFBService
+    private let appSyncStateService: AppSyncStateService
+    private let appSettings: AppSettings
 
     @State private var vm: PairsSetPlayerViewModel
 
-    init(set: PairsSet, authService: AuthFBService, userService: UserFBService,
+    init(set: PairsSet, authService: AuthFBService, userService: UserFBService, appSyncStateService: AppSyncStateService,
+         appSettings: AppSettings,
          onComplete: (() -> Void)? = nil, autoStart: Bool = false, initialAnimationMode: AnimationMode? = nil) {
         self.set = set
         self.authService = authService
         self.userService = userService
+        self.appSyncStateService = appSyncStateService
+        self.appSettings = appSettings
         self.onComplete = onComplete
         self.autoStart = autoStart
         self.initialAnimationMode = initialAnimationMode
         _vm = State(initialValue: PairsSetPlayerViewModel(set: set))
     }
 
-    @AppStorage(Constants.StorageKey.pairsAnimationMode) private var defaultAnimationMode: AnimationMode = .manual
-    @AppStorage(Constants.StorageKey.pairsAudioEnabled)  private var audioEnabled: Bool = true
-    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var ttsVoiceIdentifier: String = ""
-    @AppStorage(Constants.StorageKey.srsEnabled)         private var srsEnabled: Bool = true
-    @AppStorage(Constants.StorageKey.userPlan)           private var userPlan: AccessTier = .free
+    /// Единственный источник правды — AppSettings (см. AppSettings.swift).
+    private var defaultAnimationMode: AnimationMode {
+        get { appSettings.pairsAnimationMode }
+        nonmutating set { appSettings.pairsAnimationMode = newValue }
+    }
+    private var audioEnabled: Bool {
+        get { appSettings.pairsAudioEnabled }
+        nonmutating set { appSettings.pairsAudioEnabled = newValue }
+    }
+    /// Единственный источник правды — AppSettings (см. AppSettings.swift).
+    private var ttsVoiceIdentifier: String { appSettings.ttsVoiceIdentifier }
+    /// Единственный источник правды — AppSyncStateService.srsEnabled (SwiftData + CloudKit-синк).
+    private var srsEnabled: Bool { appSyncStateService.srsEnabled }
+    /// Единственный источник правды — UserFBService (см. UserFBService.swift).
+    private var userPlan: AccessTier { userService.userPlan }
 
     /// Навигационное состояние — по правилу проекта остаётся в View, не в ViewModel.
     @State private var showPlans = false

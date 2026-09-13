@@ -4,12 +4,8 @@ import FirebaseAuth
 
 @main
 struct SwipeLingoApp: App {
-    /// читаем системное состояние сцены (.active/.background/.inactive), нужно ниже для повторной синхронизации при возврате в foreground.
+    /// Для повторной синхронизации при возврате в foreground.
     @Environment(\.scenePhase) private var scenePhase
-
-    /// Hодной язык пользователя, читается прямо из UserDefaults по ключу Constants.StorageKey.nativeLanguage.
-    /// Важно:  это не тот же источник правды, что AppSyncStateService.nativeLanguageRaw (см. ниже) — тот пишет в тот же ключ UserDefaults параллельно с CloudKit-записью, так что оба значения синхронизированы
-    @AppStorage(Constants.StorageKey.nativeLanguage) private var nativeLanguage: NativeLanguage = .russian
 
     private let startup: Startup
 
@@ -18,21 +14,28 @@ struct SwipeLingoApp: App {
         case failed
     }
 
-    /// Подключает AppDelegate (CloudKit push, Google Sign-In URL handling) к жизненному циклу SwiftUI-приложения
+    /// Подключаем AppDelegate (CloudKit push, Google Sign-In URL handling) к жизненному циклу SwiftUI-приложения.
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
         /// Firebase необходимо настроить до того, как AuthService инициализирует Auth.auth().
         FBBootstrap.configure()
+        
+        /// Сбрасываем устаревший Keychain-токен при чистой установке Firebase: Auth.auth().signOut()
+        /// Firebase Auth SDK сам, без нашего участия, сохраняет в Keychain сериализованный объект FirebaseAuth.User
+        /// Auth.auth().signOut() удаляет этот Keychain-item (saveUser(nil) внутри signOut() в SDK) — стирает refresh token и кэшированные метаданные пользователя из Keychain для этого Firebase-конфига, так что currentUser становится nil, и при следующем обращении к Auth.auth() восстанавливать уже нечего — пользователь реально видит экран входа/онбординга, а не автоматически залогиненное состояние из прошлой установки.
         FreshInstallGuard.clearStaleSessionIfNeeded()
 
         if let container = ModelContainerFactory.make() {
+            /// гарантируеv существовани `Inbox`/`My Sets`
             SystemSeeder.ensureSystemCollections(into: container.mainContext)
+            
             let dependencies = AppDependencies(
                 authFBService: AuthFBService(),
                 userFBService: UserFBService(),
                 appSyncStateService: AppSyncStateService(modelContext: container.mainContext),
-                appViewModel: AppViewModel()
+                appViewModel: AppViewModel(),
+                appSettings: AppSettings()
             )
             startup = .ready(container: container, dependencies: dependencies)
         } else {
@@ -53,7 +56,7 @@ struct SwipeLingoApp: App {
 
     // MARK: - Ready content
 
-    /// Экран авторизации/онбординга/приложения плюс все side-effect подписки
+    /// Экран авторизации/онбординга приложения плюс все side-effect подписки
     /// (Firestore sync, аналитика, foreground-триггеры). Вынесен из body
     /// отдельной функцией, потому что доступен только внутри .ready-ветки
     /// Startup — там, где есть реальный container и dependencies.
@@ -65,6 +68,8 @@ struct SwipeLingoApp: App {
         let authService = dependencies.authFBService
         let appSyncStateService = dependencies.appSyncStateService
         let userService = dependencies.userFBService
+        /// Единственный источник правды для nativeLanguage — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк)
+        let nativeLanguage = appSyncStateService.nativeLanguage
 
         Group {
             if authService.isLoading {
@@ -76,7 +81,7 @@ struct SwipeLingoApp: App {
             } else if !appSyncStateService.hasCompletedOnboarding {
                 /// Новый пользователь: выбор языка и уровня (без этапа аутентификации —
                 /// аутентификация уже выполнена выше, до начала онбординга).
-                OnboardingView {
+                OnboardingView(appSyncStateService: appSyncStateService) {
                     appSyncStateService.hasCompletedOnboarding = true
                 }
                 .modelContainer(container)

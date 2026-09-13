@@ -5,8 +5,16 @@ import SwiftUI
 
 struct VoiceSettingsView: View {
 
-    @AppStorage(Constants.StorageKey.ttsVoiceIdentifier) private var selectedIdentifier = ""
-    @AppStorage(Constants.StorageKey.englishVariant)     private var englishVariant    = "en-US"
+    /// Передаётся из composition root через SettingsView — не через .environment().
+    let appSettings: AppSettings
+
+    /// Единственный источник правды — AppSettings (см. AppSettings.swift).
+    /// nonmutating: сеттер не трогает self (View-структуру), только appSettings (класс).
+    private var selectedIdentifier: String {
+        get { appSettings.ttsVoiceIdentifier }
+        nonmutating set { appSettings.ttsVoiceIdentifier = newValue }
+    }
+    private var englishVariant: String { appSettings.englishVariant }
     @State private var previewService       = AudioPlayerService()
     @State private var previewingVoiceId    = ""
 
@@ -223,6 +231,6 @@ struct VoiceSettingsView: View {
 
 #Preview {
     NavigationStack {
-        VoiceSettingsView()
+        VoiceSettingsView(appSettings: AppSettings())
     }
 }

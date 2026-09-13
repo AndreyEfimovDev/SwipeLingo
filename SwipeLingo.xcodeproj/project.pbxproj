@@ -51,6 +51,8 @@
 		4757D5E03055C7DA0064F5F0 /* DatabaseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */; };
 		4757D5E43055CAAD0064F5F0 /* FBBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E23055CAAD0064F5F0 /* FBBootstrap.swift */; };
 		4757D5E53055CAAD0064F5F0 /* FreshInstallGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */; };
+		4757D5E7305694770064F5F0 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E6305694770064F5F0 /* AppSettings.swift */; };
+		4757D5E93056A1750064F5F0 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783B2F794487005FBDFE /* Collection.swift */; };
 		4758E074431285AD6E3CADF1 /* AddEditCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474529BD8FAC3FD67A8654CC /* AddEditCardViewModel.swift */; };
 		47631B022F86941C002F1666 /* CEFRLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783A2F794487005FBDFE /* CEFRLevel.swift */; };
 		47631B032F86949F002F1666 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78462F794487005FBDFE /* DictionaryService.swift */; };
@@ -285,6 +287,7 @@
 		4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseErrorView.swift; sourceTree = "<group>"; };
 		4757D5E23055CAAD0064F5F0 /* FBBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBBootstrap.swift; sourceTree = "<group>"; };
 		4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreshInstallGuard.swift; sourceTree = "<group>"; };
+		4757D5E6305694770064F5F0 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		475E5BE6DDCDBD62D051061F /* OnboardingLevelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelViewModel.swift; sourceTree = "<group>"; };
 		47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingConfirmView.swift; sourceTree = "<group>"; };
 		47631B582F86B82F002F1666 /* NativeLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLanguage.swift; sourceTree = "<group>"; };
@@ -599,6 +602,7 @@
 			children = (
 				4785898F2FF3DD4800BF3C8F /* BackupModels.swift */,
 				478589902FF3DD4800BF3C8F /* ExportService.swift */,
+				478589982FF3EA5A00BF3C8F /* RestoreBackupView.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -689,6 +693,7 @@
 			isa = PBXGroup;
 			children = (
 				478729442FAA0DD4001282EF /* Constants.swift */,
+				4757D5E6305694770064F5F0 /* AppSettings.swift */,
 				478C78402F794487005FBDFE /* ShuffleMethod.swift */,
 				478C783A2F794487005FBDFE /* CEFRLevel.swift */,
 				478C783C2F794487005FBDFE /* DictionaryModels.swift */,
@@ -897,7 +902,6 @@
 				4700CD782FB9D9CE003EA2B1 /* PaymentFormView.swift */,
 				4700CD762FB9D986003EA2B1 /* PaymentHistoryView.swift */,
 				478589972FF3EA5A00BF3C8F /* ExportAndShareView.swift */,
-				478589982FF3EA5A00BF3C8F /* RestoreBackupView.swift */,
 				4757D5DE305561520064F5F0 /* Services */,
 			);
 			path = Settings;
@@ -1313,6 +1317,7 @@
 				47C09A8E2F853D8B0049858B /* DisplayMode.swift in Sources */,
 				4757D5D730555C7C0064F5F0 /* AuthClient.swift in Sources */,
 				47C09A492F8531910049858B /* PairsSet.swift in Sources */,
+				4757D5E7305694770064F5F0 /* AppSettings.swift in Sources */,
 				4700CD792FB9D9CE003EA2B1 /* PaymentFormView.swift in Sources */,
 				4700CD8F2FBA2816003EA2B1 /* BookFBService.swift in Sources */,
 				4700CD8B2FBA2800003EA2B1 /* BookProgress.swift in Sources */,
@@ -1450,6 +1455,7 @@
 				4750705E2FBA2E3400350F5C /* ImportEPUBSheet.swift in Sources */,
 				4750705F2FBA2E3400350F5C /* BooksListView.swift in Sources */,
 				4787292C2FA9D999001282EF /* SFSymbolPickerSheet.swift in Sources */,
+				4757D5E93056A1750064F5F0 /* Collection.swift in Sources */,
 				4787292D2FA9D999001282EF /* SwipeLingoAdminApp.swift in Sources */,
 				47C09A872F853B940049858B /* FSModels.swift in Sources */,
 				47C09A882F853D360049858B /* AccessTier.swift in Sources */,

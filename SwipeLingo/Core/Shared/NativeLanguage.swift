@@ -5,8 +5,10 @@ import Foundation
 // Родной язык пользователя — выбирается однократно при онбординге, изменить нельзя.
 // Используется как ключ в FSCard.translations и FSCard.sampleTranslations.
 //
-// Хранится в @AppStorage("nativeLanguage") как rawValue (ISO 639-1 код, например "ru").
-// Совместим с @AppStorage: RawRepresentable where RawValue == String.
+// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк),
+// хранится как rawValue (ISO 639-1 код, например "ru") в AppSyncState.nativeLanguageRaw.
+// Совместим с @AppStorage: RawRepresentable where RawValue == String (используется только
+// внутри AppSyncStateService для синхронизации с UserDefaults, не читателями напрямую).
 
 enum NativeLanguage: String, CaseIterable, Codable {
     case russian          = "ru"

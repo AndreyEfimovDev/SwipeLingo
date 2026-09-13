@@ -19,17 +19,23 @@ struct PairsSessionView: View {
     /// Сама PairsSessionView их не читает, только форвардит в PairsSetPlayerView.
     private let authService: AuthFBService
     private let userService: UserFBService
+    private let appSyncStateService: AppSyncStateService
+    private let appSettings: AppSettings
 
-    init(sets: [PairsSet], pileName: String, authService: AuthFBService, userService: UserFBService) {
+    init(sets: [PairsSet], pileName: String, authService: AuthFBService, userService: UserFBService,
+         appSyncStateService: AppSyncStateService, appSettings: AppSettings) {
         self.sets = sets
         self.pileName = pileName
         self.authService = authService
         self.userService = userService
+        self.appSyncStateService = appSyncStateService
+        self.appSettings = appSettings
     }
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
-    @AppStorage(Constants.StorageKey.srsEnabled) private var srsEnabled: Bool = true
+    /// Единственный источник правды — AppSyncStateService.srsEnabled (SwiftData + CloudKit-синк).
+    private var srsEnabled: Bool { appSyncStateService.srsEnabled }
 
     @State private var currentIndex  = 0
     @State private var setKey        = UUID()
@@ -57,6 +63,8 @@ struct PairsSessionView: View {
                 set: currentSet,
                 authService: authService,
                 userService: userService,
+                appSyncStateService: appSyncStateService,
+                appSettings: appSettings,
                 onComplete: { withAnimation { isSetComplete = true } },
                 autoStart: true,
                 initialAnimationMode: sessionMode
