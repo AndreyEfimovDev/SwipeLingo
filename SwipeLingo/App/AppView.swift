@@ -30,10 +30,9 @@ struct AppView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
-            // Ре-синхронизация при повышении CEFR-уровня пользователя.
-            // При ПОНИЖЕНИИ уровня данные уже есть локально — UI фильтрует по уровню мгновенно,
-            // sync не нужен.
-            // При ПОВЫШЕНИИ — нужен forceFullSync: true чтобы скачать контент нового уровня.
+            /// Ре-синхронизация при повышении CEFR-уровня пользователя.
+            /// При ПОНИЖЕНИИ уровня данные уже есть локально — UI фильтрует по уровню мгновенно, sync не нужен.
+            /// При ПОВЫШЕНИИ — нужен forceFullSync: true чтобы скачать контент нового уровня.
             // (delta-запрос не подойдёт: новые сеты могут иметь updatedAt < lastSyncAt и не попадут в delta.)
             .onChange(of: profiles.first?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
                 let oldLevel = CEFRLevel(rawValue: oldLevelRaw ?? "") ?? .c2

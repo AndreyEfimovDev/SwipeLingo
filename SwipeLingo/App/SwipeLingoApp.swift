@@ -4,7 +4,7 @@ import FirebaseAuth
 
 @main
 struct SwipeLingoApp: App {
-    /// читаем системное состояние сцены (.active/.background/.inactive), нужно ниже для повторной синхронизации при возврате в foreground.
+    /// Для повторной синхронизации при возврате в foreground.
     @Environment(\.scenePhase) private var scenePhase
 
     private let startup: Startup
@@ -14,7 +14,7 @@ struct SwipeLingoApp: App {
         case failed
     }
 
-    /// Подключает AppDelegate (CloudKit push, Google Sign-In URL handling) к жизненному циклу SwiftUI-приложения
+    /// Подключаем AppDelegate (CloudKit push, Google Sign-In URL handling) к жизненному циклу SwiftUI-приложения.
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
@@ -56,7 +56,7 @@ struct SwipeLingoApp: App {
 
     // MARK: - Ready content
 
-    /// Экран авторизации/онбординга/приложения плюс все side-effect подписки
+    /// Экран авторизации/онбординга приложения плюс все side-effect подписки
     /// (Firestore sync, аналитика, foreground-триггеры). Вынесен из body
     /// отдельной функцией, потому что доступен только внутри .ready-ветки
     /// Startup — там, где есть реальный container и dependencies.
