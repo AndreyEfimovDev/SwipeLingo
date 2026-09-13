@@ -51,6 +51,7 @@
 		4757D5E03055C7DA0064F5F0 /* DatabaseErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */; };
 		4757D5E43055CAAD0064F5F0 /* FBBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E23055CAAD0064F5F0 /* FBBootstrap.swift */; };
 		4757D5E53055CAAD0064F5F0 /* FreshInstallGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */; };
+		6FE278252FC459EB4C630666 /* UIAppearanceConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */; };
 		4757D5E7305694770064F5F0 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E6305694770064F5F0 /* AppSettings.swift */; };
 		4757D5E93056A1750064F5F0 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783B2F794487005FBDFE /* Collection.swift */; };
 		4758E074431285AD6E3CADF1 /* AddEditCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474529BD8FAC3FD67A8654CC /* AddEditCardViewModel.swift */; };
@@ -287,6 +288,7 @@
 		4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseErrorView.swift; sourceTree = "<group>"; };
 		4757D5E23055CAAD0064F5F0 /* FBBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBBootstrap.swift; sourceTree = "<group>"; };
 		4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreshInstallGuard.swift; sourceTree = "<group>"; };
+		8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIAppearanceConfigurator.swift; sourceTree = "<group>"; };
 		4757D5E6305694770064F5F0 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		475E5BE6DDCDBD62D051061F /* OnboardingLevelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelViewModel.swift; sourceTree = "<group>"; };
 		47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingConfirmView.swift; sourceTree = "<group>"; };
@@ -592,6 +594,7 @@
 				4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */,
 				47A281A77E53A8D87F21514D /* InboxDrainService.swift */,
 				478C78492F794487005FBDFE /* SystemSeeder.swift */,
+				8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */,
 				4723A9468F60C7C2DB7889DB /* UserSessionSyncService.swift */,
 			);
 			path = Services;
@@ -1294,6 +1297,7 @@
 				4700CD852FBA27B1003EA2B1 /* BooksViewModel.swift in Sources */,
 				4757D5E43055CAAD0064F5F0 /* FBBootstrap.swift in Sources */,
 				4757D5E53055CAAD0064F5F0 /* FreshInstallGuard.swift in Sources */,
+				6FE278252FC459EB4C630666 /* UIAppearanceConfigurator.swift in Sources */,
 				4700CD862FBA27B1003EA2B1 /* BookWordLookupView.swift in Sources */,
 				4700CD872FBA27B1003EA2B1 /* BookReaderViewModel.swift in Sources */,
 				478C78552F794487005FBDFE /* Colors.swift in Sources */,
