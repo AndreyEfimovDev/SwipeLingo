@@ -22,6 +22,7 @@
 		4712E9182FEC02310014DB01 /* AppSyncStateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4712E9172FEC02310014DB01 /* AppSyncStateService.swift */; };
 		4712E91A2FEC030C0014DB01 /* AppSyncState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4712E9192FEC030C0014DB01 /* AppSyncState.swift */; };
 		4717CE3E2DC028B372F41C60 /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A8BAEAD0AAF572BD2E8862 /* ModelContainerFactory.swift */; };
+		25930C9C26817FC805AEA0FE /* SwipeLingoMigrationPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04CA3FF0F72A07A10F077B4D /* SwipeLingoMigrationPlan.swift */; };
 		471DBCA72FC5B22100F04BE0 /* BookPagedReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471DBCA62FC5B22100F04BE0 /* BookPagedReader.swift */; };
 		471DBCA92FC5B6CC00F04BE0 /* BookBookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471DBCA82FC5B6CC00F04BE0 /* BookBookmarksView.swift */; };
 		473597AE87425895D778D614 /* DeletedCardsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4742B7EEDE7912156321442E /* DeletedCardsViewModel.swift */; };
@@ -389,6 +390,7 @@
 		478C784D2F794487005FBDFE /* SwipeLingo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwipeLingo.entitlements; sourceTree = "<group>"; };
 		47A281A77E53A8D87F21514D /* InboxDrainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxDrainService.swift; sourceTree = "<group>"; };
 		47A8BAEAD0AAF572BD2E8862 /* ModelContainerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelContainerFactory.swift; sourceTree = "<group>"; };
+		04CA3FF0F72A07A10F077B4D /* SwipeLingoMigrationPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoMigrationPlan.swift; sourceTree = "<group>"; };
 		47BB0E2BA3EA926CBBF58101 /* PairsLibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsLibraryViewModel.swift; sourceTree = "<group>"; };
 		47C099F02F84F0B80049858B /* OnboardingLanguageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLanguageView.swift; sourceTree = "<group>"; };
 		47C099F12F84F0B80049858B /* OnboardingLevelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelView.swift; sourceTree = "<group>"; };
@@ -554,6 +556,7 @@
 			isa = PBXGroup;
 			children = (
 				47A8BAEAD0AAF572BD2E8862 /* ModelContainerFactory.swift */,
+				04CA3FF0F72A07A10F077B4D /* SwipeLingoMigrationPlan.swift */,
 				4757D5DF3055C7DA0064F5F0 /* DatabaseErrorView.swift */,
 			);
 			path = SwiftData;
@@ -1359,6 +1362,7 @@
 				478C787B2F794487005FBDFE /* PileService.swift in Sources */,
 				4789A20FF9DB70FF42E1535C /* PileManagementService.swift in Sources */,
 				4717CE3E2DC028B372F41C60 /* ModelContainerFactory.swift in Sources */,
+				25930C9C26817FC805AEA0FE /* SwipeLingoMigrationPlan.swift in Sources */,
 				47933E5E7BF5AA064978D33A /* InboxDrainService.swift in Sources */,
 				476830EDD9538F9B48E88EA1 /* UserSessionSyncService.swift in Sources */,
 				60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */,

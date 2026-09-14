@@ -9,24 +9,16 @@ import SwiftData
 
 enum ModelContainerFactory {
 
-    /// Собирает `ModelContainer` приложения. При провале (например
-    /// NSCocoaErrorDomain 134110 — schema mismatch) удаляет локальный стор и
-    /// пересоздаёт контейнер один раз. Возвращает `nil`, только если пересоздание
-    /// тоже не удалось.
+    /// Собирает `ModelContainer` приложения — схема и переходы между её версиями
+    /// берутся из `SwipeLingoMigrationPlan` (см. `SwipeLingoMigrationPlan.swift`),
+    /// так что совместимые изменения схемы (новое поле с default-значением и т.п.)
+    /// проходят через настоящую миграцию, без потери локальных данных.
+    /// Удаление и пересоздание стора — только последний рубеж на случай, если
+    /// миграция всё же не прошла (не ожидается в норме, но без неё сбой схемы
+    /// оставил бы пользователя с нерабочим приложением без самостоятельного
+    /// выхода). Возвращает `nil`, только если и это не помогло.
     static func make() -> ModelContainer? {
-        let schema = Schema([
-            Card.self,
-            CardSet.self,
-            Collection.self,
-            Pile.self,
-            PairsSet.self,
-            PairsPile.self,
-            UserProfile.self,
-            Book.self,
-            BookProgress.self,
-            BookBookmark.self,
-            AppSyncState.self
-        ])
+        let schema = Schema(versionedSchema: SchemaV1.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
@@ -35,18 +27,14 @@ enum ModelContainerFactory {
         let storeURL = config.url
 
         do {
-            return try ModelContainer(for: schema, configurations: [config])
+            return try ModelContainer(for: schema, migrationPlan: SwipeLingoMigrationPlan.self, configurations: [config])
         } catch {
-#warning("STUB: Replace with SchemaMigrationPlan before App Store release.")
-
-            // NSCocoaErrorDomain Code=134110 → расхождение схемы.
-            // TODO: заменить на SchemaMigrationPlan перед релизом в App Store.
             log("ModelContainer failed: \(error)", level: .error)
             log("🗑 Deleting store at: \(storeURL.path)", level: .warning)
             deleteStoreFiles(at: storeURL)
 
             do {
-                let container = try ModelContainer(for: schema, configurations: [config])
+                let container = try ModelContainer(for: schema, migrationPlan: SwipeLingoMigrationPlan.self, configurations: [config])
                 log("ModelContainer recreated after store reset", level: .info)
                 return container
             } catch {
