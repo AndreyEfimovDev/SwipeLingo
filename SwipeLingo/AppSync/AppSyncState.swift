@@ -6,8 +6,14 @@ import SwiftData
 // Хранит настройки, которые должны быть одинаковыми на всех устройствах пользователя.
 //
 // `id` — ключ singleton'а, привязанный к Firebase-аккаунту, не к устройству/iCloud:
+<<<<<<< HEAD
 // - "app_state_singleton" — device-wide bootstrap-запись, создаётся в AppSyncStateService.init()
 //   до того, как известен firebaseUID (Firebase auth-состояние ещё не разрешилось).
+=======
+// - Constants.appSyncBootstrapID ("app_state_singleton") — device-wide bootstrap-запись,
+//   создаётся в AppSyncStateService.init() до того, как известен firebaseUID (Firebase
+//   auth-состояние ещё не разрешилось).
+>>>>>>> dev
 // - "app_state_<firebaseUID>" — запись, закреплённая за конкретным аккаунтом. Переход
 //   из bootstrap в этот вид происходит через AppSyncStateManager.claim(firebaseUID:),
 //   вызывается один раз после verified-сессии (см. SwipeLingoApp).
@@ -20,7 +26,7 @@ import SwiftData
 
 @Model
 final class AppSyncState {
-    var id: String = "app_state_singleton"
+    var id: String = Constants.appSyncBootstrapID
 
     // Онбординг
     var hasCompletedOnboarding: Bool = false
@@ -41,6 +47,14 @@ final class AppSyncState {
         hasCompletedOnboarding: Bool = false,
         nativeLanguageRaw: String = NativeLanguage.russian.rawValue
     ) {
+        // Явно, а не полагаясь на декларативный default выше — на всякий случай,
+        // раз уже ловили странности с @Model-свойствами, не тронутыми в init
+        // (didSet-баг в UserProfile.swift). Реальную причину malloc-краша,
+        // который подозревали здесь изначально, нашли позже — деаллокация
+        // MainActor-класса, хранящего ModelContext (см. предупреждение в
+        // AppSyncStateManager.swift), эта строка тут просто для симметрии/
+        // подстраховки, не подтверждённый фикс чего-либо конкретного.
+        self.id = Constants.appSyncBootstrapID
         self.srsEnabled = srsEnabled
         self.studyStartHour = studyStartHour
         self.hasCompletedOnboarding = hasCompletedOnboarding

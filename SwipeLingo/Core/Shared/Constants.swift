@@ -78,6 +78,14 @@ enum Constants {
         static let appleRelayBannerDismissed = "appleRelayBannerDismissed" // Bool — баннер про Apple Private Relay email в ProfileView закрыт пользователем
     }
 
+    // MARK: - AppSync
+
+    /// Id непривязанной bootstrap-записи `AppSyncState` — device-wide бакет,
+    /// используется до вызова `AppSyncStateManager.claim(firebaseUID:)`. Не ключ
+    /// `UserDefaults` (потому не в `StorageKey`) — значение поля `AppSyncState.id`.
+    /// См. заголовочный комментарий `AppSyncState.swift`.
+    static let appSyncBootstrapID = "app_state_singleton"
+
     // MARK: - Сайт
 
     /// Базовый URL сайта SwipeLingo. Заменить на продакшен-URL перед релизом.

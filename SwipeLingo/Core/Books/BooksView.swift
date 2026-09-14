@@ -47,6 +47,7 @@ struct BooksView: View {
             }
             .background(Color(.systemBackground).ignoresSafeArea())
             .navigationTitle("Books")
+            .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $vm.searchText, prompt: "Search books")
             .toolbar { toolbarContent }
             .toolbarBackground(.hidden, for: .navigationBar)

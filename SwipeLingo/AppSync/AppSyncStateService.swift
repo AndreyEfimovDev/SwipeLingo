@@ -2,6 +2,7 @@ import CoreData
 import Foundation
 import SwiftData
 
+<<<<<<< HEAD
 // MARK: - AppSyncStateManager
 // Обрабатывает CRUD в SwiftData и слияние дубликатов для singleton'а AppSyncState.
 // CloudKit может создавать дубликаты, если два устройства вставляют запись до завершения синка.
@@ -167,6 +168,8 @@ final class AppSyncStateManager {
     }
 }
 
+=======
+>>>>>>> dev
 // MARK: - AppSyncStateService
 // @Observable-сервис, раздающий синхронизированные настройки по всему приложению.
 // Пишет и в SwiftData (CloudKit-синк), и в UserDefaults (немедленная совместимость с @AppStorage).
@@ -245,6 +248,14 @@ final class AppSyncStateService {
         observeCloudKitChanges()
     }
 
+<<<<<<< HEAD
+=======
+    // Превентивная мера против бага Swift Concurrency рантайма — см. ⚠️ в
+    // заголовочном комментарии AppSyncStateManager выше (тот же паттерн: этот
+    // класс тоже хранит ModelContext как поле).
+    deinit {}
+
+>>>>>>> dev
     // MARK: - Привязка к аккаунту
 
     /// Привязывает singleton к текущему Firebase-аккаунту — вызывать один раз после

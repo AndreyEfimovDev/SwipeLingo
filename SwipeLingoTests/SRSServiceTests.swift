@@ -6,10 +6,11 @@ import SwiftData
 //
 // Tests cover every branch of the SM-2 algorithm:
 //   • .again — full reset (EF −0.20, reps = 0, interval = 1)
-//   • .hard  — hold position (EF −0.15, reps/interval unchanged)
+//   • .hard  — EF −0.15, interval halved (floor 1), reps unchanged
 //   • .easy  — SM-2 progression (EF +0.10, reps++, interval grows)
 //   • EF floor enforcement (never < 1.3)
-//   • dueDate / lastReviewed fields
+//   • dueDate (midnight-aligned: startOfDay(now) + interval days, not
+//     now + interval×24h — see SRSService.evaluate comment) / lastReviewed
 
 @MainActor
 final class SRSServiceTests: XCTestCase {
@@ -71,11 +72,18 @@ final class SRSServiceTests: XCTestCase {
         XCTAssertEqual(card.easeFactor, 2.35, accuracy: 0.001)
     }
 
-    func testHard_DoesNotChangeInterval() throws {
+    func testHard_HalvesInterval() throws {
         let (_, ctx) = try makeContext()
         let card = makeCard(context: ctx, interval: 6, reps: 2)
         srs.evaluate(card: card, rating: .hard)
-        XCTAssertEqual(card.interval, 6)
+        XCTAssertEqual(card.interval, 3)
+    }
+
+    func testHard_IntervalNeverDropsBelowOne() throws {
+        let (_, ctx) = try makeContext()
+        let card = makeCard(context: ctx, interval: 1, reps: 1)
+        srs.evaluate(card: card, rating: .hard)
+        XCTAssertEqual(card.interval, 1)
     }
 
     func testHard_DoesNotChangeRepetitions() throws {
@@ -144,29 +152,33 @@ final class SRSServiceTests: XCTestCase {
     }
 
     // MARK: - dueDate
+    //
+    // dueDate is midnight-aligned: startOfDay(now) + interval days — not
+    // now + interval×24h (see SRSService.evaluate comment: the card should
+    // become available at midnight of the due day, not N hours after the
+    // exact moment of evaluation).
 
     func testDueDateIsSetToTodayPlusOneDay_Again() throws {
         let (_, ctx) = try makeContext()
         let card = makeCard(context: ctx)
-        let before = Date.now
         srs.evaluate(card: card, rating: .again)   // interval = 1
-        let after = Date.now
 
-        // Use addingTimeInterval — non-optional, no force unwrap needed
-        XCTAssertGreaterThanOrEqual(card.dueDate, before.addingTimeInterval(86_400))
-        XCTAssertLessThanOrEqual(card.dueDate,    after.addingTimeInterval(86_400))
+        let expected = try XCTUnwrap(
+            Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: .now))
+        )
+        XCTAssertEqual(card.dueDate, expected)
     }
 
     func testDueDateIsSetToTodayPlusSixDays_Easy() throws {
         let (_, ctx) = try makeContext()
         let card = makeCard(context: ctx, reps: 1)  // next easy → interval = 6
-        let before = Date.now
         srs.evaluate(card: card, rating: .easy)
-        let after = Date.now
 
         XCTAssertEqual(card.interval, 6)
-        XCTAssertGreaterThanOrEqual(card.dueDate, before.addingTimeInterval(6 * 86_400))
-        XCTAssertLessThanOrEqual(card.dueDate,    after.addingTimeInterval(6 * 86_400))
+        let expected = try XCTUnwrap(
+            Calendar.current.date(byAdding: .day, value: 6, to: Calendar.current.startOfDay(for: .now))
+        )
+        XCTAssertEqual(card.dueDate, expected)
     }
 
     // MARK: - lastReviewed
