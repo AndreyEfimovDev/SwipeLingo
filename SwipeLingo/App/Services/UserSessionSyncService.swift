@@ -77,6 +77,7 @@ struct UserSessionSyncService {
         } else if let email = user.email, !email.isEmpty {
             profile?.name = String(email.prefix(while: { $0 != "@" }))
         }
+        profile?.touch()   // одним вызовом на все мутации name/firebaseUID выше
         ctx.saveWithErrorHandling()
 
         let cefrRaw = profile?.cefrLevel.rawValue ?? ""

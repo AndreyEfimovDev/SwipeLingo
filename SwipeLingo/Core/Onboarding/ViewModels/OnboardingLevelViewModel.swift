@@ -21,5 +21,6 @@ final class OnboardingLevelViewModel {
     /// Выставляет выбранный уровень профилю.
     func selectLevel(_ level: CEFRLevel, profile: UserProfile?) {
         profile?.cefrLevel = level
+        profile?.touch()
     }
 }

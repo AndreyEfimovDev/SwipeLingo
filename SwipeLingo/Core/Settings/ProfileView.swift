@@ -667,6 +667,7 @@ struct ProfileView: View {
         let nameChanged = trimmedName != (profile?.name ?? "")
         profile?.name = trimmedName
         profile?.cefrLevel = pendingLevel
+        profile?.touch()
         context.saveWithErrorHandling()
         if !authService.isAnonymous && nameChanged && authService.isSessionVerified {
             Task { try? await authService.updateDisplayName(trimmedName) }
