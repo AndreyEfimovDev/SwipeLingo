@@ -309,6 +309,8 @@ struct CardsView: View {
         let levelPart = userLevel.rawValue
         guard let pile = piles.first(where: { $0.isActive }) else { return levelPart }
         let sets = pile.setIds.map(\.uuidString).sorted().joined()
-        return levelPart + pile.id.uuidString + sets + pile.shuffleMethod.rawValue
+        // pile.name включено, иначе переименование стопки (без изменения сетов/shuffleMethod)
+        // не триггерит onChange → vm.activePileName остаётся закэшированным старым значением.
+        return levelPart + pile.id.uuidString + pile.name + sets + pile.shuffleMethod.rawValue
     }
 }

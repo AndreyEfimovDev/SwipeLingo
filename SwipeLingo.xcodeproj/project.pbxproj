@@ -203,13 +203,13 @@
 		47F4D803AAACDA42B63B9F8F /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4739F3F5518B2F24B631870A /* AppDependencies.swift */; };
 		60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */; };
 		6FE278252FC459EB4C630666 /* UIAppearanceConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */; };
+		AB24E37E6C4781C61A774A7E /* SwipeLingoMigrationPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CC016D85EA2BFD8795FE26D /* SwipeLingoMigrationPlanTests.swift */; };
 		AC9B3B55D40DE0238EFE55AD /* ErrorManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2151381ED3A3442F2FD275 /* ErrorManagerTests.swift */; };
 		B0E372C47591FA8C805CB807 /* AppSyncStateManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FCFCB36E2BEC4F013B7046 /* AppSyncStateManagerTests.swift */; };
 		C3F414F4FFCC51C4A353A9F9 /* PileBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21312C0867E6DACAFF1780E7 /* PileBadgeView.swift */; };
+		CB1D7612C61D84EBFA05175A /* AppViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */; };
 		EA5914D21CB5AB9F6C4E4EBE /* UserProfileDedupeServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7F004C7FAB6A37297C8615 /* UserProfileDedupeServiceTests.swift */; };
 		EE78EECA74077ECD7784C2E1 /* UserProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71EF3E17CA0D6AFC0E321DE /* UserProfileTests.swift */; };
-		CB1D7612C61D84EBFA05175A /* AppViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */; };
-		AB24E37E6C4781C61A774A7E /* SwipeLingoMigrationPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CC016D85EA2BFD8795FE26D /* SwipeLingoMigrationPlanTests.swift */; };
 		FC6AB36DB800A4A62E39D36E /* ForeignAccountWarningService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A10B05548AD3414328CC961 /* ForeignAccountWarningService.swift */; };
 /* End PBXBuildFile section */
 
@@ -430,10 +430,10 @@
 		47DFAAA83053155500FDD455 /* DictionaryLookupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryLookupViewModel.swift; sourceTree = "<group>"; };
 		47EF10012F8531C20049858B /* PairsSetContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSetContentView.swift; sourceTree = "<group>"; };
 		704BC42AFC427BD3BA442868 /* ForeignAccountWarningServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeignAccountWarningServiceTests.swift; sourceTree = "<group>"; };
-		8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIAppearanceConfigurator.swift; sourceTree = "<group>"; };
-		A71EF3E17CA0D6AFC0E321DE /* UserProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileTests.swift; sourceTree = "<group>"; };
 		81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
+		8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIAppearanceConfigurator.swift; sourceTree = "<group>"; };
 		9CC016D85EA2BFD8795FE26D /* SwipeLingoMigrationPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoMigrationPlanTests.swift; sourceTree = "<group>"; };
+		A71EF3E17CA0D6AFC0E321DE /* UserProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileTests.swift; sourceTree = "<group>"; };
 		E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileDedupeService.swift; sourceTree = "<group>"; };
 		F8FCFCB36E2BEC4F013B7046 /* AppSyncStateManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSyncStateManagerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -814,8 +814,8 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
-				478729362FA9D9A3001282EF /* SRSServiceTests.swift */,
 				478729372FA9D9A3001282EF /* SwipeLingoTests.swift */,
+				478729362FA9D9A3001282EF /* SRSServiceTests.swift */,
 				0D7F004C7FAB6A37297C8615 /* UserProfileDedupeServiceTests.swift */,
 				F8FCFCB36E2BEC4F013B7046 /* AppSyncStateManagerTests.swift */,
 				0E2151381ED3A3442F2FD275 /* ErrorManagerTests.swift */,
