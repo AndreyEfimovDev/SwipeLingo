@@ -37,9 +37,7 @@ final class AppViewModel {
         nativeLanguage: NativeLanguage,
         context: ModelContext
     ) {
-        let oldLevel = CEFRLevel(rawValue: oldRaw ?? "") ?? .c2
-        let newLevel = CEFRLevel(rawValue: newRaw ?? "") ?? .c2
-        guard newLevel > oldLevel else { return }   // понижение — sync не нужен
+        guard let newLevel = Self.levelIncrease(oldRaw: oldRaw, newRaw: newRaw) else { return }   // понижение — sync не нужен
         Task {
             await ImportFSService().syncFromFirestore(
                 into: context,
@@ -48,6 +46,19 @@ final class AppViewModel {
                 forceFullSync: true
             )
         }
+    }
+
+    /// Чистая логика сравнения уровней, вынесена из `handleCEFRLevelChange` отдельно
+    /// от side-effect (сетевой sync) — тестируется без моков и сети. `ImportFSService`
+    /// не имеет протокола-обёртки (в отличие от `AuthClient`/`FirestoreClient`), так
+    /// что сам факт вызова sync юнит-тестом не проверить — эта функция покрывает
+    /// именно решение "нужен ли sync", а не сам sync.
+    /// - Returns: новый уровень, если это повышение (используется как `upToLevel` для
+    ///   sync), либо `nil` при понижении/равенстве — вызывающая сторона ничего не делает.
+    static func levelIncrease(oldRaw: String?, newRaw: String?) -> CEFRLevel? {
+        let oldLevel = CEFRLevel(rawValue: oldRaw ?? "") ?? .c2
+        let newLevel = CEFRLevel(rawValue: newRaw ?? "") ?? .c2
+        return newLevel > oldLevel ? newLevel : nil
     }
 
     // MARK: - StudyMode
