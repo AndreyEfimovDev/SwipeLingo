@@ -15,6 +15,12 @@ import SwiftUI
 /// Экраны с дополнительными toolbar-кнопками (например `BooksView`) добавляют
 /// свой `ToolbarItem(placement: .topBarTrailing)` в тот же `.toolbar { }` —
 /// до `MainScreenToolbar`, чтобы сохранить порядок (кнопка → меню "...").
+///
+/// `MainScreenToolbar` — `ToolbarContent`, не `View`, фон навигационного бара
+/// сам не задаёт. Прозрачный nav bar (сейчас у CardsView/PairsView/BooksView) —
+/// отдельный модификатор `.toolbarBackground(.hidden, for: .navigationBar)` на
+/// самом экране, рядом с `.toolbar { ... }`. Новый экран с этим toolbar,
+/// которому тоже нужен прозрачный бар, — не забыть добавить.
 struct MainScreenToolbar: ToolbarContent {
     let appViewModel: AppViewModel
     let currentMode: AppViewModel.StudyMode

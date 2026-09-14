@@ -71,11 +71,17 @@ struct PairsView: View {
             VStack(spacing: 0) {
                 pileBadge
                     .padding(.top, 8)
-                if candidateSets.isEmpty { emptyState } else { playScreen }
+                    .padding(.horizontal)
+                if candidateSets.isEmpty {
+                    emptyState
+                } else {
+                    playScreen
+                }
             }
             .navigationTitle("Pairs")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { pairsToolbar }
+            .toolbarBackground(.hidden, for: .navigationBar)
             .onAppear { selectDefaultMode() }
         }
     }
@@ -101,14 +107,13 @@ struct PairsView: View {
 
             // Preview: левая часть пар из активного pile/all sets (отступ сверху — за pileBadge)
             previewContent
-                .padding(.top, 12)
 
             // [Auto/Manual] · [Play / Caught up] · [Due/All]
             mainRow
                 .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.myColors.myBackground.ignoresSafeArea())
+        .background(Color.clear.ignoresSafeArea())
     }
 
     // MARK: - Preview Content
@@ -288,24 +293,9 @@ struct PairsView: View {
     // MARK: - Pile Badge
 
     private var pileBadge: some View {
-        Button { appViewModel.activeSheet = .pairsLibrary } label: {
-            HStack(spacing: 6) {
-                Text(activePile?.name ?? "All Sets")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(
-                        activePile != nil
-                            ? Color.myColors.myAccent.opacity(0.75)
-                            : Color.myColors.myAccent.opacity(0.35)
-                    )
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 8)
-            .background(.ultraThinMaterial, in: Capsule())
+        PileBadgeView(title: activePile?.name ?? "All Sets", isActive: activePile != nil) {
+            appViewModel.activeSheet = .pairsLibrary
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Play Button

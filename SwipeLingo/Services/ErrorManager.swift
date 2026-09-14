@@ -10,6 +10,7 @@ final class ErrorManager: ObservableObject {
 
     // Блокирующий алерт
     @Published var errorMessage: String?
+    @Published var errorTitle: String = "Error"
     @Published var showAlert: Bool = false
 
     // Неблокирующий баннер
@@ -19,6 +20,7 @@ final class ErrorManager: ObservableObject {
     private init() {}
 
     func handle(_ error: Error? = nil, message: String) {
+        errorTitle = "Error"
         errorMessage = error?.localizedDescription ?? message
         showAlert = true
         if let error {
@@ -26,6 +28,16 @@ final class ErrorManager: ObservableObject {
         } else {
             log("❌ \(message)", level: .error)
         }
+    }
+
+    /// Блокирующий алерт с произвольным заголовком — для неkритичных, не-error
+    /// уведомлений (напр. предупреждение о несовместимых аккаунтах), которым не
+    /// подходит дефолтный заголовок "Error" и логирование как ошибки в `handle`.
+    func notify(title: String, message: String) {
+        errorTitle = title
+        errorMessage = message
+        showAlert = true
+        log("ℹ️ \(title): \(message)", level: .info)
     }
 
     /// Показывает неблокирующий баннер, автоматически скрывается через 3 секунды.
@@ -41,6 +53,7 @@ final class ErrorManager: ObservableObject {
 
     func clear() {
         errorMessage = nil
+        errorTitle = "Error"
         showAlert = false
     }
 }
@@ -151,7 +164,7 @@ private struct ErrorAlertModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .alert("Error", isPresented: $errorManager.showAlert) {
+            .alert(errorManager.errorTitle, isPresented: $errorManager.showAlert) {
                 Button("OK") { errorManager.clear() }
             } message: {
                 Text(errorManager.errorMessage ?? "An unknown error occurred.")
