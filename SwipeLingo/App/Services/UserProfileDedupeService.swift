@@ -44,4 +44,33 @@ struct UserProfileDedupeService {
     func hasForeignProfiles(firebaseUID: String, allProfiles: [UserProfile]) -> Bool {
         allProfiles.contains { !$0.firebaseUID.isEmpty && $0.firebaseUID != firebaseUID }
     }
+
+    /// Единственное место в приложении, которое создаёт `UserProfile` "по
+    /// требованию" — единый источник правды на вопрос "есть ли профиль для этого
+    /// аккаунта", вместо того чтобы каждый вызывающий (`OnboardingLevelViewModel`,
+    /// `UserSessionSyncService`, `ProfileView`) независимо решал это по своему
+    /// снапшоту. Синхронная функция (НЕ `async`) — в неё физически нельзя вставить
+    /// `await`, компилятор не даст; вызов на MainActor поэтому гарантированно
+    /// атомарен от fetch до insert. Какой бы из вызывающих ни сработал первым,
+    /// следующий увидит уже созданный профиль через свой собственный `fetch` (сама
+    /// функция всегда фетчит заново, не принимает снапшот снаружи — так фетч,
+    /// проверка и создание остаются одним неразрывным участком, а не "вызывающий
+    /// сам фетчит где-то до, потом передаёт сюда возможно устаревший список").
+    ///
+    /// Если "мой" профиль нашёлся, но ещё не привязан (`firebaseUID` пуст) —
+    /// привязывает его. Только вызывать из мест, которые действительно должны
+    /// иметь право создать профиль (`.onAppear`, после verified-сессии) — не из
+    /// вычисляемых свойств, читаемых многократно/пассивно.
+    @discardableResult
+    func resolveOrCreateProfile(firebaseUID: String, context: ModelContext) -> UserProfile {
+        let allProfiles = context.fetchWithErrorHandling(FetchDescriptor<UserProfile>())
+        if let existing = resolveProfile(firebaseUID: firebaseUID, allProfiles: allProfiles, context: context) {
+            if existing.firebaseUID.isEmpty { existing.firebaseUID = firebaseUID }
+            return existing
+        }
+        let fresh = UserProfile()
+        fresh.firebaseUID = firebaseUID
+        context.insert(fresh)
+        return fresh
+    }
 }

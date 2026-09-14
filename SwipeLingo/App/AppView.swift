@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 // MARK: - AppView
 
@@ -15,6 +16,13 @@ struct AppView: View {
     private var settings: AppSettings { dependencies.appSettings }
     /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк);
     private var nativeLanguage: NativeLanguage { dependencies.appSyncStateService.nativeLanguage }
+    /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, см.
+    /// комментарий у аналогичного свойства в `CardsView`.
+    private var myProfile: UserProfile? {
+        UserProfileDedupeService().resolveProfile(
+            firebaseUID: dependencies.authFBService.currentUser?.uid ?? "", allProfiles: profiles, context: context
+        )
+    }
 
     init(dependencies: AppDependencies) {
         self.dependencies = dependencies
@@ -29,7 +37,7 @@ struct AppView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
-            .onChange(of: profiles.first?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
+            .onChange(of: myProfile?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
                 vm.handleCEFRLevelChange(
                     oldRaw: oldLevelRaw,
                     newRaw: newLevelRaw,

@@ -19,8 +19,12 @@ final class PairsLibraryViewModel {
 
     // MARK: - Фильтрация
 
-    func userLevel(profiles: [UserProfile]) -> CEFRLevel {
-        profiles.first?.cefrLevel ?? .c2
+    /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, см.
+    /// комментарий у аналогичного свойства в `CardsView`.
+    func userLevel(firebaseUID: String, profiles: [UserProfile], context: ModelContext) -> CEFRLevel {
+        UserProfileDedupeService().resolveProfile(
+            firebaseUID: firebaseUID, allProfiles: profiles, context: context
+        )?.cefrLevel ?? .c2
     }
 
     /// Видимые (не мягко-удалённые) сеты коллекции, доступные на уровне пользователя.

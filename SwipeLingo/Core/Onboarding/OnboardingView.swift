@@ -13,6 +13,9 @@ struct OnboardingView: View {
     /// Порядок свойств важен: onComplete должен остаться последним параметром
     /// синтезированного memberwise init ради trailing closure на call site.
     let appSyncStateService: AppSyncStateService
+    /// UID текущего аккаунта — прокидывается дальше в `OnboardingLevelView`
+    /// (см. её комментарий про фильтрацию по аккаунту).
+    let firebaseUID: String
     var onComplete: () -> Void
 
     @State private var step: Int = 0
@@ -36,10 +39,10 @@ struct OnboardingView: View {
                         OnboardingLanguageView(appSyncStateService: appSyncStateService) { next() }
                             .transition(stepTransition)
                     case 2:
-                        OnboardingLevelView(onNext: { next() }, onBack: { back() })
+                        OnboardingLevelView(firebaseUID: firebaseUID, onNext: { next() }, onBack: { back() })
                             .transition(stepTransition)
                     default:
-                        OnboardingConfirmView(appSyncStateService: appSyncStateService, onComplete: onComplete, onBack: { back() })
+                        OnboardingConfirmView(appSyncStateService: appSyncStateService, firebaseUID: firebaseUID, onComplete: onComplete, onBack: { back() })
                             .transition(stepTransition)
                     }
                 }

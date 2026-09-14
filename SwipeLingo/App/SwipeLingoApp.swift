@@ -85,7 +85,9 @@ struct SwipeLingoApp: App {
             } else if !appSyncStateService.hasCompletedOnboarding {
                 /// Новый пользователь: выбор языка и уровня (без этапа аутентификации —
                 /// аутентификация уже выполнена выше, до начала онбординга).
-                OnboardingView(appSyncStateService: appSyncStateService) {
+                /// currentUser гарантированно не nil в этой ветке (isAuthenticated уже
+                /// проверен выше) — "" тут чисто defensive fallback, не ожидаемый путь.
+                OnboardingView(appSyncStateService: appSyncStateService, firebaseUID: authService.currentUser?.uid ?? "") {
                     appSyncStateService.hasCompletedOnboarding = true
                 }
                 .modelContainer(container)
@@ -99,12 +101,15 @@ struct SwipeLingoApp: App {
         /// При первом запуске синхронизация инициируется ниже, в блоке .onChange, после завершения онбординга.
         .task {
             if appSyncStateService.hasCompletedOnboarding {
-                await ImportFSService().syncForCurrentUser(container: container, language: nativeLanguage)
+                await ImportFSService().syncForCurrentUser(
+                    container: container, language: nativeLanguage, firebaseUID: authService.currentUser?.uid ?? ""
+                )
             }
         }
         .onChange(of: appSyncStateService.hasCompletedOnboarding) { _, completed in
             if completed {
-                Task { await ImportFSService().syncForCurrentUser(container: container, language: nativeLanguage) }
+                let firebaseUID = authService.currentUser?.uid ?? ""
+                Task { await ImportFSService().syncForCurrentUser(container: container, language: nativeLanguage, firebaseUID: firebaseUID) }
             }
         }
         /// держим привязку id пользователя в системе аналитики синхронизированной с фактическим состоянием auth

@@ -1,11 +1,14 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 // MARK: - PairsView
 // Главный экран раздела Pairs.
 // Layout: pile badge (кнопка) вверху, два toggle по краям, Play внизу.
 
 struct PairsView: View {
+
+    @Environment(\.modelContext) private var context
 
     /// Передаются из composition root через AppView — не через .environment().
     private let appViewModel: AppViewModel
@@ -28,7 +31,13 @@ struct PairsView: View {
     @Query private var allPiles:   [PairsPile]
     @Query private var profiles:   [UserProfile]
 
-    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+    /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, см.
+    /// комментарий у того же свойства в `CardsView`.
+    private var userLevel: CEFRLevel {
+        UserProfileDedupeService().resolveProfile(
+            firebaseUID: authService.currentUser?.uid ?? "", allProfiles: profiles, context: context
+        )?.cefrLevel ?? .c2
+    }
 
     /// Сеты ≤ уровня пользователя. Сеты выше уровня хранятся локально, но не показываются.
     private var levelFilteredSets: [PairsSet] {

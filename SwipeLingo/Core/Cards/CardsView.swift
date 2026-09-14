@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 // MARK: - CardsView
 
@@ -29,7 +30,14 @@ struct CardsView: View {
     @Query private var collections: [Collection]
     @Query private var profiles:    [UserProfile]
 
-    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+    /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, иначе на
+    /// общем iCloud с чужим уже синкнутым профилем контент фильтровался бы по
+    /// чужому уровню.
+    private var userLevel: CEFRLevel {
+        UserProfileDedupeService().resolveProfile(
+            firebaseUID: authService.currentUser?.uid ?? "", allProfiles: profiles, context: context
+        )?.cefrLevel ?? .c2
+    }
 
     /// Сеты ≤ уровня пользователя, не мягко удалённые.
     private var levelFilteredCardSets: [CardSet] {

@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseCore
+import FirebaseAuth
 
 // MARK: - PairsLibraryView
 // Управление PairsPiles и просмотр всех PairsSets.
@@ -53,7 +54,9 @@ struct PairsLibraryView: View {
 
     // MARK: - Grouping helpers (делегируют в VM, добавляя @Query-результаты)
 
-    private var userLevel: CEFRLevel { vm.userLevel(profiles: profiles) }
+    private var userLevel: CEFRLevel {
+        vm.userLevel(firebaseUID: authService.currentUser?.uid ?? "", profiles: profiles, context: context)
+    }
 
     private func sets(for collection: Collection) -> [PairsSet] {
         vm.sets(for: collection, allSets: allSets, userLevel: userLevel)

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 // MARK: - LibraryView
 // Корень таба Library: Piles + Collections → Sets → Cards (NavigationStack)
@@ -42,7 +43,16 @@ struct LibraryView: View {
     @State private var newPileName            = ""
     @State private var showAllPiles           = false
 
-    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+    /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, см.
+    /// комментарий у того же свойства в `CardsView`.
+    private var userLevel: CEFRLevel {
+        UserProfileDedupeService()
+            .resolveProfile(
+                firebaseUID: authService.currentUser?.uid ?? "",
+                allProfiles: profiles,
+                context: context
+        )?.cefrLevel ?? .c2
+    }
 
     var body: some View {
         NavigationStack {
