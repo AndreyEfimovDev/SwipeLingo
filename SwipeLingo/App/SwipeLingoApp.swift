@@ -121,13 +121,23 @@ struct SwipeLingoApp: App {
         .onChange(of: authService.isSessionVerified) { _, verified in
             /// двойная защита: реагируем только на переход в true (не на false, т.е. не на logout — тут .onChange тоже сработает при verified → false, но guard молча выходит), и требуем реального currentUser (на случай гонки, если он уже стал nil к моменту срабатывания).
             guard verified, let user = authService.currentUser else { return }
+            /// Привязываем AppSyncState к аккаунту раньше Task ниже — синхронно, до
+            /// чтения appSyncStateService.hasCompletedOnboarding внутри неё (см. claim(firebaseUID:)).
+            appSyncStateService.claim(firebaseUID: user.uid)
+            let hasForeignSyncState = appSyncStateService.hasForeignAccountData(firebaseUID: user.uid)
             Task {
-                let isReturningUser = await UserSessionSyncService().syncAfterVerifiedSession(
+                let syncResult = await UserSessionSyncService().syncAfterVerifiedSession(
                     user: user, container: container, nativeLanguage: nativeLanguage, userService: userService
+                )
+                /// Общий iCloud, но разные Firebase-аккаунты на разных устройствах — см.
+                /// ForeignAccountWarningService. Проверяем обе стороны (AppSyncState/UserProfile),
+                /// т.к. чужие данные могут проявиться в одной модели раньше другой.
+                ForeignAccountWarningService.warnIfNeeded(
+                    hasForeignData: hasForeignSyncState || syncResult.hasForeignProfileData
                 )
                 /// Второе устройство: документ Firebase уже содержит cefrLevel → пропускаем онбординг:
                 /// узкий, специфичный сценарий: пользователь залогинился на новом устройстве, но его Firestore-документ уже содержит cefrLevel (значит, онбординг пройден на другом устройстве) — тогда просто помечаем hasCompletedOnboarding = true локально, минуя UI-онбординг целиком (роутинг в readyContent сразу переключится на AppView)
-                if isReturningUser && !appSyncStateService.hasCompletedOnboarding {
+                if syncResult.isReturningUser && !appSyncStateService.hasCompletedOnboarding {
                     appSyncStateService.hasCompletedOnboarding = true
                     log("Returning user detected — skipping onboarding", level: .info)
                 }

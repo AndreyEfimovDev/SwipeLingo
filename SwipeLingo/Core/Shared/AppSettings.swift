@@ -46,13 +46,13 @@ final class AppSettings {
 
     var bookFontSize: Int {
         didSet {
-            UserDefaults.standard.set(bookFontSize, forKey: "bookFontSize")
+            UserDefaults.standard.set(bookFontSize, forKey: Constants.StorageKey.bookFontSize)
         }
     }
 
     var appleRelayBannerDismissed: Bool {
         didSet {
-            UserDefaults.standard.set(appleRelayBannerDismissed, forKey: "appleRelayBannerDismissed")
+            UserDefaults.standard.set(appleRelayBannerDismissed, forKey: Constants.StorageKey.appleRelayBannerDismissed)
         }
     }
 
@@ -73,10 +73,10 @@ final class AppSettings {
         // ключа bool(forKey:) молча вернул бы false, хотя дефолт должен быть true.
         pairsAudioEnabled = UserDefaults.standard.object(forKey: Constants.StorageKey.pairsAudioEnabled) as? Bool ?? true
         
-        let savedFontSize = UserDefaults.standard.object(forKey: "bookFontSize") as? Int
-        
+        let savedFontSize = UserDefaults.standard.object(forKey: Constants.StorageKey.bookFontSize) as? Int
+
         bookFontSize = savedFontSize ?? 18
-        
-        appleRelayBannerDismissed = UserDefaults.standard.bool(forKey: "appleRelayBannerDismissed")
+
+        appleRelayBannerDismissed = UserDefaults.standard.bool(forKey: Constants.StorageKey.appleRelayBannerDismissed)
     }
 }

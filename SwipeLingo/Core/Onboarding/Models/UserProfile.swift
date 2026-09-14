@@ -3,9 +3,18 @@ import SwiftData
 
 @Model
 final class UserProfile {
-    var name:         String = ""
-    var cefrLevelRaw: String = CEFRLevel.a1.rawValue
-    var firebaseUID:  String = ""
+    var name:         String = "" { didSet { updatedAt = Date.now } }
+    var cefrLevelRaw: String = CEFRLevel.a1.rawValue { didSet { updatedAt = Date.now } }
+    var firebaseUID:  String = "" { didSet { updatedAt = Date.now } }
+
+    /// Момент последнего изменения любого из полей выше — используется для выбора
+    /// "победителя" при слиянии дублей (см. `UserProfileDedupeService`), если гонка
+    /// CloudKit-синхронизации создаст больше одной записи для одного аккаунта.
+    /// `didSet` на самих полях, а не ручной touch в каждом месте мутации — профиль
+    /// правится из нескольких разных мест (`OnboardingLevelViewModel`,
+    /// `UserSessionSyncService`, `ProfileView`), и ручной touch легко забыть в новом
+    /// месте; так модель сама отвечает за свою свежесть — Single Source of Truth.
+    var updatedAt: Date = Date.now
 
     var cefrLevel: CEFRLevel {
         get { CEFRLevel(rawValue: cefrLevelRaw) ?? .a1 }

@@ -49,6 +49,7 @@ struct BooksView: View {
             .navigationTitle("Books")
             .searchable(text: $vm.searchText, prompt: "Search books")
             .toolbar { toolbarContent }
+            .toolbarBackground(.hidden, for: .navigationBar)
             .fullScreenCover(item: $readerBook) { book in
                 BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings)
             }

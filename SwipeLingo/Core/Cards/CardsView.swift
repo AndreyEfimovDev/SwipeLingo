@@ -75,13 +75,15 @@ struct CardsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 pileBadge
-                    .padding(.top, 4)
+                    .padding(.top, 8)
+                    .padding(.horizontal)
                 content
                     .animation(.spring(duration: 0.35, bounce: 0.1), value: vm.sessionID)
             }
             .navigationTitle("Cards")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
         .onAppear {
             vm.startSessionIfNeeded(
@@ -202,24 +204,9 @@ struct CardsView: View {
     private var pileBadge: some View {
         let name = vm.activePileName
         let hasActivePile = !name.isEmpty && name != "All Cards"
-        return Button { appViewModel.activeSheet = .cardsLibrary } label: {
-            HStack(spacing: 6) {
-                Text(hasActivePile ? name : "All Cards")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(
-                        hasActivePile
-                            ? Color.myColors.myAccent.opacity(0.75)
-                            : Color.myColors.myAccent.opacity(0.35)
-                    )
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 8)
-            .background(.ultraThinMaterial, in: Capsule())
+        return PileBadgeView(title: hasActivePile ? name : "All Cards", isActive: hasActivePile) {
+            appViewModel.activeSheet = .cardsLibrary
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Caught-up Screen
