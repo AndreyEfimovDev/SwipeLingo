@@ -73,6 +73,9 @@ enum Constants {
         static let cachedPendingPlan      = "cachedPendingPlan"      // AccessTier.rawValue — план, запланированный после окончания текущего периода
         static let cachedPendingCycle     = "cachedPendingCycle"     // BillingCycle.rawValue — цикл ожидающего плана
         static let pendingInboxWords      = "pendingInboxWords"      // [String] — слова в очереди от Share Extension, читаются через App Group UserDefaults (не @AppStorage — общий между SwipeLingo и SwipeLingoShare)
+        static let foreignAccountWarningShown = "foreignAccountWarningShown" // Bool — предупреждение "разные аккаунты на разных устройствах" уже показано на этом устройстве (см. ForeignAccountWarningService)
+        static let bookFontSize           = "bookFontSize"           // Int — размер шрифта в BookReaderView
+        static let appleRelayBannerDismissed = "appleRelayBannerDismissed" // Bool — баннер про Apple Private Relay email в ProfileView закрыт пользователем
     }
 
     // MARK: - Сайт

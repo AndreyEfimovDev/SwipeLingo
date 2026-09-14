@@ -46,7 +46,7 @@ struct PairsSessionView: View {
     /// чтобы PairsSetPlayerView получил правильное значение с первого рендера.
     /// Next Set всегда использует это значение, локальные изменения внутри сета не влияют.
     @State private var sessionMode: AnimationMode = {
-        let raw = UserDefaults.standard.string(forKey: "pairsAnimationMode") ?? ""
+        let raw = UserDefaults.standard.string(forKey: Constants.StorageKey.pairsAnimationMode) ?? ""
         return AnimationMode(rawValue: raw) ?? .manual
     }()
 
