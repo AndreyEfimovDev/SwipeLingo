@@ -1,6 +1,13 @@
 import SwiftUI
 import AuthenticationServices
 
+
+// MARK: - AuthMode
+
+private enum AuthMode {
+    case signIn, signUp
+}
+
 // MARK: - AuthView
 // Используется в трёх контекстах:
 //   • Первый запуск — до онбординга (showGuestOption: true)
@@ -90,7 +97,7 @@ struct AuthView: View {
                             Task { await signInAnonymously() }
                         } label: {
                             Text("Continue as Guest")
-                                .font(.subheadline)
+                                .font(.title3)
                                 .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
                                 .underline()
                         }
@@ -358,10 +365,4 @@ struct AuthView: View {
             log("Apple Sign-In failed: \(error)", level: .error)
         }
     }
-}
-
-// MARK: - AuthMode
-
-private enum AuthMode {
-    case signIn, signUp
 }
