@@ -23,9 +23,9 @@ struct BooksView: View {
     }
 
     @Query private var books: [Book]
-    @State private var vm     = BooksViewModel()
-    @State private var syncTask:     Task<Void, Never>?
-    @State private var readerBook:   Book? = nil
+    @State private var vm = BooksViewModel()
+    @State private var syncTask: Task<Void, Never>?
+    @State private var readerBook: Book? = nil
     @State private var debugImportTask: Task<Void, Never>?
     @State private var bookToDelete: Book? = nil
 
@@ -51,7 +51,7 @@ struct BooksView: View {
             .searchable(text: $vm.searchText, prompt: "Search books")
             .toolbar { toolbarContent }
             .toolbarBackground(.hidden, for: .navigationBar)
-            .fullScreenCover(item: $readerBook) { book in
+            .navigationDestination(item: $readerBook) { book in
                 BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings)
             }
         }

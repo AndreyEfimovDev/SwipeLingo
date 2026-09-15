@@ -642,7 +642,6 @@
 			children = (
 				4785898F2FF3DD4800BF3C8F /* BackupModels.swift */,
 				478589902FF3DD4800BF3C8F /* ExportService.swift */,
-				478589982FF3EA5A00BF3C8F /* RestoreBackupView.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -916,6 +915,7 @@
 				4700CD782FB9D9CE003EA2B1 /* PaymentFormView.swift */,
 				4700CD762FB9D986003EA2B1 /* PaymentHistoryView.swift */,
 				478589972FF3EA5A00BF3C8F /* ExportAndShareView.swift */,
+				478589982FF3EA5A00BF3C8F /* RestoreBackupView.swift */,
 				4757D5DE305561520064F5F0 /* Services */,
 			);
 			path = Settings;

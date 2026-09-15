@@ -19,6 +19,7 @@ struct ExportAndShareView: View {
             .padding(.vertical, 16)
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        .customBackButton("")
         .navigationTitle("Export / Share")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showShareSheet) {

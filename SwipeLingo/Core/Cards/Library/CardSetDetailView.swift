@@ -123,7 +123,6 @@ struct CardSetDetailView: View {
                         }
                 }
             }
-//            .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .myShadow()
             .environment(\.editMode, $editMode)

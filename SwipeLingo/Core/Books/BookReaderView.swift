@@ -115,7 +115,6 @@ struct BookReaderView: View {
     let appSyncStateService: AppSyncStateService
     let appSettings: AppSettings
 
-    @Environment(\.dismiss)      private var dismiss
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme)  private var colorScheme
 
@@ -156,47 +155,46 @@ struct BookReaderView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                if vm.isChapterReady {
-                    readerContent
-                } else {
-                    downloadingView
-                }
+        ZStack {
+            if vm.isChapterReady {
+                readerContent
+            } else {
+                downloadingView
             }
-            .navigationTitle(vm.currentChapter?.title ?? book.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbarContent }
-            .sheet(isPresented: $vm.showDictionary) {
-                if let word = vm.tappedWord {
-                    BookWordLookupView(word: word, appSyncStateService: appSyncStateService)
-                        .onAppear {
-                            AnalyticsFBService.wordLookedUp(word: word, source: .book)
-                        }
-                }
-            }
-            .sheet(isPresented: $vm.showChapterList) {
-                BookChapterListView(
-                    book: book,
-                    currentIndex: vm.chapterIndex
-                ) { index in
-                    vm.goToChapter(index)
-                    vm.showChapterList = false
-                }
-            }
-            .sheet(isPresented: $vm.showBookmarks) {
-                BookBookmarksView(
-                    bookmarks:    bookmarks,
-                    currentIndex: vm.chapterIndex,
-                    onSelect: { bookmark in
-                        vm.goToChapter(bookmark.chapterIndex)
-                        vm.showBookmarks = false
-                    },
-                    onDelete: { bookmark in
-                        vm.deleteBookmark(bookmark, context: context)
+        }
+        .navigationTitle(vm.currentChapter?.title ?? book.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .customBackButton("")
+        .toolbar { toolbarContent }
+        .sheet(isPresented: $vm.showDictionary) {
+            if let word = vm.tappedWord {
+                BookWordLookupView(word: word, appSyncStateService: appSyncStateService)
+                    .onAppear {
+                        AnalyticsFBService.wordLookedUp(word: word, source: .book)
                     }
-                )
             }
+        }
+        .sheet(isPresented: $vm.showChapterList) {
+            BookChapterListView(
+                book: book,
+                currentIndex: vm.chapterIndex
+            ) { index in
+                vm.goToChapter(index)
+                vm.showChapterList = false
+            }
+        }
+        .sheet(isPresented: $vm.showBookmarks) {
+            BookBookmarksView(
+                bookmarks:    bookmarks,
+                currentIndex: vm.chapterIndex,
+                onSelect: { bookmark in
+                    vm.goToChapter(bookmark.chapterIndex)
+                    vm.showBookmarks = false
+                },
+                onDelete: { bookmark in
+                    vm.deleteBookmark(bookmark, context: context)
+                }
+            )
         }
         .fullScreenCover(item: Binding(
             get: { fullscreenImageURL.map { IdentifiableString(value: $0) } },
@@ -367,19 +365,6 @@ struct BookReaderView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button {
-                vm.saveProgress(context: context)
-                dismiss()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left")
-                    Text("Books")
-                }
-                .foregroundStyle(Color.myColors.myBlue)
-            }
-        }
-
         ToolbarItemGroup(placement: .topBarTrailing) {
             // Тап → открыть список. Долгий тап → Add / Remove / Show All
             Button {

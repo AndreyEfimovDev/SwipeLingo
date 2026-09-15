@@ -82,11 +82,12 @@ struct ProfileView: View {
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .customBackButton("Settings")
+        .customBackButton("")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if saveConfirmed {
                     Image(systemName: "checkmark.circle.fill")
+                        .font(.title)
                         .foregroundStyle(Color.myColors.myGreen)
                         .transition(.scale.combined(with: .opacity))
                 } else if hasChanges {
@@ -98,7 +99,8 @@ struct ProfileView: View {
             }
         }
         .onAppear {
-            UserProfileDedupeService().resolveOrCreateProfile(firebaseUID: authService.currentUser?.uid ?? "", context: context)
+            UserProfileDedupeService()
+                .resolveOrCreateProfile(firebaseUID: authService.currentUser?.uid ?? "", context: context)
             nameInput    = profile?.name ?? ""
             pendingLevel = profile?.cefrLevel ?? .a1
             isInitialized = true

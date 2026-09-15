@@ -34,10 +34,10 @@ struct PairsLibraryView: View {
         self.appSyncStateService = appSyncStateService
     }
 
-    @Query(sort: \PairsSet.createdAt, order: .reverse)    private var allSets:         [PairsSet]
-    @Query(sort: \PairsPile.createdAt, order: .reverse)   private var allPiles:        [PairsPile]
+    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets: [PairsSet]
+    @Query(sort: \PairsPile.createdAt, order: .reverse) private var allPiles: [PairsPile]
     @Query(filter: #Predicate<Collection> { $0.typeRaw == "pairs" },
-           sort: \Collection.createdAt)                   private var pairsCollections: [Collection]
+           sort: \Collection.createdAt) private var pairsCollections: [Collection]
 
     /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
     private var nativeLangRaw: String { appSyncStateService.nativeLanguageRaw }

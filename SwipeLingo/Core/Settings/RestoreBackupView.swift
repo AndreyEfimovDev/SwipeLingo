@@ -18,6 +18,7 @@ struct RestoreBackupView: View {
             .padding(.vertical, 16)
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        .customBackButton("")
         .navigationTitle("Restore")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showDocumentPicker) {

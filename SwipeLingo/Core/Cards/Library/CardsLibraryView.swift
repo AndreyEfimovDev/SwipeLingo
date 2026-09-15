@@ -334,7 +334,7 @@ struct CardsLibraryView: View {
 
             // ── Заголовок ─────────────────────────────────────────
             HStack {
-                Text("MY SETS")
+                Text("MINE")
                     .font(.footnote.weight(.semibold))
                 Spacer()
                 Button { isShowingAddCollection = true } label: {
