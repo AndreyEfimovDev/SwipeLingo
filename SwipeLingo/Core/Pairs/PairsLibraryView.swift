@@ -81,8 +81,8 @@ struct PairsLibraryView: View {
         ScrollView {
             VStack(spacing: 24) {
                 pilesSection
-                setsSection
                 managingSection
+                setsSection
             }
             .padding(.vertical, 16)
         }
@@ -394,16 +394,19 @@ struct PairsLibraryView: View {
 
     // MARK: - Managing Section
 
+    @ViewBuilder
     private var managingSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("MANAGING PAIRS")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.myColors.myAccent)
-                .padding(.horizontal, 32)
+        // Секция целиком скрыта, если удалённых сетов нет — иначе оставался бы заголовок
+        // "MANAGING PAIRS" над пустой белой плашкой (внутренний if !deletedSets.isEmpty
+        // прятал только содержимое, а не заголовок/рамку вокруг него).
+        if !deletedSets.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MANAGING PAIRS")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent)
+                    .padding(.horizontal, 32)
 
-            VStack(spacing: 0) {
-                // Строка Deleted Sets (только когда есть удалённые сеты)
-                if !deletedSets.isEmpty {
+                VStack(spacing: 0) {
                     deletedSetsRow
 
                     if showDeleted {
@@ -433,13 +436,12 @@ struct PairsLibraryView: View {
 
                     Divider().padding(.leading, 46)
                 }
-
+                .foregroundStyle(Color.myColors.myAccent)
+                .background(Color.myColors.myBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .myShadow()
+                .padding(.horizontal, 16)
             }
-            .foregroundStyle(Color.myColors.myAccent)
-            .background(Color.myColors.myBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .myShadow()
-            .padding(.horizontal, 16)
         }
     }
 

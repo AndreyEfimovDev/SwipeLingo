@@ -94,8 +94,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Language
-
     // MARK: - Study
 
     private var studySection: some View {

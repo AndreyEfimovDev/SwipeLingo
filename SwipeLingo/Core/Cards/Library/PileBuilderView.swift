@@ -9,7 +9,7 @@ struct PileBuilderView: View {
 
     @Environment(\.modelContext)  private var context
     @Environment(\.dismiss)       private var dismiss
-    /// Передаются из composition root через LibraryView — не через .environment().
+    /// Передаются из composition root через CardsLibraryView — не через .environment().
     private let appViewModel: AppViewModel
     private let appSyncStateService: AppSyncStateService
 

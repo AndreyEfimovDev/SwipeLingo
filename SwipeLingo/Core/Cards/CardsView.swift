@@ -143,6 +143,23 @@ struct CardsView: View {
                 userPlan: userPlan
             )
         }
+        // Лёгкое обновление счётчиков (не полный reload сессии — studyCards/sessionID/
+        // currentIndex/isCaughtUp не трогаются) один раз при закрытии ЛЮБОГО sheet
+        // (Library/Settings/...) — а не при каждой мутации статуса карточки. Статус может
+        // поменяться вне активной сессии (напр. swipe action "Restore" в CardSetDetailView,
+        // или restore из DeletedCardsView в Settings), allCards.count при этом не меняется,
+        // поэтому onChange(allCards.count) выше это не ловит. Пока sheet открыт, CardsView и
+        // так не виден — обновлять счётчики раньше, чем пользователь их увидит, незачем;
+        // раньше это делалось вычисляемым ключом (pileCountsSnapshot), пересчитывавшимся на
+        // КАЖДЫЙ re-render CardsView (в т.ч. скрытого под sheet) — лишняя O(n)-работа на
+        // каждую мутацию Card/Pile в БД, конкурировавшая за runloop с List/PreferenceKey
+        // синхронизацией высоты строк в CardSetDetailView и заметно тормозившая свайп-жесты
+        // там. Разовый пересчёт на закрытие sheet эту стоимость убирает.
+        .onChange(of: appViewModel.activeSheet) { oldSheet, newSheet in
+            if oldSheet != nil && newSheet == nil {
+                vm.refreshPileCounts(piles: piles, allCards: allCards, cardSets: levelFilteredCardSets)
+            }
+        }
     }
 
     // MARK: - Content

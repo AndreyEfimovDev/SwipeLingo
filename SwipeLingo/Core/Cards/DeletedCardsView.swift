@@ -550,6 +550,6 @@ private struct DeletedCardRow: View {
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
             }
         }
-        .padding(.vertical, 2)
+//        .padding(.vertical, 2)
     }
 }

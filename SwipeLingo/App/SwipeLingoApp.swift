@@ -96,6 +96,7 @@ struct SwipeLingoApp: App {
                     .modelContainer(container)
             }
         }
+        .preferredColorScheme(dependencies.appSettings.theme.colorScheme)
         /// Синхронизирует актуальные данные из Firestore в SwiftData (операция идемпотентна благодаря firestoreId).
         /// Пропускается при первом запуске (онбординг еще не пройден: отсутствует UserProfile, уровень неизвестен).
         /// При первом запуске синхронизация инициируется ниже, в блоке .onChange, после завершения онбординга.

@@ -114,6 +114,63 @@ final class FlashCardsViewModel {
         }
     }
 
+    /// Лёгкое обновление pile-уровневых счётчиков (`allActiveCount`/`pileLearntCount`) от
+    /// живых данных — в отличие от `startNewSession`, НЕ трогает `studyCards`/`sessionID`/
+    /// `currentIndex`/`isCaughtUp`. Нужно, когда статус карточки меняется вне активной
+    /// сессии (напр. swipe action "Restore" в `CardSetDetailView` возвращает Learnt-карточку
+    /// в Active) — такое изменение не задевает состав уже загруженной сессии, но делает эти
+    /// два счётчика устаревшими; полноценный `startNewSession` в этот момент сбросил бы
+    /// прогресс текущего свайпа, если пользователь как раз изучает карточки.
+    ///
+    /// Карточки текущей сессии (`studyCards`) исключаются из пересчёта `learnt` — они уже
+    /// учтены через `TinderCardsViewModel.learntInSession` (progressStatsRow показывает
+    /// `pileLearntCount + learntInSession`); без исключения свайп внутри сессии
+    /// (`card.status = .learnt` в `commitSwipe`) триггерил бы этот же refresh и попадал бы
+    /// в сумму дважды.
+    func refreshPileCounts(piles: [Pile], allCards: [Card], cardSets: [CardSet]) {
+        let allowedSetIds = Set(cardSets.map(\.id))
+        let sessionCardIds = Set(studyCards.map(\.id))
+        (allActiveCount, pileLearntCount) = pileCounts(
+            piles: piles, allCards: allCards, allowedSetIds: allowedSetIds,
+            excludingFromLearnt: sessionCardIds
+        )
+    }
+
+    /// Формула pile-уровневых счётчиков (сколько карточек Active/Learnt в текущем pile,
+    /// с учётом уровня пользователя через `allowedSetIds`) — общая для `load()` и
+    /// `refreshPileCounts`, чтобы бизнес-правило не разошлось между полной загрузкой сессии
+    /// и лёгким обновлением.
+    ///
+    /// - Parameter excludingFromLearnt: id карточек, исключаемых из подсчёта `learnt` —
+    ///   используется только `refreshPileCounts` (см. её комментарий); `load()` вызывает без
+    ///   этого параметра (пустое множество), т.к. на момент старта сессии исключать нечего.
+    private func pileCounts(
+        piles: [Pile], allCards: [Card], allowedSetIds: Set<UUID>,
+        excludingFromLearnt excludedIds: Set<UUID> = []
+    ) -> (active: Int, learnt: Int) {
+        let activePile = piles.first(where: { $0.isActive })
+
+        let active: Int
+        if let activePile {
+            let pileCards = pileService.activeCards(for: activePile, from: allCards)
+            active = pileCards.filter { allowedSetIds.contains($0.setId) }.count
+        } else {
+            active = allCards.filter { $0.status == .active && allowedSetIds.contains($0.setId) }.count
+        }
+
+        let learnt: Int
+        if let activePile {
+            let setIds = Set(activePile.setIds)
+            learnt = allCards.filter {
+                setIds.contains($0.setId) && $0.status == .learnt && !excludedIds.contains($0.id)
+            }.count
+        } else {
+            learnt = allCards.filter { $0.status == .learnt && !excludedIds.contains($0.id) }.count
+        }
+
+        return (active, learnt)
+    }
+
     // MARK: Private helpers
 
     private func load(
@@ -158,14 +215,7 @@ final class FlashCardsViewModel {
             pileTagsLine   = ""
         }
 
-        allActiveCount  = activeCards.count
-        pileLearntCount = {
-            if let pile = piles.first(where: { $0.isActive }) {
-                let setIds = Set(pile.setIds)
-                return allCards.filter { setIds.contains($0.setId) && $0.status == .learnt }.count
-            }
-            return allCards.filter { $0.status == .learnt }.count
-        }()
+        (allActiveCount, pileLearntCount) = pileCounts(piles: piles, allCards: allCards, allowedSetIds: allowedSetIds)
 
         if dueOnly {
             let now  = Date.now

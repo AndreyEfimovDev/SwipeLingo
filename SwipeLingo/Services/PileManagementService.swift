@@ -18,7 +18,7 @@ extension PairsPile: PileLike {}
 
 // MARK: - PileManagementService
 //
-// Общие мутации Pile, используемые и в Cards Library (LibraryView),
+// Общие мутации Pile, используемые и в Cards Library (CardsLibraryView),
 // и в Pairs Library (PairsLibraryView). Раньше эта логика была продублирована независимо
 // в обоих View — теперь это единственный источник истины для неё.
 //

@@ -2,10 +2,10 @@ import SwiftUI
 import SwiftData
 import FirebaseAuth
 
-// MARK: - LibraryView
+// MARK: - CardsLibraryView
 // Корень таба Library: Piles + Collections → Sets → Cards (NavigationStack)
 
-struct LibraryView: View {
+struct CardsLibraryView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
@@ -59,13 +59,13 @@ struct LibraryView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     pilesSection
-                    setsSection
                     managingSection
+                    setsSection
                 }
                 .padding(.vertical, 16)
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle("Library")
+            .navigationTitle("Cards Library")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -457,7 +457,7 @@ struct LibraryView: View {
     private func setRow(_ cardSet: CardSet, in collection: Collection) -> some View {
         NavigationLink {
             if collection.name == "Inbox" {
-                CardSetDetailView(cardSet: cardSet, backTitle: "Library",
+                CardSetDetailView(cardSet: cardSet, backTitle: "Cards Library",
                                    authService: authService, userService: userService,
                                    appSyncStateService: appSyncStateService)
             } else {
@@ -541,25 +541,31 @@ struct LibraryView: View {
 
     // MARK: - Managing Section
 
+    @ViewBuilder
     private var managingSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("MANAGING CARD")
-                .font(.footnote.weight(.semibold))
+        // Секция целиком скрыта, если внутри нечего показать — иначе оставался бы заголовок
+        // "MANAGING CARD" над пустой белой плашкой (deletedCards сама себя скрывает изнутри,
+        // но заголовок/рамка были снаружи, без учёта этого).
+        if vm.deletedCardsCount(allCards: allCards) > 0 {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MANAGING CARD")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent)
+                    .padding(.horizontal, 32)
+
+                VStack(spacing: 0) {
+                    deletedCards
+
+                }
                 .foregroundStyle(Color.myColors.myAccent)
-                .padding(.horizontal, 32)
-
-            VStack(spacing: 0) {
-                deletedCards
-
+                .background(Color.myColors.myBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .myShadow()
+                .padding(.horizontal, 16)
             }
-            .foregroundStyle(Color.myColors.myAccent)
-            .background(Color.myColors.myBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .myShadow()
-            .padding(.horizontal, 16)
         }
     }
-    
+
     @ViewBuilder
     private var deletedCards: some View {
         let deletedCount = vm.deletedCardsCount(allCards: allCards)

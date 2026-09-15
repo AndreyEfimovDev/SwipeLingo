@@ -131,7 +131,7 @@
 		478C785C2F794487005FBDFE /* AddEditCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78222F794487005FBDFE /* AddEditCardView.swift */; };
 		478C785D2F794487005FBDFE /* CardSetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78232F794487005FBDFE /* CardSetDetailView.swift */; };
 		478C785F2F794487005FBDFE /* DeletedCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78252F794487005FBDFE /* DeletedCardsView.swift */; };
-		478C78602F794487005FBDFE /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78262F794487005FBDFE /* LibraryView.swift */; };
+		478C78602F794487005FBDFE /* CardsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78262F794487005FBDFE /* CardsLibraryView.swift */; };
 		478C78612F794487005FBDFE /* PileBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78272F794487005FBDFE /* PileBuilderView.swift */; };
 		478C78622F794487005FBDFE /* PileBuilderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78282F794487005FBDFE /* PileBuilderViewModel.swift */; };
 		478C78632F794487005FBDFE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C782A2F794487005FBDFE /* SettingsView.swift */; };
@@ -369,7 +369,7 @@
 		478C78222F794487005FBDFE /* AddEditCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditCardView.swift; sourceTree = "<group>"; };
 		478C78232F794487005FBDFE /* CardSetDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSetDetailView.swift; sourceTree = "<group>"; };
 		478C78252F794487005FBDFE /* DeletedCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletedCardsView.swift; sourceTree = "<group>"; };
-		478C78262F794487005FBDFE /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		478C78262F794487005FBDFE /* CardsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardsLibraryView.swift; sourceTree = "<group>"; };
 		478C78272F794487005FBDFE /* PileBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PileBuilderView.swift; sourceTree = "<group>"; };
 		478C78282F794487005FBDFE /* PileBuilderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PileBuilderViewModel.swift; sourceTree = "<group>"; };
 		478C782A2F794487005FBDFE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -893,7 +893,7 @@
 		478C78292F794487005FBDFE /* Library */ = {
 			isa = PBXGroup;
 			children = (
-				478C78262F794487005FBDFE /* LibraryView.swift */,
+				478C78262F794487005FBDFE /* CardsLibraryView.swift */,
 				47D280372F968E5600BBD66B /* ExampleEditorSheet.swift */,
 				478C78272F794487005FBDFE /* PileBuilderView.swift */,
 				478C78232F794487005FBDFE /* CardSetDetailView.swift */,
@@ -973,8 +973,8 @@
 				478C782F2F794487005FBDFE /* DictionaryLookupView.swift */,
 				478C78222F794487005FBDFE /* AddEditCardView.swift */,
 				478C78252F794487005FBDFE /* DeletedCardsView.swift */,
-				4761E60C3052EF5F00906F1F /* Models */,
 				478C78292F794487005FBDFE /* Library */,
+				4761E60C3052EF5F00906F1F /* Models */,
 				4729DAE0143F8BE07FAE52E0 /* ViewModels */,
 			);
 			path = Cards;
@@ -1006,10 +1006,10 @@
 			isa = PBXGroup;
 			children = (
 				4757D5D630555C7C0064F5F0 /* AuthClient.swift */,
+				478728FA2FA9D3FD001282EF /* AuthFBService.swift */,
 				474C912F2FE05D40002017BD /* AnalyticsFBService.swift */,
 				478729472FAB7331001282EF /* UserFBService.swift */,
 				4700CD8E2FBA2816003EA2B1 /* BookFBService.swift */,
-				478728FA2FA9D3FD001282EF /* AuthFBService.swift */,
 			);
 			path = Firebase;
 			sourceTree = "<group>";
@@ -1335,7 +1335,7 @@
 				4700CD8D2FBA2800003EA2B1 /* BookBookmark.swift in Sources */,
 				478C785D2F794487005FBDFE /* CardSetDetailView.swift in Sources */,
 				478C785F2F794487005FBDFE /* DeletedCardsView.swift in Sources */,
-				478C78602F794487005FBDFE /* LibraryView.swift in Sources */,
+				478C78602F794487005FBDFE /* CardsLibraryView.swift in Sources */,
 				478C78612F794487005FBDFE /* PileBuilderView.swift in Sources */,
 				478C78622F794487005FBDFE /* PileBuilderViewModel.swift in Sources */,
 				478C78632F794487005FBDFE /* SettingsView.swift in Sources */,

@@ -8,38 +8,47 @@ import SwiftUI
 // Использование:
 //   .customBackButton("Pairs")   // в PairsSetPlayerView
 //   .customBackButton("Settings")   // в VoiceSettingsView
+//   .customBackButton("", isHidden: editMode == .active)   // экран с Edit-режимом
+//     (CardSetDetailView) — на время редактирования кнопку нужно СКРЫТЬ целиком (не просто
+//     подвинуть), чтобы её место в topBarLeading занял, например, Select All: toolbar
+//     допускает несколько ToolbarItem(.topBarLeading) одновременно — они располагаются
+//     рядом, а не заменяют друг друга, так что без isHidden соседний Select All просто
+//     сдвигал бы шеврон вправо, а не занимал его место.
 
 private struct CustomBackButtonModifier: ViewModifier {
     @Environment(\.dismiss) private var dismiss
     let title: String
+    var isHidden: Bool = false
 
     func body(content: Content) -> some View {
         content
             .navigationBarBackButtonHidden(true)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { dismiss() } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 17, weight: .semibold))
-                            if !title.isEmpty {
-                                Text(title)
-                                    .font(.body)
-                                    .lineLimit(1)
+                if !isHidden {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button { dismiss() } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 17, weight: .semibold))
+                                if !title.isEmpty {
+                                    Text(title)
+                                        .font(.body)
+                                        .lineLimit(1)
+                                }
                             }
+                            .fixedSize()
+                            .foregroundStyle(Color.myColors.myBlue)
                         }
-                        .fixedSize()
-                        .foregroundStyle(Color.myColors.myBlue)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
     }
 }
 
 extension View {
-    func customBackButton(_ title: String = "") -> some View {
-        modifier(CustomBackButtonModifier(title: title))
+    func customBackButton(_ title: String = "", isHidden: Bool = false) -> some View {
+        modifier(CustomBackButtonModifier(title: title, isHidden: isHidden))
     }
 }
 

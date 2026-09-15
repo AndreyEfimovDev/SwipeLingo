@@ -13,7 +13,6 @@ struct AppView: View {
     /// не через .environment(), чтобы каждый потребитель был виден в сигнатуре явно.
     private let dependencies: AppDependencies
     private var vm: AppViewModel { dependencies.appViewModel }
-    private var settings: AppSettings { dependencies.appSettings }
     /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк);
     private var nativeLanguage: NativeLanguage { dependencies.appSyncStateService.nativeLanguage }
     /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, см.
@@ -32,8 +31,8 @@ struct AppView: View {
         studyContent
             .fullScreenCover(item: Bindable(vm).activeSheet) { sheet in
                 sheetView(for: sheet)
+                    .preferredColorScheme(dependencies.appSettings.theme.colorScheme)
             }
-            .preferredColorScheme(settings.theme.colorScheme)
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
@@ -80,7 +79,7 @@ struct AppView: View {
     private func sheetView(for sheet: AppViewModel.AppSheet) -> some View {
         switch sheet {
         case .cardsLibrary:
-            LibraryView(appViewModel: dependencies.appViewModel,
+            CardsLibraryView(appViewModel: dependencies.appViewModel,
                         authService: dependencies.authFBService,
                         userService: dependencies.userFBService,
                         appSyncStateService: dependencies.appSyncStateService)
