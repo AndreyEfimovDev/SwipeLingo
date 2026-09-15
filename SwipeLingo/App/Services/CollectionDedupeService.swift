@@ -27,8 +27,11 @@ import SwiftData
 struct CollectionDedupeService {
 
     /// Имена защищённых коллекций, подлежащих claim/dedupe-логике. Курируемый
-    /// контент сюда не входит — тот уже дедуплицируется по `firestoreId`.
-    static let protectedNames: Set<String> = ["Inbox", "My Sets"]
+    /// контент сюда не входит — тот уже дедуплицируется по `firestoreId`. Inbox сюда
+    /// не входит — с рефакторинга сентября 2026 это обычный CardSet внутри "My Sets",
+    /// не отдельная Collection (см. SystemSeeder); дубли одноимённых CardSet внутри
+    /// объединённой коллекции всё равно схлопывает `mergeDuplicateCardSets` ниже.
+    static let protectedNames: Set<String> = ["My Sets"]
 
     /// Привязывает bootstrap-копии защищённых коллекций (`ownerFirebaseUID`
     /// пуст) к конкретному Firebase-аккаунту — вызывается один раз после
@@ -37,27 +40,31 @@ struct CollectionDedupeService {
     /// коллекции, созданные `SystemSeeder`, считаются device-wide
     /// bootstrap-записями.
     ///
-    /// Для каждого защищённого имени независимо:
-    /// 1. Среди коллекций с этим именем уже есть "своя" (ownerFirebaseUID ==
-    ///    firebaseUID) — ничего не делаем. Слияние дублей внутри "своих" —
-    ///    отдельная забота, см. `mergeProtectedCollections`.
-    /// 2. Иначе — все непривязанные (bootstrap) копии с этим именем
-    ///    присваиваются этому аккаунту (может быть больше одной, если
-    ///    гонка успела создать дубль до claim — mergeProtectedCollections
-    ///    схлопнет их позже).
-    /// 3. Иначе (есть только чужие, с другим ownerFirebaseUID) — не трогаем;
-    ///    свою копию для этого аккаунта на следующем запуске создаст
-    ///    account-aware `SystemSeeder`.
+    /// Для каждого защищённого имени независимо, безусловно (не только когда у
+    /// аккаунта ещё нет своей копии — см. ниже, почему): все непривязанные
+    /// (`ownerFirebaseUID == ""`) копии с этим именем присваиваются этому
+    /// аккаунту. Копии с ЧУЖИМ непустым `ownerFirebaseUID` никогда не трогаются.
+    /// Если после этого у аккаунта их несколько — `mergeProtectedCollections`
+    /// схлопнет их в одну (см. её комментарий про критерий выбора победителя).
+    ///
+    /// **Почему не "если уже есть своя — пропустить".** Ранняя версия так и
+    /// делала, но это оставляло реальную дыру: если `SystemSeeder` этого
+    /// запуска успел создать свежий bootstrap ДО того, как claim увидел, что
+    /// аккаунт уже владеет другой (более старой) копией — свежий bootstrap
+    /// навсегда оставался непривязанным. `Collection.isMine(firebaseUID:)`
+    /// трактует пустого владельца как "видно всем" (иначе обычные
+    /// пользовательские коллекции, у которых owner никогда не проставляется,
+    /// были бы не видны никому) — так что непривязанный bootstrap-Inbox
+    /// продолжал бы отображаться как третья "лишняя" копия, несмотря на
+    /// фильтрацию по владельцу. Безусловный claim закрывает эту дыру: любой
+    /// bootstrap для защищённого имени рано или поздно становится "своим" у
+    /// того аккаунта, который первым верифицировал сессию после его создания.
     func claimSystemCollections(firebaseUID: String, context: ModelContext) {
         guard !firebaseUID.isEmpty else { return }
         guard let all = try? context.fetch(FetchDescriptor<Collection>()) else { return }
 
         for name in Self.protectedNames {
-            let matches = all.filter { $0.name == name && $0.isUserCreated }
-            let alreadyOwn = matches.contains { $0.ownerFirebaseUID == firebaseUID }
-            guard !alreadyOwn else { continue }
-
-            let bootstrap = matches.filter { $0.ownerFirebaseUID.isEmpty }
+            let bootstrap = all.filter { $0.name == name && $0.isUserCreated && $0.ownerFirebaseUID.isEmpty }
             guard !bootstrap.isEmpty else { continue }
 
             for collection in bootstrap {

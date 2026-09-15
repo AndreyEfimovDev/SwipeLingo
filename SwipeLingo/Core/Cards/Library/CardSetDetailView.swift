@@ -178,10 +178,10 @@ struct CardSetDetailView: View {
             }
         }
         .sheet(isPresented: $isShowingAddCard) {
-            AddEditCardView(preselectedSetId: cardSet.id, appSyncStateService: appSyncStateService)
+            AddEditCardView(preselectedSetId: cardSet.id, appSyncStateService: appSyncStateService, authService: authService)
         }
         .sheet(item: $editingCard) { card in
-            AddEditCardView(card: card, appSyncStateService: appSyncStateService)
+            AddEditCardView(card: card, appSyncStateService: appSyncStateService, authService: authService)
         }
         .sheet(isPresented: $showPlans) {
             PlansView(authService: authService, userService: userService)

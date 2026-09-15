@@ -419,8 +419,7 @@ struct CardsLibraryView: View {
             .padding(.vertical, 12)
             .background(Color.myColors.myAccent.opacity(0.04))
             .contextMenu {
-                let isProtected = collection.name == "Inbox" || collection.name == "My Sets"
-                if !isProtected {
+                if collection.name != "My Sets" {
                     Button(role: .destructive) {
                         collectionToDelete = collection
                     } label: {
@@ -456,19 +455,16 @@ struct CardsLibraryView: View {
     @ViewBuilder
     private func setRow(_ cardSet: CardSet, in collection: Collection) -> some View {
         NavigationLink {
-            if collection.name == "Inbox" {
-                CardSetDetailView(cardSet: cardSet, backTitle: "Cards Library",
-                                   authService: authService, userService: userService,
-                                   appSyncStateService: appSyncStateService)
-            } else {
-                CardSetDetailView(
-                    cardSet: cardSet,
-                    allowsEditing: collection.isUserCreated,
-                    backTitle: collection.name,
-                    authService: authService, userService: userService,
-                    appSyncStateService: appSyncStateService
-                )
-            }
+            // Inbox (cardSet.name == "Inbox") больше не отдельная Collection — просто
+            // сет внутри "My Sets"; CardSetDetailView сама подавляет для него editing
+            // через свой internal isInbox, отдельная ветка навигации не нужна.
+            CardSetDetailView(
+                cardSet: cardSet,
+                allowsEditing: collection.isUserCreated,
+                backTitle: collection.name,
+                authService: authService, userService: userService,
+                appSyncStateService: appSyncStateService
+            )
         } label: {
             HStack {
                 let count = vm.cardCount(forSet: cardSet, allCards: allCards)
@@ -531,10 +527,12 @@ struct CardsLibraryView: View {
                 Label("Add to Pile", systemImage: "square.stack.3d.up")
             }
 
-            Button(role: .destructive) {
-                setToDelete = cardSet
-            } label: {
-                Label("Delete Set", systemImage: "trash")
+            if cardSet.name != "Inbox" {   // Inbox set никогда не удаляем — единственная цель захвата слов
+                Button(role: .destructive) {
+                    setToDelete = cardSet
+                } label: {
+                    Label("Delete Set", systemImage: "trash")
+                }
             }
         }
     }
@@ -599,7 +597,10 @@ struct CardsLibraryView: View {
 
     // Inbox + My Sets + остальные пользовательские коллекции
     private var myCollections: [Collection] {
-        vm.myCollections(from: collections, cardSets: cardSets, allCards: allCards)
+        vm.myCollections(
+            from: collections, cardSets: cardSets, allCards: allCards,
+            firebaseUID: authService.currentUser?.uid ?? ""
+        )
     }
 
     // Кураторские (Firestore) коллекции — показываем только если есть хотя бы один сет.

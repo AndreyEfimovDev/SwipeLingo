@@ -52,6 +52,18 @@ final class Collection {
     }
 }
 
+extension Collection {
+    /// "Своя" ли эта коллекция для указанного аккаунта — использовать везде, где
+    /// отображаются/резолвятся защищённые пользовательские коллекции (Inbox/My Sets),
+    /// чтобы не показывать и не использовать чужие, оставшиеся локально после гонки
+    /// CloudKit (claim корректно их не трогает, но ничего не мешает им попасть в
+    /// обычный fetch — см. CollectionDedupeService). Курируемые коллекции
+    /// (isUserCreated == false) общие для всех аккаунтов — owner на них не действует.
+    func isMine(firebaseUID: String) -> Bool {
+        !isUserCreated || ownerFirebaseUID.isEmpty || ownerFirebaseUID == firebaseUID
+    }
+}
+
 // MARK: - CollectionType
 // Тип коллекции определяет какой контент в ней хранится.
 // Задаётся при создании в Admin Tool, не меняется после публикации.

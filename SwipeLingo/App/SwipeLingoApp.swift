@@ -7,6 +7,13 @@ struct SwipeLingoApp: App {
     /// Для повторной синхронизации при возврате в foreground.
     @Environment(\.scenePhase) private var scenePhase
 
+    /// `true` между стартом `.onChange(isSessionVerified)` и завершением его `Task`
+    /// (см. ниже) — пока не известно, "новый" пользователь перед нами или
+    /// "возвращающийся" (проверка идёт через Firestore, сетевой запрос). Не даёт
+    /// роутингу успеть показать `OnboardingView` и тут же спрятать его, как только
+    /// придёт ответ — вместо этого показывается нейтральный `loadingView`.
+    @State private var isResolvingAccountStatus = false
+
     private let startup: Startup
 
     private enum Startup {
@@ -59,6 +66,17 @@ struct SwipeLingoApp: App {
         }
     }
 
+    // MARK: - Loading
+
+    /// Нейтральный экран ожидания — используется и пока не разрешилось auth-состояние
+    /// (`authService.isLoading`), и пока не определён статус аккаунта после verified-сессии
+    /// (`isResolvingAccountStatus`) — оба случая визуально означают одно и то же: "секунду,
+    /// разбираемся, что показать".
+    private var loadingView: some View {
+        Color.myColors.myBackground.ignoresSafeArea()
+            .overlay { ProgressView() }
+    }
+
     // MARK: - Ready content
 
     /// Экран авторизации/онбординга приложения плюс все side-effect подписки
@@ -78,11 +96,14 @@ struct SwipeLingoApp: App {
 
         Group {
             if authService.isLoading {
-                Color.myColors.myBackground.ignoresSafeArea()
-                    .overlay { ProgressView() }
+                loadingView
             } else if !authService.isAuthenticated {
                 /// Авторизация: Войти / Зарегистрироваться / Продолжить как гость
                 AuthView(showGuestOption: true, authService: authService)
+            } else if isResolvingAccountStatus {
+                /// Сессия подтверждена, но ещё не известно, новый пользователь перед
+                /// нами или возвращающийся — см. `isResolvingAccountStatus`.
+                loadingView
             } else if !appSyncStateService.hasCompletedOnboarding {
                 /// Новый пользователь: выбор языка и уровня (без этапа аутентификации —
                 /// аутентификация уже выполнена выше, до начала онбординга).
@@ -90,6 +111,18 @@ struct SwipeLingoApp: App {
                 /// проверен выше) — "" тут чисто defensive fallback, не ожидаемый путь.
                 OnboardingView(appSyncStateService: appSyncStateService, firebaseUID: authService.currentUser?.uid ?? "") {
                     appSyncStateService.hasCompletedOnboarding = true
+                    /// Пушим реально выбранный на онбординге уровень в Firestore сразу —
+                    /// документ пользователя уже создан ранее (при isSessionVerified, ДО
+                    /// онбординга) с дефолтным `UserProfile.cefrLevelRaw = "a1"`, и без
+                    /// этого вызова настоящий выбор так и остался бы только локальным
+                    /// (см. doc-комментарий `UserFBService.createOrUpdateUser`).
+                    if let user = authService.currentUser {
+                        let profiles = container.mainContext.fetchWithErrorHandling(FetchDescriptor<UserProfile>())
+                        let level = UserProfileDedupeService().resolveProfile(
+                            firebaseUID: user.uid, allProfiles: profiles, context: container.mainContext
+                        )?.cefrLevel.rawValue ?? ""
+                        Task { await userService.createOrUpdateUser(user, nativeLanguage: nativeLanguage.rawValue, cefrLevel: level) }
+                    }
                 }
                 .modelContainer(container)
             } else {
@@ -135,7 +168,13 @@ struct SwipeLingoApp: App {
             /// (Inbox/My Sets) — см. CollectionDedupeService.
             CollectionDedupeService().claimSystemCollections(firebaseUID: user.uid, context: container.mainContext)
             let hasForeignSyncState = appSyncStateService.hasForeignAccountData(firebaseUID: user.uid)
+            /// Держим роутинг на loadingView, пока не придёт ответ Firestore ниже —
+            /// иначе на переустановке возвращающегося пользователя на долю секунды
+            /// успевает мелькнуть OnboardingView, пока hasCompletedOnboarding ещё
+            /// false (см. isResolvingAccountStatus).
+            isResolvingAccountStatus = true
             Task {
+                defer { isResolvingAccountStatus = false }
                 let syncResult = await UserSessionSyncService().syncAfterVerifiedSession(
                     user: user, container: container, nativeLanguage: nativeLanguage, userService: userService
                 )
@@ -154,12 +193,10 @@ struct SwipeLingoApp: App {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                InboxDrainService().drain(container: container)
+            if phase == .active, let uid = authService.currentUser?.uid {
+                InboxDrainService().drain(container: container, firebaseUID: uid)
                 /// Повторно синхронизировать подписку при каждом переходе приложения на передний план, чтобы получить изменения со стороны сервера.
-                if let uid = authService.currentUser?.uid {
-                    Task { await userService.syncSubscription(for: uid) }
-                }
+                Task { await userService.syncSubscription(for: uid) }
             }
         }
     }

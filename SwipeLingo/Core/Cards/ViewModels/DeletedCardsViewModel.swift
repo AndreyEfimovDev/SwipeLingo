@@ -118,8 +118,8 @@ final class DeletedCardsViewModel {
             guard remaining.isEmpty,
                   let set = allCardSets.first(where: { $0.id == setId }),
                   set.isUserCreated,                              // кураторские сеты остаются как tombstone
-                  let collection = allCollections.first(where: { $0.id == set.collectionId }),
-                  collection.name != "Inbox" else { continue }  // Inbox set никогда не удаляем
+                  set.name != "Inbox",                            // Inbox set никогда не удаляем
+                  let collection = allCollections.first(where: { $0.id == set.collectionId }) else { continue }
 
             let collectionId = set.collectionId
             context.delete(set)

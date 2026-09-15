@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Translation
+import FirebaseAuth
 
 // MARK: - BookWordLookupView
 //
@@ -13,11 +14,17 @@ struct BookWordLookupView: View {
     let word: String
     /// Передаётся из composition root — не через .environment().
     let appSyncStateService: AppSyncStateService
+    /// Нужен только для `firebaseUID` — резолвить именно СВОЙ Inbox (см.
+    /// `Collection.isMine(firebaseUID:)`), не чужой, оставшийся локально после
+    /// гонки CloudKit.
+    let authService: AuthFBService
+    private var firebaseUID: String { authService.currentUser?.uid ?? "" }
 
     @Environment(\.dismiss)      private var dismiss
     @Environment(\.modelContext) private var context
 
     @Query private var cardSets: [CardSet]
+    @Query private var collections: [Collection]
 
     // Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
     private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
@@ -218,8 +225,13 @@ struct BookWordLookupView: View {
     // MARK: - Save to Inbox
 
     private func saveToInbox() {
-        guard let inboxSet = cardSets.first(where: { $0.name == "Inbox" }) else {
-            log("Inbox not found", level: .warning)
+        // Inbox — не отдельная Collection (см. SystemSeeder), а сет внутри "My Sets".
+        guard let mySets = collections.first(where: { $0.name == "My Sets" && $0.isMine(firebaseUID: firebaseUID) }) else {
+            log("My Sets Collection not found", level: .warning)
+            return
+        }
+        guard let inboxSet = cardSets.first(where: { $0.name == "Inbox" && $0.collectionId == mySets.id }) else {
+            log("Inbox CardSet not found", level: .warning)
             return
         }
 

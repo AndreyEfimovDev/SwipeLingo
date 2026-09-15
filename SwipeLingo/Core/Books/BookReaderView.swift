@@ -114,6 +114,8 @@ struct BookReaderView: View {
     /// appSyncStateService форвардится дальше в BookWordLookupView.
     let appSyncStateService: AppSyncStateService
     let appSettings: AppSettings
+    /// Форвардится дальше в BookWordLookupView.
+    let authService: AuthFBService
 
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme)  private var colorScheme
@@ -135,10 +137,11 @@ struct BookReaderView: View {
     private let fontSizeMax = 26
     private let fontSizeStep = 2
 
-    init(book: Book, appSyncStateService: AppSyncStateService, appSettings: AppSettings) {
+    init(book: Book, appSyncStateService: AppSyncStateService, appSettings: AppSettings, authService: AuthFBService) {
         self.book = book
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
+        self.authService = authService
         _vm = State(initialValue: BookReaderViewModel(book: book, progress: nil))
     }
 
@@ -168,7 +171,7 @@ struct BookReaderView: View {
         .toolbar { toolbarContent }
         .sheet(isPresented: $vm.showDictionary) {
             if let word = vm.tappedWord {
-                BookWordLookupView(word: word, appSyncStateService: appSyncStateService)
+                BookWordLookupView(word: word, appSyncStateService: appSyncStateService, authService: authService)
                     .onAppear {
                         AnalyticsFBService.wordLookedUp(word: word, source: .book)
                     }

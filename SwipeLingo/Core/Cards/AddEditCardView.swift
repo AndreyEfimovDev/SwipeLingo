@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Translation
+import FirebaseAuth
 
 // MARK: - AddEditCardView
 // Единый sheet добавления / редактирования Card.
@@ -36,6 +37,10 @@ struct AddEditCardView: View {
 
     /// Передаётся из composition root — не через .environment().
     private let appSyncStateService: AppSyncStateService
+    /// Нужен только для `firebaseUID` — отсечь чужие "My Sets"/сеты, оставшиеся
+    /// локально после гонки CloudKit (см. `Collection.isMine(firebaseUID:)`).
+    private let authService: AuthFBService
+    private var firebaseUID: String { authService.currentUser?.uid ?? "" }
     // Auto-fill (dictionary + Apple Translation)
     // Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
     private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
@@ -50,19 +55,20 @@ struct AddEditCardView: View {
 
     // MARK: - Init
 
-    init(card: Card? = nil, preselectedSetId: UUID? = nil, appSyncStateService: AppSyncStateService) {
+    init(card: Card? = nil, preselectedSetId: UUID? = nil, appSyncStateService: AppSyncStateService, authService: AuthFBService) {
         _vm = State(initialValue: AddEditCardViewModel(card: card, preselectedSetId: preselectedSetId))
         self.appSyncStateService = appSyncStateService
+        self.authService = authService
     }
 
     // MARK: - Computed (делегируют в VM, добавляя @Query-результаты)
 
     private var userSets: [CardSet] {
-        vm.userSets(allSets: allSets, allCollections: allCollections)
+        vm.userSets(allSets: allSets, allCollections: allCollections, firebaseUID: firebaseUID)
     }
 
     private var selectedSetName: String {
-        vm.selectedSetName(allSets: allSets, allCollections: allCollections)
+        vm.selectedSetName(allSets: allSets, allCollections: allCollections, firebaseUID: firebaseUID)
     }
 
     private var isDuplicateEN: Bool {
@@ -158,7 +164,7 @@ struct AddEditCardView: View {
     // MARK: - Actions
 
     private func handleSave() {
-        guard vm.handleSave(context: context, allCollections: allCollections) else { return }
+        guard vm.handleSave(context: context, allCollections: allCollections, firebaseUID: firebaseUID) else { return }
         dismiss()
     }
 

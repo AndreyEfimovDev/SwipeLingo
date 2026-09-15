@@ -674,12 +674,21 @@ struct ProfileView: View {
     private func saveChanges() {
         let trimmedName = nameInput.trimmingCharacters(in: .whitespaces)
         let nameChanged = trimmedName != (profile?.name ?? "")
+        let levelChanged = pendingLevel != (profile?.cefrLevel ?? .a1)
         profile?.name = trimmedName
         profile?.cefrLevel = pendingLevel
         profile?.touch()
         context.saveWithErrorHandling()
         if !authService.isAnonymous && nameChanged && authService.isSessionVerified {
             Task { try? await authService.updateDisplayName(trimmedName) }
+        }
+        // Firestore обновляется только при реальном изменении уровня — createOrUpdateUser
+        // единственная функция, пишущая cefrLevel туда (см. её doc-комментарий); без этого
+        // вызова изменение оставалось бы только локальным до следующего логина.
+        if levelChanged, let user = authService.currentUser {
+            Task {
+                await userService.createOrUpdateUser(user, nativeLanguage: nativeLanguage.rawValue, cefrLevel: pendingLevel.rawValue)
+            }
         }
         withAnimation(.spring(duration: 0.35)) { saveConfirmed = true }
         Task {

@@ -36,11 +36,13 @@ struct AppView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
-            /// Подстраховочный прогон дедупа Inbox/My Sets при появлении главного экрана —
-            /// на случай, если CloudKit доставил дубли ДО того, как CollectionDedupeObserver
+            /// Подстраховочный прогон дедупа My Sets при появлении главного экрана — на
+            /// случай, если CloudKit доставил дубли ДО того, как CollectionDedupeObserver
             /// успел подписаться на NSPersistentStoreRemoteChange (см. его комментарий).
+            /// Через уже внедрённый инстанс (dependencies), а не свой собственный — тот же
+            /// принцип Dependency Inversion, что и везде в проекте.
             .task {
-                CollectionDedupeService().mergeProtectedCollections(context: context)
+                dependencies.collectionDedupeObserver.runNow()
             }
             .onChange(of: myProfile?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
                 vm.handleCEFRLevelChange(
@@ -74,7 +76,8 @@ struct AppView: View {
                 appViewModel: dependencies.appViewModel,
                 appSyncStateService: dependencies.appSyncStateService,
                 appSettings: dependencies.appSettings,
-                userService: dependencies.userFBService
+                userService: dependencies.userFBService,
+                authService: dependencies.authFBService
             )
         }
     }
