@@ -166,9 +166,14 @@ struct DeletedCardsView: View {
             }
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        // "" — только шеврон, без имени родителя (как в CardSetDetailView); isHidden — та же
+        // причина: Select All в topBarLeading должен ЗАМЕНЯТЬ кнопку назад на время
+        // редактирования, а не сдвигать её (два ToolbarItem(.topBarLeading) рядом иначе не
+        // заменяют друг друга — задвоение). Раньше здесь была системная кнопка (нарушение
+        // стандарта — "Системная кнопка back НЕ используется"), исправлено заодно.
+        .customBackButton("", isHidden: editMode == .active)
         .navigationTitle("Deleted Cards")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(editMode == .active)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !deletedCards.isEmpty {
@@ -550,6 +555,5 @@ private struct DeletedCardRow: View {
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.35))
             }
         }
-        .padding(.vertical, 2)
     }
 }

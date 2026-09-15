@@ -94,8 +94,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Language
-
     // MARK: - Study
 
     private var studySection: some View {
@@ -208,7 +206,7 @@ struct SettingsView: View {
 
                 Divider().padding(.leading, 46)
 
-                NavigationLink { RestoreBackupView() } label: {
+                NavigationLink { RestoreBackupView(authService: authService) } label: {
                     HStack {
                         Label("Restore", systemImage: "tray.and.arrow.up")
                             .labelStyle(.fixedIcon)

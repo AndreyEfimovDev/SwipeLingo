@@ -71,7 +71,12 @@ final class UserFBService {
     // MARK: - Upsert user document
 
     /// Создаёт документ пользователя в Firestore при первом входе.
-    /// При повторных входах обновляет только provider + displayName + updatedAt (подписка сохраняется).
+    /// При повторных входах обновляет provider + displayName + updatedAt всегда, и
+    /// nativeLanguage/cefrLevel — если переданы непустыми (подписка не трогается).
+    /// Единственная функция, которая пишет `cefrLevel` в Firestore — вызывать явно
+    /// при каждом реальном изменении уровня (не только при логине), иначе поле
+    /// останется таким, каким было при создании документа (баг, найденный в сентябре
+    /// 2026: `ProfileView.saveChanges()` менял уровень только локально).
     /// Возвращает `true`, если документ пользователя уже существовал с установленным cefrLevel —
     /// используется SwipeLingoApp, чтобы пропустить онбординг на втором устройстве (возвращающийся пользователь).
     @discardableResult
@@ -94,6 +99,7 @@ final class UserFBService {
                     "updatedAt":    Timestamp(date: Date())
                 ]
                 if !nativeLanguage.isEmpty { updates["nativeLanguage"] = nativeLanguage }
+                if !cefrLevel.isEmpty { updates["cefrLevel"] = cefrLevel }
                 try await ref.updateData(updates)
                 log("User document updated: \(firebaseUser.uid) returningUser:\(isReturningUser)", level: .info)
                 return isReturningUser

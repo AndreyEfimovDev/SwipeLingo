@@ -12,20 +12,22 @@ struct BooksView: View {
     private let appSyncStateService: AppSyncStateService
     private let appSettings: AppSettings
     private let userService: UserFBService
+    private let authService: AuthFBService
     /// Единственный источник правды — UserFBService (см. UserFBService.swift).
     private var userPlan: AccessTier { userService.userPlan }
 
-    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService) {
+    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService, authService: AuthFBService) {
         self.appViewModel = appViewModel
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
         self.userService = userService
+        self.authService = authService
     }
 
     @Query private var books: [Book]
-    @State private var vm     = BooksViewModel()
-    @State private var syncTask:     Task<Void, Never>?
-    @State private var readerBook:   Book? = nil
+    @State private var vm = BooksViewModel()
+    @State private var syncTask: Task<Void, Never>?
+    @State private var readerBook: Book? = nil
     @State private var debugImportTask: Task<Void, Never>?
     @State private var bookToDelete: Book? = nil
 
@@ -35,6 +37,7 @@ struct BooksView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    SearchBar(text: $vm.searchText, prompt: "Search books")
                     levelFilterBar
                     if vm.filteredBooks(books, userPlan: userPlan).isEmpty {
                         emptyState
@@ -45,14 +48,12 @@ struct BooksView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
             }
-            .background(Color(.systemBackground).ignoresSafeArea())
+            .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Books")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $vm.searchText, prompt: "Search books")
             .toolbar { toolbarContent }
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .fullScreenCover(item: $readerBook) { book in
-                BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings)
+            .navigationDestination(item: $readerBook) { book in
+                BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings, authService: authService)
             }
         }
         // BOOKS_SYNC_STUB: автосинк при входе отключён — книги на GitHub, не в Firestore.
@@ -283,7 +284,7 @@ private struct BookCard: View {
             }
         }
         .buttonStyle(.plain)
-        .background(Color(.systemBackground))
+        .background(Color.myColors.myBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .myShadow()
@@ -354,7 +355,7 @@ private struct FilterChip: View {
                 .padding(.vertical, 6)
                 .background(
                     Capsule()
-                        .fill(isSelected ? color.opacity(0.12) : Color(.systemBackground))
+                        .fill(isSelected ? color.opacity(0.12) : Color.myColors.myBackground)
                 )
                 .overlay(
                     Capsule()

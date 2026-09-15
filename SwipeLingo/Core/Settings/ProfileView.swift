@@ -48,7 +48,14 @@ struct ProfileView: View {
     @State private var isResendingVerification = false
     @State private var verificationSent    = false
 
-    private var profile: UserProfile? { profiles.first }
+    /// Фильтрует по "моим" (firebaseUID) — раньше был наивный `profiles.first`,
+    /// на общем iCloud с чужим уже синкнутым профилем мог показать/редактировать
+    /// данные другого реального пользователя. Не создаёт профиль — см. `.onAppear`.
+    private var profile: UserProfile? {
+        UserProfileDedupeService().resolveProfile(
+            firebaseUID: authService.currentUser?.uid ?? "", allProfiles: profiles, context: context
+        )
+    }
     private var isAppleRelayEmail: Bool {
         authService.currentUser?.email?.contains("privaterelay.appleid.com") == true
     }
@@ -75,11 +82,12 @@ struct ProfileView: View {
         .background(Color.myColors.myBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .customBackButton("Settings")
+        .customBackButton("")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if saveConfirmed {
                     Image(systemName: "checkmark.circle.fill")
+                        .font(.title)
                         .foregroundStyle(Color.myColors.myGreen)
                         .transition(.scale.combined(with: .opacity))
                 } else if hasChanges {
@@ -91,7 +99,8 @@ struct ProfileView: View {
             }
         }
         .onAppear {
-            if profiles.isEmpty { context.insert(UserProfile()) }
+            UserProfileDedupeService()
+                .resolveOrCreateProfile(firebaseUID: authService.currentUser?.uid ?? "", context: context)
             nameInput    = profile?.name ?? ""
             pendingLevel = profile?.cefrLevel ?? .a1
             isInitialized = true
@@ -665,12 +674,21 @@ struct ProfileView: View {
     private func saveChanges() {
         let trimmedName = nameInput.trimmingCharacters(in: .whitespaces)
         let nameChanged = trimmedName != (profile?.name ?? "")
+        let levelChanged = pendingLevel != (profile?.cefrLevel ?? .a1)
         profile?.name = trimmedName
         profile?.cefrLevel = pendingLevel
         profile?.touch()
         context.saveWithErrorHandling()
         if !authService.isAnonymous && nameChanged && authService.isSessionVerified {
             Task { try? await authService.updateDisplayName(trimmedName) }
+        }
+        // Firestore обновляется только при реальном изменении уровня — createOrUpdateUser
+        // единственная функция, пишущая cefrLevel туда (см. её doc-комментарий); без этого
+        // вызова изменение оставалось бы только локальным до следующего логина.
+        if levelChanged, let user = authService.currentUser {
+            Task {
+                await userService.createOrUpdateUser(user, nativeLanguage: nativeLanguage.rawValue, cefrLevel: pendingLevel.rawValue)
+            }
         }
         withAnimation(.spring(duration: 0.35)) { saveConfirmed = true }
         Task {

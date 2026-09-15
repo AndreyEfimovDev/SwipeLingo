@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 // MARK: - CardsView
 
@@ -29,7 +30,14 @@ struct CardsView: View {
     @Query private var collections: [Collection]
     @Query private var profiles:    [UserProfile]
 
-    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+    /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, иначе на
+    /// общем iCloud с чужим уже синкнутым профилем контент фильтровался бы по
+    /// чужому уровню.
+    private var userLevel: CEFRLevel {
+        UserProfileDedupeService().resolveProfile(
+            firebaseUID: authService.currentUser?.uid ?? "", allProfiles: profiles, context: context
+        )?.cefrLevel ?? .c2
+    }
 
     /// Сеты ≤ уровня пользователя, не мягко удалённые.
     private var levelFilteredCardSets: [CardSet] {
@@ -83,7 +91,7 @@ struct CardsView: View {
             .navigationTitle("Cards")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .background(Color.myColors.myBackground.ignoresSafeArea())
         }
         .onAppear {
             vm.startSessionIfNeeded(
@@ -134,6 +142,23 @@ struct CardsView: View {
                 dueHour: studyStartHour, srsEnabled: srsEnabled,
                 userPlan: userPlan
             )
+        }
+        // Лёгкое обновление счётчиков (не полный reload сессии — studyCards/sessionID/
+        // currentIndex/isCaughtUp не трогаются) один раз при закрытии ЛЮБОГО sheet
+        // (Library/Settings/...) — а не при каждой мутации статуса карточки. Статус может
+        // поменяться вне активной сессии (напр. swipe action "Restore" в CardSetDetailView,
+        // или restore из DeletedCardsView в Settings), allCards.count при этом не меняется,
+        // поэтому onChange(allCards.count) выше это не ловит. Пока sheet открыт, CardsView и
+        // так не виден — обновлять счётчики раньше, чем пользователь их увидит, незачем;
+        // раньше это делалось вычисляемым ключом (pileCountsSnapshot), пересчитывавшимся на
+        // КАЖДЫЙ re-render CardsView (в т.ч. скрытого под sheet) — лишняя O(n)-работа на
+        // каждую мутацию Card/Pile в БД, конкурировавшая за runloop с List/PreferenceKey
+        // синхронизацией высоты строк в CardSetDetailView и заметно тормозившая свайп-жесты
+        // там. Разовый пересчёт на закрытие sheet эту стоимость убирает.
+        .onChange(of: appViewModel.activeSheet) { oldSheet, newSheet in
+            if oldSheet != nil && newSheet == nil {
+                vm.refreshPileCounts(piles: piles, allCards: allCards, cardSets: levelFilteredCardSets)
+            }
         }
     }
 
@@ -301,6 +326,8 @@ struct CardsView: View {
         let levelPart = userLevel.rawValue
         guard let pile = piles.first(where: { $0.isActive }) else { return levelPart }
         let sets = pile.setIds.map(\.uuidString).sorted().joined()
-        return levelPart + pile.id.uuidString + sets + pile.shuffleMethod.rawValue
+        // pile.name включено, иначе переименование стопки (без изменения сетов/shuffleMethod)
+        // не триггерит onChange → vm.activePileName остаётся закэшированным старым значением.
+        return levelPart + pile.id.uuidString + pile.name + sets + pile.shuffleMethod.rawValue
     }
 }

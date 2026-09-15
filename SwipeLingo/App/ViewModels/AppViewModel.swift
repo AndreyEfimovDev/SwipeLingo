@@ -19,7 +19,8 @@ final class AppViewModel {
     }
 
     /// Реакция на изменение CEFR-уровня пользователя (вызывается из `AppView.onChange`
-    /// по `profiles.first?.cefrLevelRaw`).
+    /// по `myProfile?.cefrLevelRaw` — отфильтрован по `firebaseUID`, не наивный
+    /// `profiles.first`).
     ///
     /// При ПОНИЖЕНИИ уровня — no-op: контент нужного уровня уже скачан локально,
     /// UI отфильтрует мгновенно, повторная синхронизация не нужна.

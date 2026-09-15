@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseCore
+import FirebaseAuth
 
 // MARK: - PairsLibraryView
 // Управление PairsPiles и просмотр всех PairsSets.
@@ -33,10 +34,10 @@ struct PairsLibraryView: View {
         self.appSyncStateService = appSyncStateService
     }
 
-    @Query(sort: \PairsSet.createdAt, order: .reverse)    private var allSets:         [PairsSet]
-    @Query(sort: \PairsPile.createdAt, order: .reverse)   private var allPiles:        [PairsPile]
+    @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets: [PairsSet]
+    @Query(sort: \PairsPile.createdAt, order: .reverse) private var allPiles: [PairsPile]
     @Query(filter: #Predicate<Collection> { $0.typeRaw == "pairs" },
-           sort: \Collection.createdAt)                   private var pairsCollections: [Collection]
+           sort: \Collection.createdAt) private var pairsCollections: [Collection]
 
     /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
     private var nativeLangRaw: String { appSyncStateService.nativeLanguageRaw }
@@ -53,7 +54,9 @@ struct PairsLibraryView: View {
 
     // MARK: - Grouping helpers (делегируют в VM, добавляя @Query-результаты)
 
-    private var userLevel: CEFRLevel { vm.userLevel(profiles: profiles) }
+    private var userLevel: CEFRLevel {
+        vm.userLevel(firebaseUID: authService.currentUser?.uid ?? "", profiles: profiles, context: context)
+    }
 
     private func sets(for collection: Collection) -> [PairsSet] {
         vm.sets(for: collection, allSets: allSets, userLevel: userLevel)
@@ -78,8 +81,8 @@ struct PairsLibraryView: View {
         ScrollView {
             VStack(spacing: 24) {
                 pilesSection
-                setsSection
                 managingSection
+                setsSection
             }
             .padding(.vertical, 16)
         }
@@ -391,16 +394,19 @@ struct PairsLibraryView: View {
 
     // MARK: - Managing Section
 
+    @ViewBuilder
     private var managingSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("MANAGING PAIRS")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.myColors.myAccent)
-                .padding(.horizontal, 32)
+        // Секция целиком скрыта, если удалённых сетов нет — иначе оставался бы заголовок
+        // "MANAGING PAIRS" над пустой белой плашкой (внутренний if !deletedSets.isEmpty
+        // прятал только содержимое, а не заголовок/рамку вокруг него).
+        if !deletedSets.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MANAGING PAIRS")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent)
+                    .padding(.horizontal, 32)
 
-            VStack(spacing: 0) {
-                // Строка Deleted Sets (только когда есть удалённые сеты)
-                if !deletedSets.isEmpty {
+                VStack(spacing: 0) {
                     deletedSetsRow
 
                     if showDeleted {
@@ -430,13 +436,12 @@ struct PairsLibraryView: View {
 
                     Divider().padding(.leading, 46)
                 }
-
+                .foregroundStyle(Color.myColors.myAccent)
+                .background(Color.myColors.myBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .myShadow()
+                .padding(.horizontal, 16)
             }
-            .foregroundStyle(Color.myColors.myAccent)
-            .background(Color.myColors.myBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .myShadow()
-            .padding(.horizontal, 16)
         }
     }
 

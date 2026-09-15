@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
+
 
 // MARK: - OnboardingConfirmView
 // Финальный шаг онбординга — сводка настроек и подтверждение.
@@ -9,14 +11,19 @@ import SwiftData
 struct OnboardingConfirmView: View {
 
     let appSyncStateService: AppSyncStateService
+    /// UID текущего аккаунта — фильтрует `profiles` по "моим" записям (см. `profile`).
+    let firebaseUID: String
     var onComplete: () -> Void
     var onBack: () -> Void
 
     /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
     private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
 
+    @Environment(\.modelContext) private var context
     @Query private var profiles: [UserProfile]
-    private var profile: UserProfile? { profiles.first }
+    private var profile: UserProfile? {
+        UserProfileDedupeService().resolveProfile(firebaseUID: firebaseUID, allProfiles: profiles, context: context)
+    }
     private var cefrLevel: CEFRLevel { profile?.cefrLevel ?? .a1 }
 
     var body: some View {

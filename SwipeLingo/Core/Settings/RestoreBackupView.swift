@@ -1,7 +1,13 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 struct RestoreBackupView: View {
+
+    /// Нужен только для `firebaseUID` — восстанавливать сеты именно в СВОЁМ "My
+    /// Sets" (см. `Collection.isMine(firebaseUID:)`), не в чужом, оставшемся
+    /// локально после гонки CloudKit.
+    let authService: AuthFBService
 
     @Environment(\.modelContext) private var modelContext
 
@@ -18,6 +24,7 @@ struct RestoreBackupView: View {
             .padding(.vertical, 16)
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
+        .customBackButton("")
         .navigationTitle("Restore")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showDocumentPicker) {
@@ -112,8 +119,12 @@ struct RestoreBackupView: View {
 
     private func handleDocumentPicked(url: URL) {
         let ctx = modelContext
+        // Читаем firebaseUID здесь, на MainActor, до входа в Task.detached —
+        // authService MainActor-изолирован, внутри detached-задачи обратиться
+        // к нему без доп. hop'а нельзя (тот же паттерн, что уже применён к ctx).
+        let firebaseUID = authService.currentUser?.uid ?? ""
         Task.detached {
-            let r = await ExportService().importBackup(from: url, into: ctx)
+            let r = await ExportService().importBackup(from: url, into: ctx, firebaseUID: firebaseUID)
             await MainActor.run {
                 isImporting  = false
                 importResult = r
@@ -123,5 +134,5 @@ struct RestoreBackupView: View {
 }
 
 #Preview {
-    NavigationStack { RestoreBackupView() }
+    NavigationStack { RestoreBackupView(authService: AuthFBService()) }
 }

@@ -7,6 +7,10 @@ import SwiftData
 
 struct OnboardingLevelView: View {
 
+    /// UID текущего аккаунта — фильтрует `profiles` по "моим" записям (см.
+    /// `profile` ниже), чтобы на общем iCloud не подхватить чужой уже
+    /// синкнутый профиль вместо своего.
+    let firebaseUID: String
     var onNext: () -> Void
     var onBack: () -> Void
 
@@ -14,7 +18,13 @@ struct OnboardingLevelView: View {
     @Environment(\.modelContext) private var context
     @State private var vm = OnboardingLevelViewModel()
 
-    private var profile: UserProfile? { profiles.first }
+    /// Не создаёт профиль (в отличие от `ensureProfile`) — только читает.
+    /// Вычисляемое свойство читается многократно на каждый re-render, поэтому
+    /// side-effect'ов (insert) здесь быть не должно — создание отдельно, из
+    /// `.onAppear`.
+    private var profile: UserProfile? {
+        UserProfileDedupeService().resolveProfile(firebaseUID: firebaseUID, allProfiles: profiles, context: context)
+    }
 
     // .a1 — тот же дефолт, что и UserProfile(level:) — на первом рендере, до
     // того как .onAppear вставит профиль и @Query его подхватит, подсветка не
@@ -72,7 +82,7 @@ struct OnboardingLevelView: View {
             .padding(.bottom, 32)
         }
         .onAppear {
-            vm.ensureProfile(profiles: profiles, context: context)
+            vm.ensureProfile(firebaseUID: firebaseUID, context: context)
         }
     }
 

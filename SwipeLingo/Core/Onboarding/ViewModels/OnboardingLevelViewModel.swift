@@ -10,12 +10,18 @@ import SwiftData
 @Observable
 final class OnboardingLevelViewModel {
 
-    /// Создаёт `UserProfile` с дефолтным уровнем, если у пользователя его ещё нет.
+    /// Резолвит/создаёт `UserProfile` для текущего аккаунта, если его ещё нет.
     /// Вызывать из `.onAppear` — на этом шаге онбординга профиль должен
     /// существовать до того, как пользователь сможет выбрать уровень.
-    func ensureProfile(profiles: [UserProfile], context: ModelContext) {
-        guard profiles.isEmpty else { return }
-        context.insert(UserProfile())
+    ///
+    /// Делегирует в `UserProfileDedupeService.resolveOrCreateProfile` —
+    /// единственное место в приложении, которое создаёт `UserProfile` (общий
+    /// источник правды с `UserSessionSyncService`/`ProfileView`, не своя копия
+    /// проверки). Раньше здесь была наивная `profiles.isEmpty` без учёта
+    /// `firebaseUID` — на общем iCloud с чужим уже синкнутым профилем это могло
+    /// подхватить ЧУЖОЙ профиль вместо создания своего (см. `firebaseUID` ниже).
+    func ensureProfile(firebaseUID: String, context: ModelContext) {
+        UserProfileDedupeService().resolveOrCreateProfile(firebaseUID: firebaseUID, context: context)
     }
 
     /// Выставляет выбранный уровень профилю.

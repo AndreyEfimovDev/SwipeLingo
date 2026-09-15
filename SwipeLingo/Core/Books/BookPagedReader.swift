@@ -68,7 +68,7 @@ struct BookPagedReader: UIViewControllerRepresentable {
 
     private func background(for scheme: ColorScheme) -> UIColor {
         scheme == .dark
-            ? UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1)
+            ? UIColor(Color.myColors.myBackground)
             : UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1) // тёплая бумага
     }
 
@@ -194,8 +194,8 @@ final class BookChapterVC: UIViewController {
         // всегда показывал сплошную страницу — даже до рендеринга HTML.
         let dark = traitCollection.userInterfaceStyle == .dark
         let pageBg: UIColor = dark
-            ? UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1)
-            : UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1)
+            ? UIColor(Color.myColors.myBackground)
+            : UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1) // тёплая бумага
         view.backgroundColor = pageBg
 
         let config = WKWebViewConfiguration()
@@ -271,7 +271,7 @@ private extension BookChapterVC {
     func injectCSS(into wv: WKWebView) {
         let dark = traitCollection.userInterfaceStyle == .dark
         let fg   = dark ? "#e8e0d6" : "#1a1a1a"
-        let bg   = dark ? "#1c1c1e" : "#faf9f6"
+        let bg   = dark ? "#000000" : "#faf9f6"
         let css  = """
         * { box-sizing: border-box; }
         html { -webkit-text-size-adjust: 100%; }

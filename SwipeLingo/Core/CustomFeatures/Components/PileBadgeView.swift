@@ -22,11 +22,12 @@ struct PileBadgeView: View {
             HStack(spacing: 6) {
                 Text(title)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(
-                        isActive
-                            ? Color.myColors.myAccent.opacity(0.75)
-                            : Color.myColors.myAccent.opacity(0.35)
-                    )
+                    .foregroundStyle(Color.myColors.myAccent)
+//                    .foregroundStyle(
+//                        isActive
+//                            ? Color.myColors.myAccent.opacity(0.75)
+//                            : Color.myColors.myAccent.opacity(0.35)
+//                    )
                     .lineLimit(1)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))

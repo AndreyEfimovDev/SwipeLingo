@@ -12,7 +12,10 @@ struct InboxDrainService {
     /// Разгружает очередь pending-слов (записанную SwipeLingoShare) в Inbox CardSet.
     /// No-op, если очередь пуста. Если Inbox CardSet не резолвится, или не удалось
     /// проверить дубли — слова возвращаются обратно в очередь, а не теряются.
-    func drain(container: ModelContainer) {
+    /// `firebaseUID` — резолвим именно СВОЙ Inbox (см. `Collection.isMine(firebaseUID:)`):
+    /// после гонки CloudKit локально может лежать больше одного Inbox от разных
+    /// аккаунтов на одном iCloud, слова не должны улетать в чужой.
+    func drain(container: ModelContainer, firebaseUID: String) {
         let defaults = UserDefaults(suiteName: Constants.appGroupID)
         let pendingKey = Constants.StorageKey.pendingInboxWords
         guard
@@ -35,10 +38,17 @@ struct InboxDrainService {
 
         let context = ModelContext(container)
 
-        // Резолвим Inbox CardSet — он гарантированно существует после запуска
-        // MockDataSeeder, но подстраховываемся guard'ом.
+        // Резолвим СВОЮ "My Sets", затем внутри неё — Inbox CardSet. Двухшаговый резолв
+        // (не просто "первый CardSet с именем Inbox"), потому что после гонки CloudKit
+        // локально может лежать больше одной "My Sets" от разных аккаунтов, и у каждой —
+        // свой Inbox CardSet. Inbox — не отдельная Collection (см. SystemSeeder).
+        let allCollections = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
+        guard let mySets = allCollections.first(where: { $0.name == "My Sets" && $0.isMine(firebaseUID: firebaseUID) }) else {
+            requeue("My Sets Collection not found")
+            return
+        }
         let allSets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
-        guard let inboxSet = allSets.first(where: { $0.name == "Inbox" }) else {
+        guard let inboxSet = allSets.first(where: { $0.name == "Inbox" && $0.collectionId == mySets.id }) else {
             requeue("Inbox CardSet not found")
             return
         }

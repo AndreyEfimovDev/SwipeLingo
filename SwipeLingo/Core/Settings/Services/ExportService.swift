@@ -107,14 +107,14 @@ final class ExportService {
         let pairsSRSRestored: Int
     }
 
-    func importBackup(from url: URL, into context: ModelContext) -> ImportResult {
+    func importBackup(from url: URL, into context: ModelContext, firebaseUID: String) -> ImportResult {
         do {
             let data    = try Data(contentsOf: url)
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             let backup  = try decoder.decode(SwipeLingoBackup.self, from: data)
 
-            let (sets, cards) = restoreCardSets(backup.cardSets, into: context)
+            let (sets, cards) = restoreCardSets(backup.cardSets, into: context, firebaseUID: firebaseUID)
             let pairsCount    = restorePairsSRS(backup.pairsSRS, into: context)
             try context.save()
 
@@ -127,9 +127,11 @@ final class ExportService {
         }
     }
 
-    private func restoreCardSets(_ sets: [BackupCardSet], into context: ModelContext) -> (sets: Int, cards: Int) {
+    private func restoreCardSets(_ sets: [BackupCardSet], into context: ModelContext, firebaseUID: String) -> (sets: Int, cards: Int) {
         let collections   = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
-        let myCollection  = collections.first { $0.name == "My Sets" }
+        // Своё "My Sets" (см. Collection.isMine(firebaseUID:)) — не чужое, оставшееся
+        // локально после гонки CloudKit.
+        let myCollection  = collections.first { $0.name == "My Sets" && $0.isMine(firebaseUID: firebaseUID) }
 
         let existingSets     = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
         let existingSetIds   = Set(existingSets.map { $0.id })

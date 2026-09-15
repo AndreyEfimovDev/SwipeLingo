@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 // MARK: - AppView
 
@@ -12,9 +13,15 @@ struct AppView: View {
     /// не через .environment(), чтобы каждый потребитель был виден в сигнатуре явно.
     private let dependencies: AppDependencies
     private var vm: AppViewModel { dependencies.appViewModel }
-    private var settings: AppSettings { dependencies.appSettings }
     /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк);
     private var nativeLanguage: NativeLanguage { dependencies.appSyncStateService.nativeLanguage }
+    /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, см.
+    /// комментарий у аналогичного свойства в `CardsView`.
+    private var myProfile: UserProfile? {
+        UserProfileDedupeService().resolveProfile(
+            firebaseUID: dependencies.authFBService.currentUser?.uid ?? "", allProfiles: profiles, context: context
+        )
+    }
 
     init(dependencies: AppDependencies) {
         self.dependencies = dependencies
@@ -24,12 +31,20 @@ struct AppView: View {
         studyContent
             .fullScreenCover(item: Bindable(vm).activeSheet) { sheet in
                 sheetView(for: sheet)
+                    .preferredColorScheme(dependencies.appSettings.theme.colorScheme)
             }
-            .preferredColorScheme(settings.theme.colorScheme)
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
-            .onChange(of: profiles.first?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
+            /// Подстраховочный прогон дедупа My Sets при появлении главного экрана — на
+            /// случай, если CloudKit доставил дубли ДО того, как CollectionDedupeObserver
+            /// успел подписаться на NSPersistentStoreRemoteChange (см. его комментарий).
+            /// Через уже внедрённый инстанс (dependencies), а не свой собственный — тот же
+            /// принцип Dependency Inversion, что и везде в проекте.
+            .task {
+                dependencies.collectionDedupeObserver.runNow()
+            }
+            .onChange(of: myProfile?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
                 vm.handleCEFRLevelChange(
                     oldRaw: oldLevelRaw,
                     newRaw: newLevelRaw,
@@ -61,7 +76,8 @@ struct AppView: View {
                 appViewModel: dependencies.appViewModel,
                 appSyncStateService: dependencies.appSyncStateService,
                 appSettings: dependencies.appSettings,
-                userService: dependencies.userFBService
+                userService: dependencies.userFBService,
+                authService: dependencies.authFBService
             )
         }
     }
@@ -72,7 +88,7 @@ struct AppView: View {
     private func sheetView(for sheet: AppViewModel.AppSheet) -> some View {
         switch sheet {
         case .cardsLibrary:
-            LibraryView(appViewModel: dependencies.appViewModel,
+            CardsLibraryView(appViewModel: dependencies.appViewModel,
                         authService: dependencies.authFBService,
                         userService: dependencies.userFBService,
                         appSyncStateService: dependencies.appSyncStateService)

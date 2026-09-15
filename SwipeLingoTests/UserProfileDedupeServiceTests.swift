@@ -9,6 +9,11 @@ import SwiftData
 //     most recently updated wins) / mix of "mine" + foreign (foreign untouched) /
 //     only foreign (returns nil, foreign untouched)
 //   • hasForeignProfiles — pure predicate over the same "mine vs foreign" split
+//   • resolveOrCreateProfile — the single place in the app that ever constructs
+//     UserProfile(): no profiles (creates) / unclaimed "mine" (claims in place,
+//     no new insert) / already-claimed "mine" (returned as-is) / only foreign
+//     (creates a SEPARATE new profile, foreign left untouched) / multiple "mine"
+//     duplicates (merges via resolveProfile, claims the primary)
 
 @MainActor
 final class UserProfileDedupeServiceTests: XCTestCase {
@@ -137,5 +142,64 @@ final class UserProfileDedupeServiceTests: XCTestCase {
         let mine = makeProfile(firebaseUID: "uid1", context: ctx)
         let foreign = makeProfile(firebaseUID: "otherUID", context: ctx)
         XCTAssertTrue(service.hasForeignProfiles(firebaseUID: "uid1", allProfiles: [mine, foreign]))
+    }
+
+    // MARK: - resolveOrCreateProfile
+    //
+    // Unlike resolveProfile, this fetches internally rather than taking an
+    // `allProfiles` snapshot — setup below inserts directly into the context.
+
+    func testResolveOrCreateProfile_NoProfiles_CreatesNew() throws {
+        let ctx = try makeContext()
+
+        let result = service.resolveOrCreateProfile(firebaseUID: "uid1", context: ctx)
+
+        XCTAssertEqual(result.firebaseUID, "uid1")
+        XCTAssertEqual(try fetchAll(ctx).count, 1)
+    }
+
+    func testResolveOrCreateProfile_UnclaimedProfileExists_ClaimsItInPlace() throws {
+        let ctx = try makeContext()
+        let unclaimed = makeProfile(firebaseUID: "", context: ctx)
+
+        let result = service.resolveOrCreateProfile(firebaseUID: "uid1", context: ctx)
+
+        XCTAssertTrue(result === unclaimed)
+        XCTAssertEqual(unclaimed.firebaseUID, "uid1")
+        XCTAssertEqual(try fetchAll(ctx).count, 1)
+    }
+
+    func testResolveOrCreateProfile_AlreadyClaimedProfileExists_ReturnsItUnchanged() throws {
+        let ctx = try makeContext()
+        let existing = makeProfile(firebaseUID: "uid1", context: ctx)
+
+        let result = service.resolveOrCreateProfile(firebaseUID: "uid1", context: ctx)
+
+        XCTAssertTrue(result === existing)
+        XCTAssertEqual(try fetchAll(ctx).count, 1)
+    }
+
+    func testResolveOrCreateProfile_OnlyForeignProfileExists_CreatesSeparateProfile_ForeignUntouched() throws {
+        let ctx = try makeContext()
+        let foreign = makeProfile(firebaseUID: "otherUID", context: ctx)
+
+        let result = service.resolveOrCreateProfile(firebaseUID: "uid1", context: ctx)
+
+        XCTAssertTrue(result !== foreign)
+        XCTAssertEqual(result.firebaseUID, "uid1")
+        XCTAssertEqual(foreign.firebaseUID, "otherUID")   // untouched
+        XCTAssertEqual(try fetchAll(ctx).count, 2)
+    }
+
+    func testResolveOrCreateProfile_MultipleMineDuplicates_MergesAndClaimsPrimary() throws {
+        let ctx = try makeContext()
+        _ = makeProfile(firebaseUID: "", updatedAt: .now.addingTimeInterval(-100), context: ctx)
+        let newer = makeProfile(firebaseUID: "uid1", updatedAt: .now, context: ctx)
+
+        let result = service.resolveOrCreateProfile(firebaseUID: "uid1", context: ctx)
+
+        XCTAssertTrue(result === newer)
+        XCTAssertEqual(result.firebaseUID, "uid1")
+        XCTAssertEqual(try fetchAll(ctx).count, 1)
     }
 }

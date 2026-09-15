@@ -1,10 +1,11 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
-// MARK: - LibraryView
+// MARK: - CardsLibraryView
 // Корень таба Library: Piles + Collections → Sets → Cards (NavigationStack)
 
-struct LibraryView: View {
+struct CardsLibraryView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
@@ -42,20 +43,29 @@ struct LibraryView: View {
     @State private var newPileName            = ""
     @State private var showAllPiles           = false
 
-    private var userLevel: CEFRLevel { profiles.first?.cefrLevel ?? .c2 }
+    /// Фильтрует по "моим" (firebaseUID) — не наивный `profiles.first`, см.
+    /// комментарий у того же свойства в `CardsView`.
+    private var userLevel: CEFRLevel {
+        UserProfileDedupeService()
+            .resolveProfile(
+                firebaseUID: authService.currentUser?.uid ?? "",
+                allProfiles: profiles,
+                context: context
+        )?.cefrLevel ?? .c2
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
                     pilesSection
-                    setsSection
                     managingSection
+                    setsSection
                 }
                 .padding(.vertical, 16)
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle("Library")
+            .navigationTitle("Cards Library")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -324,7 +334,7 @@ struct LibraryView: View {
 
             // ── Заголовок ─────────────────────────────────────────
             HStack {
-                Text("MY SETS")
+                Text("MINE")
                     .font(.footnote.weight(.semibold))
                 Spacer()
                 Button { isShowingAddCollection = true } label: {
@@ -409,8 +419,7 @@ struct LibraryView: View {
             .padding(.vertical, 12)
             .background(Color.myColors.myAccent.opacity(0.04))
             .contextMenu {
-                let isProtected = collection.name == "Inbox" || collection.name == "My Sets"
-                if !isProtected {
+                if collection.name != "My Sets" {
                     Button(role: .destructive) {
                         collectionToDelete = collection
                     } label: {
@@ -446,19 +455,16 @@ struct LibraryView: View {
     @ViewBuilder
     private func setRow(_ cardSet: CardSet, in collection: Collection) -> some View {
         NavigationLink {
-            if collection.name == "Inbox" {
-                CardSetDetailView(cardSet: cardSet, backTitle: "Library",
-                                   authService: authService, userService: userService,
-                                   appSyncStateService: appSyncStateService)
-            } else {
-                CardSetDetailView(
-                    cardSet: cardSet,
-                    allowsEditing: collection.isUserCreated,
-                    backTitle: collection.name,
-                    authService: authService, userService: userService,
-                    appSyncStateService: appSyncStateService
-                )
-            }
+            // Inbox (cardSet.name == "Inbox") больше не отдельная Collection — просто
+            // сет внутри "My Sets"; CardSetDetailView сама подавляет для него editing
+            // через свой internal isInbox, отдельная ветка навигации не нужна.
+            CardSetDetailView(
+                cardSet: cardSet,
+                allowsEditing: collection.isUserCreated,
+                backTitle: collection.name,
+                authService: authService, userService: userService,
+                appSyncStateService: appSyncStateService
+            )
         } label: {
             HStack {
                 let count = vm.cardCount(forSet: cardSet, allCards: allCards)
@@ -521,35 +527,43 @@ struct LibraryView: View {
                 Label("Add to Pile", systemImage: "square.stack.3d.up")
             }
 
-            Button(role: .destructive) {
-                setToDelete = cardSet
-            } label: {
-                Label("Delete Set", systemImage: "trash")
+            if cardSet.name != "Inbox" {   // Inbox set никогда не удаляем — единственная цель захвата слов
+                Button(role: .destructive) {
+                    setToDelete = cardSet
+                } label: {
+                    Label("Delete Set", systemImage: "trash")
+                }
             }
         }
     }
 
     // MARK: - Managing Section
 
+    @ViewBuilder
     private var managingSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("MANAGING CARD")
-                .font(.footnote.weight(.semibold))
+        // Секция целиком скрыта, если внутри нечего показать — иначе оставался бы заголовок
+        // "MANAGING CARD" над пустой белой плашкой (deletedCards сама себя скрывает изнутри,
+        // но заголовок/рамка были снаружи, без учёта этого).
+        if vm.deletedCardsCount(allCards: allCards) > 0 {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MANAGING CARD")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.myColors.myAccent)
+                    .padding(.horizontal, 32)
+
+                VStack(spacing: 0) {
+                    deletedCards
+
+                }
                 .foregroundStyle(Color.myColors.myAccent)
-                .padding(.horizontal, 32)
-
-            VStack(spacing: 0) {
-                deletedCards
-
+                .background(Color.myColors.myBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .myShadow()
+                .padding(.horizontal, 16)
             }
-            .foregroundStyle(Color.myColors.myAccent)
-            .background(Color.myColors.myBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .myShadow()
-            .padding(.horizontal, 16)
         }
     }
-    
+
     @ViewBuilder
     private var deletedCards: some View {
         let deletedCount = vm.deletedCardsCount(allCards: allCards)
@@ -583,7 +597,10 @@ struct LibraryView: View {
 
     // Inbox + My Sets + остальные пользовательские коллекции
     private var myCollections: [Collection] {
-        vm.myCollections(from: collections, cardSets: cardSets, allCards: allCards)
+        vm.myCollections(
+            from: collections, cardSets: cardSets, allCards: allCards,
+            firebaseUID: authService.currentUser?.uid ?? ""
+        )
     }
 
     // Кураторские (Firestore) коллекции — показываем только если есть хотя бы один сет.

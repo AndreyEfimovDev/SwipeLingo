@@ -27,8 +27,24 @@ final class TinderCardsViewModel {
 
     // MARK: Статистика внутри сессии
 
-    /// Карточки, оценённые Easy в этой сессии (используется для "Learnt N" в строке прогресса).
-    private(set) var learntInSession: Int = 0
+    /// ID карточек, переведённых в `.learnt` свайпом вправо в этой сессии. Считаются в
+    /// `learntInSession`, только пока карточка ДЕЙСТВИТЕЛЬНО остаётся `.learnt` прямо
+    /// сейчас (`Card` — `@Model`, общая ссылка для всего приложения) — самокоррекция,
+    /// если карточку вернули в Active извне (напр. swipe "Restore" в `CardSetDetailView`,
+    /// пока эта же сессия ещё активна): `TinderCardsViewModel` и `CardSetDetailView`
+    /// ничего друг о друге не знают, а вот `card.status` — общий факт, доступный обоим.
+    private var swipedLearntIDs: Set<UUID> = []
+    /// ID карточек, оценённых Easy (SRS) в этой сессии — в отличие от `swipedLearntIDs`,
+    /// карточка при этом остаётся `.active` (Easy не меняет `status`, только SRS-поля),
+    /// так что внешний Restore на неё в принципе не действует — считаются безусловно.
+    private var easyRatedIDs: Set<UUID> = []
+
+    /// Карточки, отмеченные Learnt в этой сессии (свайп вправо + оценённые Easy),
+    /// используется для "Learnt N" в строке прогресса.
+    var learntInSession: Int {
+        let stillLearnt = cards.filter { swipedLearntIDs.contains($0.id) && $0.status == .learnt }.count
+        return stillLearnt + easyRatedIDs.count
+    }
 
     // MARK: UI-состояние
 
@@ -118,7 +134,7 @@ final class TinderCardsViewModel {
         card.isNew = false
         if direction == .right {
             card.status = .learnt
-            learntInSession += 1
+            swipedLearntIDs.insert(card.id)
         }
         context.saveWithErrorHandling()
         advance()
@@ -141,7 +157,7 @@ final class TinderCardsViewModel {
         if rating == .again || rating == .hard {
             weakCards.append(card)
         }
-        if rating == .easy { learntInSession += 1 }
+        if rating == .easy { easyRatedIDs.insert(card.id) }
         context.saveWithErrorHandling()
         advance()
     }
@@ -150,7 +166,8 @@ final class TinderCardsViewModel {
     func restart() {
         cards            = originalCards.filter { $0.status == .active }
         weakCards        = []
-        learntInSession  = 0
+        swipedLearntIDs  = []
+        easyRatedIDs     = []
         currentIndex     = 0
         dragOffset       = .zero
         isFlipped        = false
@@ -161,7 +178,8 @@ final class TinderCardsViewModel {
         let active = weakCards.filter { $0.status == .active }
         if !active.isEmpty { cards = active }
         weakCards        = []
-        learntInSession  = 0
+        swipedLearntIDs  = []
+        easyRatedIDs     = []
         currentIndex     = 0
         dragOffset       = .zero
         isFlipped        = false

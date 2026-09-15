@@ -1,4 +1,4 @@
-import CoreData
+internal import CoreData
 import Foundation
 import SwiftData
 
