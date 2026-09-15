@@ -51,7 +51,7 @@ struct SearchBar: View {
         ZStack (alignment: .trailing) {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Color.myColors.myAccent.opacity(text.isEmpty ? 0.35 : 0.8))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(text.isEmpty ? 0.5 : 1))
                 
                 TextField(prompt, text: $text)
                     .focused($isFocused)
@@ -62,10 +62,10 @@ struct SearchBar: View {
             }
             .font(.subheadline)
             .padding(6)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            .background(Color.myColors.myBackground, in: Capsule())
             .overlay{
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(isFocused ? Color.myColors.myBlue : .clear, lineWidth: 1.5)
+                Capsule()
+                    .strokeBorder(isFocused ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.25), lineWidth: 1.5)
             }
 
             if isFocused {

@@ -90,7 +90,7 @@ struct PairsView: View {
             .navigationTitle("Pairs")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { pairsToolbar }
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .background(Color.myColors.myBackground.ignoresSafeArea())
             .onAppear { selectDefaultMode() }
         }
     }
@@ -295,7 +295,8 @@ struct PairsView: View {
         }
         .padding(.vertical, 24)
         .padding(.horizontal, 24)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28))
+        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 28))
+        .myShadow()
         .padding(.horizontal, 24)
     }
 

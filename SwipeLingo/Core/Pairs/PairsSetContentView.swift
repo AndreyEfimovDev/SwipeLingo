@@ -63,7 +63,7 @@ struct PairsSetContentView: View {
             .padding(.vertical, 16)
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
-        .customBackButton("Pairs")
+        .customBackButton("")
         .navigationTitle(set.title ?? "Pairs")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showPlans) { PlansView(authService: authService, userService: userService) }

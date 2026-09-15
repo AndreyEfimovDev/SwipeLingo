@@ -91,7 +91,7 @@ struct CardsView: View {
             .navigationTitle("Cards")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .background(Color.myColors.myBackground.ignoresSafeArea())
         }
         .onAppear {
             vm.startSessionIfNeeded(

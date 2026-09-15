@@ -125,7 +125,7 @@ struct PairsSetPlayerView: View {
                                     }
                                 }
                             }
-                            .background(Color(.systemBackground))
+                            .background(Color.myColors.myBackground)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .myShadow()
                             .padding(.horizontal, 16)
@@ -156,7 +156,7 @@ struct PairsSetPlayerView: View {
                     }
                     .padding(.top, 16)
                 }
-                .background(Color(.systemBackground).ignoresSafeArea())
+                .background(Color.myColors.myBackground.ignoresSafeArea())
                 .contentShape(Rectangle())
                 .onTapGesture { vm.handleTap() }
                 .onChange(of: vm.revealedSteps) {
@@ -189,7 +189,7 @@ struct PairsSetPlayerView: View {
         } // closes VStack
         // В session-режиме (onComplete != nil) заголовок и back button задаёт PairsSessionView
         .if(onComplete == nil) { $0
-            .customBackButton("Pairs")
+            .customBackButton("")
             .navigationTitle(set.title ?? "Pairs")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -253,9 +253,7 @@ struct PairsSetPlayerView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .background(Color.myColors.myBackground)
     }
     // MARK: - Group Section Header
     //

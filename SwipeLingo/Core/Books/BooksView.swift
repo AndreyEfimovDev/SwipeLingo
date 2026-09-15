@@ -37,6 +37,7 @@ struct BooksView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    SearchBar(text: $vm.searchText, prompt: "Search books")
                     levelFilterBar
                     if vm.filteredBooks(books, userPlan: userPlan).isEmpty {
                         emptyState
@@ -47,12 +48,10 @@ struct BooksView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
             }
-            .background(Color(.systemBackground).ignoresSafeArea())
+            .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Books")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $vm.searchText, prompt: "Search books")
             .toolbar { toolbarContent }
-            .toolbarBackground(.hidden, for: .navigationBar)
             .navigationDestination(item: $readerBook) { book in
                 BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings, authService: authService)
             }
@@ -285,7 +284,7 @@ private struct BookCard: View {
             }
         }
         .buttonStyle(.plain)
-        .background(Color(.systemBackground))
+        .background(Color.myColors.myBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .myShadow()
@@ -356,7 +355,7 @@ private struct FilterChip: View {
                 .padding(.vertical, 6)
                 .background(
                     Capsule()
-                        .fill(isSelected ? color.opacity(0.12) : Color(.systemBackground))
+                        .fill(isSelected ? color.opacity(0.12) : Color.myColors.myBackground)
                 )
                 .overlay(
                     Capsule()

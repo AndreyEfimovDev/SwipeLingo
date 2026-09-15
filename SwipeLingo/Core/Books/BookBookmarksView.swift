@@ -47,7 +47,7 @@ struct BookBookmarksView: View {
             }
         }
         .listStyle(.plain)
-        .background(Color(.systemBackground).ignoresSafeArea())
+        .background(Color.myColors.myBackground.ignoresSafeArea())
     }
 
     // MARK: - Row
@@ -99,7 +99,7 @@ struct BookBookmarksView: View {
         .background(
             bookmark.chapterIndex == currentIndex
                 ? Color.myColors.myBlue.opacity(0.06)
-                : Color(.systemBackground)
+                : Color.myColors.myBackground
         )
         // Тап → переход
         .onTapGesture { onSelect(bookmark) }

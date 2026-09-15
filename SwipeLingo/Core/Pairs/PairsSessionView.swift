@@ -83,7 +83,7 @@ struct PairsSessionView: View {
         // (встроенный ZStack-элемент) сознательно пропускает свой .customBackButton, пока
         // встроен сюда (onComplete != nil) — см. комментарий там же — рассчитывая, что его
         // поставит именно этот, внешний экран.
-        .customBackButton("Pairs")
+        .customBackButton("")
         .navigationTitle(currentSet.title ?? "Pairs")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -114,7 +114,7 @@ struct PairsSessionView: View {
             }
             navButtons
         }
-        .background(.regularMaterial)
+        .background(Color.myColors.myBackground)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .myShadow()
         .padding(.horizontal, 16)

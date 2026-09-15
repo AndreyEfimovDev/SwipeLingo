@@ -166,7 +166,7 @@ struct BookWordLookupView: View {
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(Color.myColors.myBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .myShadow()
     }

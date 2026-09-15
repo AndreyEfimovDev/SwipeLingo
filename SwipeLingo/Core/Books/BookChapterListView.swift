@@ -25,12 +25,12 @@ struct BookChapterListView: View {
                             }
                         }
                     }
-                    .background(Color(.systemBackground))
+                    .background(Color.myColors.myBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .myShadow()
                     .padding(16)
                 }
-                .background(Color(.systemBackground).ignoresSafeArea())
+                .background(Color.myColors.myBackground.ignoresSafeArea())
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         proxy.scrollTo(currentIndex, anchor: .center)
