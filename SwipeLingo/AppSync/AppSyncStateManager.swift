@@ -5,7 +5,7 @@
 //  Created by Andrey Efimov on 14.09.2026.
 //
 
-import CoreData
+internal import CoreData
 import Foundation
 import SwiftData
 

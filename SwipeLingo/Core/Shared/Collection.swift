@@ -7,15 +7,22 @@ import SwiftData
 final class Collection {
     var id: UUID = UUID()
     var name: String = ""
-    var icon: String?       // имя SF Symbol или эмодзи
-    var isOwned: Bool = true       // true = принадлежит пользователю (не paywalled); false = премиум/Firebase
+    var icon: String? // имя SF Symbol или эмодзи
+    var isOwned: Bool = true // true = принадлежит пользователю (не paywalled); false = премиум/Firebase
     // true  → создана пользователем (My Sets, Inbox, пользовательские коллекции) — без бейджа CEFR, без синка с Firebase
     // false → контент от разработчика (IELTS, Psychology) — показывать бейдж CEFR в списке сетов
     var isUserCreated: Bool = true
-    var typeRaw: String     = CollectionType.cards.rawValue  // "cards" | "pairs" — CloudKit-safe
-    var updatedAt: Date     = Date.epoch                // обновляется Admin Tool при публикации
+    var typeRaw: String = CollectionType.cards.rawValue // "cards" | "pairs" — CloudKit-safe
+    var updatedAt: Date = Date.epoch // обновляется Admin Tool при публикации
     var createdAt: Date = Date()
-    var firestoreId: String? = nil                      // ID документа Firestore для дедупликации при синке
+    var firestoreId: String? = nil // ID документа Firestore для дедупликации при синке
+
+    /// Владелец записи для пользовательских коллекций (Inbox/My Sets) — Firebase UID
+    /// аккаунта, к которому привязана эта коллекция. Пусто = ещё не привязана
+    /// (bootstrap-состояние до claim, см. CollectionDedupeService — паттерн зеркалит
+    /// AppSyncStateManager.claim(firebaseUID:)). Для курируемых коллекций
+    /// (isUserCreated == false) не используется — те уже дедуплицируются по firestoreId.
+    var ownerFirebaseUID: String = ""
 
     var collectionType: CollectionType {
         get { CollectionType(rawValue: typeRaw) ?? .cards }
@@ -30,7 +37,8 @@ final class Collection {
         isUserCreated: Bool = true,
         type: CollectionType = .cards,
         updatedAt: Date = .epoch,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        ownerFirebaseUID: String = ""
     ) {
         self.id = id
         self.name = name
@@ -40,6 +48,7 @@ final class Collection {
         self.typeRaw = type.rawValue
         self.updatedAt = updatedAt
         self.createdAt = createdAt
+        self.ownerFirebaseUID = ownerFirebaseUID
     }
 }
 

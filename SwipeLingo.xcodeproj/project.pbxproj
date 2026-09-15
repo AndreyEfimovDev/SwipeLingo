@@ -203,6 +203,8 @@
 		47EF10022F8531C20049858B /* PairsSetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EF10012F8531C20049858B /* PairsSetContentView.swift */; };
 		47F4D803AAACDA42B63B9F8F /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4739F3F5518B2F24B631870A /* AppDependencies.swift */; };
 		60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */; };
+		E9A3364B0341D1A63C5621AE /* CollectionDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */; };
+		62D8B5E8D03B6003BCBF13DB /* CollectionDedupeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */; };
 		6FE278252FC459EB4C630666 /* UIAppearanceConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */; };
 		AB24E37E6C4781C61A774A7E /* SwipeLingoMigrationPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CC016D85EA2BFD8795FE26D /* SwipeLingoMigrationPlanTests.swift */; };
 		AC9B3B55D40DE0238EFE55AD /* ErrorManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2151381ED3A3442F2FD275 /* ErrorManagerTests.swift */; };
@@ -210,6 +212,7 @@
 		C3F414F4FFCC51C4A353A9F9 /* PileBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21312C0867E6DACAFF1780E7 /* PileBadgeView.swift */; };
 		CB1D7612C61D84EBFA05175A /* AppViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */; };
 		EA5914D21CB5AB9F6C4E4EBE /* UserProfileDedupeServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7F004C7FAB6A37297C8615 /* UserProfileDedupeServiceTests.swift */; };
+		77A96E47883A5C6E9F1A56C4 /* CollectionDedupeServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D673F229DD41B274384D351D /* CollectionDedupeServiceTests.swift */; };
 		EE78EECA74077ECD7784C2E1 /* UserProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71EF3E17CA0D6AFC0E321DE /* UserProfileTests.swift */; };
 		FC6AB36DB800A4A62E39D36E /* ForeignAccountWarningService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A10B05548AD3414328CC961 /* ForeignAccountWarningService.swift */; };
 /* End PBXBuildFile section */
@@ -255,6 +258,7 @@
 /* Begin PBXFileReference section */
 		04CA3FF0F72A07A10F077B4D /* SwipeLingoMigrationPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoMigrationPlan.swift; sourceTree = "<group>"; };
 		0D7F004C7FAB6A37297C8615 /* UserProfileDedupeServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileDedupeServiceTests.swift; sourceTree = "<group>"; };
+		D673F229DD41B274384D351D /* CollectionDedupeServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDedupeServiceTests.swift; sourceTree = "<group>"; };
 		0E2151381ED3A3442F2FD275 /* ErrorManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorManagerTests.swift; sourceTree = "<group>"; };
 		1A10B05548AD3414328CC961 /* ForeignAccountWarningService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeignAccountWarningService.swift; sourceTree = "<group>"; };
 		21312C0867E6DACAFF1780E7 /* PileBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PileBadgeView.swift; sourceTree = "<group>"; };
@@ -437,6 +441,8 @@
 		9CC016D85EA2BFD8795FE26D /* SwipeLingoMigrationPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeLingoMigrationPlanTests.swift; sourceTree = "<group>"; };
 		A71EF3E17CA0D6AFC0E321DE /* UserProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileTests.swift; sourceTree = "<group>"; };
 		E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileDedupeService.swift; sourceTree = "<group>"; };
+		563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDedupeService.swift; sourceTree = "<group>"; };
+		8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDedupeObserver.swift; sourceTree = "<group>"; };
 		F8FCFCB36E2BEC4F013B7046 /* AppSyncStateManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSyncStateManagerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -632,6 +638,8 @@
 				8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */,
 				4723A9468F60C7C2DB7889DB /* UserSessionSyncService.swift */,
 				E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */,
+				563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */,
+				8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */,
 				1A10B05548AD3414328CC961 /* ForeignAccountWarningService.swift */,
 			);
 			path = Services;
@@ -818,6 +826,7 @@
 				478729372FA9D9A3001282EF /* SwipeLingoTests.swift */,
 				478729362FA9D9A3001282EF /* SRSServiceTests.swift */,
 				0D7F004C7FAB6A37297C8615 /* UserProfileDedupeServiceTests.swift */,
+				D673F229DD41B274384D351D /* CollectionDedupeServiceTests.swift */,
 				47467C7D305964A300987D2D /* ImportFSServiceTests.swift */,
 				F8FCFCB36E2BEC4F013B7046 /* AppSyncStateManagerTests.swift */,
 				0E2151381ED3A3442F2FD275 /* ErrorManagerTests.swift */,
@@ -1394,6 +1403,8 @@
 				47933E5E7BF5AA064978D33A /* InboxDrainService.swift in Sources */,
 				476830EDD9538F9B48E88EA1 /* UserSessionSyncService.swift in Sources */,
 				60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */,
+				E9A3364B0341D1A63C5621AE /* CollectionDedupeService.swift in Sources */,
+				62D8B5E8D03B6003BCBF13DB /* CollectionDedupeObserver.swift in Sources */,
 				FC6AB36DB800A4A62E39D36E /* ForeignAccountWarningService.swift in Sources */,
 				47A658EBD2F43A83CA4D7D2D /* LibraryViewModel.swift in Sources */,
 				4768075FDBE60755A9693C69 /* PairsSetPlayerViewModel.swift in Sources */,
@@ -1412,6 +1423,7 @@
 			files = (
 				478729392FA9D9A3001282EF /* SRSServiceTests.swift in Sources */,
 				EA5914D21CB5AB9F6C4E4EBE /* UserProfileDedupeServiceTests.swift in Sources */,
+				77A96E47883A5C6E9F1A56C4 /* CollectionDedupeServiceTests.swift in Sources */,
 				B0E372C47591FA8C805CB807 /* AppSyncStateManagerTests.swift in Sources */,
 				47467C7E305964A300987D2D /* ImportFSServiceTests.swift in Sources */,
 				AC9B3B55D40DE0238EFE55AD /* ErrorManagerTests.swift in Sources */,

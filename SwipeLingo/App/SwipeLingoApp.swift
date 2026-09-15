@@ -38,6 +38,7 @@ struct SwipeLingoApp: App {
                 authFBService: AuthFBService(),
                 userFBService: UserFBService(),
                 appSyncStateService: AppSyncStateService(modelContext: container.mainContext),
+                collectionDedupeObserver: CollectionDedupeObserver(container: container),
                 appViewModel: AppViewModel(),
                 appSettings: AppSettings()
             )
@@ -130,6 +131,9 @@ struct SwipeLingoApp: App {
             /// Привязываем AppSyncState к аккаунту раньше Task ниже — синхронно, до
             /// чтения appSyncStateService.hasCompletedOnboarding внутри неё (см. claim(firebaseUID:)).
             appSyncStateService.claim(firebaseUID: user.uid)
+            /// Тот же bootstrap → account-scoped переход для системных коллекций
+            /// (Inbox/My Sets) — см. CollectionDedupeService.
+            CollectionDedupeService().claimSystemCollections(firebaseUID: user.uid, context: container.mainContext)
             let hasForeignSyncState = appSyncStateService.hasForeignAccountData(firebaseUID: user.uid)
             Task {
                 let syncResult = await UserSessionSyncService().syncAfterVerifiedSession(

@@ -43,6 +43,16 @@ final class FlashCardsViewModel {
 
     private let pileService = PileService()
 
+    // Превентивная мера против воспроизводимого крэша Swift Concurrency рантайма
+    // (`swift_task_deinitOnExecutorMainActorBackDeploy`, malloc/SIGABRT) при
+    // деаллокации MainActor-изолированного класса — пойман здесь через `bt` в LLDB
+    // при прогоне всех юнит-тестов разом (см. Architecture.md, "Известная
+    // ловушка"). Изначально задокументирован только для AppSyncStateManager/
+    // AppSyncStateService, но `FlashCardsViewModel` не хранит ModelContext вообще —
+    // значит причина шире, чем "хранит ModelContext полем", и это не подтверждённый
+    // фикс, а та же превентивная мера (может изменить путь синтеза компилятора).
+    deinit {}
+
     // MARK: Session control
 
     /// Загружает сессию, если она ещё не запущена.

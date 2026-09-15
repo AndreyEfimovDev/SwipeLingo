@@ -36,6 +36,12 @@ struct AppView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
+            /// Подстраховочный прогон дедупа Inbox/My Sets при появлении главного экрана —
+            /// на случай, если CloudKit доставил дубли ДО того, как CollectionDedupeObserver
+            /// успел подписаться на NSPersistentStoreRemoteChange (см. его комментарий).
+            .task {
+                CollectionDedupeService().mergeProtectedCollections(context: context)
+            }
             .onChange(of: myProfile?.cefrLevelRaw) { oldLevelRaw, newLevelRaw in
                 vm.handleCEFRLevelChange(
                     oldRaw: oldLevelRaw,
