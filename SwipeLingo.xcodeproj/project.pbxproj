@@ -28,6 +28,7 @@
 		471DBCA92FC5B6CC00F04BE0 /* BookBookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471DBCA82FC5B6CC00F04BE0 /* BookBookmarksView.swift */; };
 		473597AE87425895D778D614 /* DeletedCardsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4742B7EEDE7912156321442E /* DeletedCardsViewModel.swift */; };
 		47467C7C3058569B00987D2D /* AppSyncStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47467C7B3058568A00987D2D /* AppSyncStateManager.swift */; };
+		47467C7E305964A300987D2D /* ImportFSServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47467C7D305964A300987D2D /* ImportFSServiceTests.swift */; };
 		474C91292FE0324C002017BD /* RetranslateSetSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474C91282FE0324C002017BD /* RetranslateSetSheet.swift */; };
 		474C912B2FE0583F002017BD /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 474C912A2FE0583F002017BD /* FirebaseCrashlytics */; };
 		474C912D2FE0584B002017BD /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 474C912C2FE0584B002017BD /* FirebaseAnalytics */; };
@@ -281,6 +282,7 @@
 		4742B7EEDE7912156321442E /* DeletedCardsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletedCardsViewModel.swift; sourceTree = "<group>"; };
 		474529BD8FAC3FD67A8654CC /* AddEditCardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditCardViewModel.swift; sourceTree = "<group>"; };
 		47467C7B3058568A00987D2D /* AppSyncStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSyncStateManager.swift; sourceTree = "<group>"; };
+		47467C7D305964A300987D2D /* ImportFSServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportFSServiceTests.swift; sourceTree = "<group>"; };
 		474BFB622F3C8255006E639B /* SwipeLingo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwipeLingo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB6F2F3C825C006E639B /* SwipeLingoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		474BFB792F3C825C006E639B /* SwipeLingoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwipeLingoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -817,6 +819,7 @@
 				478729372FA9D9A3001282EF /* SwipeLingoTests.swift */,
 				478729362FA9D9A3001282EF /* SRSServiceTests.swift */,
 				0D7F004C7FAB6A37297C8615 /* UserProfileDedupeServiceTests.swift */,
+				47467C7D305964A300987D2D /* ImportFSServiceTests.swift */,
 				F8FCFCB36E2BEC4F013B7046 /* AppSyncStateManagerTests.swift */,
 				0E2151381ED3A3442F2FD275 /* ErrorManagerTests.swift */,
 				704BC42AFC427BD3BA442868 /* ForeignAccountWarningServiceTests.swift */,
@@ -1410,6 +1413,7 @@
 				478729392FA9D9A3001282EF /* SRSServiceTests.swift in Sources */,
 				EA5914D21CB5AB9F6C4E4EBE /* UserProfileDedupeServiceTests.swift in Sources */,
 				B0E372C47591FA8C805CB807 /* AppSyncStateManagerTests.swift in Sources */,
+				47467C7E305964A300987D2D /* ImportFSServiceTests.swift in Sources */,
 				AC9B3B55D40DE0238EFE55AD /* ErrorManagerTests.swift in Sources */,
 				43107E790C124A55A0BD3B9D /* ForeignAccountWarningServiceTests.swift in Sources */,
 				EE78EECA74077ECD7784C2E1 /* UserProfileTests.swift in Sources */,

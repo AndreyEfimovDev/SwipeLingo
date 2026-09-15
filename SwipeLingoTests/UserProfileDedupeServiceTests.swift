@@ -193,7 +193,7 @@ final class UserProfileDedupeServiceTests: XCTestCase {
 
     func testResolveOrCreateProfile_MultipleMineDuplicates_MergesAndClaimsPrimary() throws {
         let ctx = try makeContext()
-        let older = makeProfile(firebaseUID: "", updatedAt: .now.addingTimeInterval(-100), context: ctx)
+        _ = makeProfile(firebaseUID: "", updatedAt: .now.addingTimeInterval(-100), context: ctx)
         let newer = makeProfile(firebaseUID: "uid1", updatedAt: .now, context: ctx)
 
         let result = service.resolveOrCreateProfile(firebaseUID: "uid1", context: ctx)

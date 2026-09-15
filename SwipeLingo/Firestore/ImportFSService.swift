@@ -269,13 +269,15 @@ struct ImportFSService {
                     let sampleItem         = sampleTranslations[language.langId] ?? []
 
                     if let existing = cardsByFsId[cardFsId] {
-                        // Обновляем контент, SRS-состояние не трогаем
-                        existing.en                = en
-                        existing.item              = item
-                        existing.sampleEN          = sampleEN
-                        existing.sampleItem        = sampleItem
-                        existing.dictTranscription = transcription
-                        existing.updatedAt         = (cd["updatedAt"] as? Timestamp)?.dateValue() ?? .now
+                        applyRemoteContent(
+                            to: existing,
+                            en: en,
+                            item: item,
+                            sampleEN: sampleEN,
+                            sampleItem: sampleItem,
+                            dictTranscription: transcription,
+                            updatedAt: (cd["updatedAt"] as? Timestamp)?.dateValue() ?? .now
+                        )
                     } else {
                         let c = Card(
                             en: en, item: item,
@@ -505,5 +507,36 @@ struct ImportFSService {
             dictTranscription: fsCard.transcription,
             setId:             swiftDataSetId
         )
+    }
+
+    // MARK: - Апдейт существующей карточки данными из Firestore
+
+    /// Применяет свежие данные из Firestore к уже существующей локальной карточке —
+    /// вынесено отдельно от `syncFromFirestore` ради тестируемости без сети/Firebase (см.
+    /// `AppViewModelTests` — тот же приём для `AppViewModel.levelIncrease`).
+    ///
+    /// `card.status` сюда **осознанно** не входит и не трогается — мягко удалённая
+    /// (`.deleted`, см. `CardSetDetailView`/`DeletedCardsView`) или изученная (`.learnt`)
+    /// curated-карточка должна пережить любой sync без изменений: обновляем только
+    /// контентные поля и `updatedAt`. Это тот же принцип tombstone, что и явный
+    /// `isSoftDeleted`-guard у целого `CardSet`/`PairsSet` (см. `syncFromFirestore` выше) —
+    /// здесь он реализован не отдельной веткой, а самим составом обновляемых полей. Если
+    /// когда-нибудь понадобится синхронизировать `status` с Firestore — делать это придётся
+    /// осознанно, отдельным полем, не трогая этот список полей "как бы заодно".
+    func applyRemoteContent(
+        to card: Card,
+        en: String,
+        item: String,
+        sampleEN: [String],
+        sampleItem: [String],
+        dictTranscription: String,
+        updatedAt: Date
+    ) {
+        card.en                = en
+        card.item              = item
+        card.sampleEN          = sampleEN
+        card.sampleItem        = sampleItem
+        card.dictTranscription = dictTranscription
+        card.updatedAt         = updatedAt
     }
 }
