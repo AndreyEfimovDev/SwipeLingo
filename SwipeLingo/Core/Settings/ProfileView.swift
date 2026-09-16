@@ -755,7 +755,7 @@ private struct AppleDeletionSheet: View {
 
     var body: some View {
         ZStack {
-            Color.myColors.myBackground.ignoresSafeArea()
+            Color.myColors.mySheetBackground.ignoresSafeArea()
 
             VStack(spacing: 24) {
                 Spacer()

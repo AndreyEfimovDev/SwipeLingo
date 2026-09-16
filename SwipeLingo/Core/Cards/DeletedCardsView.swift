@@ -177,7 +177,10 @@ struct DeletedCardsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !deletedCards.isEmpty {
-                    Button(editMode == .active ? "Done" : "Edit") {
+                    DoneButtonForSheet(
+                        title: editMode == .active ? "Done" : "Edit",
+                        color: Color.myColors.myBlue
+                    ) {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             if editMode == .active {
                                 editMode = .inactive
@@ -186,8 +189,19 @@ struct DeletedCardsView: View {
                                 editMode = .active
                             }
                         }
+
                     }
-                    .foregroundStyle(Color.myColors.myBlue)
+//                    Button(editMode == .active ? "Done" : "Edit") {
+//                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+//                            if editMode == .active {
+//                                editMode = .inactive
+//                                selectedCardIds = []
+//                            } else {
+//                                editMode = .active
+//                            }
+//                        }
+//                    }
+//                    .foregroundStyle(Color.myColors.myBlue)
                     .disabled(deletedCards.isEmpty)
                 }
             }

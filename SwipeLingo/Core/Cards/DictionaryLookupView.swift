@@ -53,14 +53,13 @@ struct DictionaryLookupView: View {
                     errorView(message)
                 }
             }
-            .navigationTitle(card.en.capitalized)
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetNavigationBar(card.en.capitalized)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    DoneButtonForSheet() { dismiss() }
                 }
             }
-            .background(Color.myColors.myBackground.ignoresSafeArea())
+            .background(Color.myColors.mySheetBackground.ignoresSafeArea())
         }
         .task {
             // Показываем закэшированную транскрипцию сразу, пока загружается полная запись
@@ -166,7 +165,7 @@ struct DictionaryLookupView: View {
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 16))
+                .background(Color.myColors.mySheetBackground, in: RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal, 32)
             }
 
@@ -233,7 +232,7 @@ struct DictionaryLookupView: View {
             .accessibilityLabel(vm.audioService.isPlaying ? "Stop audio" : "Play pronunciation")
         }
         .padding()
-        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.myColors.mySheetBackground, in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Meaning section

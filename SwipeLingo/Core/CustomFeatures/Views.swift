@@ -52,6 +52,44 @@ extension View {
     }
 }
 
+// MARK: - Sheet Navigation Bar
+// Nav bar для модальных .sheet на mySheetBackground (не .fullScreenCover — те используют
+// штатный .navigationTitle, глобальный UIAppearanceConfigurator красит их title в myAccent
+// без проблем). .toolbarBackground(_:for:) — единственный способ перекрасить бар конкретного
+// экрана в mySheetBackground (иначе он останется чёрным из глобального UIAppearance) — но
+// SwiftUI при этом создаёт для бара отдельную per-instance UINavigationBarAppearance, которая
+// НЕ наследует titleTextAttributes из appearance-прокси в UIAppearanceConfigurator: заголовок
+// откатывается на системный белый вместо myAccent. Явный Text в .principal — обходит это,
+// цвет не зависит от того, чья именно UINavigationBarAppearance сейчас активна.
+//
+// Использование (вместо .navigationTitle + .navigationBarTitleDisplayMode + вручную
+// .toolbarBackground(mySheetBackground)):
+//   .sheetNavigationBar("Examples")
+
+private struct SheetNavigationBarModifier: ViewModifier {
+    let title: String
+
+    func body(content: Content) -> some View {
+        content
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(title)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.myColors.myAccent)
+                        .lineLimit(1)
+                }
+            }
+            .toolbarBackground(Color.myColors.mySheetBackground, for: .navigationBar)
+    }
+}
+
+extension View {
+    func sheetNavigationBar(_ title: String) -> some View {
+        modifier(SheetNavigationBarModifier(title: title))
+    }
+}
+
 // MARK: - Shadow
 
 extension View {

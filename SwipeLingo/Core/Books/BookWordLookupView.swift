@@ -52,11 +52,10 @@ struct BookWordLookupView: View {
                     errorView(message)
                 }
             }
-            .navigationTitle(word.capitalized)
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetNavigationBar(word.capitalized)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    DoneButtonForSheet() { dismiss() }
                 }
             }
         }
@@ -166,7 +165,7 @@ struct BookWordLookupView: View {
             }
         }
         .padding(16)
-        .background(Color.myColors.myBackground)
+        .background(Color.myColors.mySheetBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .myShadow()
     }

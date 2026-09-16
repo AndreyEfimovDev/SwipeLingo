@@ -74,9 +74,8 @@ struct PaymentFormView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
             }
-            .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle("Subscribe")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(Color.myColors.mySheetBackground.ignoresSafeArea())
+            .sheetNavigationBar("Subscribe")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
@@ -112,7 +111,7 @@ struct PaymentFormView: View {
                 .foregroundStyle(Color.myColors.myAccent)
         }
         .padding(16)
-        .background(Color.myColors.myBackground)
+        .background(Color.myColors.mySheetBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .myShadow()
     }

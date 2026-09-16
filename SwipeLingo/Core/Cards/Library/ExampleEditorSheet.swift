@@ -39,9 +39,8 @@ struct ExampleEditorSheet: View {
                     exampleList
                 }
             }
-            .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle("Examples")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(Color.myColors.mySheetBackground.ignoresSafeArea())
+            .sheetNavigationBar("Examples")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -68,7 +67,7 @@ struct ExampleEditorSheet: View {
                     }
                 }
             }
-            .background(Color.myColors.myBackground)
+            .background(Color.myColors.mySheetBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(16)

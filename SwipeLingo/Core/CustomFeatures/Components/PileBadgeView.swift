@@ -36,7 +36,10 @@ struct PileBadgeView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 8)
             .background(Color.myColors.myBackground, in: Capsule())
-            .myShadow()
+            .overlay(
+                Capsule()
+                    .stroke(Color.myColors.myAccent.opacity(0.35), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }

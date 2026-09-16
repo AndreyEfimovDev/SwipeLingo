@@ -91,9 +91,8 @@ struct AddEditCardView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
             }
-            .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle(vm.isEditMode ? "Edit Card" : "New Card")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(Color.myColors.mySheetBackground.ignoresSafeArea())
+            .sheetNavigationBar(vm.isEditMode ? "Edit Card" : "New Card")
             .navigationBarBackButtonHidden(true)
             .toolbar { toolbarContent }
             .overlay { if isShowingExitConfirm { exitConfirmOverlay } }
@@ -129,7 +128,7 @@ struct AddEditCardView: View {
                     .font(.title2)
                     .foregroundStyle(Color.myColors.myBlue)
                     .frame(width: 48, height: 48)
-                    .background(Color.myColors.myBackground)
+                    .background(Color.myColors.mySheetBackground)
                     .clipShape(Circle())
                     .myShadow()
             }
@@ -483,7 +482,7 @@ struct AddEditCardView: View {
                 .padding(.horizontal, 16)
 
             content()
-                .background(Color.myColors.myBackground)
+                .background(Color.myColors.mySheetBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .myShadow()
         }

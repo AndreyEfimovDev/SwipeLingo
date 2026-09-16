@@ -44,9 +44,8 @@ struct PileBuilderView: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 setsFilterHeader
             }
-            .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle(vm.editingPile == nil ? "New Pile" : "Edit Pile")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(Color.myColors.mySheetBackground.ignoresSafeArea())
+            .sheetNavigationBar(vm.editingPile == nil ? "New Pile" : "Edit Pile")
             .toolbar { toolbarButtons }
             .confirmationDialog(
                 "Delete \"\(vm.name)\"?",
@@ -79,7 +78,7 @@ struct PileBuilderView: View {
             TextField("e.g. Morning Session", text: $vm.name)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(Color.myColors.myBackground)
+                .background(Color.myColors.mySheetBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .myShadow()
                 .padding(.horizontal, 16)
@@ -121,7 +120,7 @@ struct PileBuilderView: View {
                     vm.shuffleMethod = .random
                 }
             }
-            .background(Color.myColors.myBackground)
+            .background(Color.myColors.mySheetBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
@@ -177,9 +176,9 @@ struct PileBuilderView: View {
         .background {
             LinearGradient(
                 gradient: Gradient(stops: [
-                    .init(color: Color.myColors.myBackground.opacity(0.01), location: 0.0),
-                    .init(color: Color.myColors.myBackground.opacity(0.95), location: 0.3),
-                    .init(color: Color.myColors.myBackground,               location: 1.0)
+                    .init(color: Color.myColors.mySheetBackground.opacity(0.01), location: 0.0),
+                    .init(color: Color.myColors.mySheetBackground.opacity(0.95), location: 0.3),
+                    .init(color: Color.myColors.mySheetBackground,               location: 1.0)
                 ]),
                 startPoint: .bottom,
                 endPoint: .top
@@ -195,7 +194,7 @@ struct PileBuilderView: View {
                 .font(.subheadline.weight(.medium))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
-                .background(isActive ? Color.myColors.myBlue : Color.myColors.myBackground)
+                .background(isActive ? Color.myColors.myBlue : Color.myColors.mySheetBackground)
                 .foregroundStyle(isActive ? Color.white : Color.myColors.myAccent)
                 .clipShape(Capsule())
                 .overlay(Capsule().strokeBorder(
@@ -232,7 +231,7 @@ struct PileBuilderView: View {
                         }
                     }
                 }
-                .background(Color.myColors.myBackground)
+                .background(Color.myColors.mySheetBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .myShadow()
                 .padding(.horizontal, 16)

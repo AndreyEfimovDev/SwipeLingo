@@ -48,14 +48,13 @@ struct PlansView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             }
-            .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle("Plans")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(Color.myColors.mySheetBackground.ignoresSafeArea())
+            .sheetNavigationBar("Plans")
             .safeAreaInset(edge: .bottom) {
                 actionButton
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(Color.myColors.myBackground)
+                    .background(Color.myColors.mySheetBackground)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -180,7 +179,7 @@ struct PlansView: View {
                 }
             }
             .padding(16)
-            .background(Color.myColors.myBackground)
+            .background(Color.myColors.mySheetBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
