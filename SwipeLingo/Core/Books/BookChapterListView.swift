@@ -40,12 +40,13 @@ struct BookChapterListView: View {
             .sheetNavigationBar("Contents")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    DoneButtonForSheet(color: Color.myColors.myBlue) {
+                    NavBarButtonForSheet(color: Color.myColors.myBlue) {
                         dismiss()
                     }
 //                    Button("Done") { dismiss() }
 //                        .foregroundStyle(Color.myColors.myBlue)
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

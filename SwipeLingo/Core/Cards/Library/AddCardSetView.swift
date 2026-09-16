@@ -20,26 +20,31 @@ struct AddCardSetView: View {
             Form {
                 TextField("Set name", text: $name)
             }
-            .navigationTitle("New Set")
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetNavigationBar("New Set")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.myColors.myRed)
+                    NavBarButtonForSheet(
+                        title: "Cancel",
+                        color: Color.myColors.myRed) {
+                            dismiss()
+                        }
                 }
+                .hiddenSharedBackgroundIfAvailable()
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        let cardSet = CardSet(
-                            name: name.trimmingCharacters(in: .whitespaces),
-                            collectionId: collectionId
-                        )
-                        context.insert(cardSet)
-                        context.saveWithErrorHandling()
-                        dismiss()
-                    }
-                    .foregroundStyle(isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue)
-                    .disabled(isNameEmpty)
+                    NavBarButtonForSheet(
+                        title: "Create",
+                        color: isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue) {
+                            let cardSet = CardSet(
+                                name: name.trimmingCharacters(in: .whitespaces),
+                                collectionId: collectionId
+                            )
+                            context.insert(cardSet)
+                            context.saveWithErrorHandling()
+                            dismiss()
+                        }
+                        .disabled(isNameEmpty)
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

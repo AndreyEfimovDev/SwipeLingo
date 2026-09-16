@@ -177,7 +177,7 @@ struct DeletedCardsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !deletedCards.isEmpty {
-                    DoneButtonForSheet(
+                    NavBarButtonForSheet(
                         title: editMode == .active ? "Done" : "Edit",
                         color: Color.myColors.myBlue
                     ) {
@@ -205,6 +205,7 @@ struct DeletedCardsView: View {
                     .disabled(deletedCards.isEmpty)
                 }
             }
+            .hiddenSharedBackgroundIfAvailable()
             if editMode == .active {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(isAllSelected ? "Deselect All" : "Select All") {

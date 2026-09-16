@@ -55,8 +55,9 @@ struct BookWordLookupView: View {
             .sheetNavigationBar(word.capitalized)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    DoneButtonForSheet() { dismiss() }
+                    NavBarButtonForSheet() { dismiss() }
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
         }
         .overlay(alignment: .bottom) {

@@ -25,15 +25,16 @@ struct PairsPileBuilderView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                setsSection
+                .padding(.top, 16)
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 16) {
                     nameSection
                     shuffleSection
-                    setsSection
+                    setsFilterHeader
                 }
-                .padding(.vertical, 16)
-            }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                setsFilterHeader
+                .background(Color.myColors.mySheetBackground)
             }
             .background(Color.myColors.mySheetBackground.ignoresSafeArea())
             .sheetNavigationBar(vm.editingPile == nil ? "New Pile" : "Edit Pile")
@@ -223,18 +224,24 @@ struct PairsPileBuilderView: View {
     @ToolbarContentBuilder
     private var toolbarButtons: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button("Cancel") { dismiss() }
-                .foregroundStyle(Color.myColors.myRed)
+            NavBarButtonForSheet(
+                title: "Cancel",
+                color: Color.myColors.myRed) {
+                    dismiss()
+                }
         }
+        .hiddenSharedBackgroundIfAvailable()
 
         ToolbarItem(placement: .confirmationAction) {
-            Button(vm.editingPile == nil ? "Create" : "Save") {
-                vm.saveAndActivate(context: context, allPiles: allPiles)
-                dismiss()
-            }
+            NavBarButtonForSheet(
+                title: vm.editingPile == nil ? "Create" : "Save",
+                color: vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8)) {
+                    vm.saveAndActivate(context: context, allPiles: allPiles)
+                    dismiss()
+                }
             .disabled(!vm.canSave)
-            .foregroundStyle(vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
         }
+        .hiddenSharedBackgroundIfAvailable()
 
         if vm.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {

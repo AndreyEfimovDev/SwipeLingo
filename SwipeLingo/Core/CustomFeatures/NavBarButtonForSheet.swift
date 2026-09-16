@@ -1,5 +1,5 @@
 //
-//  DoneButtonForSheet.swift
+//  NavBarButtonForSheet.swift
 //  SwipeLingo
 //
 //  Created by Andrey Efimov on 16.09.2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct DoneButtonForSheet: View {
+struct NavBarButtonForSheet: View {
 
     let title: String
     let color: Color
@@ -41,5 +41,5 @@ struct DoneButtonForSheet: View {
 }
 
 #Preview {
-    DoneButtonForSheet() {}
+    NavBarButtonForSheet() {}
 }

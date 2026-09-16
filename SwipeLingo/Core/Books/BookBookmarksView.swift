@@ -27,10 +27,11 @@ struct BookBookmarksView: View {
             .sheetNavigationBar("Bookmarks")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    DoneButtonForSheet(color: Color.myColors.myBlue) {
+                    NavBarButtonForSheet(color: Color.myColors.myBlue) {
                         dismiss()
                     }
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

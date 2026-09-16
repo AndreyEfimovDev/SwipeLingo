@@ -333,7 +333,7 @@ struct TinderCardsView: View {
             }
             .font(.title3)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 32)
         .padding(.vertical, 6)
     }
 

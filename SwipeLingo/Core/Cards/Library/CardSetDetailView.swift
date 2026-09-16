@@ -152,7 +152,7 @@ struct CardSetDetailView: View {
                 HStack(spacing: 16) {
                     if editMode == .active {
                         
-                        DoneButtonForSheet() {
+                        NavBarButtonForSheet() {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 editMode = .inactive
                                 selectedCardIds = []
@@ -169,7 +169,7 @@ struct CardSetDetailView: View {
                         if allowsEditing && !isInbox {
                             Button { isShowingAddCard = true } label: {
                                 Image(systemName: "plus")
-                                    .font(.subheadline.weight(.medium))
+                                    .navBarIconStyle()
                             }
                         }
                         if !filteredCards.isEmpty {
@@ -179,6 +179,7 @@ struct CardSetDetailView: View {
                 }
                 .foregroundStyle(Color.myColors.myBlue)
             }
+            .hiddenSharedBackgroundIfAvailable()
         }
         .safeAreaInset(edge: .bottom) {
             if editMode == .active {

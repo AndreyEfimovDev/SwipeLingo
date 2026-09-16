@@ -62,7 +62,8 @@ struct SearchBar: View {
             }
             .font(.subheadline)
             .padding(6)
-            .background(Color.myColors.myBackground, in: Capsule())
+//            .background(Color.myColors.myBackground, in: Capsule())
+            .background(Color.clear, in: Capsule())
             .overlay{
                 Capsule()
                     .strokeBorder(isFocused ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.25), lineWidth: 1.5)

@@ -142,22 +142,44 @@ struct AddEditCardView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button(action: handleSave) {
-                Image(systemName: "checkmark")
-                    .font(.subheadline.weight(vm.canSave ? .semibold : .regular))
-                    .foregroundStyle(vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
-            }
-            .disabled(!vm.canSave || isShowingExitConfirm)
+        
+        ToolbarItem(placement: .cancellationAction) {
+            NavBarButtonForSheet(
+                title: "Cancel",
+                color: Color.myColors.myRed) {
+                    handleCancel()
+                }
+                .disabled(isShowingExitConfirm)
         }
-        ToolbarItem(placement: .topBarTrailing) {
-            Button(action: handleCancel) {
-                Image(systemName: "xmark")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.myColors.myRed)
-            }
-            .disabled(isShowingExitConfirm)
+        .hiddenSharedBackgroundIfAvailable()
+
+        ToolbarItem(placement: .confirmationAction) {
+            NavBarButtonForSheet(
+                title: "Save",
+                color: vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8)) {
+                    handleSave()
+                }
+                .disabled(!vm.canSave || isShowingExitConfirm)
         }
+        .hiddenSharedBackgroundIfAvailable()
+
+        
+//        ToolbarItem(placement: .topBarLeading) {
+//            Button(action: handleSave) {
+//                Image(systemName: "checkmark")
+//                    .font(.subheadline.weight(vm.canSave ? .semibold : .regular))
+//                    .foregroundStyle(vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
+//            }
+//            .disabled(!vm.canSave || isShowingExitConfirm)
+//        }
+//        ToolbarItem(placement: .topBarTrailing) {
+//            Button(action: handleCancel) {
+//                Image(systemName: "xmark")
+//                    .font(.subheadline.weight(.semibold))
+//                    .foregroundStyle(Color.myColors.myRed)
+//            }
+//            .disabled(isShowingExitConfirm)
+//        }
     }
 
     // MARK: - Actions

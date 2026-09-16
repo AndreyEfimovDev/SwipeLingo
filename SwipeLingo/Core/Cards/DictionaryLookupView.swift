@@ -56,8 +56,9 @@ struct DictionaryLookupView: View {
             .sheetNavigationBar(card.en.capitalized)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    DoneButtonForSheet() { dismiss() }
+                    NavBarButtonForSheet() { dismiss() }
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
             .background(Color.myColors.mySheetBackground.ignoresSafeArea())
         }
