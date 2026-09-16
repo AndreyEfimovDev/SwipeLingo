@@ -17,9 +17,9 @@ struct AccessTierBadge: View {
         case .free:
             badge("FREE", colors: [Color.myColors.myGreen, Color.myColors.myGreen.opacity(0.6)])
         case .go:
-            badge("GO",   colors: [Color.myColors.myPurple, Color.myColors.myBlue])
+            badge("GO", colors: [Color.myColors.myPurple, Color.myColors.myBlue])
         case .pro:
-            badge("PRO",  colors: [Color.myColors.myYellow, Color.myColors.myOrange])
+            badge("PRO", colors: [Color.myColors.myYellow, Color.myColors.myOrange])
         }
     }
 
@@ -29,7 +29,7 @@ struct AccessTierBadge: View {
             .font(isSmall ? .system(size: 7, weight: .bold) : .caption2.weight(.bold))
             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             .padding(.horizontal, isSmall ? 4 : 6)
-            .padding(.vertical,   isSmall ? 2 : 4)
+            .padding(.vertical, isSmall ? 2 : 4)
             .background(gradient.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: isSmall ? 3 : 5))
             .overlay(

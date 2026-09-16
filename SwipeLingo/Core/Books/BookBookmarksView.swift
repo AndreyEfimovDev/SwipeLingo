@@ -24,13 +24,14 @@ struct BookBookmarksView: View {
                     bookmarkList
                 }
             }
-            .navigationTitle("Bookmarks")
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetNavigationBar("Bookmarks")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundStyle(Color.myColors.myBlue)
+                    NavBarButtonForSheet(color: Color.myColors.myBlue) {
+                        dismiss()
+                    }
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }
@@ -47,7 +48,7 @@ struct BookBookmarksView: View {
             }
         }
         .listStyle(.plain)
-        .background(Color.myColors.myBackground.ignoresSafeArea())
+        .background(Color.myColors.mySheetBackground.ignoresSafeArea())
     }
 
     // MARK: - Row
@@ -99,7 +100,7 @@ struct BookBookmarksView: View {
         .background(
             bookmark.chapterIndex == currentIndex
                 ? Color.myColors.myBlue.opacity(0.06)
-                : Color.myColors.myBackground
+                : Color.myColors.mySheetBackground
         )
         // Тап → переход
         .onTapGesture { onSelect(bookmark) }

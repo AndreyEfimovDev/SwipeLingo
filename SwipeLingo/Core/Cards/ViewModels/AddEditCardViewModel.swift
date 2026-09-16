@@ -236,6 +236,15 @@ final class AddEditCardViewModel {
 
         log("handleAutoFill: word='\(word)', session=\(translationSession == nil ? "nil ❌" : "ready ✓")", level: .info)
 
+        // Apple Translation готовит session асинхронно (.translationTask во View) — при первом
+        // открытии шита или первом использовании языковой пары это заметно небыстро. Если
+        // пользователь тапнул Auto-fill раньше, чем session успела прийти, — ждём её появления
+        // с ограниченным таймаутом, а не пропускаем перевод навсегда без единой попытки.
+        if translationConfig != nil, translationSession == nil {
+            await waitForTranslationSession()
+            log("handleAutoFill: after wait, session=\(translationSession == nil ? "nil ❌" : "ready ✓")", level: .info)
+        }
+
         // Шаг 1: перевести само слово → заполнить item, если пусто
         if item.trimmingCharacters(in: .whitespaces).isEmpty,
            let session = translationSession {
@@ -298,6 +307,16 @@ final class AddEditCardViewModel {
         } catch {
             samplesItem = Array(repeating: "", count: enExamples.count)
             log("examples translation failed: \(error)", level: .warning)
+        }
+    }
+
+    /// Ждёт появления `translationSession` (устанавливается извне через `.translationTask`)
+    /// до `timeout` секунд, опрашивая с шагом `pollInterval`. Возвращается раньше, если
+    /// session появилась или task отменён — не блокирует дольше необходимого.
+    private func waitForTranslationSession(timeout: TimeInterval = 3.0, pollInterval: UInt64 = 150_000_000) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while translationSession == nil, Date() < deadline, !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: pollInterval)
         }
     }
 }

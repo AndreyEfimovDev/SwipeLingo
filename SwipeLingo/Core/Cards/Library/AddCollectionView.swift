@@ -45,26 +45,31 @@ struct AddCollectionView: View {
                     .padding(.vertical, 4)
                 }
             }
-            .navigationTitle("New Collection")
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetNavigationBar("New Collection")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.myColors.myRed)
+                    NavBarButtonForSheet(
+                        title: "Cancel",
+                        color: Color.myColors.myRed) {
+                            dismiss()
+                        }
                 }
+                .hiddenSharedBackgroundIfAvailable()
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        let collection = Collection(
-                            name: name.trimmingCharacters(in: .whitespaces),
-                            icon: selectedIcon
-                        )
-                        context.insert(collection)
-                        context.saveWithErrorHandling()
-                        dismiss()
-                    }
-                    .foregroundStyle(isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue)
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    NavBarButtonForSheet(
+                        title: "Create",
+                        color: isNameEmpty ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myBlue) {
+                            let collection = Collection(
+                                name: name.trimmingCharacters(in: .whitespaces),
+                                icon: selectedIcon
+                            )
+                            context.insert(collection)
+                            context.saveWithErrorHandling()
+                            dismiss()
+                        }
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

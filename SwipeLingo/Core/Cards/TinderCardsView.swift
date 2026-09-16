@@ -102,7 +102,13 @@ struct TinderCardsView: View {
                 cardsCaughtUpOverlay
             }
         }
-        .sheet(item: $lookupCard)       { DictionaryLookupView(card: $0, appSyncStateService: appSyncStateService, appSettings: appSettings) }
+        .sheet(item: $lookupCard) {
+            DictionaryLookupView(
+                card: $0,
+                appSyncStateService: appSyncStateService,
+                appSettings: appSettings
+            )
+        }
         .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0) }
         .onDisappear { audioService.stop() }
         .onChange(of: vm.currentIndex) { _, _ in
@@ -327,7 +333,7 @@ struct TinderCardsView: View {
             }
             .font(.title3)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 32)
         .padding(.vertical, 6)
     }
 

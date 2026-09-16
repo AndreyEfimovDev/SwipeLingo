@@ -25,19 +25,19 @@ struct PairsPileBuilderView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                setsSection
+                .padding(.top, 16)
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 16) {
                     nameSection
                     shuffleSection
-                    setsSection
+                    setsFilterHeader
                 }
-                .padding(.vertical, 16)
+                .background(Color.myColors.mySheetBackground)
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                setsFilterHeader
-            }
-            .background(Color.myColors.myBackground.ignoresSafeArea())
-            .navigationTitle(vm.editingPile == nil ? "New Pile" : "Edit Pile")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(Color.myColors.mySheetBackground.ignoresSafeArea())
+            .sheetNavigationBar(vm.editingPile == nil ? "New Pile" : "Edit Pile")
             .toolbar { toolbarButtons }
             .confirmationDialog(
                 "Delete \"\(vm.name)\"?",
@@ -69,7 +69,7 @@ struct PairsPileBuilderView: View {
             TextField("e.g. Evening Session", text: $vm.name)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(Color.myColors.myBackground)
+                .background(Color.myColors.mySheetBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .myShadow()
                 .padding(.horizontal, 16)
@@ -90,7 +90,7 @@ struct PairsPileBuilderView: View {
                 Divider().padding(.leading, 52)
                 shuffleRow(.sequential, icon: "arrow.down",  name: "Sequential")
             }
-            .background(Color.myColors.myBackground)
+            .background(Color.myColors.mySheetBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
@@ -152,9 +152,9 @@ struct PairsPileBuilderView: View {
         .background {
             LinearGradient(
                 gradient: Gradient(stops: [
-                    .init(color: Color.myColors.myBackground.opacity(0.01), location: 0.0),
-                    .init(color: Color.myColors.myBackground.opacity(0.95), location: 0.3),
-                    .init(color: Color.myColors.myBackground,               location: 1.0)
+                    .init(color: Color.myColors.mySheetBackground.opacity(0.01), location: 0.0),
+                    .init(color: Color.myColors.mySheetBackground.opacity(0.95), location: 0.3),
+                    .init(color: Color.myColors.mySheetBackground,               location: 1.0)
                 ]),
                 startPoint: .bottom,
                 endPoint: .top
@@ -170,7 +170,7 @@ struct PairsPileBuilderView: View {
                 .font(.subheadline.weight(.medium))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
-                .background(isActive ? Color.myColors.myBlue : Color.myColors.myBackground)
+                .background(isActive ? Color.myColors.myBlue : Color.myColors.mySheetBackground)
                 .foregroundStyle(isActive ? Color.white : Color.myColors.myAccent)
                 .clipShape(Capsule())
                 .overlay(Capsule().strokeBorder(
@@ -211,7 +211,7 @@ struct PairsPileBuilderView: View {
                         }
                     }
                 }
-                .background(Color.myColors.myBackground)
+                .background(Color.myColors.mySheetBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .myShadow()
                 .padding(.horizontal, 16)
@@ -224,18 +224,24 @@ struct PairsPileBuilderView: View {
     @ToolbarContentBuilder
     private var toolbarButtons: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button("Cancel") { dismiss() }
-                .foregroundStyle(Color.myColors.myRed)
+            NavBarButtonForSheet(
+                title: "Cancel",
+                color: Color.myColors.myRed) {
+                    dismiss()
+                }
         }
+        .hiddenSharedBackgroundIfAvailable()
 
         ToolbarItem(placement: .confirmationAction) {
-            Button(vm.editingPile == nil ? "Create" : "Save") {
-                vm.saveAndActivate(context: context, allPiles: allPiles)
-                dismiss()
-            }
+            NavBarButtonForSheet(
+                title: vm.editingPile == nil ? "Create" : "Save",
+                color: vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8)) {
+                    vm.saveAndActivate(context: context, allPiles: allPiles)
+                    dismiss()
+                }
             .disabled(!vm.canSave)
-            .foregroundStyle(vm.canSave ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
         }
+        .hiddenSharedBackgroundIfAvailable()
 
         if vm.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {

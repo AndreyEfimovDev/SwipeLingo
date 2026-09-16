@@ -275,6 +275,7 @@ private struct BookCard: View {
 
                     HStack(spacing: 6) {
                         CEFRBadgeView(level: book.cefrLevel)
+                            .font(.caption)
                         AccessTierBadge(tier: book.accessTier)
                     }
                     .frame(height: 22, alignment: .center)

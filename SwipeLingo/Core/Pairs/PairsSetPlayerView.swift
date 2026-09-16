@@ -251,7 +251,7 @@ struct PairsSetPlayerView: View {
             Spacer()
             modeToggle
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 24)
         .padding(.vertical, 10)
         .background(Color.myColors.myBackground)
     }
@@ -311,14 +311,14 @@ struct PairsSetPlayerView: View {
                 Text(isAuto ? "Auto" : "Manual")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.myColors.myAccent)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 8, weight: .semibold))
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+                Image(systemName: "chevron.up.chevron.down")                    .font(.caption2.weight(.semibold))
+//                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.75))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(.ultraThinMaterial, in: Capsule())
-            .opacity(isPlaybackActive ? 0.4 : 1.0)
+            .opacity(isPlaybackActive ? 0.75 : 1.0)
         }
         .buttonStyle(.plain)
         .disabled(isPlaybackActive)

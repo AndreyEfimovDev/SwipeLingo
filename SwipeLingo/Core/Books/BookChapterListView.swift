@@ -25,25 +25,28 @@ struct BookChapterListView: View {
                             }
                         }
                     }
-                    .background(Color.myColors.myBackground)
+                    .background(Color.myColors.mySheetBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .myShadow()
                     .padding(16)
                 }
-                .background(Color.myColors.myBackground.ignoresSafeArea())
+                .background(Color.myColors.mySheetBackground.ignoresSafeArea())
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         proxy.scrollTo(currentIndex, anchor: .center)
                     }
                 }
             }
-            .navigationTitle("Contents")
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetNavigationBar("Contents")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundStyle(Color.myColors.myBlue)
+                    NavBarButtonForSheet(color: Color.myColors.myBlue) {
+                        dismiss()
+                    }
+//                    Button("Done") { dismiss() }
+//                        .foregroundStyle(Color.myColors.myBlue)
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

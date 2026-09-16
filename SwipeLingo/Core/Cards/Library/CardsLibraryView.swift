@@ -71,10 +71,10 @@ struct CardsLibraryView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { dismiss() } label: {
                         Image(systemName: "chevron.left")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.myColors.myBlue)
+                            .navBarIconStyle()
                     }
                 }
+                .hiddenSharedBackgroundIfAvailable()
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task { await vm.syncContent(context: context, nativeLangRaw: nativeLangRaw, level: userLevel) }
@@ -83,11 +83,12 @@ struct CardsLibraryView: View {
                             ProgressView().tint(Color.myColors.myBlue)
                         } else {
                             Image(systemName: "arrow.clockwise")
-                                .foregroundStyle(Color.myColors.myBlue)
+                                .navBarIconStyle()
                         }
                     }
                     .disabled(vm.isSyncing)
                 }
+                .hiddenSharedBackgroundIfAvailable()
             }
             .sheet(isPresented: $isShowingAddCollection) {
                 AddCollectionView()
@@ -97,8 +98,8 @@ struct CardsLibraryView: View {
             }
             .sheet(item: $pileSheet) { mode in
                 switch mode {
-                case .new:          PileBuilderView(editingPile: nil, appViewModel: appViewModel, appSyncStateService: appSyncStateService)
-                case .edit(let p):  PileBuilderView(editingPile: p, appViewModel: appViewModel, appSyncStateService: appSyncStateService)
+                case .new: PileBuilderView(editingPile: nil, appViewModel: appViewModel, appSyncStateService: appSyncStateService)
+                case .edit(let p): PileBuilderView(editingPile: p, appViewModel: appViewModel, appSyncStateService: appSyncStateService)
                 }
             }
 //            .overlay {

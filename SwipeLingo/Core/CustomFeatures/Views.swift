@@ -29,7 +29,7 @@ private struct CustomBackButtonModifier: ViewModifier {
                         Button { dismiss() } label: {
                             HStack(spacing: 5) {
                                 Image(systemName: "chevron.left")
-                                    .font(.system(size: 17, weight: .semibold))
+                                    .font(.headline)
                                 if !title.isEmpty {
                                     Text(title)
                                         .font(.body)
@@ -49,6 +49,87 @@ private struct CustomBackButtonModifier: ViewModifier {
 extension View {
     func customBackButton(_ title: String = "", isHidden: Bool = false) -> some View {
         modifier(CustomBackButtonModifier(title: title, isHidden: isHidden))
+    }
+}
+
+// MARK: - Sheet Navigation Bar
+// Nav bar для модальных .sheet на mySheetBackground (не .fullScreenCover — те используют
+// штатный .navigationTitle, глобальный UIAppearanceConfigurator красит их title в myAccent
+// без проблем). .toolbarBackground(_:for:) — единственный способ перекрасить бар конкретного
+// экрана в mySheetBackground (иначе он останется чёрным из глобального UIAppearance) — но
+// SwiftUI при этом создаёт для бара отдельную per-instance UINavigationBarAppearance, которая
+// НЕ наследует titleTextAttributes из appearance-прокси в UIAppearanceConfigurator: заголовок
+// откатывается на системный белый вместо myAccent. Явный Text в .principal — обходит это,
+// цвет не зависит от того, чья именно UINavigationBarAppearance сейчас активна.
+//
+// Использование (вместо .navigationTitle + .navigationBarTitleDisplayMode + вручную
+// .toolbarBackground(mySheetBackground)):
+//   .sheetNavigationBar("Examples")
+
+private struct SheetNavigationBarModifier: ViewModifier {
+    let title: String
+
+    func body(content: Content) -> some View {
+        content
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(title)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.myColors.myAccent)
+                        .lineLimit(1)
+                }
+            }
+            .toolbarBackground(Color.myColors.mySheetBackground, for: .navigationBar)
+    }
+}
+
+extension View {
+    func sheetNavigationBar(_ title: String) -> some View {
+        modifier(SheetNavigationBarModifier(title: title))
+    }
+}
+
+// MARK: - Nav Bar Icon Style
+// Единый вид для всех иконок-кнопок в nav bar (gear, chevron-back вне .customBackButton,
+// +, arrow.clockwise, "..." и т.д.) — по стандарту "Иконки-ссылки" из CLAUDE.md: плоская
+// иконка без фона/подложки, только размер + цвет (myBlue активная / myAccent.opacity(0.8)
+// неактивная по умолчанию). Применяется на Image внутри Button ИЛИ Menu label — оба
+// принимают произвольный View, модификатор не завязан на конкретный тип контрола.
+//
+// Использование:
+//   Image(systemName: "gear").navBarIconStyle()                          // неактивная (по умолчанию)
+//   Image(systemName: "chevron.left").navBarIconStyle(color: .myBlue)    // активная
+//
+// На iOS 26 сам ToolbarItem всё равно оборачивает контент в системную glass-капсулу
+// независимо от того, есть ли у нас свой фон — чтобы иконка была ДЕЙСТВИТЕЛЬНО плоской,
+// добавляй `.hiddenSharedBackgroundIfAvailable()` на сам ToolbarItem.
+
+extension View {
+    func navBarIconStyle(color: Color = Color.myColors.myBlue) -> some View {
+        self
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(color)
+    }
+}
+
+// MARK: - Hidden Shared Background (iOS 26 Liquid Glass)
+// На iOS 26 каждый ToolbarItem сам получает стеклянную glass-капсулу — она накладывается
+// на кнопки с собственной ручной обводкой (NavBarButtonForSheet) и ломает их вид. Системный
+// модификатор `.sharedBackgroundVisibility(.hidden)`, убирающий её, доступен только с iOS 26 —
+// таргет проекта iOS 18+, поэтому оборачиваем в #available вместо прямого вызова.
+//
+// Использование (вместо ToolbarItem(...) { ... }.sharedBackgroundVisibility(.hidden)):
+//   ToolbarItem(...) { ... }.hiddenSharedBackgroundIfAvailable()
+
+extension ToolbarContent {
+    @ToolbarContentBuilder
+    func hiddenSharedBackgroundIfAvailable() -> some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            self.sharedBackgroundVisibility(.hidden)
+        } else {
+            self
+        }
     }
 }
 

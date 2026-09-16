@@ -33,9 +33,10 @@ struct MainScreenToolbar: ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             Button { appViewModel.activeSheet = .settings } label: {
                 Image(systemName: "gear")
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                    .navBarIconStyle(color: Color.myColors.myAccent.opacity(0.8))
             }
         }
+        .hiddenSharedBackgroundIfAvailable()
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 ForEach(AppViewModel.StudyMode.allCases.filter { $0 != currentMode }, id: \.self) { mode in
@@ -55,11 +56,9 @@ struct MainScreenToolbar: ToolbarContent {
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-                    .frame(width: 32, height: 32)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .navBarIconStyle(color: Color.myColors.myAccent.opacity(0.8))
             }
         }
+        .hiddenSharedBackgroundIfAvailable()
     }
 }

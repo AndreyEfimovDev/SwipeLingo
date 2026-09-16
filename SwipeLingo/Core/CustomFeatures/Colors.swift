@@ -14,7 +14,11 @@ struct MyColors {
     let myAccent = Color("myAccent")
     let mySecondary = Color("myAccent").opacity(0.8)
     let myBackground = Color("myBackground")
-    
+    /// Приподнятая поверхность модальных `.sheet` (не `.fullScreenCover`) — белый в light
+    /// (как myBackground), но чуть светлее чистого чёрного в dark, чтобы граница модалки
+    /// была видна на фоне родительского экрана (который остаётся на myBackground).
+    let mySheetBackground = Color("mySheetBackground")
+
     let myShadow = Color("myShadow")
     
     let myBlue = Color("myBlue")
