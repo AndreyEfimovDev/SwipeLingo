@@ -25,16 +25,16 @@ struct PairsPileBuilderView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                setsSection
-                .padding(.top, 16)
-            }
-            .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 16) {
                     nameSection
                     shuffleSection
-                    setsFilterHeader
+                    setsSection
                 }
-                .background(Color.myColors.mySheetBackground)
+                .padding(.top, 16)
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                setsFilterHeader
+                    .background(Color.myColors.mySheetBackground)
             }
             .background(Color.myColors.mySheetBackground.ignoresSafeArea())
             .sheetNavigationBar(vm.editingPile == nil ? "New Pile" : "Edit Pile")
@@ -242,16 +242,16 @@ struct PairsPileBuilderView: View {
             .disabled(!vm.canSave)
         }
         .hiddenSharedBackgroundIfAvailable()
-
+        
         if vm.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {
-                Button {
-                    isShowingDeleteConfirm = true
-                } label: {
-                    Text("Delete Pile")
-                        .foregroundStyle(Color.myColors.myRed)
-                }
+                NavBarButtonForSheet(
+                    title: "Delete Pile",
+                    color: Color.myColors.myRed) {
+                        isShowingDeleteConfirm = true
+                    }
             }
+            .hiddenSharedBackgroundIfAvailable()
         }
     }
 

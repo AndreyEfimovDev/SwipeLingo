@@ -39,8 +39,6 @@ struct BooksView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    SearchBar(text: $vm.searchText, prompt: "Search books")
-                    levelFilterBar
                     if vm.filteredBooks(books, userPlan: userPlan).isEmpty {
                         emptyState
                     } else {
@@ -49,6 +47,15 @@ struct BooksView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 16) {
+                    SearchBar(text: $vm.searchText, prompt: "Search books")
+                    levelFilterBar
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .background(Color.myColors.mySheetBackground)
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Books")
