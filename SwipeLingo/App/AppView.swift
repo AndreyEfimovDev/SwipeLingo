@@ -64,20 +64,23 @@ struct AppView: View {
                             authService: dependencies.authFBService,
                             userService: dependencies.userFBService,
                             appSyncStateService: dependencies.appSyncStateService,
-                            appSettings: dependencies.appSettings)
+                            appSettings: dependencies.appSettings,
+                            audioService: dependencies.audioService)
         case .pairs:
             PairsView(appViewModel: dependencies.appViewModel,
                        authService: dependencies.authFBService,
                        userService: dependencies.userFBService,
                        appSyncStateService: dependencies.appSyncStateService,
-                       appSettings: dependencies.appSettings)
+                       appSettings: dependencies.appSettings,
+                       audioService: dependencies.audioService)
         case .books:
             BooksView(
                 appViewModel: dependencies.appViewModel,
                 appSyncStateService: dependencies.appSyncStateService,
                 appSettings: dependencies.appSettings,
                 userService: dependencies.userFBService,
-                authService: dependencies.authFBService
+                authService: dependencies.authFBService,
+                audioService: dependencies.audioService
             )
         }
     }
@@ -106,7 +109,8 @@ struct AppView: View {
             SettingsView(syncState: dependencies.appSyncStateService,
                          authService: dependencies.authFBService,
                          userService: dependencies.userFBService,
-                         appSettings: dependencies.appSettings)
+                         appSettings: dependencies.appSettings,
+                         audioService: dependencies.audioService)
         }
     }
 }

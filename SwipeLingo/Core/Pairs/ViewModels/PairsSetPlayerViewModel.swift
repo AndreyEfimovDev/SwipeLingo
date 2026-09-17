@@ -51,7 +51,9 @@ final class PairsSetPlayerViewModel {
 
     // MARK: Audio
 
-    let audioService = AudioPlayerService()
+    /// Общий на всё приложение экземпляр, передаётся из composition root — см.
+    /// комментарий в AppDependencies.swift (позволяет stop() гасить звук с ДРУГОГО экрана).
+    let audioService: AudioPlayerService
     /// Текст для озвучки правой стороны — ставится при parallel, озвучивается после окончания левого TTS.
     private(set) var pendingRightSpeech: String? = nil
     /// true в промежутке между окончанием левого TTS и стартом правого (speechGap),
@@ -73,8 +75,9 @@ final class PairsSetPlayerViewModel {
 
     // MARK: Init
 
-    init(set: PairsSet) {
+    init(set: PairsSet, audioService: AudioPlayerService) {
         self.set = set
+        self.audioService = audioService
     }
 
     // MARK: - Жизненный цикл экрана

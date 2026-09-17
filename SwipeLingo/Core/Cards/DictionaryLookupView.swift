@@ -16,7 +16,14 @@ struct DictionaryLookupView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    @State private var vm = DictionaryLookupViewModel()
+    @State private var vm: DictionaryLookupViewModel
+
+    init(card: Card, appSyncStateService: AppSyncStateService, appSettings: AppSettings, audioService: AudioPlayerService) {
+        self.card = card
+        self.appSyncStateService = appSyncStateService
+        self.appSettings = appSettings
+        _vm = State(initialValue: DictionaryLookupViewModel(audioService: audioService))
+    }
 
     // Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
     private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }

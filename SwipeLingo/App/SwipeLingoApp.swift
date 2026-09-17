@@ -47,7 +47,8 @@ struct SwipeLingoApp: App {
                 appSyncStateService: AppSyncStateService(modelContext: container.mainContext),
                 collectionDedupeObserver: CollectionDedupeObserver(container: container),
                 appViewModel: AppViewModel(),
-                appSettings: AppSettings()
+                appSettings: AppSettings(),
+                audioService: AudioPlayerService()
             )
             startup = .ready(container: container, dependencies: dependencies)
         } else {

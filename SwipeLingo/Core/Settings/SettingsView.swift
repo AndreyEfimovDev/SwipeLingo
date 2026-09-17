@@ -15,15 +15,19 @@ struct SettingsView: View {
     private let userService: UserFBService
     /// Тема/голос — консолидированы в AppSettings вместо собственного @AppStorage (см. AppSettings.swift).
     private let appSettings: AppSettings
+    /// Форвардится дальше в VoiceSettingsView. Общий на всё приложение экземпляр —
+    /// см. комментарий в AppDependencies.swift.
+    private let audioService: AudioPlayerService
 
     private var titleFont: Font = .caption
     private var textFont: Font = .body
 
-    init(syncState: AppSyncStateService, authService: AuthFBService, userService: UserFBService, appSettings: AppSettings) {
+    init(syncState: AppSyncStateService, authService: AuthFBService, userService: UserFBService, appSettings: AppSettings, audioService: AudioPlayerService) {
         self.syncState = syncState
         self.authService = authService
         self.userService = userService
         self.appSettings = appSettings
+        self.audioService = audioService
     }
 
     private var currentVoiceName: String {
@@ -160,7 +164,7 @@ struct SettingsView: View {
                 .font(titleFont)
                 .padding(.horizontal, 32)
 
-            NavigationLink { VoiceSettingsView(appSettings: appSettings) } label: {
+            NavigationLink { VoiceSettingsView(appSettings: appSettings, audioService: audioService) } label: {
                 HStack {
                     Label("Pronunciation Voice", systemImage: "waveform")
                         .labelStyle(.fixedIcon)
@@ -255,5 +259,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView(syncState: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
-                 authService: AuthFBService(), userService: UserFBService(), appSettings: AppSettings())
+                 authService: AuthFBService(), userService: UserFBService(), appSettings: AppSettings(), audioService: AudioPlayerService())
 }

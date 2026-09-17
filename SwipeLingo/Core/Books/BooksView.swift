@@ -13,15 +13,17 @@ struct BooksView: View {
     private let appSettings: AppSettings
     private let userService: UserFBService
     private let authService: AuthFBService
+    private let audioService: AudioPlayerService
     /// Единственный источник правды — UserFBService (см. UserFBService.swift).
     private var userPlan: AccessTier { userService.userPlan }
 
-    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService, authService: AuthFBService) {
+    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService, authService: AuthFBService, audioService: AudioPlayerService) {
         self.appViewModel = appViewModel
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
         self.userService = userService
         self.authService = authService
+        self.audioService = audioService
     }
 
     @Query private var books: [Book]
@@ -53,7 +55,7 @@ struct BooksView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
             .navigationDestination(item: $readerBook) { book in
-                BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings, authService: authService)
+                BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings, authService: authService, audioService: audioService)
             }
         }
         // BOOKS_SYNC_STUB: автосинк при входе отключён — книги на GitHub, не в Firestore.

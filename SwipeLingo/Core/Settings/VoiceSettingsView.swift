@@ -15,8 +15,15 @@ struct VoiceSettingsView: View {
         nonmutating set { appSettings.ttsVoiceIdentifier = newValue }
     }
     private var englishVariant: String { appSettings.englishVariant }
-    @State private var previewService       = AudioPlayerService()
+    /// Общий на всё приложение экземпляр, передаётся из composition root — см.
+    /// комментарий в AppDependencies.swift.
+    let previewService: AudioPlayerService
     @State private var previewingVoiceId    = ""
+
+    init(appSettings: AppSettings, audioService: AudioPlayerService) {
+        self.appSettings = appSettings
+        self.previewService = audioService
+    }
 
     // MARK: - Voice data
 
@@ -231,6 +238,6 @@ struct VoiceSettingsView: View {
 
 #Preview {
     NavigationStack {
-        VoiceSettingsView(appSettings: AppSettings())
+        VoiceSettingsView(appSettings: AppSettings(), audioService: AudioPlayerService())
     }
 }

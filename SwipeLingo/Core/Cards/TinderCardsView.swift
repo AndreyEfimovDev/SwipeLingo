@@ -13,6 +13,8 @@ struct TinderCardsView: View {
     private let userService:  UserFBService
     private let appSyncStateService: AppSyncStateService
     private let appSettings: AppSettings
+    /// Общий на всё приложение экземпляр — см. комментарий в AppDependencies.swift.
+    private let audioService: AudioPlayerService
 
     /// Единственный источник правды — AppSettings (см. AppSettings.swift).
     private var ttsVoiceIdentifier: String { appSettings.ttsVoiceIdentifier }
@@ -23,7 +25,6 @@ struct TinderCardsView: View {
     @State private var vm: TinderCardsViewModel
     @State private var lookupCard:    Card?
     @State private var editExamplesCard: Card?
-    @State private var audioService  = AudioPlayerService()
     @State private var examplePageIndex: Int = 0
     /// Автоматически сбрасывается в false, когда DragGesture завершается ИЛИ отменяется (напр. второй палец).
     @GestureState private var dragIsActive = false
@@ -58,6 +59,7 @@ struct TinderCardsView: View {
          userService: UserFBService,
          appSyncStateService: AppSyncStateService,
          appSettings: AppSettings,
+         audioService: AudioPlayerService,
          lockedCardIds: Set<UUID> = [],
          contextLabels: [UUID: String] = [:],
          cefrLabels: [UUID: CEFRLevel] = [:],
@@ -76,6 +78,7 @@ struct TinderCardsView: View {
         self.userService       = userService
         self.appSyncStateService = appSyncStateService
         self.appSettings       = appSettings
+        self.audioService      = audioService
         self.lockedCardIds     = lockedCardIds
         self.cefrLabels        = cefrLabels
         self.pileTagsLine      = pileTagsLine
@@ -106,7 +109,8 @@ struct TinderCardsView: View {
             DictionaryLookupView(
                 card: $0,
                 appSyncStateService: appSyncStateService,
-                appSettings: appSettings
+                appSettings: appSettings,
+                audioService: audioService
             )
         }
         .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0) }
@@ -1053,6 +1057,7 @@ private struct CardFlowLayout: Layout {
                            userService: UserFBService(),
                            appSyncStateService: AppSyncStateService(modelContext: try! ModelContext(ModelContainer(for: AppSyncState.self))),
                            appSettings: AppSettings(),
+                           audioService: AudioPlayerService(),
                            contextLabels: [setId: "IELTS Vocabulary · Academic Words"],
                            pileTagsLine:  "IELTS Vocabulary › Academic Words (8 cards)")
         .modelContainer(container)

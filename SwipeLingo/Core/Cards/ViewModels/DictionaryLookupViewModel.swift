@@ -30,7 +30,9 @@ final class DictionaryLookupViewModel {
     func showCached(_ entry: DictionaryEntry) {
         phase = .loaded(entry)
     }
-    let audioService = AudioPlayerService()
+    /// Общий на всё приложение экземпляр, передаётся из composition root — см.
+    /// комментарий в AppDependencies.swift (позволяет stop() гасить звук с ДРУГОГО экрана).
+    let audioService: AudioPlayerService
 
     /// Переключается в true в момент успешной загрузки записи — используется как триггер кэширования.
     private(set) var didLoad = false
@@ -39,6 +41,11 @@ final class DictionaryLookupViewModel {
 
     private let service = DictionaryService()
 
+    // MARK: Init
+
+    init(audioService: AudioPlayerService) {
+        self.audioService = audioService
+    }
 
     // MARK: Actions
 
