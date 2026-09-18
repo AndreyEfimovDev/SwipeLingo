@@ -84,7 +84,7 @@ struct SettingsView: View {
                     
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                        .foregroundStyle(Color.myColors.myBlue)
                 }
                 .font(textFont)
                 .frame(height: 52)
@@ -171,6 +171,7 @@ struct SettingsView: View {
                     Spacer()
                     Text(currentVoiceName)
                         .font(.subheadline)
+                        .foregroundStyle(Color.myColors.myBlue)
                 }
                 .font(textFont)
                 .frame(height: 52)
@@ -200,7 +201,7 @@ struct SettingsView: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                            .foregroundStyle(Color.myColors.myBlue)
                     }
                     .font(textFont)
                     .frame(height: 52)
@@ -217,7 +218,7 @@ struct SettingsView: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
+                            .foregroundStyle(Color.myColors.myBlue)
                     }
                     .font(textFont)
                     .frame(height: 52)

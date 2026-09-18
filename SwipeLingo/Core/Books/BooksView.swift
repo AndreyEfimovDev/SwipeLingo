@@ -55,7 +55,7 @@ struct BooksView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
-                .background(Color.myColors.mySheetBackground)
+                .background(Color.myColors.myBackground)
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Books")
@@ -165,7 +165,7 @@ struct BooksView: View {
                 debugImportTask = Task { await importDebugBook() }
             } label: {
                 Image(systemName: "wrench.and.screwdriver")
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+                    .foregroundStyle(Color.myColors.myRed.opacity(0.5))
             }
         }
         MainScreenToolbar(appViewModel: appViewModel, currentMode: .books)
@@ -258,8 +258,9 @@ private struct BookCard: View {
                     .overlay(alignment: .bottomTrailing) {
                         if book.isNew {
                             Text("NEW")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color.myColors.buttonTextAccent)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
                                 .background(Color.myColors.myRed.opacity(0.8), in: Capsule())
@@ -269,7 +270,8 @@ private struct BookCard: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(book.title)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.footnote)
+                        .fontWeight(.semibold)
                         .foregroundStyle(Color.myColors.myAccent)
                         .lineLimit(2)
                         .minimumScaleFactor(0.75)
@@ -277,7 +279,7 @@ private struct BookCard: View {
                         .frame(height: 36, alignment: .topLeading)
 
                     Text(book.author)
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                         .lineLimit(1)
                         .frame(height: 16, alignment: .topLeading)
