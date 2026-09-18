@@ -116,6 +116,9 @@ struct BookReaderView: View {
     let appSettings: AppSettings
     /// Форвардится дальше в BookWordLookupView.
     let authService: AuthFBService
+    /// Форвардится дальше в BookWordLookupView. Общий на всё приложение экземпляр —
+    /// см. комментарий в AppDependencies.swift.
+    let audioService: AudioPlayerService
 
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme)  private var colorScheme
@@ -137,11 +140,12 @@ struct BookReaderView: View {
     private let fontSizeMax = 26
     private let fontSizeStep = 2
 
-    init(book: Book, appSyncStateService: AppSyncStateService, appSettings: AppSettings, authService: AuthFBService) {
+    init(book: Book, appSyncStateService: AppSyncStateService, appSettings: AppSettings, authService: AuthFBService, audioService: AudioPlayerService) {
         self.book = book
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
         self.authService = authService
+        self.audioService = audioService
         _vm = State(initialValue: BookReaderViewModel(book: book, progress: nil))
     }
 
@@ -171,7 +175,7 @@ struct BookReaderView: View {
         .toolbar { toolbarContent }
         .sheet(isPresented: $vm.showDictionary) {
             if let word = vm.tappedWord {
-                BookWordLookupView(word: word, appSyncStateService: appSyncStateService, authService: authService)
+                BookWordLookupView(word: word, appSyncStateService: appSyncStateService, authService: authService, audioService: audioService)
                     .onAppear {
                         AnalyticsFBService.wordLookedUp(word: word, source: .book)
                     }

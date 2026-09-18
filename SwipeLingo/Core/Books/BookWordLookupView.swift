@@ -32,13 +32,20 @@ struct BookWordLookupView: View {
     // единственная озвучка в этом экране (vm.toggleAudio) играет сетевой URL произношения,
     // TTS тут не вызывается. Удалены как мёртвый код при разборе @AppStorage-дублирования.
 
-    @State private var vm = DictionaryLookupViewModel()
+    @State private var vm: DictionaryLookupViewModel
     @State private var savedToInbox  = false
     @State private var showSavedToast = false
 
     @State private var translationConfig: TranslationSession.Configuration?
     @State private var translationSession: TranslationSession?
     @State private var translatedWord = ""
+
+    init(word: String, appSyncStateService: AppSyncStateService, authService: AuthFBService, audioService: AudioPlayerService) {
+        self.word = word
+        self.appSyncStateService = appSyncStateService
+        self.authService = authService
+        _vm = State(initialValue: DictionaryLookupViewModel(audioService: audioService))
+    }
 
     var body: some View {
         NavigationStack {

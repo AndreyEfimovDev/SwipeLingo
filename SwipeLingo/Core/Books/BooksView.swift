@@ -13,15 +13,17 @@ struct BooksView: View {
     private let appSettings: AppSettings
     private let userService: UserFBService
     private let authService: AuthFBService
+    private let audioService: AudioPlayerService
     /// Единственный источник правды — UserFBService (см. UserFBService.swift).
     private var userPlan: AccessTier { userService.userPlan }
 
-    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService, authService: AuthFBService) {
+    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService, authService: AuthFBService, audioService: AudioPlayerService) {
         self.appViewModel = appViewModel
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
         self.userService = userService
         self.authService = authService
+        self.audioService = audioService
     }
 
     @Query private var books: [Book]
@@ -37,8 +39,6 @@ struct BooksView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    SearchBar(text: $vm.searchText, prompt: "Search books")
-                    levelFilterBar
                     if vm.filteredBooks(books, userPlan: userPlan).isEmpty {
                         emptyState
                     } else {
@@ -48,12 +48,21 @@ struct BooksView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
             }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 16) {
+                    SearchBar(text: $vm.searchText, prompt: "Search books")
+                    levelFilterBar
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .background(Color.myColors.myBackground)
+            }
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Books")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
             .navigationDestination(item: $readerBook) { book in
-                BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings, authService: authService)
+                BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings, authService: authService, audioService: audioService)
             }
         }
         // BOOKS_SYNC_STUB: автосинк при входе отключён — книги на GitHub, не в Firestore.
@@ -156,7 +165,7 @@ struct BooksView: View {
                 debugImportTask = Task { await importDebugBook() }
             } label: {
                 Image(systemName: "wrench.and.screwdriver")
-                    .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
+                    .foregroundStyle(Color.myColors.myRed.opacity(0.5))
             }
         }
         MainScreenToolbar(appViewModel: appViewModel, currentMode: .books)
@@ -249,8 +258,9 @@ private struct BookCard: View {
                     .overlay(alignment: .bottomTrailing) {
                         if book.isNew {
                             Text("NEW")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color.myColors.buttonTextAccent)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
                                 .background(Color.myColors.myRed.opacity(0.8), in: Capsule())
@@ -260,7 +270,8 @@ private struct BookCard: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(book.title)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.footnote)
+                        .fontWeight(.semibold)
                         .foregroundStyle(Color.myColors.myAccent)
                         .lineLimit(2)
                         .minimumScaleFactor(0.75)
@@ -268,7 +279,7 @@ private struct BookCard: View {
                         .frame(height: 36, alignment: .topLeading)
 
                     Text(book.author)
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                         .lineLimit(1)
                         .frame(height: 16, alignment: .topLeading)

@@ -17,14 +17,16 @@ struct PairsView: View {
     /// Форвардятся дальше в PairsSessionView.
     private let appSyncStateService: AppSyncStateService
     private let appSettings: AppSettings
+    private let audioService: AudioPlayerService
 
     init(appViewModel: AppViewModel, authService: AuthFBService, userService: UserFBService,
-         appSyncStateService: AppSyncStateService, appSettings: AppSettings) {
+         appSyncStateService: AppSyncStateService, appSettings: AppSettings, audioService: AudioPlayerService) {
         self.appViewModel = appViewModel
         self.authService = authService
         self.userService = userService
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
+        self.audioService = audioService
     }
 
     @Query(sort: \PairsSet.createdAt, order: .reverse) private var allSets:  [PairsSet]
@@ -318,7 +320,8 @@ struct PairsView: View {
                 authService: authService,
                 userService: userService,
                 appSyncStateService: appSyncStateService,
-                appSettings: appSettings
+                appSettings: appSettings,
+                audioService: audioService
             )
         ) {
             VStack(spacing: 8) {
@@ -350,7 +353,8 @@ struct PairsView: View {
                     authService: authService,
                     userService: userService,
                     appSyncStateService: appSyncStateService,
-                    appSettings: appSettings
+                    appSettings: appSettings,
+                    audioService: audioService
                 )
             ) {
                 Text("Play All")
@@ -372,7 +376,7 @@ struct PairsView: View {
             Image(systemName: "square.stack")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
-            Text(activePile != nil ? "No sets in this pile" : "No sets available")
+            Text(activePile != nil ? "No sets in this pile" : "No sets available or try to increase your English level")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
             Text(activePile != nil

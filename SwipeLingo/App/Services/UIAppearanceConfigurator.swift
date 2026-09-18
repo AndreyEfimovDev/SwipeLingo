@@ -22,9 +22,11 @@ enum UIAppearanceConfigurator {
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
 
         let navBarAppearance = UINavigationBarAppearance()
-        navBarAppearance.configureWithOpaqueBackground()
-        navBarAppearance.backgroundColor = UIColor(Color.myColors.myBackground)
-        navBarAppearance.backgroundEffect = nil
+        navBarAppearance.configureWithTransparentBackground()
+        // ЭКСПЕРИМЕНТ: тест "стеклянного" бара — backgroundColor закомментирован,
+        // иначе он рисуется поверх blur и глушит прозрачность.
+        // navBarAppearance.backgroundColor = UIColor(Color.myColors.myBackground)
+        navBarAppearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
         navBarAppearance.shadowColor = .clear
 
         let accentColor = UIColor(Color.myColors.myAccent)

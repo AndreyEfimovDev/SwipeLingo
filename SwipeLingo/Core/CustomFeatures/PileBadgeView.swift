@@ -23,11 +23,6 @@ struct PileBadgeView: View {
                 Text(title)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.myColors.myAccent)
-//                    .foregroundStyle(
-//                        isActive
-//                            ? Color.myColors.myAccent.opacity(0.75)
-//                            : Color.myColors.myAccent.opacity(0.35)
-//                    )
                     .lineLimit(1)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
@@ -35,12 +30,15 @@ struct PileBadgeView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 8)
-            .background(Color.myColors.myBackground, in: Capsule())
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
             .overlay(
                 Capsule()
                     .stroke(Color.myColors.myAccent.opacity(0.35), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
+        .padding(.top, 8)
+
     }
 }

@@ -51,7 +51,7 @@ struct PairsSetPlayerView: View {
     @State private var vm: PairsSetPlayerViewModel
 
     init(set: PairsSet, authService: AuthFBService, userService: UserFBService, appSyncStateService: AppSyncStateService,
-         appSettings: AppSettings,
+         appSettings: AppSettings, audioService: AudioPlayerService,
          onComplete: (() -> Void)? = nil, autoStart: Bool = false, initialAnimationMode: AnimationMode? = nil) {
         self.set = set
         self.authService = authService
@@ -61,7 +61,7 @@ struct PairsSetPlayerView: View {
         self.onComplete = onComplete
         self.autoStart = autoStart
         self.initialAnimationMode = initialAnimationMode
-        _vm = State(initialValue: PairsSetPlayerViewModel(set: set))
+        _vm = State(initialValue: PairsSetPlayerViewModel(set: set, audioService: audioService))
     }
 
     /// Единственный источник правды — AppSettings (см. AppSettings.swift).

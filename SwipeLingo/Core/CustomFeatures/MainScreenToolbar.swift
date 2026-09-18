@@ -33,7 +33,7 @@ struct MainScreenToolbar: ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             Button { appViewModel.activeSheet = .settings } label: {
                 Image(systemName: "gear")
-                    .navBarIconStyle(color: Color.myColors.myAccent.opacity(0.8))
+                    .navBarIconStyle(color: Color.myColors.myBlue)
             }
         }
         .hiddenSharedBackgroundIfAvailable()
@@ -56,7 +56,7 @@ struct MainScreenToolbar: ToolbarContent {
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .navBarIconStyle(color: Color.myColors.myAccent.opacity(0.8))
+                    .navBarIconStyle(color: Color.myColors.myBlue)
             }
         }
         .hiddenSharedBackgroundIfAvailable()

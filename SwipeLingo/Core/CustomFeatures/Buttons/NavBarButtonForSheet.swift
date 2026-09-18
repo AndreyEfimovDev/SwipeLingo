@@ -27,15 +27,19 @@ struct NavBarButtonForSheet: View {
         Button {
             action()
         } label: {
+            // ЭКСПЕРИМЕНТ: своя Capsule-обводка убрана — вместе с отключённым
+            // .hiddenSharedBackgroundIfAvailable() кнопка теперь полностью
+            // отдаёт вид системной glass-капсуле (iOS 26) вместо конфликта
+            // "своя обводка поверх/под системным стеклом".
             Text(title)
                 .foregroundStyle(color)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .background(Color.clear, in: Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(Color.myColors.myAccent.opacity(0.35), lineWidth: 1)
-                )
+            // .background(Color.clear, in: Capsule())
+            // .overlay(
+            //     Capsule()
+            //         .stroke(Color.myColors.myAccent.opacity(0.35), lineWidth: 1)
+            // )
         }
     }
 }

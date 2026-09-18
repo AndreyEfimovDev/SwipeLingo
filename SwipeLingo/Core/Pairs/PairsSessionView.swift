@@ -21,15 +21,17 @@ struct PairsSessionView: View {
     private let userService: UserFBService
     private let appSyncStateService: AppSyncStateService
     private let appSettings: AppSettings
+    private let audioService: AudioPlayerService
 
     init(sets: [PairsSet], pileName: String, authService: AuthFBService, userService: UserFBService,
-         appSyncStateService: AppSyncStateService, appSettings: AppSettings) {
+         appSyncStateService: AppSyncStateService, appSettings: AppSettings, audioService: AudioPlayerService) {
         self.sets = sets
         self.pileName = pileName
         self.authService = authService
         self.userService = userService
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
+        self.audioService = audioService
     }
 
     @Environment(\.modelContext) private var context
@@ -65,6 +67,7 @@ struct PairsSessionView: View {
                 userService: userService,
                 appSyncStateService: appSyncStateService,
                 appSettings: appSettings,
+                audioService: audioService,
                 onComplete: { withAnimation { isSetComplete = true } },
                 autoStart: true,
                 initialAnimationMode: sessionMode

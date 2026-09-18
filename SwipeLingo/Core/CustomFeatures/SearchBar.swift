@@ -43,6 +43,7 @@ struct SearchEmptyState: View {
 struct SearchBar: View {
     
     @Binding var text: String
+    var isBGVisible: Bool = true
     var prompt: String = "Search"
     
     @FocusState private var isFocused: Bool
@@ -63,7 +64,9 @@ struct SearchBar: View {
             .font(.subheadline)
             .padding(6)
 //            .background(Color.myColors.myBackground, in: Capsule())
-            .background(Color.clear, in: Capsule())
+//            .background(Color.clear, in: Capsule())
+            .background(.ultraThinMaterial.opacity(isBGVisible ? 1 : 0))
+            .clipShape(Capsule())
             .overlay{
                 Capsule()
                     .strokeBorder(isFocused ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.25), lineWidth: 1.5)

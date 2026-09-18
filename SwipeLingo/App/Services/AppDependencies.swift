@@ -22,4 +22,10 @@ struct AppDependencies {
     /// Общие пользовательские настройки (тема и т.п.) — консолидированы, чтобы не
     /// повторять `@AppStorage(...)` в каждом View, читающем то же самое значение.
     let appSettings: AppSettings
+    /// Единственный на всё приложение экземпляр — так `stop()` перед `play()`/`speak()`
+    /// (см. AudioPlayerService) останавливает и звук, запущенный на ДРУГОМ экране, а не
+    /// только на своём. При отдельных экземплярах на TinderCardsView/DictionaryLookupView/
+    /// PairsSetPlayerView/VoiceSettingsView возможно наложение двух звуков одновременно
+    /// (напр. Dictionary lookup поверх TinderCardsView).
+    let audioService: AudioPlayerService
 }

@@ -125,11 +125,15 @@ extension View {
 extension ToolbarContent {
     @ToolbarContentBuilder
     func hiddenSharedBackgroundIfAvailable() -> some ToolbarContent {
-        if #available(iOS 26.0, *) {
-            self.sharedBackgroundVisibility(.hidden)
-        } else {
-            self
-        }
+        // ЭКСПЕРИМЕНТ: временно отключено на все call sites разом — тестируем
+        // стеклянный nav bar, при котором системная glass-капсула кнопок не
+        // должна конфликтовать с фоном.
+        self
+        // if #available(iOS 26.0, *) {
+        //     self.sharedBackgroundVisibility(.hidden)
+        // } else {
+        //     self
+        // }
     }
 }
 
