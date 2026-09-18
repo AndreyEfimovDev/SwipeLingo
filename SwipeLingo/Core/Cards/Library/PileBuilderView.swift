@@ -170,7 +170,7 @@ struct PileBuilderView: View {
             .padding(.bottom, 4)
 
             // Строка поиска
-            SearchBar(text: $searchText, prompt: "Search sets")
+            SearchBar(text: $searchText, isBGVisible: false, prompt: "Search sets")
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)
         }

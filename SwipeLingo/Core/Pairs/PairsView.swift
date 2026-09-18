@@ -376,7 +376,7 @@ struct PairsView: View {
             Image(systemName: "square.stack")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.4))
-            Text(activePile != nil ? "No sets in this pile" : "No sets available")
+            Text(activePile != nil ? "No sets in this pile" : "No sets available or try to increase your English level")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
             Text(activePile != nil

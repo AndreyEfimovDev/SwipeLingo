@@ -145,7 +145,7 @@ struct PairsPileBuilderView: View {
             .padding(.top, 8)
             .padding(.bottom, 4)
 
-            SearchBar(text: $searchText, prompt: "Search sets")
+            SearchBar(text: $searchText, isBGVisible: false, prompt: "Search sets")
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)
         }
