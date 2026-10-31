@@ -628,6 +628,7 @@
 				478C782C2F794487005FBDFE /* Settings */,
 				478C782E2F794487005FBDFE /* Statistics */,
 				4761E6173052F27B00906F1F /* Shared */,
+				47467C82305ABAFA00987D2D /* Extensions */,
 				478C781F2F794487005FBDFE /* CustomFeatures */,
 			);
 			path = Core;
@@ -902,7 +903,6 @@
 				47D280322F938D0000BBD66B /* ExpandableSection.swift */,
 				478C78142F794487005FBDFE /* CEFRBadgeView.swift */,
 				21312C0867E6DACAFF1780E7 /* PileBadgeView.swift */,
-				47467C82305ABAFA00987D2D /* Extensions */,
 				47467C81305ABAC500987D2D /* Buttons */,
 				478C78182F794487005FBDFE /* Pickets */,
 			);
