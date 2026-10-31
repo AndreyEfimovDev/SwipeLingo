@@ -69,10 +69,10 @@ struct TinderCardsView: View {
          onToggleMode: (() -> Void)? = nil,
          hasDueCards: Bool = true,
          onDone: (() -> Void)? = nil) {
-        _vm             = State(initialValue: TinderCardsViewModel(
-                                    cards: cards,
-                                    contextLabels: contextLabels,
-                                    onDone: onDone))
+            _vm = State(initialValue: TinderCardsViewModel(
+                cards: cards,
+                contextLabels: contextLabels,
+                onDone: onDone))
         self.appViewModel      = appViewModel
         self.authService       = authService
         self.userService       = userService
@@ -126,7 +126,7 @@ struct TinderCardsView: View {
     private var portraitBody: some View {
         VStack(spacing: 0) {
             if !vm.isDone {
-                progressStatsRow
+                progressStatsPortrait
                     .padding(.bottom, 8)
             }
 
@@ -143,20 +143,19 @@ struct TinderCardsView: View {
 
     private var landscapeBody: some View {
         HStack(spacing: 0) {
-            landscapeStatsColumn
+            progressStatsLandscape
             ZStack {
                 if vm.isDone { doneFullCard } else { cardStack }
             }
             .padding(.horizontal, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, 16)
-
+        .padding(.top, 8) // в ландшафте вертикаль в дефиците — см. комментарий у .padding(.vertical) в CardsView
     }
 
     // MARK: - Landscape Stats Column
 
-    private var landscapeStatsColumn: some View {
+    private var progressStatsLandscape: some View {
         let allCards    = vm.cards
         let effTotal    = allCards.filter { $0.status != .deleted }.count
         let learnt      = pileLearntCount + vm.learntInSession
@@ -168,7 +167,7 @@ struct TinderCardsView: View {
         return HStack(spacing: 0) {
             // Содержимое статистики
             VStack(spacing: 0) {
-                Spacer()
+//                Spacer()
                 statLabel("Learnt", value: learnt, status: .learnt)
                     .frame(maxWidth: .infinity)
                 Spacer()
@@ -178,9 +177,9 @@ struct TinderCardsView: View {
                 Spacer()
                 statLabel(isDueMode ? "Due" : "Active", value: active, status: .active)
                     .frame(maxWidth: .infinity)
-                Spacer()
+//                Spacer()
             }
-            // Вертикальный прогресс-бар — правый край, заменяет Divider осмысленным элементом
+            // Вертикальный прогресс-бар — правый край, заменяет Divider осмысленным элемеpнтом
             GeometryReader { geo in
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 1.5)
@@ -294,7 +293,7 @@ struct TinderCardsView: View {
 
     // MARK: - Portrait Stats Row
 
-    private var progressStatsRow: some View {
+    private var progressStatsPortrait: some View {
         let allCards = vm.cards
         let effTotal = allCards.filter { $0.status != .deleted }.count
         let learnt   = pileLearntCount + vm.learntInSession
@@ -337,7 +336,7 @@ struct TinderCardsView: View {
             }
             .font(.title3)
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 12)
         .padding(.vertical, 6)
     }
 
