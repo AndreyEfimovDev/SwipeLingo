@@ -23,7 +23,7 @@ enum UIAppearanceConfigurator {
 
         let navBarAppearance = UINavigationBarAppearance()
         navBarAppearance.configureWithTransparentBackground()
-        // ЭКСПЕРИМЕНТ: тест "стеклянного" бара — backgroundColor закомментирован,
+        // "Стеклянный" бар (принят 2026-10-31): backgroundColor намеренно НЕ задаём —
         // иначе он рисуется поверх blur и глушит прозрачность.
         // navBarAppearance.backgroundColor = UIColor(Color.myColors.myBackground)
         navBarAppearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)

@@ -56,7 +56,7 @@ extension View {
 // Nav bar для модальных .sheet на mySheetBackground (не .fullScreenCover — те используют
 // штатный .navigationTitle, глобальный UIAppearanceConfigurator красит их title в myAccent
 // без проблем). .toolbarBackground(_:for:) — единственный способ перекрасить бар конкретного
-// экрана в mySheetBackground (иначе он останется чёрным из глобального UIAppearance) — но
+// экрана в mySheetBackground (иначе бар останется глобальным стеклянным, не в цвет модалки) — но
 // SwiftUI при этом создаёт для бара отдельную per-instance UINavigationBarAppearance, которая
 // НЕ наследует titleTextAttributes из appearance-прокси в UIAppearanceConfigurator: заголовок
 // откатывается на системный белый вместо myAccent. Явный Text в .principal — обходит это,
@@ -92,18 +92,18 @@ extension View {
 
 // MARK: - Nav Bar Icon Style
 // Единый вид для всех иконок-кнопок в nav bar (gear, chevron-back вне .customBackButton,
-// +, arrow.clockwise, "..." и т.д.) — по стандарту "Иконки-ссылки" из CLAUDE.md: плоская
-// иконка без фона/подложки, только размер + цвет (myBlue активная / myAccent.opacity(0.8)
-// неактивная по умолчанию). Применяется на Image внутри Button ИЛИ Menu label — оба
-// принимают произвольный View, модификатор не завязан на конкретный тип контрола.
+// +, arrow.clockwise, "..." и т.д.) — по стандарту "Иконки-ссылки" из CLAUDE.md: иконка
+// без своего фона/подложки, только размер + цвет (по умолчанию myBlue; для неактивной —
+// явно `color: Color.myColors.myAccent.opacity(0.8)`). Применяется на Image внутри Button
+// ИЛИ Menu label — оба принимают произвольный View, модификатор не завязан на тип контрола.
 //
 // Использование:
-//   Image(systemName: "gear").navBarIconStyle()                          // неактивная (по умолчанию)
-//   Image(systemName: "chevron.left").navBarIconStyle(color: .myBlue)    // активная
+//   Image(systemName: "chevron.left").navBarIconStyle()                                      // по умолчанию, myBlue
+//   Image(systemName: "gear").navBarIconStyle(color: Color.myColors.myAccent.opacity(0.8))   // неактивная
 //
-// На iOS 26 сам ToolbarItem всё равно оборачивает контент в системную glass-капсулу
-// независимо от того, есть ли у нас свой фон — чтобы иконка была ДЕЙСТВИТЕЛЬНО плоской,
-// добавляй `.hiddenSharedBackgroundIfAvailable()` на сам ToolbarItem.
+// На iOS 26 ToolbarItem сам оборачивает контент в системную glass-капсулу — это
+// осознанно оставлено (см. CLAUDE.md "Navigation Bar и модальные окна"): своих
+// фонов/кругов вокруг иконки не добавляем.
 
 extension View {
     func navBarIconStyle(color: Color = Color.myColors.myBlue) -> some View {
@@ -125,9 +125,10 @@ extension View {
 extension ToolbarContent {
     @ToolbarContentBuilder
     func hiddenSharedBackgroundIfAvailable() -> some ToolbarContent {
-        // ЭКСПЕРИМЕНТ: временно отключено на все call sites разом — тестируем
-        // стеклянный nav bar, при котором системная glass-капсула кнопок не
-        // должна конфликтовать с фоном.
+        // Отключено намеренно с принятием стеклянного nav bar (2026-10-31): системная
+        // glass-капсула кнопок теперь не скрывается. Возвращает self; call sites
+        // сохранены — удалить их или вернуть реализацию ниже — открытый вопрос
+        // (CLAUDE.md, "Открытые вопросы").
         self
         // if #available(iOS 26.0, *) {
         //     self.sharedBackgroundVisibility(.hidden)

@@ -17,14 +17,13 @@ import SwiftUI
 /// до `MainScreenToolbar`, чтобы сохранить порядок (кнопка → меню "...").
 ///
 /// `MainScreenToolbar` — `ToolbarContent`, не `View`, фон навигационного бара
-/// сам не задаёт — используется штатный (непрозрачный) nav bar, настроенный
-/// глобально в `UIAppearanceConfigurator` (`Color.myColors.myBackground`).
+/// сам не задаёт — используется глобальный стеклянный бар (transparent + blur),
+/// настроенный в `UIAppearanceConfigurator`.
 /// НЕ скрывать фон бара через `.toolbarBackground(.hidden, for: .navigationBar)` —
-/// в iOS 26 скрытый бар подхватывает системный Liquid Glass поверх экрана вместо
-/// нашего непрозрачного цвета, что на iOS 18 незаметно (тот же цвет), а на iOS 26
-/// даёт видимую серую "плашку" сверху/снизу экрана (регрессия найдена в сентябре
-/// 2026 на CardsView/PairsView/BooksView — все трое когда-то скрывали фон бара;
-/// SettingsView никогда не скрывал и проблемы не имел).
+/// это убирает сам blur-материал; исторически `.hidden` на CardsView/PairsView/BooksView
+/// давал на iOS 26 серые "плашки" сверху/снизу экрана (SettingsView бар никогда не
+/// скрывал и проблемы не имел). Иконки — `.navBarIconStyle()`, без своего фона.
+/// Подробности — CLAUDE.md, "Navigation Bar и модальные окна".
 struct MainScreenToolbar: ToolbarContent {
     let appViewModel: AppViewModel
     let currentMode: AppViewModel.StudyMode
