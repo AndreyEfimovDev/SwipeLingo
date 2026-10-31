@@ -38,7 +38,5 @@ struct PileBadgeView: View {
             )
         }
         .buttonStyle(.plain)
-        .padding(.top, 8)
-
     }
 }

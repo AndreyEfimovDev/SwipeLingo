@@ -133,7 +133,7 @@ final class FlashCardsViewModel {
     /// прогресс текущего свайпа, если пользователь как раз изучает карточки.
     ///
     /// Карточки текущей сессии (`studyCards`) исключаются из пересчёта `learnt` — они уже
-    /// учтены через `TinderCardsViewModel.learntInSession` (progressStatsRow показывает
+    /// учтены через `TinderCardsViewModel.learntInSession` (progressStatsPortrait показывает
     /// `pileLearntCount + learntInSession`); без исключения свайп внутри сессии
     /// (`card.status = .learnt` в `commitSwipe`) триггерил бы этот же refresh и попадал бы
     /// в сумму дважды.

@@ -150,7 +150,11 @@ struct TinderCardsView: View {
             .padding(.horizontal, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, 8) // в ландшафте вертикаль в дефиците — см. комментарий у .padding(.vertical) в CardsView
+        // 24 + отступ CardsView (.padding(.vertical), 16) — запас под карточки стопки, которые
+        // выглядывают ВВЕРХ за счёт offset/scaleEffect (в раскладку не входят, см. cardStack);
+        // выступ ~30pt, меньше — они наезжают на значок Pile над карточкой; 24 вместо 16 добавляет
+        // небольшой зазор между значком и самой дальней картой стопки.
+        .padding(.top, 24)
     }
 
     // MARK: - Landscape Stats Column
@@ -275,8 +279,10 @@ struct TinderCardsView: View {
                 .padding(.top, 4)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.myColors.myBackground.opacity(0.97))
+        .frame(maxWidth: 300, maxHeight: .infinity)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding()
         .transition(.opacity)
     }
 
@@ -369,8 +375,8 @@ struct TinderCardsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
+            .padding(.top, isLandscape ? 6 : 12)
+            .padding(.bottom, isLandscape ? 4 : 8)
         }
     }
 
@@ -572,11 +578,24 @@ struct TinderCardsView: View {
 
     // MARK: - Card Front
 
+    // Размеры лицевой стороны. В ландшафте (iPhone) высоты в обрез, а содержимое лицевой
+    // стороны — слово, озвучка, подсказка — непроматываемое и задаёт нижнюю границу высоты
+    // карточки; если она не помещается, VStack экрана переполняется симметрично и значок Pile
+    // уезжает под nav bar. Поэтому в ландшафте тот же контент компактнее. Общие для cardFront
+    // и nextCardPreview, чтобы превью следующей карточки совпадало с лицевой стороной.
+
+    /// Расстояние между элементами лицевой стороны.
+    private var frontSpacing: CGFloat { isLandscape ? 4 : 12 }
+    /// Размер шрифта слова на лицевой стороне.
+    private var frontWordSize: CGFloat { isLandscape ? 34 : 42 }
+    /// Нижний отступ подсказки "Tap to check".
+    private var frontHintBottomPadding: CGFloat { isLandscape ? 8 : 20 }
+
     private func cardFront(_ card: Card) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: frontSpacing) {
             Spacer()
             Text(card.en)
-                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .font(.system(size: frontWordSize, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
                 .padding(.horizontal, 24)
@@ -590,7 +609,7 @@ struct TinderCardsView: View {
             Spacer()
             Text("Tap to check")
                 .font(.caption2)
-                .padding(.bottom, 20)
+                .padding(.bottom, frontHintBottomPadding)
                 .opacity(0.75)
         }
     }
@@ -752,10 +771,10 @@ struct TinderCardsView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color.myColors.myBackground)
-            VStack(spacing: 12) {
+            VStack(spacing: frontSpacing) {
                 Spacer()
                 Text(card.en)
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .font(.system(size: frontWordSize, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal, 24)
@@ -769,7 +788,7 @@ struct TinderCardsView: View {
                 Spacer()
                 Text("Tap to check")
                     .font(.caption2)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, frontHintBottomPadding)
                     .opacity(0.75)
             }
         }
