@@ -55,13 +55,18 @@ struct PairsView: View {
     }
 
     @State private var isDueMode = false
+    /// Seed случайного порядка сетов пайла (`shuffleMethod == .random`). Хранится в @State, потому что
+    /// `candidateSets` пересчитывается на каждую перерисовку — без фиксированного seed порядок
+    /// менялся бы при каждом рендере. Обновляется при каждом появлении экрана (см. `onAppear`):
+    /// возврат с сессии или из библиотеки пайлов даёт новый порядок на следующую сессию.
+    @State private var shuffleSeed = UInt64.random(in: UInt64.min...UInt64.max)
 
     private let service = PairsPileService()
 
     private var activePile: PairsPile? { allPiles.first { $0.isActive } }
 
     private var candidateSets: [PairsSet] {
-        if let pile = activePile { return service.sets(for: pile, from: levelFilteredSets) }
+        if let pile = activePile { return service.sets(for: pile, from: levelFilteredSets, seed: shuffleSeed) }
         return levelFilteredSets
     }
 
@@ -93,7 +98,10 @@ struct PairsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { pairsToolbar }
             .background(Color.myColors.myBackground.ignoresSafeArea())
-            .onAppear { selectDefaultMode() }
+            .onAppear {
+                shuffleSeed = UInt64.random(in: UInt64.min...UInt64.max)
+                selectDefaultMode()
+            }
         }
     }
 

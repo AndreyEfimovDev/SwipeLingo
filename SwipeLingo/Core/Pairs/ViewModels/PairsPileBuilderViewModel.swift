@@ -7,13 +7,15 @@ import SwiftData
 final class PairsPileBuilderViewModel {
 
     var name: String
-    var selectedSetIds: Set<UUID>
+    /// Выбранные сеты В ПОРЯДКЕ ВЫБОРА (не `Set`): этот порядок сохраняется в `PairsPile.setIds` и
+    /// задаёт показ при `.sequential`. У `Set` порядка нет — раньше `Array(Set)` давал произвольный.
+    var selectedSetIds: [UUID]
     var shuffleMethod: ShuffleMethod
 
     let editingPile: PairsPile?
 
     private let initialName: String
-    private let initialSetIds: Set<UUID>
+    private let initialSetIds: [UUID]
     private let initialShuffleMethod: ShuffleMethod
 
     var isValid: Bool {
@@ -23,7 +25,7 @@ final class PairsPileBuilderViewModel {
     var hasChanges: Bool {
         guard editingPile != nil else { return true }
         return name != initialName
-            || selectedSetIds != initialSetIds
+            || selectedSetIds != initialSetIds   // сравнение с учётом порядка: он влияет на показ
             || shuffleMethod != initialShuffleMethod
     }
 
@@ -32,18 +34,19 @@ final class PairsPileBuilderViewModel {
     init(editingPile: PairsPile? = nil) {
         self.editingPile          = editingPile
         self.name                 = editingPile?.name          ?? ""
-        self.selectedSetIds       = Set(editingPile?.setIds    ?? [])
+        self.selectedSetIds       = editingPile?.setIds        ?? []
         self.shuffleMethod        = editingPile?.shuffleMethod ?? .random
         self.initialName          = editingPile?.name          ?? ""
-        self.initialSetIds        = Set(editingPile?.setIds    ?? [])
+        self.initialSetIds        = editingPile?.setIds        ?? []
         self.initialShuffleMethod = editingPile?.shuffleMethod ?? .random
     }
 
+    /// Добавляет сет в конец выбора либо убирает его; порядок остальных сетов не меняется.
     func toggleSet(_ id: UUID) {
-        if selectedSetIds.contains(id) {
-            selectedSetIds.remove(id)
+        if let index = selectedSetIds.firstIndex(of: id) {
+            selectedSetIds.remove(at: index)
         } else {
-            selectedSetIds.insert(id)
+            selectedSetIds.append(id)
         }
     }
 
@@ -51,7 +54,7 @@ final class PairsPileBuilderViewModel {
     func save(context: ModelContext) -> PairsPile {
         if let pile = editingPile {
             pile.name          = name.trimmingCharacters(in: .whitespaces)
-            pile.setIds        = Array(selectedSetIds)
+            pile.setIds        = selectedSetIds
             pile.shuffleMethod = shuffleMethod
             pile.updatedAt     = .now
             context.saveWithErrorHandling()
@@ -59,7 +62,7 @@ final class PairsPileBuilderViewModel {
         } else {
             let pile = PairsPile(
                 name: name.trimmingCharacters(in: .whitespaces),
-                setIds: Array(selectedSetIds),
+                setIds: selectedSetIds,
                 shuffleMethod: shuffleMethod,
                 isActive: false
             )
