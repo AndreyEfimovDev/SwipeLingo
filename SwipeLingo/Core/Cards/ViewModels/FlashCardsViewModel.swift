@@ -41,7 +41,7 @@ final class FlashCardsViewModel {
 
     // MARK: Private
 
-    private let pileService = PileService()
+    private let pileService = CardsPileService()
 
     // Превентивная мера против воспроизводимого крэша Swift Concurrency рантайма
     // (`swift_task_deinitOnExecutorMainActorBackDeploy`, malloc/SIGABRT) при

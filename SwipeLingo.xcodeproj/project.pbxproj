@@ -158,7 +158,7 @@
 		478C78782F794487005FBDFE /* ImportFSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78472F794487005FBDFE /* ImportFSService.swift */; };
 		478C78792F794487005FBDFE /* KeyboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78482F794487005FBDFE /* KeyboardManager.swift */; };
 		478C787A2F794487005FBDFE /* SystemSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78492F794487005FBDFE /* SystemSeeder.swift */; };
-		478C787B2F794487005FBDFE /* PileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C784A2F794487005FBDFE /* PileService.swift */; };
+		478C787B2F794487005FBDFE /* CardsPileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C784A2F794487005FBDFE /* CardsPileService.swift */; };
 		478C787C2F794487005FBDFE /* SRSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C784B2F794487005FBDFE /* SRSService.swift */; };
 		478C787D2F794487005FBDFE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 478C78432F794487005FBDFE /* Assets.xcassets */; };
 		478C787E2F794487005FBDFE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 478C78432F794487005FBDFE /* Assets.xcassets */; };
@@ -401,7 +401,7 @@
 		478C78472F794487005FBDFE /* ImportFSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportFSService.swift; sourceTree = "<group>"; };
 		478C78482F794487005FBDFE /* KeyboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardManager.swift; sourceTree = "<group>"; };
 		478C78492F794487005FBDFE /* SystemSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSeeder.swift; sourceTree = "<group>"; };
-		478C784A2F794487005FBDFE /* PileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PileService.swift; sourceTree = "<group>"; };
+		478C784A2F794487005FBDFE /* CardsPileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardsPileService.swift; sourceTree = "<group>"; };
 		478C784B2F794487005FBDFE /* SRSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRSService.swift; sourceTree = "<group>"; };
 		478C784D2F794487005FBDFE /* SwipeLingo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwipeLingo.entitlements; sourceTree = "<group>"; };
 		47A281A77E53A8D87F21514D /* InboxDrainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxDrainService.swift; sourceTree = "<group>"; };
@@ -508,7 +508,6 @@
 				47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */,
 				4761E60D3052EF7300906F1F /* Models */,
 				47575FB1C5D460A8873D1EED /* ViewModels */,
-				4757D5DC30555F260064F5F0 /* Services */,
 			);
 			path = Pairs;
 			sourceTree = "<group>";
@@ -634,49 +633,6 @@
 			path = Core;
 			sourceTree = "<group>";
 		};
-		4757D5DB30555EF00064F5F0 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				4750704F2FBA2A4000350F5C /* BookDownloadService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		4757D5DC30555F260064F5F0 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				478C78452F794487005FBDFE /* AudioPlayerService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		4757D5DD30555F700064F5F0 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */,
-				4739F3F5518B2F24B631870A /* AppDependencies.swift */,
-				4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */,
-				47A281A77E53A8D87F21514D /* InboxDrainService.swift */,
-				478C78492F794487005FBDFE /* SystemSeeder.swift */,
-				8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */,
-				4723A9468F60C7C2DB7889DB /* UserSessionSyncService.swift */,
-				E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */,
-				563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */,
-				8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */,
-				1A10B05548AD3414328CC961 /* ForeignAccountWarningService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		4757D5DE305561520064F5F0 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				4785898F2FF3DD4800BF3C8F /* BackupModels.swift */,
-				478589902FF3DD4800BF3C8F /* ExportService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
 		4757D5E13055C7F50064F5F0 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -715,7 +671,6 @@
 				4700CD802FBA27B1003EA2B1 /* BookWordLookupView.swift */,
 				4761E60F3052EF9400906F1F /* Models */,
 				4761E6133052F03F00906F1F /* ViewModels */,
-				4757D5DB30555EF00064F5F0 /* Services */,
 			);
 			path = Books;
 			sourceTree = "<group>";
@@ -875,8 +830,10 @@
 				478C78122F794487005FBDFE /* SwipeLingoApp.swift */,
 				474D28BB2F9B734400BC11FF /* AppView.swift */,
 				478728F72FA9D386001282EF /* AuthView.swift */,
+				477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */,
+				4739F3F5518B2F24B631870A /* AppDependencies.swift */,
+				47FD94BD309606EB005EEE30 /* Bootstrap */,
 				4757D5E13055C7F50064F5F0 /* ViewModels */,
-				4757D5DD30555F700064F5F0 /* Services */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -933,7 +890,6 @@
 				4700CD762FB9D986003EA2B1 /* PaymentHistoryView.swift */,
 				478589972FF3EA5A00BF3C8F /* ExportAndShareView.swift */,
 				478589982FF3EA5A00BF3C8F /* RestoreBackupView.swift */,
-				4757D5DE305561520064F5F0 /* Services */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -957,13 +913,18 @@
 		478C784C2F794487005FBDFE /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				47DE7F852F83CB0300F6BCF3 /* PairsPileService.swift */,
-				474F1FE02F7BB11800128E83 /* ErrorManager.swift */,
+				478C78452F794487005FBDFE /* AudioPlayerService.swift */,
 				478C78462F794487005FBDFE /* DictionaryService.swift */,
+				474F1FE02F7BB11800128E83 /* ErrorManager.swift */,
 				478C78482F794487005FBDFE /* KeyboardManager.swift */,
-				478C784A2F794487005FBDFE /* PileService.swift */,
-				478C784B2F794487005FBDFE /* SRSService.swift */,
 				4713B87FCC6D18B942D94ED7 /* PileManagementService.swift */,
+				478C784B2F794487005FBDFE /* SRSService.swift */,
+				4723A9468F60C7C2DB7889DB /* UserSessionSyncService.swift */,
+				47FD94C230960E02005EEE30 /* Cards */,
+				47FD94BE309607E0005EEE30 /* Pairs */,
+				47FD94C030960AA9005EEE30 /* Books */,
+				47FD94BF30960844005EEE30 /* CloudKit */,
+				47FD94C130960AEA005EEE30 /* Export */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -1048,6 +1009,61 @@
 				478C78412F794487005FBDFE /* UserProfile.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		47FD94BD309606EB005EEE30 /* Bootstrap */ = {
+			isa = PBXGroup;
+			children = (
+				4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */,
+				478C78492F794487005FBDFE /* SystemSeeder.swift */,
+				8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */,
+			);
+			path = Bootstrap;
+			sourceTree = "<group>";
+		};
+		47FD94BE309607E0005EEE30 /* Pairs */ = {
+			isa = PBXGroup;
+			children = (
+				47DE7F852F83CB0300F6BCF3 /* PairsPileService.swift */,
+			);
+			path = Pairs;
+			sourceTree = "<group>";
+		};
+		47FD94BF30960844005EEE30 /* CloudKit */ = {
+			isa = PBXGroup;
+			children = (
+				1A10B05548AD3414328CC961 /* ForeignAccountWarningService.swift */,
+				E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */,
+				563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */,
+				8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */,
+			);
+			path = CloudKit;
+			sourceTree = "<group>";
+		};
+		47FD94C030960AA9005EEE30 /* Books */ = {
+			isa = PBXGroup;
+			children = (
+				4750704F2FBA2A4000350F5C /* BookDownloadService.swift */,
+			);
+			path = Books;
+			sourceTree = "<group>";
+		};
+		47FD94C130960AEA005EEE30 /* Export */ = {
+			isa = PBXGroup;
+			children = (
+				4785898F2FF3DD4800BF3C8F /* BackupModels.swift */,
+				478589902FF3DD4800BF3C8F /* ExportService.swift */,
+			);
+			path = Export;
+			sourceTree = "<group>";
+		};
+		47FD94C230960E02005EEE30 /* Cards */ = {
+			isa = PBXGroup;
+			children = (
+				47A281A77E53A8D87F21514D /* InboxDrainService.swift */,
+				478C784A2F794487005FBDFE /* CardsPileService.swift */,
+			);
+			path = Cards;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1404,7 +1420,7 @@
 				47DE7F352F82D5EC00F6BCF3 /* PlansView.swift in Sources */,
 				478C78792F794487005FBDFE /* KeyboardManager.swift in Sources */,
 				478C787A2F794487005FBDFE /* SystemSeeder.swift in Sources */,
-				478C787B2F794487005FBDFE /* PileService.swift in Sources */,
+				478C787B2F794487005FBDFE /* CardsPileService.swift in Sources */,
 				4789A20FF9DB70FF42E1535C /* PileManagementService.swift in Sources */,
 				4717CE3E2DC028B372F41C60 /* ModelContainerFactory.swift in Sources */,
 				25930C9C26817FC805AEA0FE /* SwipeLingoMigrationPlan.swift in Sources */,
