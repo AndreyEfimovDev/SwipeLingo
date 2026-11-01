@@ -177,7 +177,7 @@ struct PairsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
-            .padding(.top, 30)
+            .padding(.top, 12)   // зазор между значком Pile и превью сетов — одинаков в портрете и ландшафте
         }
         .scrollDisabled(true)
         .mask(

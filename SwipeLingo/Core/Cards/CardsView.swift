@@ -223,9 +223,15 @@ struct CardsView: View {
             )
             .id(vm.sessionID)
             .transition(.scale(scale: 0.95).combined(with: .opacity))
-            .padding(.vertical)
+            .padding(.top, contentTopPadding)
+            .padding(.bottom)
         }
     }
+
+    /// Отступ между значком Pile и содержимым (карточки / экран "all caught up"). В портрете
+    /// небольшой; в ландшафте прежний 16 — там вместе с `TinderCardsView.landscapeBody` он даёт запас
+    /// под выглядывающие вверх карточки стопки, меньше нельзя (они наедут на значок).
+    private var contentTopPadding: CGFloat { isLandscape ? 16 : 4 }
 
     // MARK: - Pile Badge
 
@@ -291,7 +297,8 @@ struct CardsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 24))
         .myShadow()
         .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding(.top, contentTopPadding)
+        .padding(.bottom, 16)
     }
 
     @ToolbarContentBuilder
