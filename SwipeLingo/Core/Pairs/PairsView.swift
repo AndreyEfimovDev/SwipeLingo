@@ -305,6 +305,9 @@ struct PairsView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 12)
+        // Лимит ширины ставится ДО background: иначе плашка останется на всю ширину, а ограничится
+        // только содержимое. В портрете на iPhone не срабатывает, нужен для ландшафта и iPad.
+        .frame(maxWidth: 420)
         .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 28))
         .myShadow()
         .padding(.horizontal, 24)
