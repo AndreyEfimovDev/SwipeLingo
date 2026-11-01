@@ -304,8 +304,7 @@ struct DictionaryService: DictionaryLookingUp {
     ///   - entry: Декодированная статья.
     ///   - raw: Та же статья как словарь — для примеров из `def`, которые не декодируются через Codable.
     private func makeMWEntry(word: String, entry: MWEntry, raw: [String: Any]) -> DictionaryEntry {
-        let transcription = entry.hwi?.prs?.first(where: { $0.mw != nil })?.mw ?? ""
-        let audioURL      = entry.hwi?.prs?.compactMap(\.sound?.audio).first.map(mwAudioURL) ?? ""
+        let (transcription, audioURL) = mwPronunciation(entry.hwi?.prs ?? [])
         let partOfSpeech  = entry.fl ?? ""
         let example       = extractFirstExample(from: raw)
 
@@ -322,6 +321,21 @@ struct DictionaryService: DictionaryLookingUp {
                                audioURL: audioURL,
                                meanings: [meaning],
                                source: .merriamWebster)
+    }
+
+    /// Выбирает транскрипцию и аудио из одного варианта произношения статьи MW.
+    ///
+    /// У части слов вариантов несколько (`data`: ˈdeɪtə и ˈdætə, `either`: американский и британский,
+    /// `you`: ˈjuː с аудио и jə без). Берётся первый вариант, где есть и IPA, и аудио — у MW первым идёт
+    /// американский; если такого нет — первая IPA и первое аудио по отдельности.
+    ///
+    /// - Returns: Транскрипция в слешах (`/ˈmaɪ/`, как у Free) и URL аудио; пустая строка, если поля нет.
+    private func mwPronunciation(_ prs: [MWPronunciation]) -> (transcription: String, audioURL: String) {
+        let variants = prs.map { (ipa: $0.ipa ?? "", audio: $0.sound?.audio ?? "") }
+        let chosen = variants.first(where: { !$0.ipa.isEmpty && !$0.audio.isEmpty })
+        let ipa   = chosen?.ipa   ?? variants.first(where: { !$0.ipa.isEmpty })?.ipa ?? ""
+        let audio = chosen?.audio ?? variants.first(where: { !$0.audio.isEmpty })?.audio ?? ""
+        return (ipa.isEmpty ? "" : "/\(ipa)/", audio.isEmpty ? "" : mwAudioURL(audio))
     }
 
     /// Строит URL MW audio CDN по имени звукового файла.

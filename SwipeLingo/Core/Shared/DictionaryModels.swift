@@ -57,8 +57,9 @@ struct MWHeadwordInfo: Decodable {
 }
 
 struct MWPronunciation: Decodable {
-    /// Транскрипция в нотации MW, напр. "ˈwərd".
-    let mw: String?
+    /// IPA-транскрипция без слешей, напр. "rɪˈlajəbəl". Learner's отдаёт её в `ipa`; поля `mw`
+    /// (нотация Collegiate) в этом словаре нет — его чтение оставляло транскрипцию MW всегда пустой.
+    let ipa: String?
     let sound: MWSound?
 }
 

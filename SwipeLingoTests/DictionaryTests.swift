@@ -54,13 +54,13 @@ final class DictionaryServiceTests: XCTestCase {
 
     /// Ответ MW: одна запись с заголовком «my»; `transcription == nil` — запись без блока произношения.
     private func mwJSON(transcription: String?, definition: String = "belonging to me") -> String {
-        let prs = transcription.map { #","prs":[{"mw":"\#($0)","sound":{"audio":"my000001"}}]"# } ?? ""
+        let prs = transcription.map { #","prs":[{"ipa":"\#($0)","sound":{"audio":"my000001"}}]"# } ?? ""
         return #"[{"hwi":{"hw":"my"\#(prs)},"fl":"adjective","shortdef":["\#(definition)"]}]"#
     }
 
     /// Статья MW о «look», где «look up» есть только как run-on фраза; так MW отвечает на запрос «look up».
     private let mwLookJSON = """
-    [{"meta":{"stems":["look","look after"]},"hwi":{"hw":"look","prs":[{"mw":"ˈlʊk"}]},"fl":"verb",
+    [{"meta":{"stems":["look","look after"]},"hwi":{"hw":"look","prs":[{"ipa":"ˈlʊk"}]},"fl":"verb",
       "shortdef":["to use your eyes to see someone or something"],
       "def":[{"sseq":[[["sense",{"dt":[["text","{bc}to use your eyes "],["vis",[{"t":"{it}Look{/it} at me."}]]]}]]]}],
       "dros":[
@@ -80,16 +80,16 @@ final class DictionaryServiceTests: XCTestCase {
     // MARK: - Порядок и приоритет
 
     func testFreeComesFirstThenMWReplacesIt() async throws {
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī"), delay: 0.3), free: .json(freeJSON))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 0.3), free: .json(freeJSON))
 
         let updates = try await collect(makeService())
 
         XCTAssertEqual(updates.map(\.source), [.freeDictionary, .merriamWebster])
-        XCTAssertEqual(updates.map(\.transcription), ["/mi/", "ˈmī"])
+        XCTAssertEqual(updates.map(\.transcription), ["/mi/", "ˈmaɪ"])
     }
 
     func testLateFreeDoesNotChangeEntryWhenMWAlreadyArrived() async throws {
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī")), free: .json(freeJSON, delay: 0.3))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ")), free: .json(freeJSON, delay: 0.3))
 
         let updates = try await collect(makeService())
 
@@ -97,7 +97,7 @@ final class DictionaryServiceTests: XCTestCase {
     }
 
     func testMWWithTranscriptionDoesNotWaitForSlowFree() async throws {
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī")), free: .json(freeJSON, delay: 5))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ")), free: .json(freeJSON, delay: 5))
         let started = ContinuousClock.now
 
         let updates = try await collect(makeService())
@@ -107,7 +107,7 @@ final class DictionaryServiceTests: XCTestCase {
     }
 
     func testLookupReturnsBestEntry() async throws {
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī"), delay: 0.2), free: .json(freeJSON))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 0.2), free: .json(freeJSON))
 
         let entry = try await makeService().lookup(word: "my")
 
@@ -118,7 +118,7 @@ final class DictionaryServiceTests: XCTestCase {
     // MARK: - lookup: последовательно MW → Free
 
     func testLookupDoesNotRequestFreeWhenMWIsComplete() async throws {
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī")), free: .json(freeJSON))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ")), free: .json(freeJSON))
 
         let entry = try await makeService().lookup(word: "my")
 
@@ -165,7 +165,7 @@ final class DictionaryServiceTests: XCTestCase {
         // Ответы задержаны на 1 с. Параллельно — второй запрос стартует сразу за первым; последовательно —
         // только после ответа на первый (через ~1 с). Сравниваем моменты СТАРТА запросов, а не общее время:
         // общее время зависит от загрузки машины (в прогоне с хост-приложением оно уже давало ложный провал).
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī"), delay: 1), free: .json(freeJSON, delay: 1))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 1), free: .json(freeJSON, delay: 1))
 
         _ = try await collect(makeService())
 
@@ -244,7 +244,7 @@ final class DictionaryServiceTests: XCTestCase {
 
     func testMWAcceptsInflectedFormFromStems() async throws {
         let mw = """
-        [{"meta":{"stems":["give","gave","given"]},"hwi":{"hw":"give","prs":[{"mw":"ˈgɪv"}]},"fl":"verb",
+        [{"meta":{"stems":["give","gave","given"]},"hwi":{"hw":"give","prs":[{"ipa":"ˈgɪv"}]},"fl":"verb",
           "shortdef":["to cause someone to have something"]}]
         """
         setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
@@ -260,7 +260,7 @@ final class DictionaryServiceTests: XCTestCase {
         let mw = """
         [{"hwi":{"hw":"mine"},"fl":"pronoun","shortdef":["that which belongs to me"],
           "def":[{"sseq":[[["sense",{"dt":[["vis",[{"t":"wrong example"}]]]}]]]}]},
-         {"hwi":{"hw":"my","prs":[{"mw":"ˈmī"}]},"fl":"adjective","shortdef":["belonging to me"],
+         {"hwi":{"hw":"my","prs":[{"ipa":"ˈmaɪ"}]},"fl":"adjective","shortdef":["belonging to me"],
           "def":[{"sseq":[[["sense",{"dt":[["vis",[{"t":"{it}my{/it} book"}]]]}]]]}]}]
         """
         setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
@@ -269,6 +269,52 @@ final class DictionaryServiceTests: XCTestCase {
 
         XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.text, "belonging to me")
         XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.example, "my book")
+    }
+
+    // MARK: - Произношение MW
+
+    func testMWTranscriptionIsReadFromIPA() async throws {
+        // Реальный ответ Learner's для «reliable»: транскрипция в `ipa`. Раньше читалось поле `mw`, которого
+        // в Learner's нет, — транскрипция MW всегда была пустой и всегда бралась из Free.
+        let mw = """
+        [{"hwi":{"hw":"re*li*able","prs":[{"ipa":"rɪˈlajəbəl","sound":{"audio":"reliab02"}}]},
+          "fl":"adjective","shortdef":["able to be trusted"]}]
+        """
+        setReplies(mw: .json(mw), free: .json(freeJSON))
+
+        let entry = try await makeService().lookup(word: "reliable")
+
+        XCTAssertEqual(entry.source, .merriamWebster)
+        XCTAssertEqual(entry.transcription, "/rɪˈlajəbəl/", "IPA MW — в слешах, как у Free")
+        XCTAssertEqual(entry.audioURL, "https://media.merriam-webster.com/audio/prons/en/us/mp3/r/reliab02.mp3")
+        XCTAssertEqual(StubState.shared.requestedHosts, [mwHost], "транскрипция MW есть — Free не нужен")
+    }
+
+    func testMWTranscriptionAndAudioComeFromOneVariant() async throws {
+        // Вариант без аудио (jə) стоит первым — транскрипция и аудио всё равно из одного полного варианта (ˈjuː)
+        let mw = """
+        [{"hwi":{"hw":"you","prs":[{"ipa":"jə"},{"ipa":"ˈjuː","sound":{"audio":"you00001"}}]},
+          "fl":"pronoun","shortdef":["the person being addressed"]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "you")
+
+        XCTAssertEqual(updates.first?.transcription, "/ˈjuː/")
+        XCTAssertEqual(updates.first?.audioURL, "https://media.merriam-webster.com/audio/prons/en/us/mp3/y/you00001.mp3")
+    }
+
+    func testMWFieldsArePickedSeparatelyWithoutCompleteVariant() async throws {
+        let mw = """
+        [{"hwi":{"hw":"the","prs":[{"sound":{"audio":"the00001"}},{"ipa":"ði"}]},
+          "fl":"definite article","shortdef":["used to indicate a particular person or thing"]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "the")
+
+        XCTAssertEqual(updates.first?.transcription, "/ði/")
+        XCTAssertEqual(updates.first?.audioURL, "https://media.merriam-webster.com/audio/prons/en/us/mp3/t/the00001.mp3")
     }
 
     // MARK: - Сбой одного из источников
@@ -291,7 +337,7 @@ final class DictionaryServiceTests: XCTestCase {
     }
 
     func testFreeFailureYieldsMWOnly() async throws {
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī")), free: .failure(.notConnectedToInternet))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ")), free: .failure(.notConnectedToInternet))
 
         let updates = try await collect(makeService())
 
@@ -376,7 +422,7 @@ final class DictionaryServiceTests: XCTestCase {
     // MARK: - Отмена и таймаут
 
     func testCancellationCancelsBothRequests() async {
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī"), delay: 5), free: .json(freeJSON, delay: 5))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 5), free: .json(freeJSON, delay: 5))
         let service = makeService()
         let task = Task { _ = try? await self.collect(service) }
 
@@ -389,7 +435,7 @@ final class DictionaryServiceTests: XCTestCase {
     }
 
     func testLookupThrowsCancellationErrorWhenCallerIsCancelled() async {
-        setReplies(mw: .json(mwJSON(transcription: "ˈmī"), delay: 5), free: .json(freeJSON, delay: 5))
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 5), free: .json(freeJSON, delay: 5))
         let service = makeService()
         let task = Task { () -> Error? in
             do {
