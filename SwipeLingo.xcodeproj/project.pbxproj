@@ -504,8 +504,8 @@
 				47C09A4C2F8531C20049858B /* PairsPileBuilderView.swift */,
 				47C09A4E2F8531C20049858B /* PairsSessionView.swift */,
 				47C09A4F2F8531C20049858B /* PairsSetPlayerView.swift */,
-				47EF10012F8531C20049858B /* PairsSetContentView.swift */,
 				47DE7F912F844EF700F6BCF3 /* PairsVerticalToggle.swift */,
+				47EF10012F8531C20049858B /* PairsSetContentView.swift */,
 				4761E60D3052EF7300906F1F /* Models */,
 				47575FB1C5D460A8873D1EED /* ViewModels */,
 			);

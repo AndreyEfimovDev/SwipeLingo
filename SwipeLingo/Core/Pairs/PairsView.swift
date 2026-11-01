@@ -128,7 +128,7 @@ struct PairsView: View {
             previewContent
 
             // [Auto/Manual] · [Play / Caught up] · [Due/All]
-            mainRow
+            controlPanel
                 .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -260,9 +260,9 @@ struct PairsView: View {
         return result
     }
 
-    // MARK: - Main Row
+    // MARK: - Control Panel
 
-    private var mainRow: some View {
+    private var controlPanel: some View {
         HStack(alignment: .center, spacing: 0) {
 
             // Auto / Manual
@@ -303,8 +303,8 @@ struct PairsView: View {
                 Color.clear.frame(width: 80)
             }
         }
-        .padding(.vertical, 24)
-        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
         .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 28))
         .myShadow()
         .padding(.horizontal, 24)
@@ -344,7 +344,7 @@ struct PairsView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Caught Up (компактный, центр mainRow)
+    // MARK: - Caught Up (компактный, центр controlPanel)
 
     private var caughtUpCenter: some View {
         VStack(spacing: 10) {
