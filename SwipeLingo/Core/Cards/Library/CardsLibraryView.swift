@@ -29,7 +29,7 @@ struct CardsLibraryView: View {
     @Query(sort: \CardSet.createdAt)    private var cardSets:    [CardSet]
 
     /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
-    private var nativeLangRaw: String { appSyncStateService.nativeLanguageRaw }
+    private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
     @Query private var profiles: [UserProfile]
     @State private var vm = LibraryViewModel()
 
@@ -76,7 +76,7 @@ struct CardsLibraryView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        Task { await vm.syncContent(context: context, nativeLangRaw: nativeLangRaw, level: userLevel) }
+                        Task { await vm.syncContent(context: context, language: nativeLanguage, level: userLevel) }
                     } label: {
                         if vm.isSyncing {
                             ProgressView().tint(Color.myColors.myBlue)
