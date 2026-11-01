@@ -11,6 +11,9 @@ import XCTest
 //   • MW без транскрипции — транскрипция берётся из Free (при любом порядке прихода), остальное от MW
 //   • оба упали — ошибка Free (она приоритетна), пустое слово — invalidWord
 //   • отмена потребителя отменяет оба запроса, а `lookup` в этом случае бросает CancellationError
+//   • статья MW выбирается по запросу: заголовок → run-on фраза (`dros`) → форма из `stems`; статья
+//     другого слова не принимается (MW считается не нашедшим). Регрессия: на «look up» показывалось
+//     значение «look», на «run out of» — «patience», а пример брался из первой статьи ответа
 // `lookup(word:)` (один итог — автозаполнение, Admin) — последовательно MW → Free: Free запрашивается только
 // при сбое MW или пустой транскрипции (иначе пакетный импорт в Admin слал бы запрос к Free на каждое слово)
 // Регрессия: запросы шли последовательно (MW → Free) через URLSession.shared с таймаутом 60 с —
@@ -49,11 +52,25 @@ final class DictionaryServiceTests: XCTestCase {
         StubState.shared.set(free, forHost: freeHost)
     }
 
-    /// Ответ MW: одна запись; `transcription == nil` — запись без блока произношения.
+    /// Ответ MW: одна запись с заголовком «my»; `transcription == nil` — запись без блока произношения.
     private func mwJSON(transcription: String?, definition: String = "belonging to me") -> String {
-        let hwi = transcription.map { #"{"prs":[{"mw":"\#($0)","sound":{"audio":"my000001"}}]}"# } ?? "{}"
-        return #"[{"hwi":\#(hwi),"fl":"adjective","shortdef":["\#(definition)"]}]"#
+        let prs = transcription.map { #","prs":[{"mw":"\#($0)","sound":{"audio":"my000001"}}]"# } ?? ""
+        return #"[{"hwi":{"hw":"my"\#(prs)},"fl":"adjective","shortdef":["\#(definition)"]}]"#
     }
+
+    /// Статья MW о «look», где «look up» есть только как run-on фраза; так MW отвечает на запрос «look up».
+    private let mwLookJSON = """
+    [{"meta":{"stems":["look","look after"]},"hwi":{"hw":"look","prs":[{"mw":"ˈlʊk"}]},"fl":"verb",
+      "shortdef":["to use your eyes to see someone or something"],
+      "def":[{"sseq":[[["sense",{"dt":[["text","{bc}to use your eyes "],["vis",[{"t":"{it}Look{/it} at me."}]]]}]]]}],
+      "dros":[
+        {"drp":"look after","gram":"phrasal verb","def":[{"sseq":[[["sense",{"dt":[["text","{bc}to take care of "]]}]]]}]},
+        {"drp":"look up","gram":"phrasal verb","def":[{"sseq":[
+          [["sense",{"sn":"1","dt":[["text","{bc}to get better {bc}{sx|improve||} "],["vis",[{"t":"The economy is {it}looking up{/it}."}]]]}]],
+          [["sense",{"sn":"2","dt":[["text","{bc}to search for (something) in a reference book "]]}]]
+        ]}]}
+      ]}]
+    """
 
     private let freeJSON = """
     [{"word":"my","phonetics":[{"text":"/mi/","audio":"https://example.com/my.mp3"}],
@@ -157,6 +174,101 @@ final class DictionaryServiceTests: XCTestCase {
         guard starts.count == 2 else { return XCTFail("ожидалось два запроса, было \(starts.count)") }
         let gap = abs(starts[1].at.timeIntervalSince(starts[0].at))
         XCTAssertLessThan(gap, 0.5, "второй запрос стартовал через \(gap) с — запросы идут не параллельно")
+    }
+
+    // MARK: - Выбор статьи MW по запросу
+
+    func testMWPhraseIsTakenFromRunOnOfHeadwordEntry() async throws {
+        setReplies(mw: .json(mwLookJSON), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "look up")
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster])
+        let meaning = try XCTUnwrap(updates.first?.meanings.first)
+        XCTAssertEqual(meaning.partOfSpeech, "phrasal verb")
+        XCTAssertEqual(meaning.definitions.map(\.text),
+                       ["to get better : improve", "to search for (something) in a reference book"],
+                       "значения фразы, а не статьи «look»; ведущий {bc} убран")
+        XCTAssertEqual(meaning.definitions.first?.example, "The economy is looking up.")
+        XCTAssertNil(meaning.definitions.last?.example)
+        XCTAssertEqual(updates.first?.transcription, "", "произношения фразы у MW нет — транскрипцию не берём от «look»")
+    }
+
+    func testMWPhraseIsPreferredOverStems() async throws {
+        // «look after» есть и в stems статьи «look» — по ним нашлось бы значение самого «look»
+        setReplies(mw: .json(mwLookJSON), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "Look  After")
+
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.map(\.text), ["to take care of"])
+    }
+
+    func testMWPhraseDefinedByUsageNote() async throws {
+        // У «by the way» в dt нет текста — значение дано пояснением об употреблении (uns)
+        let mw = """
+        [{"hwi":{"hw":"way"},"fl":"noun","shortdef":["a road"],
+          "dros":[{"drp":"by the way","def":[{"sseq":[[["sense",{"dt":[["uns",[[
+            ["text","used to introduce a new topic "],["vis",[{"t":"{it}By the way{/it}, I like your shoes."}]]
+          ]]]]}]]]}]}]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "by the way")
+
+        let meaning = try XCTUnwrap(updates.first?.meanings.first)
+        XCTAssertEqual(meaning.partOfSpeech, "phrase", "у фразы без gram — нейтральная метка")
+        XCTAssertEqual(meaning.definitions.first?.text, "used to introduce a new topic")
+        XCTAssertEqual(meaning.definitions.first?.example, "By the way, I like your shoes.")
+    }
+
+    func testMWEntryWithOtherHeadwordIsIgnored() async throws {
+        // На «run out of» MW отвечает статьёй «patience» — её показывать нельзя, остаётся Free
+        let mw = """
+        [{"meta":{"stems":["patience","run out of patience"]},"hwi":{"hw":"pa*tience"},"fl":"noun",
+          "shortdef":["the ability to wait"]}]
+        """
+        setReplies(mw: .json(mw), free: .json(freeJSON))
+
+        let updates = try await collect(makeService(), word: "run out of")
+
+        XCTAssertEqual(updates.map(\.source), [.freeDictionary])
+    }
+
+    func testLookupFallsBackToFreeWhenMWHasNoMatchingEntry() async throws {
+        setReplies(mw: .json(mwLookJSON), free: .json(freeJSON))
+
+        let entry = try await makeService().lookup(word: "look around")
+
+        XCTAssertEqual(entry.source, .freeDictionary)
+    }
+
+    func testMWAcceptsInflectedFormFromStems() async throws {
+        let mw = """
+        [{"meta":{"stems":["give","gave","given"]},"hwi":{"hw":"give","prs":[{"mw":"ˈgɪv"}]},"fl":"verb",
+          "shortdef":["to cause someone to have something"]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "gave")
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster])
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.text, "to cause someone to have something")
+    }
+
+    func testMWExampleComesFromChosenEntry() async throws {
+        // Раньше пример брался из первой статьи ответа, даже если выбрана другая
+        let mw = """
+        [{"hwi":{"hw":"mine"},"fl":"pronoun","shortdef":["that which belongs to me"],
+          "def":[{"sseq":[[["sense",{"dt":[["vis",[{"t":"wrong example"}]]]}]]]}]},
+         {"hwi":{"hw":"my","prs":[{"mw":"ˈmī"}]},"fl":"adjective","shortdef":["belonging to me"],
+          "def":[{"sseq":[[["sense",{"dt":[["vis",[{"t":"{it}my{/it} book"}]]]}]]]}]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "my")
+
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.text, "belonging to me")
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.example, "my book")
     }
 
     // MARK: - Сбой одного из источников

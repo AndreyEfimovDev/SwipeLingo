@@ -264,15 +264,50 @@ struct DictionaryService: DictionaryLookingUp {
             throw DictionaryError.decodingError(error)
         }
 
-        // Берём первую запись, у которой есть хотя бы одно определение.
-        guard let entry = entries.first(where: { !$0.shortdef.isEmpty }) else {
-            throw DictionaryError.notFound
-        }
+        // Статья выбирается по совпадению с запросом, а не первая попавшаяся: на фразу MW Learner's
+        // отдаёт статью главного слова («look up» → «look») или вовсе другого («run out of» → «patience»).
+        // Порядок: заголовок → run-on фраза внутри статьи → форма слова из `stems`. Фраза идёт раньше
+        // `stems`, потому что в `stems` у «look» есть и «look after» — по ним нашлось бы значение «look».
+        let query = Self.normalizedMWTerm(word)
+        let withDefinitions = entries.indices.filter { !entries[$0].shortdef.isEmpty }
 
+        if let index = withDefinitions.first(where: { entries[$0].hwi?.hw.map(Self.normalizedMWTerm) == query }) {
+            return makeMWEntry(word: word, entry: entries[index], raw: objects[index])
+        }
+        if let phrase = mwPhraseMeaning(query, in: objects) {
+            log("MW '\(word)' → run-on phrase, defs: \(phrase.definitions.count)")
+            return DictionaryEntry(word: word, transcription: "", audioURL: "",
+                                   meanings: [phrase], source: .merriamWebster)
+        }
+        if let index = withDefinitions.first(where: {
+            entries[$0].meta?.stems?.contains { Self.normalizedMWTerm($0) == query } == true
+        }) {
+            return makeMWEntry(word: word, entry: entries[index], raw: objects[index])
+        }
+        log("MW '\(word)' → no entry for this headword")
+        throw DictionaryError.notFound
+    }
+
+    /// Приводит заголовок, фразу или запрос MW к виду для сравнения: без слогоделителей `*`,
+    /// в нижнем регистре, с одиночными пробелами.
+    private static func normalizedMWTerm(_ term: String) -> String {
+        term.replacingOccurrences(of: "*", with: "")
+            .lowercased()
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+    }
+
+    /// Собирает запись словаря из статьи MW: краткие определения, произношение и первый пример статьи.
+    ///
+    /// - Parameters:
+    ///   - word: Запрос пользователя — попадает в запись как есть.
+    ///   - entry: Декодированная статья.
+    ///   - raw: Та же статья как словарь — для примеров из `def`, которые не декодируются через Codable.
+    private func makeMWEntry(word: String, entry: MWEntry, raw: [String: Any]) -> DictionaryEntry {
         let transcription = entry.hwi?.prs?.first(where: { $0.mw != nil })?.mw ?? ""
         let audioURL      = entry.hwi?.prs?.compactMap(\.sound?.audio).first.map(mwAudioURL) ?? ""
         let partOfSpeech  = entry.fl ?? ""
-        let example       = extractFirstExample(from: rawArray)
+        let example       = extractFirstExample(from: raw)
 
         let definitions = entry.shortdef.enumerated().map { i, text in
             DictionaryDefinition(text: text, example: i == 0 ? example : nil)
@@ -308,32 +343,91 @@ struct DictionaryService: DictionaryLookingUp {
         URL(string: urlString)?.host == mwAudioHost
     }
 
-    /// Извлекает первый пример-иллюстрацию (example sentence) из MW `def/sseq/dt/vis`.
+    /// Извлекает первый пример-иллюстрацию (example sentence) из `def/sseq/dt/vis` одной статьи MW.
     /// Использует JSONSerialization, потому что `sseq` — глубоко вложенный массив со смешанными типами.
-    private func extractFirstExample(from rawArray: [Any]) -> String? {
-        for item in rawArray {
-            guard let entry = item as? [String: Any],
-                  let defs  = entry["def"] as? [[String: Any]] else { continue }
-            for def in defs {
-                guard let sseq = def["sseq"] as? [[[Any]]] else { continue }
-                for senseSeq in sseq {
-                    for senseItem in senseSeq {
-                        guard senseItem.count >= 2,
-                              (senseItem[0] as? String) == "sense",
-                              let content = senseItem[1] as? [String: Any],
-                              let dt      = content["dt"] as? [[Any]] else { continue }
-                        for dtItem in dt {
-                            guard dtItem.count >= 2,
-                                  (dtItem[0] as? String) == "vis",
-                                  let visItems = dtItem[1] as? [[String: Any]],
-                                  let text     = visItems.first?["t"] as? String else { continue }
-                            return stripMWMarkup(text)
-                        }
+    private func extractFirstExample(from entry: [String: Any]) -> String? {
+        guard let defs = entry["def"] as? [[String: Any]] else { return nil }
+        for def in defs {
+            guard let sseq = def["sseq"] as? [[[Any]]] else { continue }
+            for senseSeq in sseq {
+                for senseItem in senseSeq {
+                    guard senseItem.count >= 2,
+                          (senseItem[0] as? String) == "sense",
+                          let content = senseItem[1] as? [String: Any],
+                          let dt      = content["dt"] as? [[Any]] else { continue }
+                    for dtItem in dt {
+                        guard dtItem.count >= 2,
+                              (dtItem[0] as? String) == "vis",
+                              let visItems = dtItem[1] as? [[String: Any]],
+                              let text     = visItems.first?["t"] as? String else { continue }
+                        return stripMWMarkup(text)
                     }
                 }
             }
         }
         return nil
+    }
+
+    /// Ищет устойчивое выражение среди run-on фраз (`dros`) статей ответа.
+    ///
+    /// Отдельной статьи на фразу («look up», «by the way») у MW Learner's нет — её значение лежит
+    /// внутри статьи главного слова. Совпадение — точное, после `normalizedMWTerm`.
+    ///
+    /// - Returns: Значение фразы с определениями и примерами смыслов или `nil`, если фразы нет
+    ///   или у неё не нашлось ни одного определения.
+    private func mwPhraseMeaning(_ query: String, in objects: [[String: Any]]) -> DictionaryMeaning? {
+        for object in objects {
+            guard let dros = object["dros"] as? [[String: Any]] else { continue }
+            for dro in dros {
+                guard let drp  = dro["drp"] as? String, Self.normalizedMWTerm(drp) == query,
+                      let defs = dro["def"] as? [[String: Any]] else { continue }
+                let definitions = mwSenseDefinitions(in: defs)
+                guard !definitions.isEmpty else { continue }
+                return DictionaryMeaning(partOfSpeech: dro["gram"] as? String ?? "phrase",
+                                         definitions: definitions,
+                                         synonyms: [])
+            }
+        }
+        return nil
+    }
+
+    /// Определения смыслов из `def/sseq`: текст смысла и его первый пример.
+    ///
+    /// У части фраз текста в `dt` нет — значение дано пояснением об употреблении (`uns`,
+    /// у «by the way»); тогда текст и пример берутся из него.
+    private func mwSenseDefinitions(in defs: [[String: Any]]) -> [DictionaryDefinition] {
+        var definitions: [DictionaryDefinition] = []
+        for def in defs {
+            guard let sseq = def["sseq"] as? [[[Any]]] else { continue }
+            for senseSeq in sseq {
+                for senseItem in senseSeq {
+                    guard senseItem.count >= 2,
+                          (senseItem[0] as? String) == "sense",
+                          let content = senseItem[1] as? [String: Any],
+                          let dt      = content["dt"] as? [[Any]] else { continue }
+                    // Пояснение `uns` — массив вложенных dt: ["uns", [[["text", …], ["vis", …]]]]
+                    let usageNotes = dt
+                        .filter { $0.count >= 2 && ($0[0] as? String) == "uns" }
+                        .compactMap { $0[1] as? [[[Any]]] }
+                        .flatMap { $0.joined() }
+                    let items = dt + usageNotes
+
+                    guard let rawText = items.first(where: { ($0.first as? String) == "text" && $0.count >= 2 })?[1] as? String
+                    else { continue }
+                    // "{bc}" в начале смысла превращается в ": " — у определения он лишний
+                    var text = stripMWMarkup(rawText)
+                    while text.hasPrefix(":") { text = String(text.dropFirst()).trimmingCharacters(in: .whitespaces) }
+                    guard !text.isEmpty else { continue }
+
+                    let example = items
+                        .first(where: { ($0.first as? String) == "vis" && $0.count >= 2 })
+                        .flatMap { ($0[1] as? [[String: Any]])?.first?["t"] as? String }
+                        .map(stripMWMarkup)
+                    definitions.append(DictionaryDefinition(text: text, example: example))
+                }
+            }
+        }
+        return definitions
     }
 
     /// Убирает инлайн-разметку MW, оставляя чистый читаемый текст.

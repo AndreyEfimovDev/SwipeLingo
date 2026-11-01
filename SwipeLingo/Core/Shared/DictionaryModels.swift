@@ -35,16 +35,24 @@ struct APIDefinitionItem: Codable {
 // JSONSerialization в DictionaryService, а не через Codable.
 
 struct MWEntry: Decodable {
+    let meta: MWMeta?
     let hwi: MWHeadwordInfo?
     /// Функциональная метка — часть речи, напр. "noun", "verb".
     let fl: String?
     /// Предформатированные краткие определения — из них уже убрана большая часть разметки.
     let shortdef: [String]
 
-    enum CodingKeys: String, CodingKey { case hwi, fl, shortdef }
+    enum CodingKeys: String, CodingKey { case meta, hwi, fl, shortdef }
+}
+
+struct MWMeta: Decodable {
+    /// Формы и выражения, по которым MW находит статью: «gave» у «give», «cats» у «cat».
+    let stems: [String]?
 }
 
 struct MWHeadwordInfo: Decodable {
+    /// Заголовок статьи со слогоделителями, напр. "pa*tience".
+    let hw: String?
     let prs: [MWPronunciation]?
 }
 
