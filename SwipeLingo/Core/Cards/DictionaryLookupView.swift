@@ -22,7 +22,31 @@ struct DictionaryLookupView: View {
         self.card = card
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
-        _vm = State(initialValue: DictionaryLookupViewModel(audioService: audioService))
+        _vm = State(initialValue: DictionaryLookupViewModel(
+            audioService: audioService,
+            cachedEntry: Self.cachedEntry(for: card)
+        ))
+    }
+
+    /// Запись из кэша карточки (`nil`, если кэша нет). Проверяем любое поле, не только транскрипцию: у фраз
+    /// её часто нет, а определение есть — без показа кэш не защищён, а при сбое сети на экране была бы ошибка
+    /// вместо сохранённого определения.
+    private static func cachedEntry(for card: Card) -> DictionaryEntry? {
+        guard !card.dictTranscription.isEmpty || !card.dictDefinition.isEmpty || !card.dictAudioURL.isEmpty else {
+            return nil
+        }
+        return DictionaryEntry(
+            word: card.en,
+            transcription: card.dictTranscription,
+            audioURL: card.dictAudioURL,
+            meanings: card.dictDefinition.isEmpty ? [] : [
+                DictionaryMeaning(
+                    partOfSpeech: "",
+                    definitions: [DictionaryDefinition(text: card.dictDefinition, example: nil)],
+                    synonyms: []
+                )
+            ]
+        )
     }
 
     // Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
@@ -38,6 +62,9 @@ struct DictionaryLookupView: View {
 
     /// Перевод card.en, показываемый в состоянии ошибки (фраза не найдена в словаре).
     @State private var phraseTranslation: String? = nil
+
+    /// Повторный поиск по кнопке «Try Again»; хранится, чтобы отменить при закрытии экрана или повторном тапе.
+    @State private var retryTask: Task<Void, Never>?
 
     private func buildTranslationConfig() {
         #if !targetEnvironment(simulator)
@@ -69,28 +96,13 @@ struct DictionaryLookupView: View {
             .background(Color.myColors.mySheetBackground.ignoresSafeArea())
         }
         .task {
-            // Показываем закэшированную транскрипцию сразу, пока загружается полная запись
-            if !card.dictTranscription.isEmpty {
-                vm.showCached(
-                    DictionaryEntry(
-                        word: card.en,
-                        transcription: card.dictTranscription,
-                        audioURL: card.dictAudioURL,
-                        meanings: card.dictDefinition.isEmpty ? [] : [
-                            DictionaryMeaning(
-                                partOfSpeech: "",
-                                definitions: [DictionaryDefinition(text: card.dictDefinition, example: nil)],
-                                synonyms: []
-                            )
-                        ]
-                    )
-                )
-            }
-            // Всегда подгружаем свежие данные
+            // Кэш карточки уже показан (передан в init ViewModel); всегда подгружаем свежие данные
             await vm.load(word: card.en)
         }
-        .onChange(of: vm.didLoad) { _, loaded in
-            if loaded, case .loaded(let entry) = vm.phase {
+        // Записей за один поиск может быть две (Free, затем MW) — кэшируем каждую смену экрана;
+        // что именно кэшировать (правило защиты записи MW), решает ViewModel (`entryToCache`).
+        .onChange(of: vm.updateCount) { _, _ in
+            if let entry = vm.entryToCache {
                 cacheEntry(entry)
             }
         }
@@ -104,6 +116,7 @@ struct DictionaryLookupView: View {
         }
         .onDisappear {
             vm.audioService.stop()
+            retryTask?.cancel()
         }
         // Готовим translation session для выбранного целевого языка.
         .translationTask(translationConfig) { session in
@@ -178,7 +191,9 @@ struct DictionaryLookupView: View {
 
             Button("Try Again") {
                 phraseTranslation = nil
-                Task { await vm.load(word: card.en) }
+                // Предыдущую попытку отменяем (двойной тап), задачу храним, чтобы отменить при закрытии экрана.
+                retryTask?.cancel()
+                retryTask = Task { await vm.load(word: card.en) }
             }
             .buttonStyle(.borderedProminent)
         }
@@ -198,9 +213,25 @@ struct DictionaryLookupView: View {
                 ForEach(entry.meanings.indices, id: \.self) { idx in
                     meaningSection(entry.meanings[idx])
                 }
+                if let status = vm.refreshStatusText {
+                    refreshIndicator(status)
+                }
             }
             .padding()
+            .animation(.easeInOut(duration: 0.2), value: vm.refreshStatusText)
         }
+    }
+
+    /// Строка «что ещё догружается»: контент уже виден, а полные определения от Merriam-Webster ещё в пути.
+    private func refreshIndicator(_ text: String) -> some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     // MARK: - Header: word + transcription + audio
@@ -348,9 +379,18 @@ struct DictionaryLookupView: View {
     // MARK: - Cache entry to Card
 
     private func cacheEntry(_ entry: DictionaryEntry) {
+        let definition = entry.meanings.first?.definitions.first?.text ?? ""
+        // За одно открытие запись может прийти дважды (Free, затем MW; или MW, затем он же с транскрипцией),
+        // и часто совпадает с уже сохранённой. Каждое сохранение будит слушателей NSPersistentStoreRemoteChange
+        // и уходит в CloudKit — поэтому сохраняем только реальное изменение.
+        guard card.dictTranscription != entry.transcription
+                || card.dictAudioURL != entry.audioURL
+                || card.dictDefinition != definition
+        else { return }
+
         card.dictTranscription = entry.transcription
         card.dictAudioURL      = entry.audioURL
-        card.dictDefinition    = entry.meanings.first?.definitions.first?.text ?? ""
+        card.dictDefinition    = definition
         context.saveWithErrorHandling()
         log("cached to card '\(card.en)':")
         log("  transcription : '\(card.dictTranscription)'")

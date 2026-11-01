@@ -62,6 +62,12 @@ struct MWSound: Decodable {
 // MARK: - Чистые структуры уровня приложения
 // Используются DictionaryService и UI — отвязаны от деталей API.
 
+/// Откуда взята запись словаря. Нужен, чтобы запись из резервного источника не вытесняла более качественную.
+enum DictionarySource {
+    case merriamWebster
+    case freeDictionary
+}
+
 struct DictionaryEntry {
     let word: String
     /// IPA-транскрипция, напр. "/həˈloʊ/", пустая строка, если недоступна.
@@ -69,6 +75,8 @@ struct DictionaryEntry {
     /// Строка HTTPS-URL аудио, пустая строка, если недоступна.
     let audioURL: String
     let meanings: [DictionaryMeaning]
+    /// Источник свежей записи; `nil` у записи, собранной из кэша карточки.
+    var source: DictionarySource? = nil
 }
 
 struct DictionaryMeaning {

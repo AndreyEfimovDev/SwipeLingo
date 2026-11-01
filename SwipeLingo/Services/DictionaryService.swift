@@ -2,14 +2,46 @@ import Foundation
 
 // MARK: - DictionaryService
 //
-// Сначала пробует Merriam-Webster Learner's Dictionary (лучше определения + примеры).
-// Если MW не сработал — откатывается на Free Dictionary API (dictionaryapi.dev).
+// Запрашивает Merriam-Webster Learner's Dictionary (лучше определения + примеры) и Free Dictionary API
+// (dictionaryapi.dev) ПАРАЛЛЕЛЬНО и отдаёт результаты по мере прихода: Free обычно приходит за доли секунды,
+// MW — медленнее или не приходит вовсе (с устройства бывают таймауты), поэтому ждать MW перед показом
+// первого результата незачем. MW приоритетнее: если он пришёл, он заменяет Free.
+// Для вызывающих, которым нужен один итог (автозаполнение, Admin), — `lookup(word:)`: последовательно MW → Free,
+// без лишнего запроса к Free, когда MW ответил полностью.
 // Безопасно вызывать из контекста @MainActor — URLSession.data внутри приостанавливается вне MainActor.
 
 /// Поиск слова в словаре. Протокол нужен, чтобы ViewModel можно было проверить на подменном
 /// источнике (без сети); боевая реализация — `DictionaryService`.
 protocol DictionaryLookingUp {
+    /// Результаты поиска по мере прихода (каждый следующий лучше предыдущего: Free → MW).
+    /// Поток завершается без ошибки, если пришёл хотя бы один результат; с ошибкой — только если не пришёл ни один.
+    /// Отмена потребителя отменяет оба сетевых запроса.
+    func lookupUpdates(word: String) -> AsyncThrowingStream<DictionaryEntry, Error>
+
+    /// Один итоговый результат — для вызывающих, которым не нужен промежуточный показ (автозаполнение, Admin).
+    /// При отмене вызывающего бросает `CancellationError`.
     func lookup(word: String) async throws -> DictionaryEntry
+}
+
+extension DictionaryLookingUp {
+    /// Реализация по умолчанию — через поток: дожидается его окончания и возвращает лучший (последний) результат.
+    /// `DictionaryService` переопределяет её последовательной схемой (см. там).
+    func lookup(word: String) async throws -> DictionaryEntry {
+        var best: DictionaryEntry?
+        do {
+            for try await entry in lookupUpdates(word: word) {
+                best = entry
+            }
+        } catch {
+            // При отмене вызывающего поток мог успеть завершиться ошибкой отменённого запроса
+            // (URLError.cancelled) — для вызывающего это отмена, а не сетевая ошибка.
+            if Task.isCancelled { throw CancellationError() }
+            throw error
+        }
+        try Task.checkCancellation()
+        guard let best else { throw DictionaryService.DictionaryError.notFound }
+        return best
+    }
 }
 
 struct DictionaryService: DictionaryLookingUp {
@@ -48,39 +80,154 @@ struct DictionaryService: DictionaryLookingUp {
 
         var errorDescription: String? {
             switch self {
-            case .invalidWord:          return "Invalid word"
-            case .notFound:             return "Word not found in dictionary"
-            case .networkError(let error):  return error.localizedDescription
-            case .decodingError(let error): return "Data error: \(error.localizedDescription)"
+            case .invalidWord:
+                return "Invalid word"
+            case .notFound:
+                return "Word not found in dictionary"
+            case .networkError(let error):
+                return error.localizedDescription
+            case .decodingError(let error):
+                return "Data error: \(error.localizedDescription)"
             }
         }
     }
 
     // MARK: - Public API
 
-    /// Looks up `word`: tries Merriam-Webster first, falls back to Free Dictionary.
+    /// Один итог: сначала MW; Free — только если MW не ответил или пришёл без транскрипции (тогда она берётся
+    /// из Free). Параллельный режим здесь почти ничего не даёт — итог всё равно ждёт MW, а при его недоступности
+    /// обе схемы упираются в таймаут, — зато Free не получает запрос на каждое слово (пакетный импорт в Admin).
     func lookup(word: String) async throws -> DictionaryEntry {
         let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw DictionaryError.invalidWord }
 
-        if let entry = try? await fetchMW(word: trimmed) {
-            log("MW lookup succeeded for '\(trimmed)'")
-            // MW иногда не содержит транскрипцию — берём её из FreeDictionary
-            if entry.transcription.isEmpty,
-               let freeEntry = try? await fetchFreeDictionary(word: trimmed),
-               !freeEntry.transcription.isEmpty {
-                log("MW transcription empty — using FreeDictionary transcription for '\(trimmed)'")
-                return DictionaryEntry(
-                    word:          entry.word,
-                    transcription: freeEntry.transcription,
-                    audioURL:      entry.audioURL,
-                    meanings:      entry.meanings
-                )
+        let mwEntry: DictionaryEntry
+        do {
+            mwEntry = try await fetchMW(word: trimmed)
+        } catch {
+            try Task.checkCancellation()
+            if !Self.isCancellation(error) {
+                log("MW lookup failed for '\(trimmed)': \(error.localizedDescription)", level: .warning)
             }
-            return entry
+            do {
+                return try await fetchFreeDictionary(word: trimmed)
+            } catch {
+                if Task.isCancelled { throw CancellationError() }
+                throw error
+            }
         }
-        log("MW lookup failed for '\(trimmed)' — falling back to FreeDictionary")
-        return try await fetchFreeDictionary(word: trimmed)
+
+        guard mwEntry.transcription.isEmpty else { return mwEntry }
+        let freeEntry = try? await fetchFreeDictionary(word: trimmed)
+        try Task.checkCancellation()
+        return Self.bestEntry(mw: mwEntry, free: freeEntry) ?? mwEntry
+    }
+
+    /// Запускает MW и Free одновременно и отдаёт лучший из пришедших результатов по мере прихода.
+    func lookupUpdates(word: String) -> AsyncThrowingStream<DictionaryEntry, Error> {
+        let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
+        return AsyncThrowingStream { continuation in
+            guard !trimmed.isEmpty else {
+                continuation.finish(throwing: DictionaryError.invalidWord)
+                return
+            }
+            let task = Task { await runLookup(word: trimmed, continuation: continuation) }
+            // Потребитель ушёл (закрыли экран) — отменяем оба запроса, а не ждём их таймаута.
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    /// Итог одного из двух параллельных запросов.
+    private enum Outcome {
+        case mw(Result<DictionaryEntry, Error>)
+        case free(Result<DictionaryEntry, Error>)
+    }
+
+    private func runLookup(word: String, continuation: AsyncThrowingStream<DictionaryEntry, Error>.Continuation) async {
+        var mwEntry: DictionaryEntry?
+        var freeEntry: DictionaryEntry?
+        var mwError: Error?
+        var freeError: Error?
+        var lastYielded: DictionaryEntry?
+
+        await withTaskGroup(of: Outcome.self) { group in
+            group.addTask { .mw(await Self.capture { try await self.fetchMW(word: word) }) }
+            group.addTask { .free(await Self.capture { try await self.fetchFreeDictionary(word: word) }) }
+
+            for await outcome in group {
+                switch outcome {
+                case .mw(.success(let entry)):    mwEntry = entry
+                case .free(.success(let entry)):  freeEntry = entry
+                case .mw(.failure(let error)):
+                    mwError = error
+                    // Только описание: в самом `error` лежит URL с ключом MW. Отмена (экран закрыт,
+                    // MW уже не нужен) — не сбой.
+                    if !Self.isCancellation(error) {
+                        log("MW lookup failed for '\(word)': \(error.localizedDescription)", level: .warning)
+                    }
+                case .free(.failure(let error)):  freeError = error
+                }
+
+                // Отдаём результат, только если он отличается от уже отданного: Free, пришедший
+                // после MW с транскрипцией, ничего не меняет. Сравнение по источнику и транскрипции
+                // достаточно, пока `bestEntry` дополняет у MW только транскрипцию; если начнёт
+                // подмешивать ещё поля из Free — расширить условие, иначе обновления будут глотаться.
+                guard let best = Self.bestEntry(mw: mwEntry, free: freeEntry),
+                      best.source != lastYielded?.source || best.transcription != lastYielded?.transcription
+                else { continue }
+                lastYielded = best
+                continuation.yield(best)
+
+                // MW с транскрипцией — лучшее, что можно получить: поздний Free ничего не изменит,
+                // так что не ждём его (зависший Free держал бы поток и `isRefreshing` до таймаута).
+                if best.source == .merriamWebster, !best.transcription.isEmpty {
+                    group.cancelAll()
+                }
+            }
+        }
+
+        if lastYielded != nil {
+            continuation.finish()
+            return
+        }
+        // Ни один источник не дал результата. Ошибку Free предпочитаем: она совпадает с прежним поведением (откат на Free).
+        let failure = freeError ?? mwError ?? DictionaryError.notFound
+        if !Self.isCancellation(failure) {
+            log("dictionary lookup failed for '\(word)': \(failure.localizedDescription)", level: .warning)
+        }
+        continuation.finish(throwing: failure)
+    }
+
+    /// Ошибка — следствие отмены (закрыли экран, или запрос отменён, потому что уже пришёл MW),
+    /// а не сбой источника: в логах такие не показываем.
+    static func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if case .networkError(let underlying)? = error as? DictionaryError {
+            return isCancellation(underlying)
+        }
+        return (error as? URLError)?.code == .cancelled
+    }
+
+    private static func capture(_ work: () async throws -> DictionaryEntry) async -> Result<DictionaryEntry, Error> {
+        do {
+            return .success(try await work())
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    /// Лучший из доступных результатов: MW приоритетнее Free. MW иногда приходит без транскрипции —
+    /// тогда она берётся из Free (определения и аудио остаются от MW).
+    static func bestEntry(mw: DictionaryEntry?, free: DictionaryEntry?) -> DictionaryEntry? {
+        guard let mw else { return free }
+        guard mw.transcription.isEmpty, let free, !free.transcription.isEmpty else { return mw }
+        return DictionaryEntry(
+            word:          mw.word,
+            transcription: free.transcription,
+            audioURL:      mw.audioURL,
+            meanings:      mw.meanings,
+            source:        .merriamWebster
+        )
     }
 
     // MARK: - Merriam-Webster
@@ -91,25 +238,15 @@ struct DictionaryService: DictionaryLookingUp {
             let url = URL(string: Self.mwBaseURL + encoded + "?key=" + Secrets.merriamWebsterKey)
         else { throw DictionaryError.invalidWord }
 
-        // ВРЕМЕННЫЕ тайминг-логи (⏱): ищем, какой из двух запросов тормозит на устройстве. Убрать после разбора.
-        let clock = ContinuousClock()
-        let started = clock.now
-        log("⏱ MW '\(word)': запрос отправлен")
-
         let data: Data
         do {
             let (responseData, response) = try await session.data(from: url)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
-            log("⏱ MW '\(word)': HTTP \(status) за \(started.duration(to: clock.now))")
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 throw DictionaryError.notFound
             }
             data = responseData
         } catch let e as DictionaryError { throw e
-        } catch {
-            log("⏱ MW '\(word)': сетевая ошибка через \(started.duration(to: clock.now)): \(error)", level: .warning)
-            throw DictionaryError.networkError(error)
-        }
+        } catch { throw DictionaryError.networkError(error) }
 
         // Ответ MW — это [Any]: реальные записи это объекты, а предложения-подсказки — строки.
         // Фильтруем только объекты, затем декодируем.
@@ -148,7 +285,8 @@ struct DictionaryService: DictionaryLookingUp {
         return DictionaryEntry(word: word,
                                transcription: transcription,
                                audioURL: audioURL,
-                               meanings: [meaning])
+                               meanings: [meaning],
+                               source: .merriamWebster)
     }
 
     /// Строит URL MW audio CDN по имени звукового файла.
@@ -159,7 +297,15 @@ struct DictionaryService: DictionaryLookingUp {
         else if audio.hasPrefix("gg")       { subdir = "gg" }
         else if audio.first?.isNumber == true { subdir = "number" }
         else                                { subdir = String(audio.prefix(1)) }
-        return "https://media.merriam-webster.com/audio/prons/en/us/mp3/\(subdir)/\(audio).mp3"
+        return "https://\(Self.mwAudioHost)/audio/prons/en/us/mp3/\(subdir)/\(audio).mp3"
+    }
+
+    private static let mwAudioHost = "media.merriam-webster.com"
+
+    /// Аудио с CDN Merriam-Webster — признак, что запись (в т.ч. сохранённая в кэше карточки, где источник
+    /// не хранится) получена от MW. Пустая строка или другой хост — источник не доказан.
+    static func isMerriamWebsterAudioURL(_ urlString: String) -> Bool {
+        URL(string: urlString)?.host == mwAudioHost
     }
 
     /// Извлекает первый пример-иллюстрацию (example sentence) из MW `def/sseq/dt/vis`.
@@ -226,30 +372,22 @@ struct DictionaryService: DictionaryLookingUp {
             let url = URL(string: Self.freeBaseURL + encoded)
         else { throw DictionaryError.invalidWord }
 
-        // ВРЕМЕННЫЕ тайминг-логи (⏱), см. fetchMW. Убрать после разбора.
-        let clock = ContinuousClock()
-        let started = clock.now
-        log("⏱ Free '\(word)': запрос отправлен")
-
         let data: Data
         do {
             let (responseData, response) = try await session.data(from: url)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
-            log("⏱ Free '\(word)': HTTP \(status) за \(started.duration(to: clock.now))")
             if let http = response as? HTTPURLResponse, http.statusCode == 404 {
                 throw DictionaryError.notFound
             }
             data = responseData
         } catch let e as DictionaryError { throw e
-        } catch {
-            log("⏱ Free '\(word)': сетевая ошибка через \(started.duration(to: clock.now)): \(error)", level: .warning)
-            throw DictionaryError.networkError(error)
-        }
+        } catch { throw DictionaryError.networkError(error) }
 
         do {
             let entries = try JSONDecoder().decode([APIEntry].self, from: data)
             guard let first = entries.first else { throw DictionaryError.notFound }
-            return first.toDictionaryEntry()
+            var entry = first.toDictionaryEntry()
+            entry.source = .freeDictionary
+            return entry
         } catch let e as DictionaryError { throw e
         } catch { throw DictionaryError.decodingError(error) }
     }

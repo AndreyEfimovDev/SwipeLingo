@@ -280,7 +280,10 @@ final class AddEditCardViewModel {
                 }
                 if !examples.isEmpty { samplesEN = examples }
             } catch {
-                log("dictionary lookup failed: \(error)", level: .warning)
+                // Только описание: в самой ошибке сети лежит URL запроса (у MW — с ключом API).
+                if !DictionaryService.isCancellation(error) {
+                    log("dictionary lookup failed: \(error.localizedDescription)", level: .warning)
+                }
             }
         }
 

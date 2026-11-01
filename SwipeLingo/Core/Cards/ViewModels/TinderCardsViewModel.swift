@@ -113,6 +113,15 @@ final class TinderCardsViewModel {
         self.onDone = onDone
     }
 
+    // Превентивная мера против воспроизводимого крэша Swift Concurrency рантайма
+    // (`swift_task_deinitOnExecutorMainActorBackDeploy`, malloc/SIGABRT) при
+    // деаллокации MainActor-изолированного класса — пойман здесь при прогоне юнит-тестов:
+    // SwiftUI хост-приложения освобождал этот ViewModel во время теста (iOS 18.x, сборка
+    // Xcode 26.x; см. Architecture.md, "Известная ловушка"). Тот же приём, что у
+    // FlashCardsViewModel и AppSyncState*; не подтверждённый фикс — может изменить путь
+    // синтеза компилятора.
+    deinit {}
+
     // MARK: Действия
 
     /// Переворачивает лицом → рубашкой.
