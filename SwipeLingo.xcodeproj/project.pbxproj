@@ -202,6 +202,7 @@
 		47EF10022F8531C20049858B /* PairsSetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EF10012F8531C20049858B /* PairsSetContentView.swift */; };
 		47F4D803AAACDA42B63B9F8F /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4739F3F5518B2F24B631870A /* AppDependencies.swift */; };
 		47FD94C430962241005EEE30 /* PairsPileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94C330962241005EEE30 /* PairsPileTests.swift */; };
+		47FD94C6309769AA005EEE30 /* DictionaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94C5309769AA005EEE30 /* DictionaryTests.swift */; };
 		60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */; };
 		62D8B5E8D03B6003BCBF13DB /* CollectionDedupeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */; };
 		6FE278252FC459EB4C630666 /* UIAppearanceConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */; };
@@ -434,6 +435,7 @@
 		47DFAAA83053155500FDD455 /* DictionaryLookupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryLookupViewModel.swift; sourceTree = "<group>"; };
 		47EF10012F8531C20049858B /* PairsSetContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsSetContentView.swift; sourceTree = "<group>"; };
 		47FD94C330962241005EEE30 /* PairsPileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPileTests.swift; sourceTree = "<group>"; };
+		47FD94C5309769AA005EEE30 /* DictionaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryTests.swift; sourceTree = "<group>"; };
 		563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDedupeService.swift; sourceTree = "<group>"; };
 		704BC42AFC427BD3BA442868 /* ForeignAccountWarningServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeignAccountWarningServiceTests.swift; sourceTree = "<group>"; };
 		81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
@@ -800,6 +802,7 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
+				47FD94C5309769AA005EEE30 /* DictionaryTests.swift */,
 				F8FCFCB36E2BEC4F013B7046 /* AppSyncStateManagerTests.swift */,
 				478729362FA9D9A3001282EF /* SRSServiceTests.swift */,
 				47FD94C330962241005EEE30 /* PairsPileTests.swift */,
@@ -1450,6 +1453,7 @@
 				77A96E47883A5C6E9F1A56C4 /* CollectionDedupeServiceTests.swift in Sources */,
 				47FD94C430962241005EEE30 /* PairsPileTests.swift in Sources */,
 				B0E372C47591FA8C805CB807 /* AppSyncStateManagerTests.swift in Sources */,
+				47FD94C6309769AA005EEE30 /* DictionaryTests.swift in Sources */,
 				47467C7E305964A300987D2D /* ImportFSServiceTests.swift in Sources */,
 				AC9B3B55D40DE0238EFE55AD /* ErrorManagerTests.swift in Sources */,
 				43107E790C124A55A0BD3B9D /* ForeignAccountWarningServiceTests.swift in Sources */,

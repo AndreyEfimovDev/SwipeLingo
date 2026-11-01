@@ -6,10 +6,37 @@ import Foundation
 // Если MW не сработал — откатывается на Free Dictionary API (dictionaryapi.dev).
 // Безопасно вызывать из контекста @MainActor — URLSession.data внутри приостанавливается вне MainActor.
 
-struct DictionaryService {
+/// Поиск слова в словаре. Протокол нужен, чтобы ViewModel можно было проверить на подменном
+/// источнике (без сети); боевая реализация — `DictionaryService`.
+protocol DictionaryLookingUp {
+    func lookup(word: String) async throws -> DictionaryEntry
+}
+
+struct DictionaryService: DictionaryLookingUp {
 
     private static let mwBaseURL      = "https://www.dictionaryapi.com/api/v3/references/learners/json/"
     private static let freeBaseURL    = "https://api.dictionaryapi.dev/api/v2/entries/en/"
+
+    /// Таймаут одного запроса, секунды. У `URLSession.shared` он 60 с — зависший Merriam-Webster
+    /// держал бы экран словаря до минуты, прежде чем сработал откат на Free Dictionary.
+    /// Значение подобрано на глаз (на устройстве MW отвечал ~3 с); при необходимости подправить.
+    static let requestTimeout: TimeInterval = 8
+
+    /// Сессия для словарных запросов с коротким таймаутом. Одна на всё приложение: каждый
+    /// `DictionaryService()` переиспользует её, а не плодит новые сессии.
+    static let defaultSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest  = requestTimeout
+        config.timeoutIntervalForResource = requestTimeout * 2
+        return URLSession(configuration: config)
+    }()
+
+    private let session: URLSession
+
+    /// - Parameter session: сессия для запросов; в тестах подменяется на сессию с `URLProtocol`-заглушкой.
+    init(session: URLSession = DictionaryService.defaultSession) {
+        self.session = session
+    }
 
     // MARK: - Errors
 
@@ -23,8 +50,8 @@ struct DictionaryService {
             switch self {
             case .invalidWord:          return "Invalid word"
             case .notFound:             return "Word not found in dictionary"
-            case .networkError(let e):  return e.localizedDescription
-            case .decodingError(let e): return "Data error: \(e.localizedDescription)"
+            case .networkError(let error):  return error.localizedDescription
+            case .decodingError(let error): return "Data error: \(error.localizedDescription)"
             }
         }
     }
@@ -64,15 +91,25 @@ struct DictionaryService {
             let url = URL(string: Self.mwBaseURL + encoded + "?key=" + Secrets.merriamWebsterKey)
         else { throw DictionaryError.invalidWord }
 
+        // ВРЕМЕННЫЕ тайминг-логи (⏱): ищем, какой из двух запросов тормозит на устройстве. Убрать после разбора.
+        let clock = ContinuousClock()
+        let started = clock.now
+        log("⏱ MW '\(word)': запрос отправлен")
+
         let data: Data
         do {
-            let (responseData, response) = try await URLSession.shared.data(from: url)
+            let (responseData, response) = try await session.data(from: url)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            log("⏱ MW '\(word)': HTTP \(status) за \(started.duration(to: clock.now))")
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 throw DictionaryError.notFound
             }
             data = responseData
         } catch let e as DictionaryError { throw e
-        } catch { throw DictionaryError.networkError(error) }
+        } catch {
+            log("⏱ MW '\(word)': сетевая ошибка через \(started.duration(to: clock.now)): \(error)", level: .warning)
+            throw DictionaryError.networkError(error)
+        }
 
         // Ответ MW — это [Any]: реальные записи это объекты, а предложения-подсказки — строки.
         // Фильтруем только объекты, затем декодируем.
@@ -189,15 +226,25 @@ struct DictionaryService {
             let url = URL(string: Self.freeBaseURL + encoded)
         else { throw DictionaryError.invalidWord }
 
+        // ВРЕМЕННЫЕ тайминг-логи (⏱), см. fetchMW. Убрать после разбора.
+        let clock = ContinuousClock()
+        let started = clock.now
+        log("⏱ Free '\(word)': запрос отправлен")
+
         let data: Data
         do {
-            let (responseData, response) = try await URLSession.shared.data(from: url)
+            let (responseData, response) = try await session.data(from: url)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            log("⏱ Free '\(word)': HTTP \(status) за \(started.duration(to: clock.now))")
             if let http = response as? HTTPURLResponse, http.statusCode == 404 {
                 throw DictionaryError.notFound
             }
             data = responseData
         } catch let e as DictionaryError { throw e
-        } catch { throw DictionaryError.networkError(error) }
+        } catch {
+            log("⏱ Free '\(word)': сетевая ошибка через \(started.duration(to: clock.now)): \(error)", level: .warning)
+            throw DictionaryError.networkError(error)
+        }
 
         do {
             let entries = try JSONDecoder().decode([APIEntry].self, from: data)

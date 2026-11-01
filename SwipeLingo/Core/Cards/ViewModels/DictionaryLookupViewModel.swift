@@ -39,24 +39,40 @@ final class DictionaryLookupViewModel {
 
     // MARK: Service
 
-    private let service = DictionaryService()
+    private let service: DictionaryLookingUp
 
     // MARK: Init
 
-    init(audioService: AudioPlayerService) {
+    init(audioService: AudioPlayerService, service: DictionaryLookingUp = DictionaryService()) {
         self.audioService = audioService
+        self.service = service
     }
 
     // MARK: Actions
 
+    /// Загружает свежую запись. Если уже показан кэш (`showCached`), его НЕ сбрасываем в спиннер:
+    /// свежие данные подменят его, когда придут, а при сбое сети кэш остаётся на экране.
+    /// Раньше `phase = .loading` стирал кэш сразу после показа — пользователь ждал сеть
+    /// (до нескольких секунд) даже для слова, которое уже сохранено в карточке.
     func load(word: String) async {
-        phase = .loading
+        let hasCachedEntry: Bool
+        if case .loaded = phase {
+            hasCachedEntry = true
+        } else {
+            hasCachedEntry = false
+            phase = .loading
+        }
+
         do {
             let entry = try await service.lookup(word: word)
             phase = .loaded(entry)
             didLoad = true
         } catch {
-            phase = .error(error.localizedDescription)
+            if hasCachedEntry {
+                log("dictionary refresh failed, keeping cached entry: \(error)", level: .warning)
+            } else {
+                phase = .error(error.localizedDescription)
+            }
         }
     }
 
