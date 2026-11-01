@@ -151,7 +151,6 @@ struct AddEditCardView: View {
                 }
                 .disabled(isShowingExitConfirm)
         }
-        .hiddenSharedBackgroundIfAvailable()
 
         ToolbarItem(placement: .confirmationAction) {
             NavBarButtonForSheet(
@@ -161,7 +160,6 @@ struct AddEditCardView: View {
                 }
                 .disabled(!vm.canSave || isShowingExitConfirm)
         }
-        .hiddenSharedBackgroundIfAvailable()
 
         
 //        ToolbarItem(placement: .topBarLeading) {

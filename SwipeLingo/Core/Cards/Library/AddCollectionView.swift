@@ -54,7 +54,6 @@ struct AddCollectionView: View {
                             dismiss()
                         }
                 }
-                .hiddenSharedBackgroundIfAvailable()
                 ToolbarItem(placement: .confirmationAction) {
                     NavBarButtonForSheet(
                         title: "Create",
@@ -69,7 +68,6 @@ struct AddCollectionView: View {
                         }
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

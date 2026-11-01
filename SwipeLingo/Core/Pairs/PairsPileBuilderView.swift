@@ -230,7 +230,6 @@ struct PairsPileBuilderView: View {
                     dismiss()
                 }
         }
-        .hiddenSharedBackgroundIfAvailable()
 
         ToolbarItem(placement: .confirmationAction) {
             NavBarButtonForSheet(
@@ -241,7 +240,6 @@ struct PairsPileBuilderView: View {
                 }
             .disabled(!vm.canSave)
         }
-        .hiddenSharedBackgroundIfAvailable()
         
         if vm.editingPile != nil {
             ToolbarItem(placement: .bottomBar) {
@@ -251,7 +249,6 @@ struct PairsPileBuilderView: View {
                         isShowingDeleteConfirm = true
                     }
             }
-            .hiddenSharedBackgroundIfAvailable()
         }
     }
 

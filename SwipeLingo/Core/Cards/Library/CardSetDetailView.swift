@@ -179,7 +179,6 @@ struct CardSetDetailView: View {
                 }
                 .foregroundStyle(Color.myColors.myBlue)
             }
-            .hiddenSharedBackgroundIfAvailable()
         }
         .safeAreaInset(edge: .bottom) {
             if editMode == .active {

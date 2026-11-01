@@ -29,7 +29,6 @@ struct AddCardSetView: View {
                             dismiss()
                         }
                 }
-                .hiddenSharedBackgroundIfAvailable()
                 ToolbarItem(placement: .confirmationAction) {
                     NavBarButtonForSheet(
                         title: "Create",
@@ -44,7 +43,6 @@ struct AddCardSetView: View {
                         }
                         .disabled(isNameEmpty)
                 }
-                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

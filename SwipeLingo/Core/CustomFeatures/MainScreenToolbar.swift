@@ -35,7 +35,6 @@ struct MainScreenToolbar: ToolbarContent {
                     .navBarIconStyle(color: Color.myColors.myBlue)
             }
         }
-        .hiddenSharedBackgroundIfAvailable()
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 ForEach(AppViewModel.StudyMode.allCases.filter { $0 != currentMode }, id: \.self) { mode in
@@ -58,6 +57,5 @@ struct MainScreenToolbar: ToolbarContent {
                     .navBarIconStyle(color: Color.myColors.myBlue)
             }
         }
-        .hiddenSharedBackgroundIfAvailable()
     }
 }

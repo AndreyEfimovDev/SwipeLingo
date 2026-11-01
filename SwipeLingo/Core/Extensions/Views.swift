@@ -113,31 +113,6 @@ extension View {
     }
 }
 
-// MARK: - Hidden Shared Background (iOS 26 Liquid Glass)
-// На iOS 26 каждый ToolbarItem сам получает стеклянную glass-капсулу — она накладывается
-// на кнопки с собственной ручной обводкой (NavBarButtonForSheet) и ломает их вид. Системный
-// модификатор `.sharedBackgroundVisibility(.hidden)`, убирающий её, доступен только с iOS 26 —
-// таргет проекта iOS 18+, поэтому оборачиваем в #available вместо прямого вызова.
-//
-// Использование (вместо ToolbarItem(...) { ... }.sharedBackgroundVisibility(.hidden)):
-//   ToolbarItem(...) { ... }.hiddenSharedBackgroundIfAvailable()
-
-extension ToolbarContent {
-    @ToolbarContentBuilder
-    func hiddenSharedBackgroundIfAvailable() -> some ToolbarContent {
-        // Отключено намеренно с принятием стеклянного nav bar (2026-10-31): системная
-        // glass-капсула кнопок теперь не скрывается. Возвращает self; call sites
-        // сохранены — удалить их или вернуть реализацию ниже — открытый вопрос
-        // (CLAUDE.md, "Открытые вопросы").
-        self
-        // if #available(iOS 26.0, *) {
-        //     self.sharedBackgroundVisibility(.hidden)
-        // } else {
-        //     self
-        // }
-    }
-}
-
 // MARK: - Shadow
 
 extension View {

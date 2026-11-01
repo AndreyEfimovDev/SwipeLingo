@@ -74,7 +74,6 @@ struct CardsLibraryView: View {
                             .navBarIconStyle()
                     }
                 }
-                .hiddenSharedBackgroundIfAvailable()
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task { await vm.syncContent(context: context, nativeLangRaw: nativeLangRaw, level: userLevel) }
@@ -88,7 +87,6 @@ struct CardsLibraryView: View {
                     }
                     .disabled(vm.isSyncing)
                 }
-                .hiddenSharedBackgroundIfAvailable()
             }
             .sheet(isPresented: $isShowingAddCollection) {
                 AddCollectionView()

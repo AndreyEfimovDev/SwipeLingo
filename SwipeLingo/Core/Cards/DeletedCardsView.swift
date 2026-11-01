@@ -205,7 +205,6 @@ struct DeletedCardsView: View {
                     .disabled(deletedCards.isEmpty)
                 }
             }
-            .hiddenSharedBackgroundIfAvailable()
             if editMode == .active {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(isAllSelected ? "Deselect All" : "Select All") {
