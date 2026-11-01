@@ -122,10 +122,10 @@ struct PairsView: View {
     // MARK: - Play Screen
 
     private var playScreen: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .bottom) {
 
-            // Preview: левая часть пар из активного pile/all sets (отступ сверху — за pileBadge)
             previewContent
+                .ignoresSafeArea(edges: .bottom)
 
             // [Auto/Manual] · [Play / Caught up] · [Due/All]
             controlPanel
