@@ -67,7 +67,7 @@ final class LibraryViewModel {
                 let cards = allCards.filter { $0.setId == set.id }
                 return cards.isEmpty || cards.contains { $0.status != .deleted }
             }
-        guard collection.name == "My Sets" else { return visible }
+        guard collection.isMySets else { return visible }
         return visible.sorted { ($0.name == "Inbox" ? 0 : 1) < ($1.name == "Inbox" ? 0 : 1) }
     }
 
@@ -80,9 +80,9 @@ final class LibraryViewModel {
     /// бы "лишние" My Sets от прошлых аккаунтов.
     func myCollections(from collections: [Collection], cardSets: [CardSet], allCards: [Card], firebaseUID: String) -> [Collection] {
         let mine     = collections.filter { $0.isMine(firebaseUID: firebaseUID) }
-        let mySets   = mine.filter { $0.name == "My Sets" }
+        let mySets   = mine.filter { $0.isMySets }
         let userRest = mine.filter {
-            $0.isUserCreated && $0.name != "My Sets"
+            $0.isUserCreated && !$0.isMySets
                 && hasVisibleContent($0, cardSets: cardSets, allCards: allCards)
         }
         return mySets + userRest

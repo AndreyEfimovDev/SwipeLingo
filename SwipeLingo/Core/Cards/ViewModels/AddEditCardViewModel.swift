@@ -189,7 +189,7 @@ final class AddEditCardViewModel {
             let setName = newSetName.trimmingCharacters(in: .whitespaces)
             guard !setName.isEmpty else { return nil }
             let mine = allCollections.filter { $0.isMine(firebaseUID: firebaseUID) }
-            let collection = mine.first(where: { $0.name == "My Sets" })
+            let collection = mine.first(where: { $0.isMySets })
                           ?? mine.first(where: { $0.isUserCreated })
             guard let collection else { return nil }
             let newSet = CardSet(name: setName, collectionId: collection.id, isUserCreated: true)

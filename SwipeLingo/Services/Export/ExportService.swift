@@ -131,7 +131,7 @@ final class ExportService {
         let collections   = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
         // Своё "My Sets" (см. Collection.isMine(firebaseUID:)) — не чужое, оставшееся
         // локально после гонки CloudKit.
-        let myCollection  = collections.first { $0.name == "My Sets" && $0.isMine(firebaseUID: firebaseUID) }
+        let myCollection  = collections.first { $0.isMySets && $0.isMine(firebaseUID: firebaseUID) }
 
         let existingSets     = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
         let existingSetIds   = Set(existingSets.map { $0.id })

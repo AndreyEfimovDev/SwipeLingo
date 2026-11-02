@@ -38,10 +38,10 @@ struct SystemSeeder {
         }
 
         let mySets: Collection
-        if let found = existing.first(where: { $0.name == "My Sets" }) {
+        if let found = existing.first(where: { $0.isMySets }) {
             mySets = found
         } else {
-            mySets = Collection(name: "My Sets", icon: "folder", isOwned: true, isUserCreated: true)
+            mySets = Collection(name: Collection.mySetsName, icon: "folder", isOwned: true, isUserCreated: true)
             context.insert(mySets)
         }
 

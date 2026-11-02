@@ -43,7 +43,7 @@ struct InboxDrainService {
         // локально может лежать больше одной "My Sets" от разных аккаунтов, и у каждой —
         // свой Inbox CardSet. Inbox — не отдельная Collection (см. SystemSeeder).
         let allCollections = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
-        guard let mySets = allCollections.first(where: { $0.name == "My Sets" && $0.isMine(firebaseUID: firebaseUID) }) else {
+        guard let mySets = allCollections.first(where: { $0.isMySets && $0.isMine(firebaseUID: firebaseUID) }) else {
             requeue("My Sets Collection not found")
             return
         }

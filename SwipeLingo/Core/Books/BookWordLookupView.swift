@@ -248,7 +248,7 @@ struct BookWordLookupView: View {
 
     private func saveToInbox() {
         // Inbox — не отдельная Collection (см. SystemSeeder), а сет внутри "My Sets".
-        guard let mySets = collections.first(where: { $0.name == "My Sets" && $0.isMine(firebaseUID: firebaseUID) }) else {
+        guard let mySets = collections.first(where: { $0.isMySets && $0.isMine(firebaseUID: firebaseUID) }) else {
             log("My Sets Collection not found", level: .warning)
             return
         }
