@@ -10,17 +10,26 @@ final class ExportService {
 
     // MARK: - Export
 
-    func exportAll(from context: ModelContext) -> Result<URL, Error> {
-        let cardSets = buildCardSetsExport(from: context)
+    /// Экспортирует карточки своего аккаунта и SRS-состояние pairs во временный JSON-файл.
+    /// - Parameter firebaseUID: аккаунт, чьи сеты попадают в бэкап (см. `buildCardSetsExport`).
+    func exportAll(from context: ModelContext, firebaseUID: String) -> Result<URL, Error> {
+        let cardSets = buildCardSetsExport(from: context, firebaseUID: firebaseUID)
         let pairsSRS = buildPairsSRSExport(from: context)
         let backup   = SwipeLingoBackup(cardSets: cardSets, pairsSRS: pairsSRS)
         return writeToTemp(backup)
     }
 
-    private func buildCardSetsExport(from context: ModelContext) -> [BackupCardSet] {
-        let sets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
-            .filter { $0.isUserCreated && !$0.isSoftDeleted }
+    /// Сеты пользователя только из СВОИХ коллекций (см. `Collection.isMine(firebaseUID:)`) — «бэкап =
+    /// то, что видно на экране». Сеты другого Firebase-аккаунта на том же iCloud в UI скрыты; попади они
+    /// в бэкап, восстановление на чистом устройстве присвоило бы их текущему аккаунту — слияние
+    /// аккаунтов через файл, которого приложение избегает и в дедупе.
+    private func buildCardSetsExport(from context: ModelContext, firebaseUID: String) -> [BackupCardSet] {
         let collections = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
+        let ownCollectionIds = Set(
+            collections.filter { $0.isUserCreated && $0.isMine(firebaseUID: firebaseUID) }.map(\.id)
+        )
+        let sets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
+            .filter { $0.isUserCreated && !$0.isSoftDeleted && ownCollectionIds.contains($0.collectionId) }
 
         return sets.map { set in
             let collection = collections.first { $0.id == set.collectionId }

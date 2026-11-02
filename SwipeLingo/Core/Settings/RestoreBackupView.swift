@@ -4,9 +4,9 @@ import FirebaseAuth
 
 struct RestoreBackupView: View {
 
-    /// Нужен только для `firebaseUID` — восстанавливать сеты именно в СВОЁМ "My
-    /// Sets" (см. `Collection.isMine(firebaseUID:)`), не в чужом, оставшемся
-    /// локально после гонки CloudKit.
+    /// Нужен только для `firebaseUID` — восстанавливать в СВОИ коллекции и СВОЙ Inbox
+    /// (см. `Collection.isMine(firebaseUID:)`), не в чужие, оставшиеся локально после
+    /// гонки CloudKit.
     let authService: AuthFBService
 
     @Environment(\.modelContext) private var modelContext

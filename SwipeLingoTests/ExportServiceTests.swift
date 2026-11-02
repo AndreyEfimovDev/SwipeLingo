@@ -10,6 +10,7 @@ import SwiftData
 //   • сет попадает в свою коллекцию по названию; нет такой — создаётся с иконкой из бэкапа
 //   • сеты одной коллекции не плодят одноимённые коллекции; существующая коллекция переиспользуется
 //   • в системную коллекцию (контейнер Inbox) новые сеты не попадают — регрессия: раньше попадали все
+//   • экспорт берёт сеты только своего аккаунта — сеты другого Firebase-аккаунта на том же iCloud не попадают
 
 @MainActor
 final class ExportServiceTests: XCTestCase {
@@ -108,6 +109,29 @@ final class ExportServiceTests: XCTestCase {
         XCTAssertEqual(verbs.collectionId, existingTravel.id)
     }
 
+    func testExport_SkipsSetsOfOtherAccount() throws {
+        let source = try makeContext()
+        _ = seedInbox(in: source)
+        let own     = Collection(name: "Travel", ownerFirebaseUID: uid)
+        let foreign = Collection(name: "Foreign", ownerFirebaseUID: "otherUID")
+        source.insert(own)
+        source.insert(foreign)
+        source.insert(CardSet(name: "Verbs", collectionId: own.id))
+        source.insert(CardSet(name: "Hidden", collectionId: foreign.id))
+        try source.save()
+
+        let target = try makeContext()
+        _ = seedInbox(in: target)
+        try target.save()
+
+        _ = service.importBackup(from: try export(source), into: target, firebaseUID: uid)
+
+        let names = Set(try target.fetch(FetchDescriptor<CardSet>()).map(\.name))
+        XCTAssertTrue(names.contains("Verbs"))
+        XCTAssertFalse(names.contains("Hidden"), "сеты другого аккаунта в бэкап не попадают")
+        XCTAssertFalse(try target.fetch(FetchDescriptor<Collection>()).contains { $0.name == "Foreign" })
+    }
+
     // MARK: - Helpers
 
     private func makeContext() throws -> ModelContext {
@@ -138,7 +162,7 @@ final class ExportServiceTests: XCTestCase {
     }
 
     private func export(_ context: ModelContext) throws -> URL {
-        let url = try service.exportAll(from: context).get()
+        let url = try service.exportAll(from: context, firebaseUID: uid).get()
         tempFiles.append(url)
         return url
     }
