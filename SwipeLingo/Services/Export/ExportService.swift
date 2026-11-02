@@ -20,8 +20,10 @@ final class ExportService {
     private func buildCardSetsExport(from context: ModelContext) -> [BackupCardSet] {
         let sets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
             .filter { $0.isUserCreated && !$0.isSoftDeleted }
+        let collections = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
 
         return sets.map { set in
+            let collection = collections.first { $0.id == set.collectionId }
             let setId = set.id
             let cards = context.fetchWithErrorHandling(
                 FetchDescriptor<Card>(predicate: #Predicate { $0.setId == setId })
@@ -53,6 +55,9 @@ final class ExportService {
             return BackupCardSet(
                 id:             set.id,
                 name:           set.name,
+                isInbox:        collection?.isMySets ?? false,
+                collectionName: collection?.name ?? "",
+                collectionIcon: collection?.icon,
                 level:          set.level,
                 setDescription: set.setDescription,
                 createdAt:      set.createdAt,
@@ -127,14 +132,25 @@ final class ExportService {
         }
     }
 
+    /// Восстанавливает сеты и карточки из бэкапа. Сет попадает в свою коллекцию пользователя
+    /// по названию (`collectionName`; нет такой — создаётся с иконкой из бэкапа), карточки Inbox —
+    /// в текущий Inbox. В системную коллекцию (контейнер Inbox) новые сеты не попадают: она скрыта,
+    /// и сеты пропали бы из библиотеки. Уже существующие сеты и карточки (по id) не дублируются.
     private func restoreCardSets(_ sets: [BackupCardSet], into context: ModelContext, firebaseUID: String) -> (sets: Int, cards: Int) {
-        let collections   = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
-        // Своё "My Sets" (см. Collection.isMine(firebaseUID:)) — не чужое, оставшееся
-        // локально после гонки CloudKit.
-        let myCollection  = collections.first { $0.isMySets && $0.isMine(firebaseUID: firebaseUID) }
-
-        let existingSets     = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
-        let existingSetIds   = Set(existingSets.map { $0.id })
+        let collections = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
+        let existingSets   = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
+        let existingSetIds = Set(existingSets.map { $0.id })
+        // Свой Inbox (см. Collection.isMine(firebaseUID:)) — не чужой, оставшийся локально после гонки CloudKit.
+        let inboxContainer = collections.first { $0.isMySets && $0.isMine(firebaseUID: firebaseUID) }
+        let inbox = existingSets.first { $0.name == "Inbox" && $0.collectionId == inboxContainer?.id }
+        // Свои пользовательские коллекции по названию; созданные в этом восстановлении добавляются сюда же,
+        // чтобы несколько сетов одной коллекции не создали несколько одноимённых коллекций.
+        var userCollections = Dictionary(
+            collections
+                .filter { $0.isUserCreated && !$0.isMySets && $0.isMine(firebaseUID: firebaseUID) }
+                .map { ($0.name, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
 
         var newSets  = 0
         var newCards = 0
@@ -142,18 +158,30 @@ final class ExportService {
         for backupSet in sets {
             let setId: UUID
 
-            if existingSetIds.contains(backupSet.id) {
+            if backupSet.isInbox {
+                guard let inbox else {
+                    log("Restore: Inbox not found, skipping \(backupSet.cards.count) Inbox card(s)", level: .warning)
+                    continue
+                }
+                setId = inbox.id
+            } else if existingSetIds.contains(backupSet.id) {
                 setId = backupSet.id
             } else {
-                // Определяем целевую коллекцию: предпочитаем исходный collectionId, если он существует, иначе My Sets
-                let targetCollectionId = existingSets.first { _ in
-                    collections.contains { $0.id == backupSet.id }
-                }.map { _ in backupSet.id } ?? (myCollection?.id ?? UUID())
+                // Пустое название — у сета в бэкапе не нашлось коллекции; кладём в общую "Restored".
+                let name = backupSet.collectionName.isEmpty ? "Restored" : backupSet.collectionName
+                let collection: Collection
+                if let existing = userCollections[name] {
+                    collection = existing
+                } else {
+                    collection = Collection(name: name, icon: backupSet.collectionIcon, ownerFirebaseUID: firebaseUID)
+                    context.insert(collection)
+                    userCollections[name] = collection
+                }
 
                 let newSet = CardSet(
                     id:             backupSet.id,
                     name:           backupSet.name,
-                    collectionId:   targetCollectionId,
+                    collectionId:   collection.id,
                     level:          CEFRLevel(rawValue: backupSet.level) ?? .a1,
                     isUserCreated:  true,
                     setDescription: backupSet.setDescription,
