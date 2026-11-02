@@ -255,7 +255,6 @@ struct DictionaryLookupView: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(vm.audioService.isPlaying ? "Stop audio" : "Play pronunciation")
         }
         .padding()
         .background(Color.myColors.mySheetBackground, in: RoundedRectangle(cornerRadius: 16))
@@ -325,7 +324,6 @@ struct DictionaryLookupView: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(alreadyAdded ? "Added" : "Add example to card")
         }
     }
 
@@ -357,7 +355,6 @@ struct DictionaryLookupView: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(synonymAdded ? "Added" : "Add \(synonym) to card")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
