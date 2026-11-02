@@ -125,7 +125,7 @@ final class AuthFBService {
     /// Вызывается один раз из auth-state листенера при первом запуске приложения.
     /// Держит isLoading = true, пока Firebase не подтвердит валидность сессии.
     /// Проверяются все типы пользователей (включая анонимных) — удалённые аккаунты выходят из системы.
-    /// Сетевые ошибки игнорируются, чтобы пользователь мог работать офлайн.
+    /// Выход — только по явным ошибкам авторизации (`shouldSignOut`), остальные ошибки не мешают работать офлайн.
     private func verifyAndFinishLoading() async {
         guard isLoading else { return }
         defer { isLoading = false }
@@ -150,28 +150,34 @@ final class AuthFBService {
             currentUser = auth.currentUser
             log("Launch verify: session confirmed", level: .info)
         } catch let error as NSError {
-            // Firebase оборачивает исходные NSURLError в AuthErrorCode.networkError (17020).
-            // Любая сетевая ошибка/таймаут → сохраняем сессию (повтор при следующем запуске).
-            // Выход из системы — только по явным auth-ошибкам (невалидный credential, пользователь отключён и т.д.).
-            let keepSessionCodes: Set<Int> = [
-                NSURLErrorNotConnectedToInternet,  // -1009 нет интернета
-                NSURLErrorNetworkConnectionLost,   // -1005 соединение прервано
-                NSURLErrorDataNotAllowed,          // -1020 заблокировано в сотовой сети
-                NSURLErrorTimedOut,                // -1001 сервер медленный / прокси / VPN
-                NSURLErrorCannotConnectToHost,     // -1004 хост недоступен
-            ]
             let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError
-            let isNetworkError = keepSessionCodes.contains(error.code)
-                || (error.code == AuthErrorCode.networkError.rawValue
-                    && underlying.map { keepSessionCodes.contains($0.code) } == true)
-            if isNetworkError {
-                log("Launch verify: network error (\(error.code)) — keeping session", level: .warning)
-            } else {
-                log("Launch verify: session invalid (domain:\(error.domain) code:\(error.code) underlying:\(String(describing: underlying?.code))) — signing out", level: .warning)
+            let details = "domain:\(error.domain) code:\(error.code) underlying:\(String(describing: underlying?.code))"
+            if Self.shouldSignOut(afterLaunchVerifyError: error) {
+                log("Launch verify: session invalid (\(details)) — signing out", level: .warning)
                 try? signOut()
                 currentUser = nil
+            } else {
+                log("Launch verify: not an auth error (\(details)) — keeping session", level: .warning)
             }
         }
+    }
+
+    /// Нужно ли выходить из аккаунта после ошибки проверки сессии на старте.
+    ///
+    /// Выход — только по явным ошибкам авторизации: пользователь удалён или отключён, токен отозван или истёк.
+    /// Любая другая ошибка (сеть, таймаут, TLS, неизвестный код) сессию сохраняет — проверка повторится при
+    /// следующем запуске. Раньше было наоборот (сохраняли только при кодах из короткого списка сетевых), и
+    /// `networkError` 17020 с вложенным TLS-сбоем -1200 (VPN в авиарежиме) разлогинивал пользователя — для
+    /// гостя это потеря UID и доступа к своему Inbox.
+    static func shouldSignOut(afterLaunchVerifyError error: NSError) -> Bool {
+        guard error.domain == AuthErrors.domain else { return false }
+        let authErrorCodes: Set<Int> = [
+            AuthErrorCode.userNotFound.rawValue,      // 17011 аккаунт удалён
+            AuthErrorCode.userDisabled.rawValue,      // 17005 аккаунт отключён
+            AuthErrorCode.invalidUserToken.rawValue,  // 17017 токен недействителен (напр. сменили пароль)
+            AuthErrorCode.userTokenExpired.rawValue   // 17021 токен отозван/истёк, нужен повторный вход
+        ]
+        return authErrorCodes.contains(error.code)
     }
 
     // MARK: - Google
