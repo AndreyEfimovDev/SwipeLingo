@@ -229,9 +229,19 @@ struct BookWordLookupView: View {
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.5))
                 .multilineTextAlignment(.center)
 
+            // Перевод не зависит от словарей — показываем его и здесь, чтобы было видно,
+            // с чем слово уйдёт в Inbox (имена, редкие слова, сбой сети словаря).
+            if !translatedWord.isEmpty {
+                Text(translatedWord)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.myColors.myBlue)
+                    .multilineTextAlignment(.center)
+            }
+
             saveButton
         }
         .padding(32)
+        .animation(.easeInOut(duration: 0.2), value: translatedWord)
     }
 
     // MARK: - Save to Inbox
