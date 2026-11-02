@@ -100,8 +100,10 @@ struct TinderCardsView: View {
         .animation(.spring(duration: 0.4), value: vm.isDone)
         .overlay {
             // Показываем caught-up когда пользователь переключился в Due,
-            // но due карточек нет — сессия не сбрасывается, карточка за оверлеем сохраняется
-            if isDueMode && !hasDueCards {
+            // но due карточек нет — сессия не сбрасывается, карточка за оверлеем сохраняется.
+            // Не поверх экрана завершения: после оценки последней due-карточки hasDueCards
+            // тоже становится false, а переход в All там даёт кнопка "Study all cards".
+            if isDueMode && !hasDueCards && !vm.isDone {
                 cardsCaughtUpOverlay
             }
         }
@@ -952,10 +954,17 @@ struct TinderCardsView: View {
 
     private var doneActionsView: some View {
         VStack(spacing: 10) {
+            // В режиме Due повторять только что оценённые карточки бессмысленно (их dueDate уже
+            // сдвинут) — вместо "Study again" переход ко всем активным карточкам через onDone
+            // (FlashCardsViewModel.onSessionComplete переключает сессию в режим All).
             Button {
-                withAnimation(.spring(duration: 0.4, bounce: 0.2)) { vm.restart() }
+                if isDueMode {
+                    vm.onDone?()
+                } else {
+                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) { vm.restart() }
+                }
             } label: {
-                Text("Study again")
+                Text(isDueMode ? "Study all cards" : "Study again")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)

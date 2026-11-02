@@ -217,7 +217,7 @@ struct CardsView: View {
                     vm.onSessionComplete(
                         piles: piles, allCards: allCards,
                         cardSets: levelFilteredCardSets, collections: collections,
-                        dueHour: studyStartHour
+                        dueHour: studyStartHour, userPlan: userPlan
                     )
                 }
             )

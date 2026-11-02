@@ -102,13 +102,14 @@ final class FlashCardsViewModel {
     /// - Режим All завершён → показать экран "всё пройдено".
     func onSessionComplete(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
-        collections: [Collection], dueHour: Int
+        collections: [Collection], dueHour: Int, userPlan: AccessTier = .free
     ) {
         switch studyMode {
         case .due:
             // Сессия Due завершена → продолжаем всеми активными карточками
             load(piles: piles, allCards: allCards, cardSets: cardSets,
-                 collections: collections, dueHour: dueHour, dueOnly: false)
+                 collections: collections, dueHour: dueHour, dueOnly: false,
+                 userPlan: userPlan)
         case .all:
             // Сессия All завершена → пользователь действительно закончил на сегодня
             let pileCards: [Card]

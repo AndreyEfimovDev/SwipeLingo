@@ -74,6 +74,7 @@
 		476830EDD9538F9B48E88EA1 /* UserSessionSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4723A9468F60C7C2DB7889DB /* UserSessionSyncService.swift */; };
 		476EFBA7B7B64DDDC07B1E2B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */; };
 		477300143098EA1700402B80 /* CardSamplesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477300133098EA1700402B80 /* CardSamplesTests.swift */; };
+		477300163098EDDD00402B80 /* FlashCardsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477300153098EDDD00402B80 /* FlashCardsViewModelTests.swift */; };
 		4777A64D69CD08532A3CD45F /* MainScreenToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472631E6B19501091864466C /* MainScreenToolbar.swift */; };
 		4785898E2FF3DCF100BF3C8F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4785898D2FF3DCF100BF3C8F /* ActivityView.swift */; };
 		478589912FF3DD4800BF3C8F /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478589902FF3DD4800BF3C8F /* ExportService.swift */; };
@@ -331,6 +332,7 @@
 		47631B582F86B82F002F1666 /* NativeLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLanguage.swift; sourceTree = "<group>"; };
 		47631B7A2F86F048002F1666 /* Translation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Translation.framework; path = System/Library/Frameworks/Translation.framework; sourceTree = SDKROOT; };
 		477300133098EA1700402B80 /* CardSamplesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSamplesTests.swift; sourceTree = "<group>"; };
+		477300153098EDDD00402B80 /* FlashCardsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashCardsViewModelTests.swift; sourceTree = "<group>"; };
 		477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4785898D2FF3DCF100BF3C8F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		4785898F2FF3DD4800BF3C8F /* BackupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupModels.swift; sourceTree = "<group>"; };
@@ -827,6 +829,7 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
+				477300153098EDDD00402B80 /* FlashCardsViewModelTests.swift */,
 				477300133098EA1700402B80 /* CardSamplesTests.swift */,
 				47FD94DB3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift */,
 				81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */,
@@ -1507,6 +1510,7 @@
 				47FD94DA3098D093005EEE30 /* DeletedCardsViewModelTests.swift in Sources */,
 				47FD94D0309791F9005EEE30 /* PairsPileBuilderViewModelTests.swift in Sources */,
 				47FD94D63098CC3D005EEE30 /* AddEditCardViewModelTests.swift in Sources */,
+				477300163098EDDD00402B80 /* FlashCardsViewModelTests.swift in Sources */,
 				AB24E37E6C4781C61A774A7E /* SwipeLingoMigrationPlanTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
