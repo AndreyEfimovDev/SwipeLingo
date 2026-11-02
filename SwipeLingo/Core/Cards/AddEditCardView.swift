@@ -8,7 +8,8 @@ import FirebaseAuth
 //
 // Режим добавления (card == nil):
 //   • preselectedSetId — опционален, предзаполняет выбор сета
-//   • userSets пуст   — инлайн-поле "создать сет"; сет создаётся при сохранении внутри My Sets
+//   • userSets пуст   — сразу ввод нового сета: имя + коллекция + «Add set» (сет создаётся
+//                       сразу и становится выбранным); без своих коллекций — «New Collection»
 //   • userSets непуст — Menu-пикер; опция "New set…" внизу
 //
 // Режим редактирования (card != nil):
@@ -33,6 +34,7 @@ struct AddEditCardView: View {
     @State private var vm: AddEditCardViewModel
 
     @State private var isShowingExitConfirm = false
+    @State private var isShowingAddCollection = false
     @FocusState private var focused: Field?
 
     /// Передаётся из composition root — не через .environment().
@@ -75,6 +77,14 @@ struct AddEditCardView: View {
         vm.isDuplicateEN(allCards: allCards)
     }
 
+    private var targetCollections: [Collection] {
+        vm.targetCollections(allCollections: allCollections, firebaseUID: firebaseUID)
+    }
+
+    private var canAddNewSet: Bool {
+        vm.canAddNewSet(allSets: allSets, allCollections: allCollections, firebaseUID: firebaseUID)
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -99,12 +109,19 @@ struct AddEditCardView: View {
             .onAppear {
                 focused = nil // предотвращаем всплытие клавиатуры при старте
                 if !vm.isEditMode && userSets.isEmpty {
-                    vm.isCreatingNewSet = true
+                    vm.beginNewSet(allSets: allSets, allCollections: allCollections, firebaseUID: firebaseUID)
                 }
                 vm.buildTranslationConfig(nativeLanguage: nativeLanguage)
             }
             .onDisappear {
                 vm.cancelAutoFillTask()
+            }
+            .sheet(isPresented: $isShowingAddCollection) {
+                AddCollectionView()
+            }
+            // Коллекция, созданная прямо отсюда («New Collection»), сразу становится целью нового сета.
+            .onChange(of: targetCollections.map(\.id)) { _, _ in
+                vm.ensureNewSetCollection(allCollections: allCollections, firebaseUID: firebaseUID)
             }
             .translationTask(vm.translationConfig) { session in
                 log("translationTask: session received ✓", level: .info)
@@ -183,8 +200,14 @@ struct AddEditCardView: View {
     // MARK: - Actions
 
     private func handleSave() {
-        guard vm.handleSave(context: context, allCollections: allCollections, firebaseUID: firebaseUID) else { return }
+        guard vm.handleSave(context: context) else { return }
         dismiss()
+    }
+
+    /// Создаёт новый сет кнопкой «Add set» (или Return в поле имени) и убирает клавиатуру.
+    private func addNewSet() {
+        guard vm.addNewSet(context: context, allSets: allSets, allCollections: allCollections, firebaseUID: firebaseUID) else { return }
+        focused = nil
     }
 
     private func handleCancel() {
@@ -277,8 +300,7 @@ struct AddEditCardView: View {
             }
             Divider()
             Button {
-                vm.selectedSetId = nil
-                vm.isCreatingNewSet = true
+                vm.beginNewSet(allSets: allSets, allCollections: allCollections, firebaseUID: firebaseUID)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                     focused = .newSetName
                 }
@@ -303,42 +325,108 @@ struct AddEditCardView: View {
         }
     }
 
-    /// Инлайн-поле имени нового сета
+    /// Ввод нового сета: имя, коллекция и кнопка «Add set», которая создаёт сет сразу и
+    /// возвращает пикер с ним выбранным. Без своих коллекций — предложение сначала создать коллекцию.
     @ViewBuilder
     private var newSetField: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                TextField("Set name", text: $vm.newSetName)
-                    .font(.body)
-                    .focused($focused, equals: .newSetName)
-                    .submitLabel(.next)
-                    .onSubmit { focused = .sampleEN(0) }
-                if !vm.newSetName.isEmpty {
-                    clearButton { vm.newSetName = "" }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-
-            if !userSets.isEmpty {
-                Divider()
+        if targetCollections.isEmpty {
+            VStack(spacing: 10) {
+                Text("Create a collection first to add sets")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 Button {
-                    vm.newSetName = ""
-                    vm.isCreatingNewSet = false
-                    vm.selectedSetId = vm.originalSetId ?? vm.preselectedSetId
+                    isShowingAddCollection = true
                 } label: {
-                    HStack {
-                        Image(systemName: "chevron.left")
-                            .font(.caption.weight(.semibold))
-                        Text("Choose a set")
-                            .font(.subheadline)
-                    }
-                    .foregroundStyle(Color.myColors.myBlue)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 11)
+                    Label("New Collection", systemImage: "plus")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.myColors.myBlue)
                 }
                 .buttonStyle(.plain)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+        } else {
+            VStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    TextField("Set name", text: $vm.newSetName)
+                        .font(.body)
+                        .focused($focused, equals: .newSetName)
+                        .submitLabel(.done)
+                        .onSubmit { addNewSet() }
+                    if !vm.newSetName.isEmpty {
+                        clearButton { vm.newSetName = "" }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+
+                Divider()
+                newSetCollectionMenu
+
+                Divider()
+                HStack {
+                    if !userSets.isEmpty {
+                        Button {
+                            vm.newSetName = ""
+                            vm.isCreatingNewSet = false
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left")
+                                    .font(.caption.weight(.semibold))
+                                Text("Back")
+                                    .font(.subheadline)
+                            }
+                            .foregroundStyle(Color.myColors.myBlue)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Spacer()
+                    Button {
+                        addNewSet()
+                    } label: {
+                        Text("Add set")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(canAddNewSet ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canAddNewSet)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+            }
+        }
+    }
+
+    /// Строка выбора коллекции для нового сета — только свои коллекции, без системной "My Sets".
+    private var newSetCollectionMenu: some View {
+        Menu {
+            ForEach(targetCollections) { collection in
+                Button {
+                    vm.newSetCollectionId = collection.id
+                } label: {
+                    HStack {
+                        Text(collection.name)
+                        if vm.newSetCollectionId == collection.id {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack {
+                Text("In collection")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                Spacer()
+                Text(targetCollections.first { $0.id == vm.newSetCollectionId }?.name ?? "Choose")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.myColors.myAccent)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(Color.myColors.myBlue)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
     }
 

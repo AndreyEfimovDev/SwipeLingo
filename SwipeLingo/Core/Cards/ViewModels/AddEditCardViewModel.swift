@@ -37,6 +37,8 @@ final class AddEditCardViewModel {
     var selectedSetId: UUID?
     var isCreatingNewSet: Bool = false
     var newSetName: String = ""
+    /// Коллекция, в которой будет создан новый сет (кнопка «Add set»).
+    var newSetCollectionId: UUID?
 
     // MARK: Auto-fill (dictionary + Apple Translation)
 
@@ -73,20 +75,70 @@ final class AddEditCardViewModel {
         || samplesItem.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
     }
 
-    /// Пользовательские Sets, кроме Inbox. Двойная фильтрация — по CardSet.isUserCreated
-    /// И по parent Collection.isUserCreated — чтобы покрыть legacy-дефолты миграции.
-    /// `firebaseUID` отсекает сеты внутри ЧУЖИХ пользовательских коллекций, оставшихся
-    /// локально после гонки CloudKit (см. `Collection.isMine(firebaseUID:)`) — иначе в
-    /// пикере сетов мог бы показаться (и быть выбран) сет из чужого "My Sets".
+    /// Сеты из своих коллекций пользователя (см. `targetCollections`) — без системной "My Sets"
+    /// и, значит, без Inbox: Inbox — отдельная сущность, в пикере карточки его нет. Двойная
+    /// фильтрация — по CardSet.isUserCreated И по parent Collection — чтобы покрыть
+    /// legacy-дефолты миграции.
     func userSets(allSets: [CardSet], allCollections: [Collection], firebaseUID: String) -> [CardSet] {
-        let userCollectionIds = Set(
-            allCollections.filter { $0.isUserCreated && $0.isMine(firebaseUID: firebaseUID) }.map { $0.id }
-        )
-        return allSets.filter {
-            $0.isUserCreated &&
-            userCollectionIds.contains($0.collectionId) &&
-            $0.name != "Inbox"
+        let userCollectionIds = Set(targetCollections(allCollections: allCollections, firebaseUID: firebaseUID).map(\.id))
+        return allSets.filter { $0.isUserCreated && userCollectionIds.contains($0.collectionId) }
+    }
+
+    /// Коллекции, в которых можно создать сет: пользовательские и свои, кроме системной "My Sets"
+    /// (контейнер Inbox). `firebaseUID` отсекает чужие коллекции, оставшиеся локально после гонки
+    /// CloudKit (см. `Collection.isMine(firebaseUID:)`).
+    func targetCollections(allCollections: [Collection], firebaseUID: String) -> [Collection] {
+        allCollections.filter { $0.isUserCreated && !$0.isMySets && $0.isMine(firebaseUID: firebaseUID) }
+    }
+
+    /// Начинает ввод нового сета: коллекция по умолчанию — коллекция выбранного сета, если он
+    /// в своей коллекции, иначе первая из `targetCollections` (`nil`, если своих коллекций нет).
+    /// Выбранный сет не сбрасывается — «Back» возвращает к нему.
+    func beginNewSet(allSets: [CardSet], allCollections: [Collection], firebaseUID: String) {
+        isCreatingNewSet = true
+        newSetName = ""
+        let targets = targetCollections(allCollections: allCollections, firebaseUID: firebaseUID)
+        let selectedCollectionId = allSets.first { $0.id == selectedSetId }?.collectionId
+        newSetCollectionId = targets.first { $0.id == selectedCollectionId }?.id ?? targets.first?.id
+    }
+
+    /// Подставляет первую из своих коллекций, если выбранной для нового сета нет среди них —
+    /// например, пользователь только что создал первую коллекцию прямо из этого экрана.
+    func ensureNewSetCollection(allCollections: [Collection], firebaseUID: String) {
+        let targets = targetCollections(allCollections: allCollections, firebaseUID: firebaseUID)
+        guard !targets.contains(where: { $0.id == newSetCollectionId }) else { return }
+        newSetCollectionId = targets.first?.id
+    }
+
+    /// Можно ли нажать «Add set»: имя не пустое, коллекция своя, и в ней ещё нет сета с таким
+    /// именем (без учёта регистра).
+    func canAddNewSet(allSets: [CardSet], allCollections: [Collection], firebaseUID: String) -> Bool {
+        let name = newSetName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty,
+              let collectionId = newSetCollectionId,
+              targetCollections(allCollections: allCollections, firebaseUID: firebaseUID).contains(where: { $0.id == collectionId })
+        else { return false }
+        return !allSets.contains {
+            $0.collectionId == collectionId && !$0.isSoftDeleted && $0.name.lowercased() == name.lowercased()
         }
+    }
+
+    /// Создаёт сет сразу (не при Save карточки) в выбранной коллекции и делает его выбранным;
+    /// блок SET возвращается к пикеру. Если карточку потом отменят, сет остаётся — его создание
+    /// было явным действием пользователя.
+    /// - Returns: false, если добавить нельзя (см. `canAddNewSet`).
+    @discardableResult
+    func addNewSet(context: ModelContext, allSets: [CardSet], allCollections: [Collection], firebaseUID: String) -> Bool {
+        guard canAddNewSet(allSets: allSets, allCollections: allCollections, firebaseUID: firebaseUID),
+              let collectionId = newSetCollectionId
+        else { return false }
+        let newSet = CardSet(name: newSetName.trimmingCharacters(in: .whitespaces), collectionId: collectionId, isUserCreated: true)
+        context.insert(newSet)
+        context.saveWithErrorHandling()
+        selectedSetId = newSet.id
+        isCreatingNewSet = false
+        newSetName = ""
+        return true
     }
 
     func selectedSetName(allSets: [CardSet], allCollections: [Collection], firebaseUID: String) -> String {
@@ -140,23 +192,23 @@ final class AddEditCardViewModel {
     var canSave: Bool {
         let enOK = !en.trimmingCharacters(in: .whitespaces).isEmpty
         guard enLengthState != .tooLong, itemLengthState != .tooLong else { return false }
+        // Пока вводится новый сет, сохранять нельзя: сет создаётся только кнопкой «Add set»,
+        // иначе карточка молча ушла бы в прежний выбранный сет.
+        guard !isCreatingNewSet else { return false }
         if isEditMode {
             return enOK && hasChanges          // активна только когда что-то изменилось
-        }
-        if isCreatingNewSet {
-            return enOK && !newSetName.trimmingCharacters(in: .whitespaces).isEmpty
         }
         return enOK && selectedSetId != nil
     }
 
     // MARK: - Save
 
-    /// Применяет working copy к `originalCard`, либо вставляет новую `Card` — при необходимости
-    /// сперва создавая новый `CardSet` (когда выбрано "New set…").
-    /// - Returns: false, если новый Set требуется, но его имя пустое — вызывающая сторона
+    /// Применяет working copy к `originalCard`, либо вставляет новую `Card` в выбранный сет.
+    /// Новый сет здесь не создаётся — только кнопкой «Add set» (`addNewSet`).
+    /// - Returns: false, если для новой карточки не выбран сет — вызывающая сторона
     ///   не должна закрывать экран в этом случае.
     @discardableResult
-    func handleSave(context: ModelContext, allCollections: [Collection], firebaseUID: String) -> Bool {
+    func handleSave(context: ModelContext) -> Bool {
         let enClean   = en.trimmingCharacters(in: .whitespaces)
         let itemClean = item.trimmingCharacters(in: .whitespaces)
         let snEN   = samplesEN.map   { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
@@ -167,36 +219,17 @@ final class AddEditCardViewModel {
             original.item       = itemClean
             original.sampleEN   = snEN
             original.sampleItem = snItem
-            if let newSetId = resolveSetId(context: context, allCollections: allCollections, firebaseUID: firebaseUID) {
+            if let newSetId = selectedSetId {
                 original.setId = newSetId
             }
         } else {
-            guard let setId = resolveSetId(context: context, allCollections: allCollections, firebaseUID: firebaseUID) else { return false }
+            guard let setId = selectedSetId else { return false }
             let card = Card(en: enClean, item: itemClean,
                             sampleEN: snEN, sampleItem: snItem, setId: setId)
             context.insert(card)
         }
         context.saveWithErrorHandling()
         return true
-    }
-
-    /// Возвращает целевой setId; создаёт новый CardSet, если isCreatingNewSet.
-    /// `firebaseUID` — новый сет создаётся именно в СВОЁМ "My Sets" (см.
-    /// `Collection.isMine(firebaseUID:)`), не в чужом, оставшемся локально после
-    /// гонки CloudKit.
-    private func resolveSetId(context: ModelContext, allCollections: [Collection], firebaseUID: String) -> UUID? {
-        if isCreatingNewSet {
-            let setName = newSetName.trimmingCharacters(in: .whitespaces)
-            guard !setName.isEmpty else { return nil }
-            let mine = allCollections.filter { $0.isMine(firebaseUID: firebaseUID) }
-            let collection = mine.first(where: { $0.isMySets })
-                          ?? mine.first(where: { $0.isUserCreated })
-            guard let collection else { return nil }
-            let newSet = CardSet(name: setName, collectionId: collection.id, isUserCreated: true)
-            context.insert(newSet)
-            return newSet.id
-        }
-        return selectedSetId
     }
 
     // MARK: - Auto-fill
