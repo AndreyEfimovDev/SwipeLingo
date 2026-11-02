@@ -166,12 +166,12 @@ struct CardSetDetailView: View {
                                 }
                             }
 
-    //                        Button("Done") {
-    //                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-    //                                editMode = .inactive
-    //                                selectedCardIds = []
-    //                            }
-    //                        }
+//                        Button("Done") {
+//                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+//                                editMode = .inactive
+//                                selectedCardIds = []
+//                            }
+//                        }
                         } else {
                             if allowsEditing && !isInbox {
                                 Button { isShowingAddCard = true } label: {

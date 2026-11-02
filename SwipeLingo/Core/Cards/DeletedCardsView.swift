@@ -176,33 +176,33 @@ struct DeletedCardsView: View {
             // Условие снаружи ToolbarItem: пустой элемент iOS 26 рисует стеклянным кругом.
             if !deletedCards.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
-                        NavBarButtonForSheet(
-                            title: editMode == .active ? "Done" : "Edit",
-                            color: Color.myColors.myBlue,
-                            isOutlined: false
-                        ) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                if editMode == .active {
-                                    editMode = .inactive
-                                    selectedCardIds = []
-                                } else {
-                                    editMode = .active
-                                }
+                    NavBarButtonForSheet(
+                        title: editMode == .active ? "Done" : "Edit",
+                        color: Color.myColors.myBlue,
+                        isOutlined: false
+                    ) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            if editMode == .active {
+                                editMode = .inactive
+                                selectedCardIds = []
+                            } else {
+                                editMode = .active
                             }
-
                         }
-    //                    Button(editMode == .active ? "Done" : "Edit") {
-    //                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-    //                            if editMode == .active {
-    //                                editMode = .inactive
-    //                                selectedCardIds = []
-    //                            } else {
-    //                                editMode = .active
-    //                            }
-    //                        }
-    //                    }
-    //                    .foregroundStyle(Color.myColors.myBlue)
-                        .disabled(deletedCards.isEmpty)
+
+                    }
+//                    Button(editMode == .active ? "Done" : "Edit") {
+//                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+//                            if editMode == .active {
+//                                editMode = .inactive
+//                                selectedCardIds = []
+//                            } else {
+//                                editMode = .active
+//                            }
+//                        }
+//                    }
+//                    .foregroundStyle(Color.myColors.myBlue)
+                    .disabled(deletedCards.isEmpty)
                 }
             }
             if editMode == .active {
