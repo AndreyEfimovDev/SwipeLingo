@@ -113,12 +113,21 @@ struct TinderCardsView: View {
                 audioService: audioService
             )
         }
-        .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0) }
+        .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0, isUserCard: isUserCard($0)) }
         .onDisappear { audioService.stop() }
         .onChange(of: vm.currentIndex) { _, _ in
             examplePageIndex = 0
             audioService.stop()
         }
+    }
+
+    /// Карточка из пользовательского сета (её основные примеры можно удалять в `ExampleEditorSheet`).
+    /// Сет не найден — считаем карточку облачной: основные примеры не удаляются.
+    private func isUserCard(_ card: Card) -> Bool {
+        let setId = card.setId
+        var descriptor = FetchDescriptor<CardSet>(predicate: #Predicate { $0.id == setId })
+        descriptor.fetchLimit = 1
+        return context.fetchWithErrorHandling(descriptor).first?.isUserCreated ?? false
     }
 
     // MARK: - Portrait

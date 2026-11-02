@@ -212,6 +212,8 @@
 		47FD94D63098CC3D005EEE30 /* AddEditCardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D53098CC3D005EEE30 /* AddEditCardViewModelTests.swift */; };
 		47FD94D83098CDB3005EEE30 /* ExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D73098CDB3005EEE30 /* ExportServiceTests.swift */; };
 		47FD94DA3098D093005EEE30 /* DeletedCardsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D93098D093005EEE30 /* DeletedCardsViewModelTests.swift */; };
+		47FD94DC3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94DB3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift */; };
+		47FD94DE3098E83E005EEE30 /* ExampleEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94DD3098E83E005EEE30 /* ExampleEditorViewModel.swift */; };
 		60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */; };
 		62D8B5E8D03B6003BCBF13DB /* CollectionDedupeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */; };
 		6FE278252FC459EB4C630666 /* UIAppearanceConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */; };
@@ -454,6 +456,8 @@
 		47FD94D53098CC3D005EEE30 /* AddEditCardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditCardViewModelTests.swift; sourceTree = "<group>"; };
 		47FD94D73098CDB3005EEE30 /* ExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportServiceTests.swift; sourceTree = "<group>"; };
 		47FD94D93098D093005EEE30 /* DeletedCardsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletedCardsViewModelTests.swift; sourceTree = "<group>"; };
+		47FD94DB3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleEditorViewModelTests.swift; sourceTree = "<group>"; };
+		47FD94DD3098E83E005EEE30 /* ExampleEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleEditorViewModel.swift; sourceTree = "<group>"; };
 		563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDedupeService.swift; sourceTree = "<group>"; };
 		704BC42AFC427BD3BA442868 /* ForeignAccountWarningServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeignAccountWarningServiceTests.swift; sourceTree = "<group>"; };
 		81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
@@ -535,6 +539,7 @@
 		4729DAE0143F8BE07FAE52E0 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				47FD94DD3098E83E005EEE30 /* ExampleEditorViewModel.swift */,
 				478C78342F794487005FBDFE /* FlashCardsViewModel.swift */,
 				478C78312F794487005FBDFE /* TinderCardsViewModel.swift */,
 				47D9CBBBA55930090A0B3B1D /* LibraryViewModel.swift */,
@@ -820,6 +825,7 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
+				47FD94DB3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift */,
 				81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */,
 				A71EF3E17CA0D6AFC0E321DE /* UserProfileTests.swift */,
 				47FD94D73098CDB3005EEE30 /* ExportServiceTests.swift */,
@@ -1384,6 +1390,7 @@
 				47DE7F862F83CB0300F6BCF3 /* PairsPileService.swift in Sources */,
 				478C785A2F794487005FBDFE /* AddCardSetView.swift in Sources */,
 				478589962FF3DF3000BF3C8F /* DocumentPicker.swift in Sources */,
+				47FD94DE3098E83E005EEE30 /* ExampleEditorViewModel.swift in Sources */,
 				47467C7C3058569B00987D2D /* AppSyncStateManager.swift in Sources */,
 				478C785B2F794487005FBDFE /* AddCollectionView.swift in Sources */,
 				4700CD772FB9D986003EA2B1 /* PaymentHistoryView.swift in Sources */,
@@ -1477,6 +1484,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				478729392FA9D9A3001282EF /* SRSServiceTests.swift in Sources */,
+				47FD94DC3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift in Sources */,
 				EA5914D21CB5AB9F6C4E4EBE /* UserProfileDedupeServiceTests.swift in Sources */,
 				47FD94CC30979081005EEE30 /* FreeDictionaryPronunciationTests.swift in Sources */,
 				77A96E47883A5C6E9F1A56C4 /* CollectionDedupeServiceTests.swift in Sources */,
