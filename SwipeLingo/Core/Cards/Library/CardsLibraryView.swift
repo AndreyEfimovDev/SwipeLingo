@@ -333,7 +333,7 @@ struct CardsLibraryView: View {
 
             // ── Заголовок ─────────────────────────────────────────
             HStack {
-                Text("MY SETS")
+                Text("MY LESSONS")
                     .font(.footnote.weight(.semibold))
                 Spacer()
                 Button { isShowingAddCollection = true } label: {
@@ -348,7 +348,7 @@ struct CardsLibraryView: View {
 
             // ── Пользовательские коллекции ────────────────────────────────
             if myCollections.isEmpty {
-                Text("No collections yet — tap + to create one")
+                Text("No own collections yet — tap + to create one")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -545,7 +545,7 @@ struct CardsLibraryView: View {
         // но заголовок/рамка были снаружи, без учёта этого).
         if vm.deletedCardsCount(allCards: allCards) > 0 {
             VStack(alignment: .leading, spacing: 6) {
-                Text("MANAGING CARD")
+                Text("MANAGING CARDS")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color.myColors.myAccent)
                     .padding(.horizontal, 32)
