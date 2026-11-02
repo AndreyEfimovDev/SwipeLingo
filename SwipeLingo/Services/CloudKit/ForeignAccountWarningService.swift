@@ -19,7 +19,9 @@ enum ForeignAccountWarningService {
         UserDefaults.standard.set(true, forKey: key)
         ErrorManager.shared.notify(
             title: "Sync Unavailable",
-            message: "Looks like you're signed in to different SwipeLingo accounts on your devices. Because of that, we can't sync your progress and settings between them — sign in with the same account on all your devices to keep everything in sync."
+            // Текст подходит к обоим сценариям: разные аккаунты на разных устройствах одного iCloud
+            // и смена аккаунта на этом же устройстве (данные прошлого аккаунта остались локально).
+            message: "This iCloud account already has SwipeLingo data from another account. Progress and settings are kept separately for each account and won't sync between them — use the same account on all your devices to keep everything in sync."
         )
     }
 }
