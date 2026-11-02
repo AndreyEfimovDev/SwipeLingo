@@ -61,7 +61,7 @@ final class ExportServiceTests: XCTestCase {
         XCTAssertEqual(restoredVerbs.collectionId, restoredTravel.id)
         XCTAssertEqual(try cards(in: restoredVerbs, target).map(\.en), ["go"])
 
-        let containerId = try XCTUnwrap(try target.fetch(FetchDescriptor<Collection>()).first { $0.isMySets }?.id)
+        let containerId = try XCTUnwrap(try target.fetch(FetchDescriptor<Collection>()).first { $0.isInbox }?.id)
         XCTAssertEqual(sets.filter { $0.collectionId == containerId }.map(\.id), [targetInbox.id],
                        "регрессия: восстановленные сеты уходили в скрытую системную коллекцию")
     }
@@ -121,7 +121,7 @@ final class ExportServiceTests: XCTestCase {
 
     /// Системная коллекция со своим Inbox — как после `SystemSeeder` и claim.
     private func seedInbox(in context: ModelContext) -> CardSet {
-        let container = Collection(name: Collection.mySetsName, icon: "folder", ownerFirebaseUID: uid)
+        let container = Collection(name: Collection.inboxCollectionName, icon: "folder", ownerFirebaseUID: uid)
         context.insert(container)
         let inbox = CardSet(name: "Inbox", collectionId: container.id)
         context.insert(inbox)

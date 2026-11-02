@@ -33,10 +33,10 @@ final class CollectionDedupeServiceTests: XCTestCase {
     /// "My Sets" хранится в `Collection.name` у существующих пользователей — смена константы
     /// сломала бы поиск системной коллекции (SystemSeeder создал бы вторую). Тест фиксирует ключ.
     func testMySetsKey_IsStoredNameAndProtected() {
-        XCTAssertEqual(Collection.mySetsName, "My Sets")
+        XCTAssertEqual(Collection.inboxCollectionName, "My Sets")
         XCTAssertEqual(CollectionDedupeService.protectedNames, ["My Sets"])
-        XCTAssertTrue(Collection(name: "My Sets").isMySets)
-        XCTAssertFalse(Collection(name: "my sets").isMySets, "проверка точная, как и прежние литералы")
+        XCTAssertTrue(Collection(name: "My Sets").isInbox)
+        XCTAssertFalse(Collection(name: "my sets").isInbox, "проверка точная, как и прежние литералы")
     }
 
     let service = CollectionDedupeService()

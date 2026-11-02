@@ -127,7 +127,7 @@ final class DeletedCardsViewModel {
             // проверяем, остались ли в коллекции другие сеты.
             let remainingSets = allCardSets.filter { $0.collectionId == collectionId && $0.id != setId }
             guard remainingSets.isEmpty,
-                  !collection.isMySets else { continue }  // My Sets никогда не удаляется
+                  !collection.isInbox else { continue }  // My Sets никогда не удаляется
             context.delete(collection)
         }
     }

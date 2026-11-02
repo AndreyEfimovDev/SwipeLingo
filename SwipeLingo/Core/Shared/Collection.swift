@@ -57,11 +57,11 @@ extension Collection {
     /// и по нему коллекцию находят `SystemSeeder`, `CollectionDedupeService` и др.), а не текст UI.
     /// Не менять: у существующих пользователей коллекция так и останется со старым именем, её
     /// перестанут узнавать, а `SystemSeeder` создаст вторую.
-    static let mySetsName = "My Sets"
+    static let inboxCollectionName = "My Sets"
 
-    /// Системная ли это коллекция "My Sets" (см. `mySetsName`). Проверка только по имени —
-    /// как и во всех местах, которые она заменила.
-    var isMySets: Bool { name == Self.mySetsName }
+    /// Системная ли это коллекция — контейнер Inbox: в ней лежит сет "Inbox" (см. `SystemSeeder`),
+    /// на экране она сама не показывается. Ключ — `inboxCollectionName`; проверка только по имени.
+    var isInbox: Bool { name == Self.inboxCollectionName }
 
     /// "Своя" ли эта коллекция для указанного аккаунта — использовать везде, где
     /// отображаются/резолвятся защищённые пользовательские коллекции (Inbox/My Sets),

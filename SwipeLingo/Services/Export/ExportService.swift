@@ -55,7 +55,7 @@ final class ExportService {
             return BackupCardSet(
                 id:             set.id,
                 name:           set.name,
-                isInbox:        collection?.isMySets ?? false,
+                isInbox:        collection?.isInbox ?? false,
                 collectionName: collection?.name ?? "",
                 collectionIcon: collection?.icon,
                 level:          set.level,
@@ -141,13 +141,13 @@ final class ExportService {
         let existingSets   = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
         let existingSetIds = Set(existingSets.map { $0.id })
         // Свой Inbox (см. Collection.isMine(firebaseUID:)) — не чужой, оставшийся локально после гонки CloudKit.
-        let inboxContainer = collections.first { $0.isMySets && $0.isMine(firebaseUID: firebaseUID) }
+        let inboxContainer = collections.first { $0.isInbox && $0.isMine(firebaseUID: firebaseUID) }
         let inbox = existingSets.first { $0.name == "Inbox" && $0.collectionId == inboxContainer?.id }
         // Свои пользовательские коллекции по названию; созданные в этом восстановлении добавляются сюда же,
         // чтобы несколько сетов одной коллекции не создали несколько одноимённых коллекций.
         var userCollections = Dictionary(
             collections
-                .filter { $0.isUserCreated && !$0.isMySets && $0.isMine(firebaseUID: firebaseUID) }
+                .filter { $0.isUserCreated && !$0.isInbox && $0.isMine(firebaseUID: firebaseUID) }
                 .map { ($0.name, $0) },
             uniquingKeysWith: { first, _ in first }
         )

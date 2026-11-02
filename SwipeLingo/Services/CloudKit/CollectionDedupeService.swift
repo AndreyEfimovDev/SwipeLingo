@@ -31,7 +31,7 @@ struct CollectionDedupeService {
     /// не входит — с рефакторинга сентября 2026 это обычный CardSet внутри "My Sets",
     /// не отдельная Collection (см. SystemSeeder); дубли одноимённых CardSet внутри
     /// объединённой коллекции всё равно схлопывает `mergeDuplicateCardSets` ниже.
-    static let protectedNames: Set<String> = [Collection.mySetsName]
+    static let protectedNames: Set<String> = [Collection.inboxCollectionName]
 
     /// Привязывает bootstrap-копии защищённых коллекций (`ownerFirebaseUID`
     /// пуст) к конкретному Firebase-аккаунту — вызывается один раз после

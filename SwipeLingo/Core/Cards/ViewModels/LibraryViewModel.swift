@@ -65,7 +65,7 @@ final class LibraryViewModel {
                 let cards = allCards.filter { $0.setId == set.id }
                 return cards.isEmpty || cards.contains { $0.status != .deleted }
             }
-        guard collection.isMySets else { return visible }
+        guard collection.isInbox else { return visible }
         return visible.filter { $0.name != "Inbox" }
     }
 
@@ -73,7 +73,7 @@ final class LibraryViewModel {
     /// над коллекциями. Фильтр `isMine` — как в `InboxDrainService`/`BookWordLookupView`: чужой
     /// Inbox, оставшийся локально после гонки CloudKit, не показываем. `nil` — Inbox ещё нет.
     func inboxSet(collections: [Collection], cardSets: [CardSet], firebaseUID: String) -> CardSet? {
-        guard let mySets = collections.first(where: { $0.isMySets && $0.isMine(firebaseUID: firebaseUID) }) else {
+        guard let mySets = collections.first(where: { $0.isInbox && $0.isMine(firebaseUID: firebaseUID) }) else {
             return nil
         }
         return cardSets.first { $0.name == "Inbox" && $0.collectionId == mySets.id }
@@ -92,10 +92,10 @@ final class LibraryViewModel {
     ) -> [Collection] {
         let mine     = collections.filter { $0.isMine(firebaseUID: firebaseUID) }
         let mySets   = mine.filter {
-            $0.isMySets && !setsForCollection($0, cardSets: cardSets, allCards: allCards, userLevel: userLevel).isEmpty
+            $0.isInbox && !setsForCollection($0, cardSets: cardSets, allCards: allCards, userLevel: userLevel).isEmpty
         }
         let userRest = mine.filter {
-            $0.isUserCreated && !$0.isMySets
+            $0.isUserCreated && !$0.isInbox
                 && hasVisibleContent($0, cardSets: cardSets, allCards: allCards)
         }
         return mySets + userRest

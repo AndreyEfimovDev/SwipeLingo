@@ -27,7 +27,7 @@ final class AddEditCardViewModelTests: XCTestCase {
     // MARK: - targetCollections / userSets
 
     func testTargetCollections_ExcludeMySetsAndForeign() {
-        let mySets  = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets  = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let own     = Collection(name: "1st collection", ownerFirebaseUID: uid)
         let foreign = Collection(name: "Foreign", ownerFirebaseUID: "otherUID")
         let curated = Collection(name: "Core Vocabulary", isUserCreated: false)
@@ -38,7 +38,7 @@ final class AddEditCardViewModelTests: XCTestCase {
     }
 
     func testUserSets_ExcludeInboxAndSetsOfMySets() {
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let own    = Collection(name: "1st collection", ownerFirebaseUID: uid)
         let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
         let legacy = CardSet(name: "My own set", collectionId: mySets.id)
@@ -65,7 +65,7 @@ final class AddEditCardViewModelTests: XCTestCase {
     }
 
     func testBeginNewSet_WithoutSelectedSet_DefaultsToFirstOwnCollectionNotMySets() {
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let own    = Collection(name: "1st collection", ownerFirebaseUID: uid)
         let vm = makeVM()
 
@@ -75,7 +75,7 @@ final class AddEditCardViewModelTests: XCTestCase {
     }
 
     func testBeginNewSet_NoOwnCollections_LeavesCollectionEmpty() {
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let vm = makeVM()
 
         vm.beginNewSet(allSets: [], allCollections: [mySets], firebaseUID: uid)
@@ -138,7 +138,7 @@ final class AddEditCardViewModelTests: XCTestCase {
 
     func testAddNewSet_CreatesSetInChosenCollectionAndSelectsIt() throws {
         let context = try makeContext()
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let own    = Collection(name: "1st collection", ownerFirebaseUID: uid)
         context.insert(mySets)
         context.insert(own)

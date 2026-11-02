@@ -18,7 +18,7 @@ final class LibraryViewModelTests: XCTestCase {
     // MARK: - inboxSet
 
     func testInboxSet_ReturnsInboxOfOwnMySets() {
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
         let other  = CardSet(name: "My own set", collectionId: mySets.id)
 
@@ -28,7 +28,7 @@ final class LibraryViewModelTests: XCTestCase {
     }
 
     func testInboxSet_IgnoresForeignMySets() {
-        let foreign = Collection(name: Collection.mySetsName, ownerFirebaseUID: "otherUID")
+        let foreign = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: "otherUID")
         let inbox   = CardSet(name: "Inbox", collectionId: foreign.id)
 
         XCTAssertNil(vm.inboxSet(collections: [foreign], cardSets: [inbox], firebaseUID: uid))
@@ -37,7 +37,7 @@ final class LibraryViewModelTests: XCTestCase {
     // MARK: - setsForCollection
 
     func testSetsForCollection_MySetsExcludesInbox() {
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
         let own    = CardSet(name: "My own set", collectionId: mySets.id)
 
@@ -58,7 +58,7 @@ final class LibraryViewModelTests: XCTestCase {
     // MARK: - myCollections
 
     func testMyCollections_HidesMySetsWithOnlyInbox() {
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
 
         let result = vm.myCollections(from: [mySets], cardSets: [inbox], allCards: [], firebaseUID: uid, userLevel: .c2)
@@ -67,7 +67,7 @@ final class LibraryViewModelTests: XCTestCase {
     }
 
     func testMyCollections_ShowsMySetsWithOwnSet() {
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
         let own    = CardSet(name: "My own set", collectionId: mySets.id)
 
@@ -77,7 +77,7 @@ final class LibraryViewModelTests: XCTestCase {
     }
 
     func testMyCollections_ShowsEmptyUserCollectionAfterMySets() {
-        let mySets = Collection(name: Collection.mySetsName, ownerFirebaseUID: uid)
+        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
         let own    = CardSet(name: "My own set", collectionId: mySets.id)
         let second = Collection(name: "My 2nd collection", ownerFirebaseUID: uid)

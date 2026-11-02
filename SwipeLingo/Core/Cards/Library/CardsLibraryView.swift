@@ -426,7 +426,7 @@ struct CardsLibraryView: View {
             .padding(.vertical, 12)
             .background(Color.myColors.myAccent.opacity(0.04))
             .contextMenu {
-                if !collection.isMySets {
+                if !collection.isInbox {
                     Button(role: .destructive) {
                         collectionToDelete = collection
                     } label: {

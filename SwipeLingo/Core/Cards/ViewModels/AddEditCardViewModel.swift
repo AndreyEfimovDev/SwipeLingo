@@ -88,7 +88,7 @@ final class AddEditCardViewModel {
     /// (контейнер Inbox). `firebaseUID` отсекает чужие коллекции, оставшиеся локально после гонки
     /// CloudKit (см. `Collection.isMine(firebaseUID:)`).
     func targetCollections(allCollections: [Collection], firebaseUID: String) -> [Collection] {
-        allCollections.filter { $0.isUserCreated && !$0.isMySets && $0.isMine(firebaseUID: firebaseUID) }
+        allCollections.filter { $0.isUserCreated && !$0.isInbox && $0.isMine(firebaseUID: firebaseUID) }
     }
 
     /// Начинает ввод нового сета: коллекция по умолчанию — коллекция выбранного сета, если он
