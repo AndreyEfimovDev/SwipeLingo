@@ -214,24 +214,12 @@ struct DictionaryLookupView: View {
                     meaningSection(entry.meanings[idx])
                 }
                 if let status = vm.refreshStatusText {
-                    refreshIndicator(status)
+                    DictionaryRefreshIndicator(text: status)
                 }
             }
             .padding()
             .animation(.easeInOut(duration: 0.2), value: vm.refreshStatusText)
         }
-    }
-
-    /// Строка «что ещё догружается»: контент уже виден, а полные определения от Merriam-Webster ещё в пути.
-    private func refreshIndicator(_ text: String) -> some View {
-        HStack(spacing: 8) {
-            ProgressView()
-                .controlSize(.small)
-            Text(text)
-                .font(.footnote)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     // MARK: - Header: word + transcription + audio
