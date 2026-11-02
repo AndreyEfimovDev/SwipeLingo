@@ -80,6 +80,7 @@
 		4773001D3098FF7300402B80 /* BooksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773001B3098FF7300402B80 /* BooksViewModelTests.swift */; };
 		4773001E3098FF7300402B80 /* MockBookCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773001C3098FF7300402B80 /* MockBookCatalogTests.swift */; };
 		477300203099051500402B80 /* BookDownloadServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773001F3099051500402B80 /* BookDownloadServiceTests.swift */; };
+		4773002130990F8200402B80 /* DateFormater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C781B2F794487005FBDFE /* DateFormater.swift */; };
 		4777A64D69CD08532A3CD45F /* MainScreenToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472631E6B19501091864466C /* MainScreenToolbar.swift */; };
 		4785898E2FF3DCF100BF3C8F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4785898D2FF3DCF100BF3C8F /* ActivityView.swift */; };
 		478589912FF3DD4800BF3C8F /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478589902FF3DD4800BF3C8F /* ExportService.swift */; };
@@ -1588,6 +1589,7 @@
 				4750705C2FBA2E3400350F5C /* EPUBParser.swift in Sources */,
 				4750705D2FBA2E3400350F5C /* BookEditorSheet.swift in Sources */,
 				474C91292FE0324C002017BD /* RetranslateSetSheet.swift in Sources */,
+				4773002130990F8200402B80 /* DateFormater.swift in Sources */,
 				4750705E2FBA2E3400350F5C /* ImportEPUBSheet.swift in Sources */,
 				4750705F2FBA2E3400350F5C /* BooksListView.swift in Sources */,
 				4787292C2FA9D999001282EF /* SFSymbolPickerSheet.swift in Sources */,

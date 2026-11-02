@@ -317,6 +317,9 @@ final class AdminStore {
         deleteError = nil
         do {
             try await FirestoreService().deleteBook(id: id)
+            // Файлы — после документа: если удаление документа упадёт, книга в приложении
+            // не останется без глав. Раньше файлы в Storage не удалялись вовсе.
+            await BookStorageService().deleteBookFiles(bookId: id)
             books.removeAll { $0.id == id }
             save()
         } catch {
