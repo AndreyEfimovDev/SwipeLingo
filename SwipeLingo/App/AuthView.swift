@@ -33,6 +33,8 @@ struct AuthView: View {
     @State private var name = ""
     @State private var email = ""
     @State private var password = ""
+    @State private var isPasswordVisible = false
+    @FocusState private var isPasswordFocused: Bool
     @State private var errorMessage: String? = nil
     @State private var isLoading = false
     @State private var showResetConfirm = false
@@ -195,11 +197,43 @@ struct AuthView: View {
                 .textContentType(.emailAddress)
                 .autocapitalization(.none)
                 .textInputStyle(invalid: !email.isEmpty && !isEmailValid)
-            SecureField("Password", text: $password)
-                .textContentType(mode == .signIn ? .password : .newPassword)
-                .textInputStyle()
+            passwordField
         }
         .animation(.easeInOut(duration: 0.2), value: mode)
+        .onChange(of: mode) { isPasswordVisible = false }
+    }
+
+    /// Поле пароля с кнопкой показа/скрытия ввода.
+    ///
+    /// При переключении `SecureField` ↔ `TextField` SwiftUI создаёт новое поле, и фокус
+    /// (вместе с клавиатурой) терялся бы — оба варианта привязаны к одному `isPasswordFocused`,
+    /// а кнопка возвращает фокус, если поле было активно до переключения.
+    private var passwordField: some View {
+        HStack(spacing: 8) {
+            Group {
+                if isPasswordVisible {
+                    TextField("Password", text: $password)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } else {
+                    SecureField("Password", text: $password)
+                }
+            }
+            .textContentType(mode == .signIn ? .password : .newPassword)
+            .focused($isPasswordFocused)
+
+            Button {
+                let wasFocused = isPasswordFocused
+                isPasswordVisible.toggle()
+                if wasFocused { isPasswordFocused = true }
+            } label: {
+                Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                    .foregroundStyle(isPasswordVisible ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8))
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.plain)
+        }
+        .textInputStyle()
     }
 
     // MARK: - Primary Button
