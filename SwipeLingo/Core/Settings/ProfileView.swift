@@ -84,15 +84,18 @@ struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .customBackButton("")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                if saveConfirmed {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(Color.myColors.myGreen)
-                        .transition(.scale.combined(with: .opacity))
-                } else if hasChanges {
-                    NavBarButtonForSheet(title: "Save") { saveChanges() }
-                        .transition(.opacity)
+            // Условие снаружи ToolbarItem: пустой элемент iOS 26 рисует стеклянным кругом.
+            if saveConfirmed || hasChanges {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if saveConfirmed {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title)
+                            .foregroundStyle(Color.myColors.myGreen)
+                            .transition(.scale.combined(with: .opacity))
+                    } else if hasChanges {
+                        NavBarButtonForSheet(title: "Save", isOutlined: false) { saveChanges() }
+                            .transition(.opacity)
+                    }
                 }
             }
         }

@@ -14,15 +14,20 @@ struct NavBarButtonForSheet: View {
 
     let title: String
     let color: Color
+    /// Контур капсулы на iOS 18–25 — только в `.sheet`; на экранах, открытых через push, кнопки
+    /// бара без контура, как иконки рядом. На iOS 26 не влияет (там форму даёт системная капсула).
+    let isOutlined: Bool
     let action: () -> Void
 
     init(
         title: String = "Done",
         color: Color = Color.myColors.myBlue,
+        isOutlined: Bool = true,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.color = color
+        self.isOutlined = isOutlined
         self.action = action
     }
         
@@ -30,18 +35,23 @@ struct NavBarButtonForSheet: View {
         Button {
             action()
         } label: {
-            // Своей Capsule-обводки нет: форму кнопки даёт системная glass-капсула
-            // ToolbarItem (iOS 26) — своя обводка поверх неё давала "двойную капсулу".
-            Text(title)
-                .foregroundStyle(color)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-            // .background(Color.clear, in: Capsule())
-            // .overlay(
-            //     Capsule()
-            //         .stroke(Color.myColors.myAccent.opacity(0.35), lineWidth: 1)
-            // )
+            if #available(iOS 26, *) {
+                // Своей обводки нет: форму кнопки даёт системная glass-капсула ToolbarItem —
+                // своя обводка поверх неё давала "двойную капсулу".
+                label
+            } else {
+                // iOS 18–25: системной капсулы нет — в .sheet рисуем контур в цвет текста.
+                label
+                    .overlay(Capsule().stroke(color, lineWidth: 1).opacity(isOutlined ? 1 : 0))
+            }
         }
+    }
+
+    private var label: some View {
+        Text(title)
+            .foregroundStyle(color)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
     }
 }
 
