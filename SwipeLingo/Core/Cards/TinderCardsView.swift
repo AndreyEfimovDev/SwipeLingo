@@ -687,8 +687,9 @@ struct TinderCardsView: View {
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
                                 audioButton(for: card.allSampleEN[page], isTTS: true)
-                                if page < card.allSampleItem.count {
-                                    Text(card.allSampleItem[page])
+                                let translations = card.allSampleItem
+                                if page < translations.count, !translations[page].isEmpty {
+                                    Text(translations[page])
                                         .multilineTextAlignment(.center)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
