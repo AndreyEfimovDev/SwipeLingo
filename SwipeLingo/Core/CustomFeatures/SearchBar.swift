@@ -63,13 +63,14 @@ struct SearchBar: View {
             }
             .font(.subheadline)
             .padding(6)
-//            .background(Color.myColors.myBackground, in: Capsule())
-//            .background(Color.clear, in: Capsule())
             .background(.ultraThinMaterial.opacity(isBGVisible ? 1 : 0))
             .clipShape(Capsule())
             .overlay{
                 Capsule()
-                    .strokeBorder(isFocused ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.25), lineWidth: 1.5)
+                    .strokeBorder(
+                        isFocused ? Color.myColors.myBlue : Color.myColors.myAccent,
+                        lineWidth: isFocused ? 3 : 1
+                    )
             }
 
             if isFocused {
@@ -85,10 +86,7 @@ struct SearchBar: View {
                 .padding(.trailing, 8)
                 .opacity(isFocused ? 1 : 0)
             }
-            
         }
         .animation(.bouncy(duration: 0.5), value: isFocused)
-        
-        
     }
 }

@@ -46,7 +46,6 @@ struct BookChapterListView: View {
 //                    Button("Done") { dismiss() }
 //                        .foregroundStyle(Color.myColors.myBlue)
                 }
-                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

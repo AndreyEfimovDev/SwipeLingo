@@ -31,7 +31,6 @@ struct BookBookmarksView: View {
                         dismiss()
                     }
                 }
-                .hiddenSharedBackgroundIfAvailable()
             }
         }
     }

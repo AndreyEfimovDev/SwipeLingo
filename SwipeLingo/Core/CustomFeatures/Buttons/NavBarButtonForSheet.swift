@@ -27,10 +27,8 @@ struct NavBarButtonForSheet: View {
         Button {
             action()
         } label: {
-            // ЭКСПЕРИМЕНТ: своя Capsule-обводка убрана — вместе с отключённым
-            // .hiddenSharedBackgroundIfAvailable() кнопка теперь полностью
-            // отдаёт вид системной glass-капсуле (iOS 26) вместо конфликта
-            // "своя обводка поверх/под системным стеклом".
+            // Своей Capsule-обводки нет: форму кнопки даёт системная glass-капсула
+            // ToolbarItem (iOS 26) — своя обводка поверх неё давала "двойную капсулу".
             Text(title)
                 .foregroundStyle(color)
                 .padding(.horizontal)

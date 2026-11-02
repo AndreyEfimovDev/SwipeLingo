@@ -61,7 +61,6 @@ struct CircleStrokeButtonView: View {
                         .opacity(isShownCircle ? 1 : 0)
                 )
         }
-        .accessibilityIdentifier(iconName)
     }
 }
 

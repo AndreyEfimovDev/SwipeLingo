@@ -1,0 +1,642 @@
+import XCTest
+@testable import SwipeLingo
+
+// MARK: - DictionaryServiceTests
+//
+// DictionaryService.lookupUpdates запускает Merriam-Webster (MW) и Free Dictionary ПАРАЛЛЕЛЬНО и отдаёт
+// результаты по мере прихода (Free → MW):
+//   • MW приоритетнее: пришёл после Free — заменяет его; пришёл раньше — поздний Free ничего не меняет
+//   • MW с транскрипцией — финал: медленный Free не ждём (поток завершается сразу)
+//   • один источник упал — поток отдаёт результат второго, без ошибки
+//   • MW без транскрипции — транскрипция берётся из Free (при любом порядке прихода), остальное от MW
+//   • оба упали — ошибка Free (она приоритетна), пустое слово — invalidWord
+//   • отмена потребителя отменяет оба запроса, а `lookup` в этом случае бросает CancellationError
+//   • статья MW выбирается по запросу: заголовок → run-on фраза (`dros`) → форма из `stems`; статья
+//     другого слова не принимается (MW считается не нашедшим). Регрессия: на «look up» показывалось
+//     значение «look», на «run out of» — «patience», а пример брался из первой статьи ответа
+// `lookup(word:)` (один итог — автозаполнение, Admin) — последовательно MW → Free: Free запрашивается только
+// при сбое MW или пустой транскрипции (иначе пакетный импорт в Admin слал бы запрос к Free на каждое слово)
+// Регрессия: запросы шли последовательно (MW → Free) через URLSession.shared с таймаутом 60 с —
+// при недоступном MW пользователь ждал таймаут, хотя Free отвечает за доли секунды.
+// Сеть подменяется URLProtocol-заглушкой (хосты MW и Free различаются по host, ответ можно задержать).
+
+@MainActor
+final class DictionaryServiceTests: XCTestCase {
+
+    private let mwHost   = "www.dictionaryapi.com"
+    private let freeHost = "api.dictionaryapi.dev"
+
+    override func setUp() {
+        super.setUp()
+        StubState.shared.reset()
+    }
+
+    // MARK: - Helpers
+
+    private func makeService() -> DictionaryService {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [DictionaryStubProtocol.self]
+        return DictionaryService(session: URLSession(configuration: config))
+    }
+
+    private func collect(_ service: DictionaryService, word: String = "my") async throws -> [DictionaryEntry] {
+        var updates: [DictionaryEntry] = []
+        for try await entry in service.lookupUpdates(word: word) {
+            updates.append(entry)
+        }
+        return updates
+    }
+
+    private func setReplies(mw: StubReply, free: StubReply) {
+        StubState.shared.set(mw, forHost: mwHost)
+        StubState.shared.set(free, forHost: freeHost)
+    }
+
+    /// Ответ MW: одна запись с заголовком «my»; `transcription == nil` — запись без блока произношения.
+    private func mwJSON(transcription: String?, definition: String = "belonging to me") -> String {
+        let prs = transcription.map { #","prs":[{"ipa":"\#($0)","sound":{"audio":"my000001"}}]"# } ?? ""
+        return #"[{"hwi":{"hw":"my"\#(prs)},"fl":"adjective","shortdef":["\#(definition)"]}]"#
+    }
+
+    /// Статья MW о «look», где «look up» есть только как run-on фраза; так MW отвечает на запрос «look up».
+    private let mwLookJSON = """
+    [{"meta":{"stems":["look","look after"]},"hwi":{"hw":"look","prs":[{"ipa":"ˈlʊk"}]},"fl":"verb",
+      "shortdef":["to use your eyes to see someone or something"],
+      "def":[{"sseq":[[["sense",{"dt":[["text","{bc}to use your eyes "],["vis",[{"t":"{it}Look{/it} at me."}]]]}]]]}],
+      "dros":[
+        {"drp":"look after","gram":"phrasal verb","def":[{"sseq":[[["sense",{"dt":[["text","{bc}to take care of "]]}]]]}]},
+        {"drp":"look up","gram":"phrasal verb","def":[{"sseq":[
+          [["sense",{"sn":"1","dt":[["text","{bc}to get better {bc}{sx|improve||} "],["vis",[{"t":"The economy is {it}looking up{/it}."}]]]}]],
+          [["sense",{"sn":"2","dt":[["text","{bc}to search for (something) in a reference book "]]}]]
+        ]}]}
+      ]}]
+    """
+
+    private let freeJSON = """
+    [{"word":"my","phonetics":[{"text":"/mi/","audio":"https://example.com/my.mp3"}],
+      "meanings":[{"partOfSpeech":"adjective","definitions":[{"definition":"free definition"}],"synonyms":[]}]}]
+    """
+
+    // MARK: - Порядок и приоритет
+
+    func testFreeComesFirstThenMWReplacesIt() async throws {
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 0.3), free: .json(freeJSON))
+
+        let updates = try await collect(makeService())
+
+        XCTAssertEqual(updates.map(\.source), [.freeDictionary, .merriamWebster])
+        XCTAssertEqual(updates.map(\.transcription), ["/mi/", "/ˈmaɪ/"])
+    }
+
+    func testLateFreeDoesNotChangeEntryWhenMWAlreadyArrived() async throws {
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ")), free: .json(freeJSON, delay: 0.3))
+
+        let updates = try await collect(makeService())
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster], "Free после MW с транскрипцией ничего не меняет")
+    }
+
+    func testMWWithTranscriptionDoesNotWaitForSlowFree() async throws {
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ")), free: .json(freeJSON, delay: 5))
+        let started = ContinuousClock.now
+
+        let updates = try await collect(makeService())
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster])
+        XCTAssertLessThan(started.duration(to: .now), .seconds(2), "завершённый MW не должен ждать зависший Free")
+    }
+
+    func testLookupReturnsBestEntry() async throws {
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 0.2), free: .json(freeJSON))
+
+        let entry = try await makeService().lookup(word: "my")
+
+        XCTAssertEqual(entry.source, .merriamWebster)
+        XCTAssertTrue(entry.audioURL.contains("media.merriam-webster.com"))
+    }
+
+    // MARK: - lookup: последовательно MW → Free
+
+    func testLookupDoesNotRequestFreeWhenMWIsComplete() async throws {
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ")), free: .json(freeJSON))
+
+        let entry = try await makeService().lookup(word: "my")
+
+        XCTAssertEqual(entry.source, .merriamWebster)
+        XCTAssertEqual(StubState.shared.requestedHosts, [mwHost], "MW ответил полностью — Free не нужен")
+    }
+
+    func testLookupTakesTranscriptionFromFreeWhenMWHasNone() async throws {
+        setReplies(mw: .json(mwJSON(transcription: nil, definition: "mw definition")), free: .json(freeJSON))
+
+        let entry = try await makeService().lookup(word: "my")
+
+        XCTAssertEqual(entry.source, .merriamWebster)
+        XCTAssertEqual(entry.transcription, "/mi/")
+        XCTAssertEqual(entry.meanings.first?.definitions.first?.text, "mw definition")
+        XCTAssertEqual(StubState.shared.requestedHosts, [mwHost, freeHost])
+    }
+
+    func testLookupFallsBackToFreeWhenMWFails() async throws {
+        setReplies(mw: .failure(.timedOut), free: .json(freeJSON))
+
+        let entry = try await makeService().lookup(word: "my")
+
+        XCTAssertEqual(entry.source, .freeDictionary)
+        XCTAssertEqual(StubState.shared.requestedHosts, [mwHost, freeHost], "сначала MW, потом Free")
+    }
+
+    func testLookupThrowsFreeErrorWhenBothFail() async {
+        setReplies(mw: .failure(.timedOut), free: .status(404))
+
+        do {
+            _ = try await makeService().lookup(word: "my")
+            XCTFail("ожидалась ошибка")
+        } catch let error as DictionaryService.DictionaryError {
+            guard case .notFound = error else {
+                return XCTFail("ожидалась .notFound (ошибка Free), получили \(error)")
+            }
+        } catch {
+            XCTFail("неожиданный тип ошибки: \(error)")
+        }
+    }
+
+    func testBothSourcesAreRequestedInParallel() async throws {
+        // Ответы задержаны на 1 с. Параллельно — второй запрос стартует сразу за первым; последовательно —
+        // только после ответа на первый (через ~1 с). Сравниваем моменты СТАРТА запросов, а не общее время:
+        // общее время зависит от загрузки машины (в прогоне с хост-приложением оно уже давало ложный провал).
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 1), free: .json(freeJSON, delay: 1))
+
+        _ = try await collect(makeService())
+
+        let starts = StubState.shared.requestStarts
+        XCTAssertEqual(Set(starts.map(\.host)), [mwHost, freeHost])
+        guard starts.count == 2 else { return XCTFail("ожидалось два запроса, было \(starts.count)") }
+        let gap = abs(starts[1].at.timeIntervalSince(starts[0].at))
+        XCTAssertLessThan(gap, 0.5, "второй запрос стартовал через \(gap) с — запросы идут не параллельно")
+    }
+
+    // MARK: - Выбор статьи MW по запросу
+
+    func testMWPhraseIsTakenFromRunOnOfHeadwordEntry() async throws {
+        setReplies(mw: .json(mwLookJSON), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "look up")
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster])
+        let meaning = try XCTUnwrap(updates.first?.meanings.first)
+        XCTAssertEqual(meaning.partOfSpeech, "phrasal verb")
+        XCTAssertEqual(meaning.definitions.map(\.text),
+                       ["to get better : improve", "to search for (something) in a reference book"],
+                       "значения фразы, а не статьи «look»; ведущий {bc} убран")
+        XCTAssertEqual(meaning.definitions.first?.example, "The economy is looking up.")
+        XCTAssertNil(meaning.definitions.last?.example)
+        XCTAssertEqual(updates.first?.transcription, "", "произношения фразы у MW нет — транскрипцию не берём от «look»")
+    }
+
+    func testMWPhraseIsPreferredOverStems() async throws {
+        // «look after» есть и в stems статьи «look» — по ним нашлось бы значение самого «look»
+        setReplies(mw: .json(mwLookJSON), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "Look  After")
+
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.map(\.text), ["to take care of"])
+    }
+
+    func testMWPhraseDefinedByUsageNote() async throws {
+        // У «by the way» в dt нет текста — значение дано пояснением об употреблении (uns)
+        let mw = """
+        [{"hwi":{"hw":"way"},"fl":"noun","shortdef":["a road"],
+          "dros":[{"drp":"by the way","def":[{"sseq":[[["sense",{"dt":[["uns",[[
+            ["text","used to introduce a new topic "],["vis",[{"t":"{it}By the way{/it}, I like your shoes."}]]
+          ]]]]}]]]}]}]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "by the way")
+
+        let meaning = try XCTUnwrap(updates.first?.meanings.first)
+        XCTAssertEqual(meaning.partOfSpeech, "phrase", "у фразы без gram — нейтральная метка")
+        XCTAssertEqual(meaning.definitions.first?.text, "used to introduce a new topic")
+        XCTAssertEqual(meaning.definitions.first?.example, "By the way, I like your shoes.")
+    }
+
+    func testMWEntryWithOtherHeadwordIsIgnored() async throws {
+        // На «run out of» MW отвечает статьёй «patience» — её показывать нельзя, остаётся Free
+        let mw = """
+        [{"meta":{"stems":["patience","run out of patience"]},"hwi":{"hw":"pa*tience"},"fl":"noun",
+          "shortdef":["the ability to wait"]}]
+        """
+        setReplies(mw: .json(mw), free: .json(freeJSON))
+
+        let updates = try await collect(makeService(), word: "run out of")
+
+        XCTAssertEqual(updates.map(\.source), [.freeDictionary])
+    }
+
+    func testLookupFallsBackToFreeWhenMWHasNoMatchingEntry() async throws {
+        setReplies(mw: .json(mwLookJSON), free: .json(freeJSON))
+
+        let entry = try await makeService().lookup(word: "look around")
+
+        XCTAssertEqual(entry.source, .freeDictionary)
+    }
+
+    func testMWAcceptsInflectedFormFromStems() async throws {
+        let mw = """
+        [{"meta":{"stems":["give","gave","given"]},"hwi":{"hw":"give","prs":[{"ipa":"ˈgɪv"}]},"fl":"verb",
+          "shortdef":["to cause someone to have something"]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "gave")
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster])
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.text, "to cause someone to have something")
+    }
+
+    func testMWExampleComesFromChosenEntry() async throws {
+        // Раньше пример брался из первой статьи ответа, даже если выбрана другая
+        let mw = """
+        [{"hwi":{"hw":"mine"},"fl":"pronoun","shortdef":["that which belongs to me"],
+          "def":[{"sseq":[[["sense",{"dt":[["vis",[{"t":"wrong example"}]]]}]]]}]},
+         {"hwi":{"hw":"my","prs":[{"ipa":"ˈmaɪ"}]},"fl":"adjective","shortdef":["belonging to me"],
+          "def":[{"sseq":[[["sense",{"dt":[["vis",[{"t":"{it}my{/it} book"}]]]}]]]}]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "my")
+
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.text, "belonging to me")
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.example, "my book")
+    }
+
+    // MARK: - Произношение MW
+
+    func testMWTranscriptionIsReadFromIPA() async throws {
+        // Реальный ответ Learner's для «reliable»: транскрипция в `ipa`. Раньше читалось поле `mw`, которого
+        // в Learner's нет, — транскрипция MW всегда была пустой и всегда бралась из Free.
+        let mw = """
+        [{"hwi":{"hw":"re*li*able","prs":[{"ipa":"rɪˈlajəbəl","sound":{"audio":"reliab02"}}]},
+          "fl":"adjective","shortdef":["able to be trusted"]}]
+        """
+        setReplies(mw: .json(mw), free: .json(freeJSON))
+
+        let entry = try await makeService().lookup(word: "reliable")
+
+        XCTAssertEqual(entry.source, .merriamWebster)
+        XCTAssertEqual(entry.transcription, "/rɪˈlajəbəl/", "IPA MW — в слешах, как у Free")
+        XCTAssertEqual(entry.audioURL, "https://media.merriam-webster.com/audio/prons/en/us/mp3/r/reliab02.mp3")
+        XCTAssertEqual(StubState.shared.requestedHosts, [mwHost], "транскрипция MW есть — Free не нужен")
+    }
+
+    func testMWTranscriptionAndAudioComeFromOneVariant() async throws {
+        // Вариант без аудио (jə) стоит первым — транскрипция и аудио всё равно из одного полного варианта (ˈjuː)
+        let mw = """
+        [{"hwi":{"hw":"you","prs":[{"ipa":"jə"},{"ipa":"ˈjuː","sound":{"audio":"you00001"}}]},
+          "fl":"pronoun","shortdef":["the person being addressed"]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "you")
+
+        XCTAssertEqual(updates.first?.transcription, "/ˈjuː/")
+        XCTAssertEqual(updates.first?.audioURL, "https://media.merriam-webster.com/audio/prons/en/us/mp3/y/you00001.mp3")
+    }
+
+    func testMWFieldsArePickedSeparatelyWithoutCompleteVariant() async throws {
+        let mw = """
+        [{"hwi":{"hw":"the","prs":[{"sound":{"audio":"the00001"}},{"ipa":"ði"}]},
+          "fl":"definite article","shortdef":["used to indicate a particular person or thing"]}]
+        """
+        setReplies(mw: .json(mw), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService(), word: "the")
+
+        XCTAssertEqual(updates.first?.transcription, "/ði/")
+        XCTAssertEqual(updates.first?.audioURL, "https://media.merriam-webster.com/audio/prons/en/us/mp3/t/the00001.mp3")
+    }
+
+    // MARK: - Сбой одного из источников
+
+    func testMWNetworkFailureYieldsFreeOnly() async throws {
+        setReplies(mw: .failure(.timedOut), free: .json(freeJSON))
+
+        let updates = try await collect(makeService())
+
+        XCTAssertEqual(updates.map(\.source), [.freeDictionary])
+        XCTAssertEqual(updates.first?.meanings.first?.definitions.first?.text, "free definition")
+    }
+
+    func testMWNon200StatusYieldsFreeOnly() async throws {
+        setReplies(mw: .status(500), free: .json(freeJSON))
+
+        let updates = try await collect(makeService())
+
+        XCTAssertEqual(updates.map(\.source), [.freeDictionary])
+    }
+
+    func testFreeFailureYieldsMWOnly() async throws {
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ")), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService())
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster])
+    }
+
+    func testMWWithoutTranscriptionAndFailedFreeFinishesWithoutError() async throws {
+        setReplies(mw: .json(mwJSON(transcription: nil)), free: .failure(.notConnectedToInternet))
+
+        let updates = try await collect(makeService())   // не должно бросить: одна запись уже отдана
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster])
+        XCTAssertEqual(updates.first?.transcription, "")
+    }
+
+    func testBothSourcesFailingThrowsNetworkError() async {
+        setReplies(mw: .failure(.timedOut), free: .failure(.notConnectedToInternet))
+
+        do {
+            _ = try await collect(makeService())
+            XCTFail("ожидалась ошибка")
+        } catch let error as DictionaryService.DictionaryError {
+            guard case .networkError = error else {
+                return XCTFail("ожидалась .networkError, получили \(error)")
+            }
+        } catch {
+            XCTFail("неожиданный тип ошибки: \(error)")
+        }
+    }
+
+    func testFreeErrorIsPreferredWhenBothFail() async {
+        // MW — сетевая ошибка, Free — «слово не найдено»: пользователю нужна ошибка Free, а не таймаут MW.
+        setReplies(mw: .failure(.timedOut), free: .status(404))
+
+        do {
+            _ = try await collect(makeService())
+            XCTFail("ожидалась ошибка")
+        } catch let error as DictionaryService.DictionaryError {
+            guard case .notFound = error else {
+                return XCTFail("ожидалась .notFound (ошибка Free), получили \(error)")
+            }
+        } catch {
+            XCTFail("неожиданный тип ошибки: \(error)")
+        }
+    }
+
+    func testFreeHTTPErrorThrowsServiceUnavailableNotDecodingError() async {
+        // Регрессия: Free ответил 429 (лимит запросов), тело ответа уходило в декодер — пользователь
+        // видел «Data error: The data couldn't be read…» вместо понятного текста.
+        setReplies(mw: .status(404), free: .status(429))
+
+        do {
+            _ = try await collect(makeService())
+            XCTFail("ожидалась ошибка")
+        } catch let error as DictionaryService.DictionaryError {
+            guard case .serviceUnavailable(let statusCode) = error else {
+                return XCTFail("ожидалась .serviceUnavailable, получили \(error)")
+            }
+            XCTAssertEqual(statusCode, 429)
+        } catch {
+            XCTFail("неожиданный тип ошибки: \(error)")
+        }
+    }
+
+    func testEmptyWordThrowsInvalidWord() async {
+        do {
+            _ = try await collect(makeService(), word: "   ")
+            XCTFail("ожидалась ошибка")
+        } catch let error as DictionaryService.DictionaryError {
+            guard case .invalidWord = error else {
+                return XCTFail("ожидалась .invalidWord, получили \(error)")
+            }
+        } catch {
+            XCTFail("неожиданный тип ошибки: \(error)")
+        }
+        XCTAssertTrue(StubState.shared.requestedHosts.isEmpty, "для пустого слова запросы не отправляются")
+    }
+
+    // MARK: - Транскрипция из Free
+
+    func testMWWithoutTranscriptionIsPatchedFromFreeWhenFreeComesFirst() async throws {
+        setReplies(mw: .json(mwJSON(transcription: nil, definition: "mw definition"), delay: 0.3), free: .json(freeJSON))
+
+        let updates = try await collect(makeService())
+
+        XCTAssertEqual(updates.map(\.source), [.freeDictionary, .merriamWebster])
+        XCTAssertEqual(updates.last?.transcription, "/mi/", "транскрипция — из Free")
+        XCTAssertEqual(updates.last?.meanings.first?.definitions.first?.text, "mw definition", "определения — от MW")
+    }
+
+    func testMWWithoutTranscriptionIsPatchedFromFreeWhenMWComesFirst() async throws {
+        setReplies(mw: .json(mwJSON(transcription: nil, definition: "mw definition")), free: .json(freeJSON, delay: 0.3))
+
+        let updates = try await collect(makeService())
+
+        XCTAssertEqual(updates.map(\.source), [.merriamWebster, .merriamWebster])
+        XCTAssertEqual(updates.map(\.transcription), ["", "/mi/"], "поздний Free дополняет транскрипцию уже показанной записи MW")
+    }
+
+    // MARK: - Отмена и таймаут
+
+    func testCancellationCancelsBothRequests() async {
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 5), free: .json(freeJSON, delay: 5))
+        let service = makeService()
+        let task = Task { _ = try? await self.collect(service) }
+
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        task.cancel()
+        await task.value
+
+        // Ответы заготовлены на 5 с — до остановки обоих запросов они дойти не могли, значит их отменили.
+        await waitUntil(timeout: 1) { StubState.shared.stoppedCount == 2 }
+    }
+
+    func testLookupThrowsCancellationErrorWhenCallerIsCancelled() async {
+        setReplies(mw: .json(mwJSON(transcription: "ˈmaɪ"), delay: 5), free: .json(freeJSON, delay: 5))
+        let service = makeService()
+        let task = Task { () -> Error? in
+            do {
+                _ = try await service.lookup(word: "my")
+                return nil
+            } catch {
+                return error
+            }
+        }
+
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        task.cancel()
+        let error = await task.value
+
+        XCTAssertTrue(error is CancellationError, "при отмене ожидалась CancellationError, получили \(String(describing: error))")
+    }
+
+    func testMerriamWebsterAudioURLIsRecognisedByHost() {
+        XCTAssertTrue(DictionaryService.isMerriamWebsterAudioURL("https://media.merriam-webster.com/audio/prons/en/us/mp3/m/my000001.mp3"))
+        XCTAssertFalse(DictionaryService.isMerriamWebsterAudioURL("https://api.dictionaryapi.dev/media/pronunciations/en/my-us.mp3"))
+        XCTAssertFalse(DictionaryService.isMerriamWebsterAudioURL(""))
+        XCTAssertFalse(DictionaryService.isMerriamWebsterAudioURL("https://example.com/media.merriam-webster.com/my.mp3"),
+                       "проверяется хост, а не подстрока")
+    }
+
+    func testLookupTurnsCancelledRequestErrorIntoCancellationError() async {
+        // Поток успел завершиться ошибкой отменённого запроса, а вызывающий уже отменён — для него это
+        // отмена, а не сетевая ошибка.
+        let lookup = CancelledRequestLookup()
+        let task = Task { () -> Error? in
+            withUnsafeCurrentTask { $0?.cancel() }
+            do {
+                _ = try await lookup.lookup(word: "my")
+                return nil
+            } catch {
+                return error
+            }
+        }
+
+        let error = await task.value
+
+        XCTAssertTrue(error is CancellationError, "ожидалась CancellationError, получили \(String(describing: error))")
+    }
+
+    func testIsCancellationRecognisesWrappedCancelledRequest() {
+        XCTAssertTrue(DictionaryService.isCancellation(CancellationError()))
+        XCTAssertTrue(DictionaryService.isCancellation(URLError(.cancelled)))
+        XCTAssertTrue(DictionaryService.isCancellation(DictionaryService.DictionaryError.networkError(URLError(.cancelled))))
+        XCTAssertFalse(DictionaryService.isCancellation(DictionaryService.DictionaryError.networkError(URLError(.timedOut))))
+        XCTAssertFalse(DictionaryService.isCancellation(DictionaryService.DictionaryError.notFound))
+    }
+
+    func testDefaultSessionTimeoutIsShort() {
+        let config = DictionaryService.defaultSession.configuration
+
+        XCTAssertEqual(config.timeoutIntervalForRequest, DictionaryService.requestTimeout)
+        XCTAssertLessThanOrEqual(config.timeoutIntervalForRequest, 10, "60 с (как у URLSession.shared) — слишком долго")
+    }
+}
+
+// MARK: - Подменный источник с отменённым запросом
+
+/// Поток, сразу завершённый ошибкой отменённого запроса (как у сервиса, когда запрос отменили).
+@MainActor
+private final class CancelledRequestLookup: DictionaryLookingUp {
+    func lookupUpdates(word: String) -> AsyncThrowingStream<DictionaryEntry, Error> {
+        AsyncThrowingStream { continuation in
+            continuation.finish(throwing: DictionaryService.DictionaryError.networkError(URLError(.cancelled)))
+        }
+    }
+}
+
+// MARK: - URLProtocol-заглушка сети
+
+private enum StubReply {
+    case json(String, delay: TimeInterval = 0)
+    case status(Int, delay: TimeInterval = 0)
+    case failure(URLError.Code, delay: TimeInterval = 0)
+
+    var delay: TimeInterval {
+        switch self {
+        case .json(_, let delay), .status(_, let delay), .failure(_, let delay): return delay
+        }
+    }
+}
+
+/// Состояние заглушки общее для сессии и теста; обращения идут с разных потоков — под замком.
+private final class StubState: @unchecked Sendable {
+    static let shared = StubState()
+
+    private let lock = NSLock()
+    private var replies: [String: StubReply] = [:]
+    private var starts: [(host: String, at: Date)] = []
+    private var stopped = 0
+
+    func reset() {
+        lock.lock(); defer { lock.unlock() }
+        replies = [:]
+        starts = []
+        stopped = 0
+    }
+
+    func set(_ reply: StubReply, forHost host: String) {
+        lock.lock(); defer { lock.unlock() }
+        replies[host] = reply
+    }
+
+    /// Записывает обращение к host и возвращает заготовленный ответ (неизвестный host → ошибка соединения).
+    func take(host: String) -> StubReply {
+        lock.lock(); defer { lock.unlock() }
+        starts.append((host: host, at: Date()))
+        return replies[host] ?? .failure(.cannotConnectToHost)
+    }
+
+    func noteStopped() {
+        lock.lock(); defer { lock.unlock() }
+        stopped += 1
+    }
+
+    var requestedHosts: [String] {
+        lock.lock(); defer { lock.unlock() }
+        return starts.map(\.host)
+    }
+
+    /// Хост и момент старта каждого запроса — для проверки параллельности.
+    var requestStarts: [(host: String, at: Date)] {
+        lock.lock(); defer { lock.unlock() }
+        return starts
+    }
+
+    /// Сколько запросов остановлено (отменены или завершены) — для проверки отмены.
+    var stoppedCount: Int {
+        lock.lock(); defer { lock.unlock() }
+        return stopped
+    }
+}
+
+private final class DictionaryStubProtocol: URLProtocol, @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var stopped = false
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let url = request.url else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badURL))
+            return
+        }
+        let reply = StubState.shared.take(host: url.host ?? "")
+        DispatchQueue.global().asyncAfter(deadline: .now() + reply.delay) { [self] in
+            guard !isStopped else { return }
+            switch reply {
+            case .json(let body, _):
+                respond(url: url, status: 200, body: Data(body.utf8))
+            case .status(let code, _):
+                respond(url: url, status: code, body: Data())
+            case .failure(let code, _):
+                client?.urlProtocol(self, didFailWithError: URLError(code))
+            }
+        }
+    }
+
+    override func stopLoading() {
+        lock.lock()
+        stopped = true
+        lock.unlock()
+        StubState.shared.noteStopped()
+    }
+
+    private var isStopped: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return stopped
+    }
+
+    private func respond(url: URL, status: Int, body: Data) {
+        guard let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: nil, headerFields: nil) else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+}

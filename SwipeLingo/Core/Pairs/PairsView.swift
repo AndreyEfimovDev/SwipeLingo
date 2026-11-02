@@ -55,13 +55,18 @@ struct PairsView: View {
     }
 
     @State private var isDueMode = false
+    /// Seed случайного порядка сетов пайла (`shuffleMethod == .random`). Хранится в @State, потому что
+    /// `candidateSets` пересчитывается на каждую перерисовку — без фиксированного seed порядок
+    /// менялся бы при каждом рендере. Обновляется при каждом появлении экрана (см. `onAppear`):
+    /// возврат с сессии или из библиотеки пайлов даёт новый порядок на следующую сессию.
+    @State private var shuffleSeed = UInt64.random(in: UInt64.min...UInt64.max)
 
     private let service = PairsPileService()
 
     private var activePile: PairsPile? { allPiles.first { $0.isActive } }
 
     private var candidateSets: [PairsSet] {
-        if let pile = activePile { return service.sets(for: pile, from: levelFilteredSets) }
+        if let pile = activePile { return service.sets(for: pile, from: levelFilteredSets, seed: shuffleSeed) }
         return levelFilteredSets
     }
 
@@ -93,7 +98,10 @@ struct PairsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { pairsToolbar }
             .background(Color.myColors.myBackground.ignoresSafeArea())
-            .onAppear { selectDefaultMode() }
+            .onAppear {
+                shuffleSeed = UInt64.random(in: UInt64.min...UInt64.max)
+                selectDefaultMode()
+            }
         }
     }
 
@@ -114,13 +122,13 @@ struct PairsView: View {
     // MARK: - Play Screen
 
     private var playScreen: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .bottom) {
 
-            // Preview: левая часть пар из активного pile/all sets (отступ сверху — за pileBadge)
             previewContent
+                .ignoresSafeArea(edges: .bottom)
 
             // [Auto/Manual] · [Play / Caught up] · [Due/All]
-            mainRow
+            controlPanel
                 .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -169,7 +177,7 @@ struct PairsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .myShadow()
             .padding(.horizontal, 16)
-            .padding(.top, 30)
+            .padding(.top, 12)
         }
         .scrollDisabled(true)
         .mask(
@@ -252,9 +260,9 @@ struct PairsView: View {
         return result
     }
 
-    // MARK: - Main Row
+    // MARK: - Control Panel
 
-    private var mainRow: some View {
+    private var controlPanel: some View {
         HStack(alignment: .center, spacing: 0) {
 
             // Auto / Manual
@@ -295,8 +303,11 @@ struct PairsView: View {
                 Color.clear.frame(width: 80)
             }
         }
-        .padding(.vertical, 24)
-        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        // Лимит ширины ставится ДО background: иначе плашка останется на всю ширину, а ограничится
+        // только содержимое. В портрете на iPhone не срабатывает, нужен для ландшафта и iPad.
+        .frame(maxWidth: 420)
         .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 28))
         .myShadow()
         .padding(.horizontal, 24)
@@ -336,7 +347,7 @@ struct PairsView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Caught Up (компактный, центр mainRow)
+    // MARK: - Caught Up (компактный, центр controlPanel)
 
     private var caughtUpCenter: some View {
         VStack(spacing: 10) {

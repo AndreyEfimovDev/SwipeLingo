@@ -216,7 +216,7 @@ final class AppSyncStateService {
         }
     }
 
-    var nativeLanguageRaw: String {
+    private var nativeLanguageRaw: String {
         didSet {
             guard !isReloading else { return }
             appState.nativeLanguageRaw = nativeLanguageRaw
@@ -227,6 +227,8 @@ final class AppSyncStateService {
 
     /// Типизированная обёртка над `nativeLanguageRaw` — избавляет вызывающий код от
     /// ручного `NativeLanguage(rawValue:) ?? .russian` на каждом чтении/записи.
+    /// Единственный внешний вход к родному языку: сырая строка закрыта (`private`),
+    /// чтобы `rawValue` не утекал за пределы слоя хранения.
     var nativeLanguage: NativeLanguage {
         get { NativeLanguage(rawValue: nativeLanguageRaw) ?? .russian }
         set { nativeLanguageRaw = newValue.rawValue }

@@ -40,7 +40,7 @@ struct PairsLibraryView: View {
            sort: \Collection.createdAt) private var pairsCollections: [Collection]
 
     /// Единственный источник правды — AppSyncStateService.nativeLanguage (SwiftData + CloudKit-синк).
-    private var nativeLangRaw: String { appSyncStateService.nativeLanguageRaw }
+    private var nativeLanguage: NativeLanguage { appSyncStateService.nativeLanguage }
     @Query private var profiles: [UserProfile]
 
     @State private var vm = PairsLibraryViewModel()
@@ -508,7 +508,7 @@ struct PairsLibraryView: View {
     // MARK: - Actions
 
     private func syncContent() async {
-        await vm.syncContent(context: context, nativeLangRaw: nativeLangRaw, level: userLevel)
+        await vm.syncContent(context: context, language: nativeLanguage, level: userLevel)
     }
 
     private func activatePile(_ pile: PairsPile) {

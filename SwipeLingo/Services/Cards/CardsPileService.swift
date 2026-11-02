@@ -1,11 +1,13 @@
 import Foundation
 
-// MARK: - PileService
+// MARK: - CardsPileService
 //
 // Определяет карточки Pile из уже загруженного среза [Card].
 // Принимает allCards из @Query, поэтому работает без прямого вызова ModelContext.
+// Парный сервис для Pairs — PairsPileService (модель Pile не переименована: это @Model
+// в миграционном плане SwiftData, смена имени сущности потребовала бы миграции).
 
-struct PileService {
+struct CardsPileService {
 
     /// Возвращает активные карточки, принадлежащие сетам Pile, отсортированные по shuffleMethod.
     func cards(for pile: Pile, from allCards: [Card]) -> [Card] {

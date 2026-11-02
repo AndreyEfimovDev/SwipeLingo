@@ -173,9 +173,14 @@ struct SwipeLingoApp: App {
             /// иначе на переустановке возвращающегося пользователя на долю секунды
             /// успевает мелькнуть OnboardingView, пока hasCompletedOnboarding ещё
             /// false (см. isResolvingAccountStatus).
-            isResolvingAccountStatus = true
+            /// Только если онбординг не пройден: иначе AppView к этому моменту уже показан,
+            /// и loadingView спрятал бы его на время запроса — UI пропадал и рисовался заново
+            /// на каждом холодном старте. Читается после claim(firebaseUID:) — по привязанному
+            /// к аккаунту AppSyncState.
+            let needsAccountStatus = !appSyncStateService.hasCompletedOnboarding
+            if needsAccountStatus { isResolvingAccountStatus = true }
             Task {
-                defer { isResolvingAccountStatus = false }
+                defer { if needsAccountStatus { isResolvingAccountStatus = false } }
                 let syncResult = await UserSessionSyncService().syncAfterVerifiedSession(
                     user: user, container: container, nativeLanguage: nativeLanguage, userService: userService
                 )
