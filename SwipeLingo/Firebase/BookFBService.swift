@@ -17,7 +17,7 @@ import FirebaseFirestore
 // Логика upsert: сопоставление по firestoreId. Никогда не удаляет локальные книги
 // (у пользователя может быть прогресс чтения).
 
-struct BookFBService {
+struct BookFBService: BookCatalogSyncing {
 
     private static let lastSyncAtKey = "booksLastSyncAt"
 

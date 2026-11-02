@@ -11,6 +11,13 @@ final class BooksViewModel {
     var isSyncing:     Bool         = false
     var selectedBook:  Book?        = nil
 
+    private let catalog: BookCatalogSyncing
+
+    /// - Parameter catalog: источник каталога книг из composition root (мок в DEBUG, Firestore в релизе).
+    init(catalog: BookCatalogSyncing) {
+        self.catalog = catalog
+    }
+
     // MARK: - Filtered books
 
     func filteredBooks(_ books: [Book], userPlan: AccessTier) -> [Book] {
@@ -33,10 +40,11 @@ final class BooksViewModel {
 
     // MARK: - Sync
 
+    /// Загружает каталог книг из внедрённого источника. Повторный вызов во время идущего синка игнорируется.
     func syncBooks(context: ModelContext) async {
         guard !isSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
-        await BookFBService().syncBooks(into: context)
+        await catalog.syncBooks(into: context, forceFullSync: false)
     }
 }

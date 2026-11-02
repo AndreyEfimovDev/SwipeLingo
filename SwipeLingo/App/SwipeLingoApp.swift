@@ -48,12 +48,23 @@ struct SwipeLingoApp: App {
                 collectionDedupeObserver: CollectionDedupeObserver(container: container),
                 appViewModel: AppViewModel(),
                 appSettings: AppSettings(),
-                audioService: AudioPlayerService()
+                audioService: AudioPlayerService(),
+                bookCatalog: Self.makeBookCatalog()
             )
             startup = .ready(container: container, dependencies: dependencies)
         } else {
             startup = .failed
         }
+    }
+
+    /// Источник каталога книг: в DEBUG — мок-книги без сети (загружаются кнопкой в BooksView),
+    /// в релизе — Firestore.
+    private static func makeBookCatalog() -> BookCatalogSyncing {
+        #if DEBUG
+        MockBookCatalog()
+        #else
+        BookFBService()
+        #endif
     }
 
     var body: some Scene {

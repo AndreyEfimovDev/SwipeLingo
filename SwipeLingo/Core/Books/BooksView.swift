@@ -17,20 +17,20 @@ struct BooksView: View {
     /// Единственный источник правды — UserFBService (см. UserFBService.swift).
     private var userPlan: AccessTier { userService.userPlan }
 
-    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService, authService: AuthFBService, audioService: AudioPlayerService) {
+    init(appViewModel: AppViewModel, appSyncStateService: AppSyncStateService, appSettings: AppSettings, userService: UserFBService, authService: AuthFBService, audioService: AudioPlayerService, bookCatalog: BookCatalogSyncing) {
         self.appViewModel = appViewModel
         self.appSyncStateService = appSyncStateService
         self.appSettings = appSettings
         self.userService = userService
         self.authService = authService
         self.audioService = audioService
+        _vm = State(initialValue: BooksViewModel(catalog: bookCatalog))
     }
 
     @Query private var books: [Book]
-    @State private var vm = BooksViewModel()
+    @State private var vm: BooksViewModel
     @State private var syncTask: Task<Void, Never>?
     @State private var readerBook: Book? = nil
-    @State private var debugImportTask: Task<Void, Never>?
     @State private var bookToDelete: Book? = nil
 
     private let columns = [GridItem(.adaptive(minimum: 155, maximum: 190), spacing: 16)]
@@ -65,8 +65,10 @@ struct BooksView: View {
                 BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings, authService: authService, audioService: audioService)
             }
         }
-        // BOOKS_SYNC_STUB: автосинк при входе отключён — книги на GitHub, не в Firestore.
-        // .task { syncTask = Task { await vm.syncBooks(context: context) } }
+        #if !DEBUG
+        // В релизе каталог тихо обновляется при входе в раздел; в DEBUG мок-книги грузятся только кнопкой.
+        .task { syncTask = Task { await vm.syncBooks(context: context) } }
+        #endif
         .onDisappear { syncTask?.cancel() }
     }
 
@@ -145,96 +147,28 @@ struct BooksView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        // Кнопка идёт перед меню-переключателем табов (MainScreenToolbar ниже), чтобы сохранить
+        // порядок кнопок в trailing-группе. Источник каталога — vm (мок в DEBUG, Firestore в релизе).
         ToolbarItem(placement: .topBarTrailing) {
-            // BOOKS_SYNC_STUB: кнопка sync и спиннер скрыты — книги загружаются с GitHub, не из Firestore.
-            // Когда книги переедут в Firebase Storage/Firestore — раскомментировать:
-            // if vm.isSyncing {
-            //     ProgressView().tint(Color.myColors.myBlue)
-            // } else {
-            //     Button {
-            //         syncTask = Task { await vm.syncBooks(context: context) }
-            //     } label: {
-            //         Image(systemName: "arrow.clockwise")
-            //             .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            //     }
-            // }
-
-            // Debug import — идёт перед меню-переключателем табов (MainScreenToolbar
-            // ниже), чтобы сохранить порядок кнопок в trailing-группе.
             Button {
-                debugImportTask = Task { await importDebugBook() }
+                syncTask = Task { await vm.syncBooks(context: context) }
             } label: {
-                Image(systemName: "wrench.and.screwdriver")
-                    .foregroundStyle(Color.myColors.myRed.opacity(0.5))
+                if vm.isSyncing {
+                    ProgressView().tint(Color.myColors.myBlue)
+                } else {
+                    #if DEBUG
+                    // Отладка: загрузить мок-книги (MockBookCatalog), без сети.
+                    Image(systemName: "wrench.and.screwdriver")
+                        .navBarIconStyle(color: Color.myColors.myRed.opacity(0.5))
+                    #else
+                    Image(systemName: "arrow.clockwise")
+                        .navBarIconStyle()
+                    #endif
+                }
             }
+            .disabled(vm.isSyncing)
         }
         MainScreenToolbar(appViewModel: appViewModel, currentMode: .books)
-    }
-
-    // MARK: - Debug import
-
-    private func importDebugBook() async {
-        let indexURL = URL(string: "https://raw.githubusercontent.com/AndreyEfimovDev/Support/main/Books/books_index.json")!
-        do {
-            let (indexData, _) = try await URLSession.shared.data(from: indexURL)
-            guard let index = try JSONSerialization.jsonObject(with: indexData) as? [String: Any],
-                  let bookURLs = index["books"] as? [String] else { return }
-
-            for urlString in bookURLs {
-                guard let metaURL = URL(string: urlString) else { continue }
-                await importSingleBook(from: metaURL)
-            }
-        } catch {
-            log("Index load failed: \(error)", level: .error)
-        }
-    }
-
-    private func importSingleBook(from metaURL: URL) async {
-        do {
-            let (data, _) = try await URLSession.shared.data(from: metaURL)
-            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-
-            let firestoreId    = json["firestoreId"]    as? String ?? UUID().uuidString
-            let title          = json["title"]          as? String ?? "Untitled"
-            let author         = json["author"]         as? String ?? "Unknown"
-            let desc           = json["description"]    as? String
-            let cefrRaw        = json["cefrLevel"]      as? String ?? "a1"
-            let accessRaw      = json["accessTier"]     as? String ?? "free"
-            let coverURL       = json["coverURL"]       as? String ?? ""
-            let chapterBaseURL = json["chapterBaseURL"] as? String ?? ""
-            let totalChapters  = json["totalChapters"]  as? Int    ?? 0
-            let chaptersRaw    = json["chapters"]       as? [[String: Any]] ?? []
-            let chapters       = chaptersRaw.compactMap { d -> BookChapter? in
-                guard let idx = d["index"] as? Int, let t = d["title"] as? String else { return nil }
-                return BookChapter(index: idx, title: t)
-            }
-
-            let existing = try context.fetch(FetchDescriptor<Book>())
-            existing.filter { $0.firestoreId == firestoreId }.forEach {
-                BookDownloadService.shared.clearCache(firestoreId: $0.firestoreId)
-                context.delete($0)
-            }
-
-            let book = Book(
-                firestoreId:      firestoreId,
-                title:            title,
-                author:           author,
-                description:      desc?.isEmpty == false ? desc : nil,
-                cefrLevel:        CEFRLevel(rawValue: cefrRaw)   ?? .a1,
-                accessTier:       AccessTier(rawValue: accessRaw) ?? .free,
-                coverStoragePath: coverURL,
-                chapterBaseURL:   chapterBaseURL,
-                totalChapters:    totalChapters,
-                chapters:         chapters,
-                createdAt:        .now,
-                updatedAt:        .now
-            )
-            context.insert(book)
-            try context.save()
-            log("Imported '\(title)' (\(totalChapters) chapters)", level: .info)
-        } catch {
-            log("Import '\(metaURL.lastPathComponent)' failed: \(error)", level: .error)
-        }
     }
 }
 

@@ -28,4 +28,6 @@ struct AppDependencies {
     /// PairsSetPlayerView/VoiceSettingsView возможно наложение двух звуков одновременно
     /// (напр. Dictionary lookup поверх TinderCardsView).
     let audioService: AudioPlayerService
+    /// Источник каталога книг: в DEBUG — мок-книги без сети (MockBookCatalog), в релизе — Firestore.
+    let bookCatalog: BookCatalogSyncing
 }

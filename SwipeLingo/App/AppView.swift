@@ -80,7 +80,8 @@ struct AppView: View {
                 appSettings: dependencies.appSettings,
                 userService: dependencies.userFBService,
                 authService: dependencies.authFBService,
-                audioService: dependencies.audioService
+                audioService: dependencies.audioService,
+                bookCatalog: dependencies.bookCatalog
             )
         }
     }
