@@ -211,6 +211,7 @@
 		47FD94D43098C4D8005EEE30 /* LibraryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D33098C4D7005EEE30 /* LibraryViewModelTests.swift */; };
 		47FD94D63098CC3D005EEE30 /* AddEditCardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D53098CC3D005EEE30 /* AddEditCardViewModelTests.swift */; };
 		47FD94D83098CDB3005EEE30 /* ExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D73098CDB3005EEE30 /* ExportServiceTests.swift */; };
+		47FD94DA3098D093005EEE30 /* DeletedCardsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D93098D093005EEE30 /* DeletedCardsViewModelTests.swift */; };
 		60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */; };
 		62D8B5E8D03B6003BCBF13DB /* CollectionDedupeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */; };
 		6FE278252FC459EB4C630666 /* UIAppearanceConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */; };
@@ -452,6 +453,7 @@
 		47FD94D33098C4D7005EEE30 /* LibraryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModelTests.swift; sourceTree = "<group>"; };
 		47FD94D53098CC3D005EEE30 /* AddEditCardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditCardViewModelTests.swift; sourceTree = "<group>"; };
 		47FD94D73098CDB3005EEE30 /* ExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportServiceTests.swift; sourceTree = "<group>"; };
+		47FD94D93098D093005EEE30 /* DeletedCardsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletedCardsViewModelTests.swift; sourceTree = "<group>"; };
 		563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDedupeService.swift; sourceTree = "<group>"; };
 		704BC42AFC427BD3BA442868 /* ForeignAccountWarningServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeignAccountWarningServiceTests.swift; sourceTree = "<group>"; };
 		81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
@@ -818,8 +820,11 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
+				81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */,
+				A71EF3E17CA0D6AFC0E321DE /* UserProfileTests.swift */,
 				47FD94D73098CDB3005EEE30 /* ExportServiceTests.swift */,
 				47FD94D53098CC3D005EEE30 /* AddEditCardViewModelTests.swift */,
+				47FD94D93098D093005EEE30 /* DeletedCardsViewModelTests.swift */,
 				47FD94D33098C4D7005EEE30 /* LibraryViewModelTests.swift */,
 				47FD94C5309769AA005EEE30 /* DictionaryTests.swift */,
 				47FD94C730978B00005EEE30 /* DictionaryLookupViewModelTests.swift */,
@@ -834,8 +839,6 @@
 				47467C7D305964A300987D2D /* ImportFSServiceTests.swift */,
 				0E2151381ED3A3442F2FD275 /* ErrorManagerTests.swift */,
 				704BC42AFC427BD3BA442868 /* ForeignAccountWarningServiceTests.swift */,
-				A71EF3E17CA0D6AFC0E321DE /* UserProfileTests.swift */,
-				81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */,
 				9CC016D85EA2BFD8795FE26D /* SwipeLingoMigrationPlanTests.swift */,
 			);
 			path = SwipeLingoTests;
@@ -1489,6 +1492,7 @@
 				47FD94D83098CDB3005EEE30 /* ExportServiceTests.swift in Sources */,
 				47FD94CA30978B0C005EEE30 /* WaitUntil.swift in Sources */,
 				CB1D7612C61D84EBFA05175A /* AppViewModelTests.swift in Sources */,
+				47FD94DA3098D093005EEE30 /* DeletedCardsViewModelTests.swift in Sources */,
 				47FD94D0309791F9005EEE30 /* PairsPileBuilderViewModelTests.swift in Sources */,
 				47FD94D63098CC3D005EEE30 /* AddEditCardViewModelTests.swift in Sources */,
 				AB24E37E6C4781C61A774A7E /* SwipeLingoMigrationPlanTests.swift in Sources */,

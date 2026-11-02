@@ -79,26 +79,15 @@ final class LibraryViewModel {
         return cardSets.first { $0.name == "Inbox" && $0.collectionId == inboxCollection.id }
     }
 
-    /// Системная коллекция Inbox + остальные пользовательские коллекции с видимым контентом, в этом порядке.
-    /// Системная коллекция — только если в ней есть видимые сеты, кроме Inbox (у Inbox своя плашка, см.
-    /// `inboxSet`): пустой системный блок не показываем, а сеты, созданные без коллекции
-    /// («New set…» в AddEditCardView), так не пропадают из библиотеки. `firebaseUID`
-    /// отфильтровывает чужую системную коллекцию, оставшееся локально после гонки CloudKit
-    /// (см. `Collection.isMine(firebaseUID:)`) — без этого после нескольких
-    /// переустановок/гостевых входов на одном iCloud-аккаунте в списке накапливались
-    /// бы "лишние" системные коллекции от прошлых аккаунтов.
-    func myCollections(
-        from collections: [Collection], cardSets: [CardSet], allCards: [Card], firebaseUID: String, userLevel: CEFRLevel
-    ) -> [Collection] {
-        let mine     = collections.filter { $0.isMine(firebaseUID: firebaseUID) }
-        let inboxCollection   = mine.filter {
-            $0.isInbox && !setsForCollection($0, cardSets: cardSets, allCards: allCards, userLevel: userLevel).isEmpty
-        }
-        let userRest = mine.filter {
-            $0.isUserCreated && !$0.isInbox
+    /// Свои пользовательские коллекции с видимым контентом. Системная коллекция Inbox сюда не
+    /// входит никогда — у Inbox своя плашка (см. `inboxSet`), а других сетов в ней не бывает
+    /// (новый сет создаётся только в своей коллекции). `firebaseUID` отфильтровывает чужие
+    /// коллекции, оставшиеся локально после гонки CloudKit (см. `Collection.isMine(firebaseUID:)`).
+    func myCollections(from collections: [Collection], cardSets: [CardSet], allCards: [Card], firebaseUID: String) -> [Collection] {
+        collections.filter {
+            $0.isMine(firebaseUID: firebaseUID) && $0.isUserCreated && !$0.isInbox
                 && hasVisibleContent($0, cardSets: cardSets, allCards: allCards)
         }
-        return inboxCollection + userRest
     }
 
     /// Облачные (Firestore) коллекции — только те, у которых есть хотя бы один сет для

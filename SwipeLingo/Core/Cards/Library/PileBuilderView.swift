@@ -302,6 +302,8 @@ struct PileBuilderView: View {
 
     private var setGroups: [SetGroup] {
         collections
+            // Системная коллекция Inbox — не группа сетов (Inbox в пайлы не входит, а её имя — ключ, не текст UI)
+            .filter { !$0.isInbox }
             .compactMap { collection -> SetGroup? in
                 let sets = cardSets.filter {
                     $0.collectionId == collection.id && $0.name != "Inbox"

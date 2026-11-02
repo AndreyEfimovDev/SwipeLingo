@@ -605,11 +605,11 @@ struct CardsLibraryView: View {
 
     }
 
-    // Системная коллекция Inbox (если в ней есть сеты, кроме Inbox) + остальные пользовательские коллекции
+    // Свои пользовательские коллекции (системная коллекция Inbox не показывается)
     private var myCollections: [Collection] {
         vm.myCollections(
             from: collections, cardSets: cardSets, allCards: allCards,
-            firebaseUID: authService.currentUser?.uid ?? "", userLevel: userLevel
+            firebaseUID: authService.currentUser?.uid ?? ""
         )
     }
 

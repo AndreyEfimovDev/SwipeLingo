@@ -38,7 +38,17 @@ final class DeletedCardsViewModel {
     func availableCollections(allCards: [Card], allCardSets: [CardSet], allCollections: [Collection]) -> [Collection] {
         let deletedSetIds = Set(deletedCards(allCards: allCards).map { $0.setId })
         let collectionIds = Set(allCardSets.filter { deletedSetIds.contains($0.id) }.map { $0.collectionId })
-        return allCollections.filter { collectionIds.contains($0.id) }
+        // Системная коллекция Inbox в фильтре не показывается: Inbox — отдельный пункт фильтра сетов,
+        // а имя коллекции — ключ в данных, не текст UI.
+        return allCollections.filter { collectionIds.contains($0.id) && !$0.isInbox }
+    }
+
+    /// Название коллекции для подписи удалённой карточки; `nil` для Inbox — у него подпись только «Inbox».
+    func collectionName(for cardSet: CardSet?, allCollections: [Collection]) -> String? {
+        guard let cardSet, let collection = allCollections.first(where: { $0.id == cardSet.collectionId }),
+              !collection.isInbox
+        else { return nil }
+        return collection.name
     }
 
     /// Сеты, в которых есть хотя бы одна удалённая карточка; сужается выбранной коллекцией, если она активна.

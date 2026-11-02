@@ -106,9 +106,7 @@ struct DeletedCardsView: View {
                         let cardSet        = allCardSets.first(where: { $0.id == card.setId })
                         let curated        = !(cardSet?.isUserCreated ?? true)
                         let setName        = cardSet?.name
-                        let collectionName = cardSet.flatMap { set in
-                            allCollections.first(where: { $0.id == set.collectionId })?.name
-                        }
+                        let collectionName = vm.collectionName(for: cardSet, allCollections: allCollections)
                         DeletedCardRow(card: card, setName: setName, collectionName: collectionName, isCurated: curated)
                             .id(card.id)
                             .listRowBackground(Color.myColors.myBackground)
@@ -347,6 +345,10 @@ struct DeletedCardsView: View {
             // Сет
             Menu {
                 if selectedCollectionId == nil && availableCollections.count > 1 {
+                    // Сеты вне показанных коллекций (Inbox) — отдельными пунктами над секциями
+                    ForEach(availableSets.filter { set in !availableCollections.contains { $0.id == set.collectionId } }) { set in
+                        setMenuButton(set)
+                    }
                     ForEach(availableCollections) { col in
                         let setsForCol = availableSets.filter { $0.collectionId == col.id }
                         if !setsForCol.isEmpty {

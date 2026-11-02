@@ -7,7 +7,7 @@ import SwiftData
 // Inbox на экране библиотеки — отдельная плашка над коллекциями, хотя в данных это сет внутри системной коллекции:
 //   • inboxSet — Inbox своей системной коллекции; Inbox чужой (гонка CloudKit) не возвращается
 //   • setsForCollection(системная коллекция) — без Inbox; у других коллекций сет с именем "Inbox" не прячется
-//   • myCollections — системная коллекция только если в ней есть сеты, кроме Inbox; своя коллекция видна и пустой
+//   • myCollections — системная коллекция не показывается никогда; своя коллекция видна и пустой
 
 @MainActor
 final class LibraryViewModelTests: XCTestCase {
@@ -57,35 +57,28 @@ final class LibraryViewModelTests: XCTestCase {
 
     // MARK: - myCollections
 
-    func testMyCollections_HidesInboxCollectionWithOnlyInbox() {
+    func testMyCollections_NeverShowsInboxCollection() {
         let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
+        let legacy = CardSet(name: "My own set", collectionId: inboxCollection.id)
 
-        let result = vm.myCollections(from: [inboxCollection], cardSets: [inbox], allCards: [], firebaseUID: uid, userLevel: .c2)
+        let result = vm.myCollections(from: [inboxCollection], cardSets: [inbox, legacy], allCards: [], firebaseUID: uid)
 
-        XCTAssertTrue(result.isEmpty)
+        XCTAssertTrue(result.isEmpty, "системная коллекция не показывается, даже если в ней оказались другие сеты")
     }
 
-    func testMyCollections_ShowsInboxCollectionWithOwnSet() {
+    func testMyCollections_ShowsOwnCollectionsIncludingEmptyOne() {
         let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
-        let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
-        let own    = CardSet(name: "My own set", collectionId: inboxCollection.id)
-
-        let result = vm.myCollections(from: [inboxCollection], cardSets: [inbox, own], allCards: [], firebaseUID: uid, userLevel: .c2)
-
-        XCTAssertEqual(result.map(\.id), [inboxCollection.id])
-    }
-
-    func testMyCollections_ShowsEmptyUserCollectionAfterInboxCollection() {
-        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
-        let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
-        let own    = CardSet(name: "My own set", collectionId: inboxCollection.id)
-        let second = Collection(name: "My 2nd collection", ownerFirebaseUID: uid)
+        let inbox   = CardSet(name: "Inbox", collectionId: inboxCollection.id)
+        let first   = Collection(name: "1st collection", ownerFirebaseUID: uid)
+        let firstSet = CardSet(name: "1st set", collectionId: first.id)
+        let second  = Collection(name: "My 2nd collection", ownerFirebaseUID: uid)
+        let foreign = Collection(name: "Foreign", ownerFirebaseUID: "otherUID")
 
         let result = vm.myCollections(
-            from: [second, inboxCollection], cardSets: [inbox, own], allCards: [], firebaseUID: uid, userLevel: .c2
+            from: [inboxCollection, first, second, foreign], cardSets: [inbox, firstSet], allCards: [], firebaseUID: uid
         )
 
-        XCTAssertEqual(result.map(\.id), [inboxCollection.id, second.id], "системная коллекция первой, только что созданная коллекция видна")
+        XCTAssertEqual(result.map(\.id), [first.id, second.id], "только что созданная пустая коллекция видна, чужая — нет")
     }
 }
