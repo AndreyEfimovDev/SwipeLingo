@@ -79,6 +79,7 @@
 		4773001A3098FEE000402B80 /* MockBookCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477300183098FEE000402B80 /* MockBookCatalog.swift */; };
 		4773001D3098FF7300402B80 /* BooksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773001B3098FF7300402B80 /* BooksViewModelTests.swift */; };
 		4773001E3098FF7300402B80 /* MockBookCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773001C3098FF7300402B80 /* MockBookCatalogTests.swift */; };
+		477300203099051500402B80 /* BookDownloadServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773001F3099051500402B80 /* BookDownloadServiceTests.swift */; };
 		4777A64D69CD08532A3CD45F /* MainScreenToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472631E6B19501091864466C /* MainScreenToolbar.swift */; };
 		4785898E2FF3DCF100BF3C8F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4785898D2FF3DCF100BF3C8F /* ActivityView.swift */; };
 		478589912FF3DD4800BF3C8F /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478589902FF3DD4800BF3C8F /* ExportService.swift */; };
@@ -341,6 +342,7 @@
 		477300183098FEE000402B80 /* MockBookCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBookCatalog.swift; sourceTree = "<group>"; };
 		4773001B3098FF7300402B80 /* BooksViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BooksViewModelTests.swift; sourceTree = "<group>"; };
 		4773001C3098FF7300402B80 /* MockBookCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBookCatalogTests.swift; sourceTree = "<group>"; };
+		4773001F3099051500402B80 /* BookDownloadServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookDownloadServiceTests.swift; sourceTree = "<group>"; };
 		477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4785898D2FF3DCF100BF3C8F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		4785898F2FF3DD4800BF3C8F /* BackupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupModels.swift; sourceTree = "<group>"; };
@@ -837,6 +839,7 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
+				4773001F3099051500402B80 /* BookDownloadServiceTests.swift */,
 				4773001B3098FF7300402B80 /* BooksViewModelTests.swift */,
 				4773001C3098FF7300402B80 /* MockBookCatalogTests.swift */,
 				477300153098EDDD00402B80 /* FlashCardsViewModelTests.swift */,
@@ -1507,6 +1510,7 @@
 				4773001D3098FF7300402B80 /* BooksViewModelTests.swift in Sources */,
 				4773001E3098FF7300402B80 /* MockBookCatalogTests.swift in Sources */,
 				477300143098EA1700402B80 /* CardSamplesTests.swift in Sources */,
+				477300203099051500402B80 /* BookDownloadServiceTests.swift in Sources */,
 				47FD94DC3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift in Sources */,
 				EA5914D21CB5AB9F6C4E4EBE /* UserProfileDedupeServiceTests.swift in Sources */,
 				47FD94CC30979081005EEE30 /* FreeDictionaryPronunciationTests.swift in Sources */,
