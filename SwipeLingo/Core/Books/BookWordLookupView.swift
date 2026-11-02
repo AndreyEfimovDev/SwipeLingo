@@ -247,12 +247,12 @@ struct BookWordLookupView: View {
     // MARK: - Save to Inbox
 
     private func saveToInbox() {
-        // Inbox — не отдельная Collection (см. SystemSeeder), а сет внутри "My Sets".
-        guard let mySets = collections.first(where: { $0.isInbox && $0.isMine(firebaseUID: firebaseUID) }) else {
-            log("My Sets Collection not found", level: .warning)
+        // Inbox — не отдельная Collection (см. SystemSeeder), а сет внутри системной коллекции Inbox.
+        guard let inboxCollection = collections.first(where: { $0.isInbox && $0.isMine(firebaseUID: firebaseUID) }) else {
+            log("Inbox collection not found", level: .warning)
             return
         }
-        guard let inboxSet = cardSets.first(where: { $0.name == "Inbox" && $0.collectionId == mySets.id }) else {
+        guard let inboxSet = cardSets.first(where: { $0.name == "Inbox" && $0.collectionId == inboxCollection.id }) else {
             log("Inbox CardSet not found", level: .warning)
             return
         }

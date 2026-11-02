@@ -38,17 +38,17 @@ struct InboxDrainService {
 
         let context = ModelContext(container)
 
-        // Резолвим СВОЮ "My Sets", затем внутри неё — Inbox CardSet. Двухшаговый резолв
+        // Резолвим СВОЮ системную коллекцию Inbox, затем внутри неё — Inbox CardSet. Двухшаговый резолв
         // (не просто "первый CardSet с именем Inbox"), потому что после гонки CloudKit
-        // локально может лежать больше одной "My Sets" от разных аккаунтов, и у каждой —
+        // локально может лежать больше одной системной коллекции от разных аккаунтов, и у каждой —
         // свой Inbox CardSet. Inbox — не отдельная Collection (см. SystemSeeder).
         let allCollections = context.fetchWithErrorHandling(FetchDescriptor<Collection>())
-        guard let mySets = allCollections.first(where: { $0.isInbox && $0.isMine(firebaseUID: firebaseUID) }) else {
-            requeue("My Sets Collection not found")
+        guard let inboxCollection = allCollections.first(where: { $0.isInbox && $0.isMine(firebaseUID: firebaseUID) }) else {
+            requeue("Inbox collection not found")
             return
         }
         let allSets = context.fetchWithErrorHandling(FetchDescriptor<CardSet>())
-        guard let inboxSet = allSets.first(where: { $0.name == "Inbox" && $0.collectionId == mySets.id }) else {
+        guard let inboxSet = allSets.first(where: { $0.name == "Inbox" && $0.collectionId == inboxCollection.id }) else {
             requeue("Inbox CardSet not found")
             return
         }

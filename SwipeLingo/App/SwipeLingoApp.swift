@@ -38,7 +38,7 @@ struct SwipeLingoApp: App {
         FreshInstallGuard.clearStaleSessionIfNeeded()
 
         if let container = ModelContainerFactory.make() {
-            /// гарантируеv существовани `Inbox`/`My Sets`
+            /// гарантируеv существовани системной коллекции Inbox и сета `Inbox`
             SystemSeeder.ensureSystemCollections(into: container.mainContext)
             
             let dependencies = AppDependencies(
@@ -166,7 +166,7 @@ struct SwipeLingoApp: App {
             /// чтения appSyncStateService.hasCompletedOnboarding внутри неё (см. claim(firebaseUID:)).
             appSyncStateService.claim(firebaseUID: user.uid)
             /// Тот же bootstrap → account-scoped переход для системных коллекций
-            /// (Inbox/My Sets) — см. CollectionDedupeService.
+            /// (системной коллекции Inbox) — см. CollectionDedupeService.
             CollectionDedupeService().claimSystemCollections(firebaseUID: user.uid, context: container.mainContext)
             let hasForeignSyncState = appSyncStateService.hasForeignAccountData(firebaseUID: user.uid)
             /// Держим роутинг на loadingView, пока не придёт ответ Firestore ниже —

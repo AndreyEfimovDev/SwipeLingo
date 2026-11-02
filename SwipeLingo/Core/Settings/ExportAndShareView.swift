@@ -43,7 +43,7 @@ struct ExportAndShareView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                Text("Exports cards from Inbox and My Sets — including translations, examples, and SRS study progress — to a JSON file. Share via AirDrop, Mail, or save to Files.")
+                Text("Exports cards from Inbox and your collections — including translations, examples, and SRS study progress — to a JSON file. Share via AirDrop, Mail, or save to Files.")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.mySecondary)
                     .multilineTextAlignment(.leading)

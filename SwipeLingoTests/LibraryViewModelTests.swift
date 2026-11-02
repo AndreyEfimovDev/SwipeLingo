@@ -4,10 +4,10 @@ import SwiftData
 
 // MARK: - LibraryViewModelTests
 //
-// Inbox на экране библиотеки — отдельная плашка над коллекциями, хотя в данных это сет внутри "My Sets":
-//   • inboxSet — Inbox своей "My Sets"; Inbox чужой "My Sets" (гонка CloudKit) не возвращается
-//   • setsForCollection("My Sets") — без Inbox; у других коллекций сет с именем "Inbox" не прячется
-//   • myCollections — "My Sets" только если в ней есть сеты, кроме Inbox; своя коллекция видна и пустой
+// Inbox на экране библиотеки — отдельная плашка над коллекциями, хотя в данных это сет внутри системной коллекции:
+//   • inboxSet — Inbox своей системной коллекции; Inbox чужой (гонка CloudKit) не возвращается
+//   • setsForCollection(системная коллекция) — без Inbox; у других коллекций сет с именем "Inbox" не прячется
+//   • myCollections — системная коллекция только если в ней есть сеты, кроме Inbox; своя коллекция видна и пустой
 
 @MainActor
 final class LibraryViewModelTests: XCTestCase {
@@ -17,17 +17,17 @@ final class LibraryViewModelTests: XCTestCase {
 
     // MARK: - inboxSet
 
-    func testInboxSet_ReturnsInboxOfOwnMySets() {
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
-        let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
-        let other  = CardSet(name: "My own set", collectionId: mySets.id)
+    func testInboxSet_ReturnsInboxOfOwnInboxCollection() {
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+        let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
+        let other  = CardSet(name: "My own set", collectionId: inboxCollection.id)
 
-        let result = vm.inboxSet(collections: [mySets], cardSets: [other, inbox], firebaseUID: uid)
+        let result = vm.inboxSet(collections: [inboxCollection], cardSets: [other, inbox], firebaseUID: uid)
 
         XCTAssertEqual(result?.id, inbox.id)
     }
 
-    func testInboxSet_IgnoresForeignMySets() {
+    func testInboxSet_IgnoresForeignInboxCollection() {
         let foreign = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: "otherUID")
         let inbox   = CardSet(name: "Inbox", collectionId: foreign.id)
 
@@ -36,12 +36,12 @@ final class LibraryViewModelTests: XCTestCase {
 
     // MARK: - setsForCollection
 
-    func testSetsForCollection_MySetsExcludesInbox() {
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
-        let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
-        let own    = CardSet(name: "My own set", collectionId: mySets.id)
+    func testSetsForCollection_InboxCollectionExcludesInbox() {
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+        let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
+        let own    = CardSet(name: "My own set", collectionId: inboxCollection.id)
 
-        let sets = vm.setsForCollection(mySets, cardSets: [inbox, own], allCards: [], userLevel: .c2)
+        let sets = vm.setsForCollection(inboxCollection, cardSets: [inbox, own], allCards: [], userLevel: .c2)
 
         XCTAssertEqual(sets.map(\.name), ["My own set"])
     }
@@ -52,40 +52,40 @@ final class LibraryViewModelTests: XCTestCase {
 
         let sets = vm.setsForCollection(travel, cardSets: [set], allCards: [], userLevel: .c2)
 
-        XCTAssertEqual(sets.map(\.name), ["Inbox"], "прячется только Inbox системной My Sets")
+        XCTAssertEqual(sets.map(\.name), ["Inbox"], "прячется только Inbox системной коллекции")
     }
 
     // MARK: - myCollections
 
-    func testMyCollections_HidesMySetsWithOnlyInbox() {
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
-        let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
+    func testMyCollections_HidesInboxCollectionWithOnlyInbox() {
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+        let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
 
-        let result = vm.myCollections(from: [mySets], cardSets: [inbox], allCards: [], firebaseUID: uid, userLevel: .c2)
+        let result = vm.myCollections(from: [inboxCollection], cardSets: [inbox], allCards: [], firebaseUID: uid, userLevel: .c2)
 
         XCTAssertTrue(result.isEmpty)
     }
 
-    func testMyCollections_ShowsMySetsWithOwnSet() {
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
-        let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
-        let own    = CardSet(name: "My own set", collectionId: mySets.id)
+    func testMyCollections_ShowsInboxCollectionWithOwnSet() {
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+        let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
+        let own    = CardSet(name: "My own set", collectionId: inboxCollection.id)
 
-        let result = vm.myCollections(from: [mySets], cardSets: [inbox, own], allCards: [], firebaseUID: uid, userLevel: .c2)
+        let result = vm.myCollections(from: [inboxCollection], cardSets: [inbox, own], allCards: [], firebaseUID: uid, userLevel: .c2)
 
-        XCTAssertEqual(result.map(\.id), [mySets.id])
+        XCTAssertEqual(result.map(\.id), [inboxCollection.id])
     }
 
-    func testMyCollections_ShowsEmptyUserCollectionAfterMySets() {
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
-        let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
-        let own    = CardSet(name: "My own set", collectionId: mySets.id)
+    func testMyCollections_ShowsEmptyUserCollectionAfterInboxCollection() {
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+        let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
+        let own    = CardSet(name: "My own set", collectionId: inboxCollection.id)
         let second = Collection(name: "My 2nd collection", ownerFirebaseUID: uid)
 
         let result = vm.myCollections(
-            from: [second, mySets], cardSets: [inbox, own], allCards: [], firebaseUID: uid, userLevel: .c2
+            from: [second, inboxCollection], cardSets: [inbox, own], allCards: [], firebaseUID: uid, userLevel: .c2
         )
 
-        XCTAssertEqual(result.map(\.id), [mySets.id, second.id], "My Sets первой, только что созданная коллекция видна")
+        XCTAssertEqual(result.map(\.id), [inboxCollection.id, second.id], "системная коллекция первой, только что созданная коллекция видна")
     }
 }

@@ -39,7 +39,7 @@ struct AddEditCardView: View {
 
     /// Передаётся из composition root — не через .environment().
     private let appSyncStateService: AppSyncStateService
-    /// Нужен только для `firebaseUID` — отсечь чужие "My Sets"/сеты, оставшиеся
+    /// Нужен только для `firebaseUID` — отсечь чужие коллекции/сеты, оставшиеся
     /// локально после гонки CloudKit (см. `Collection.isMine(firebaseUID:)`).
     private let authService: AuthFBService
     private var firebaseUID: String { authService.currentUser?.uid ?? "" }
@@ -397,7 +397,7 @@ struct AddEditCardView: View {
         }
     }
 
-    /// Строка выбора коллекции для нового сета — только свои коллекции, без системной "My Sets".
+    /// Строка выбора коллекции для нового сета — только свои коллекции, без системной коллекции Inbox.
     private var newSetCollectionMenu: some View {
         Menu {
             ForEach(targetCollections) { collection in

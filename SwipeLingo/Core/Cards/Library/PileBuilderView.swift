@@ -289,7 +289,7 @@ struct PileBuilderView: View {
 
     private var filteredSetGroups: [SetGroup] {
         setGroups.compactMap { group in
-            // Пользовательские коллекции (My Sets и т.д.) показываются всегда, без фильтрации
+            // Пользовательские коллекции показываются всегда, без фильтрации
             if group.isUserCreated { return group }
             let sets = group.sets.filter { set in
                 let matchesLevel  = selectedLevel == nil || set.level == selectedLevel

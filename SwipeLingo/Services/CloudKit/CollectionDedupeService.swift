@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - CollectionDedupeService
 //
-// Привязка и слияние дублей системных (protected) коллекций — Inbox/My Sets.
+// Привязка и слияние дублей системных (protected) коллекций — системной коллекции Inbox.
 // Та же гонка CloudKit-синхронизации, что решена для AppSyncState (см.
 // AppSyncStateManager.claim(firebaseUID:)) и UserProfile (см.
 // UserProfileDedupeService): SystemSeeder создаёт эти коллекции синхронно при
@@ -17,7 +17,7 @@ import SwiftData
 // пусто = ещё не привязана, непустое значение = принадлежит конкретному
 // Firebase-аккаунту. Это защищает multi-account изоляцию: на общем iCloud, но
 // с разными Firebase-аккаунтами на разных устройствах, дубли одного аккаунта
-// не должны мержиться с легитимно отдельной парой Inbox/My Sets другого.
+// не должны мержиться с легитимно отдельной системной коллекцией Inbox другого.
 //
 // Stateless-структура: ModelContext передаётся параметром на каждый вызов, не
 // хранится полем — по аналогии с UserProfileDedupeService/PileManagementService,
@@ -28,7 +28,7 @@ struct CollectionDedupeService {
 
     /// Имена защищённых коллекций, подлежащих claim/dedupe-логике. Курируемый
     /// контент сюда не входит — тот уже дедуплицируется по `firestoreId`. Inbox сюда
-    /// не входит — с рефакторинга сентября 2026 это обычный CardSet внутри "My Sets",
+    /// не входит — с рефакторинга сентября 2026 это обычный CardSet внутри системной коллекции,
     /// не отдельная Collection (см. SystemSeeder); дубли одноимённых CardSet внутри
     /// объединённой коллекции всё равно схлопывает `mergeDuplicateCardSets` ниже.
     static let protectedNames: Set<String> = [Collection.inboxCollectionName]

@@ -11,7 +11,7 @@ final class CardSet {
     var createdAt: Date = Date()
 
     // false = контент от разработчика (IELTS-сеты, Psychology-сеты)
-    // true  = пользовательский контент (сеты внутри My Sets)
+    // true  = пользовательский контент (Inbox и сеты в коллекциях пользователя)
     var isUserCreated: Bool = true
 
     // опциональное развёрнутое описание, показывается в экране деталей сета

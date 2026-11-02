@@ -330,9 +330,9 @@ struct CardsLibraryView: View {
 
             // ── Inbox ─────────────────────────────────────────────
             // Однострочная плашка без заголовка: Inbox — точка входа для новых слов (Share
-            // Extension, книги), а не коллекция. В данных он по-прежнему сет внутри "My Sets".
-            if let inbox, let mySets = collections.first(where: { $0.id == inbox.collectionId }) {
-                setRow(inbox, in: mySets, backTitle: "Cards Library")
+            // Extension, книги), а не коллекция. В данных он по-прежнему сет внутри системной коллекции Inbox.
+            if let inbox, let inboxCollection = collections.first(where: { $0.id == inbox.collectionId }) {
+                setRow(inbox, in: inboxCollection, backTitle: "Cards Library")
                     .background(Color.myColors.myBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .myShadow()
@@ -466,7 +466,7 @@ struct CardsLibraryView: View {
     private func setRow(_ cardSet: CardSet, in collection: Collection, backTitle: String? = nil) -> some View {
         NavigationLink {
             // Inbox (cardSet.name == "Inbox") больше не отдельная Collection — просто
-            // сет внутри "My Sets"; CardSetDetailView сама подавляет для него editing
+            // сет внутри системной коллекции Inbox; CardSetDetailView сама подавляет для него editing
             // через свой internal isInbox, отдельная ветка навигации не нужна.
             CardSetDetailView(
                 cardSet: cardSet,
@@ -605,7 +605,7 @@ struct CardsLibraryView: View {
 
     }
 
-    // My Sets (если в ней есть сеты, кроме Inbox) + остальные пользовательские коллекции
+    // Системная коллекция Inbox (если в ней есть сеты, кроме Inbox) + остальные пользовательские коллекции
     private var myCollections: [Collection] {
         vm.myCollections(
             from: collections, cardSets: cardSets, allCards: allCards,

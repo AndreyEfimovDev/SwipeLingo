@@ -5,10 +5,10 @@ import SwiftData
 // MARK: - AddEditCardViewModelTests
 //
 // Новый сет в карточке создаётся явной кнопкой «Add set» и только в своей коллекции пользователя:
-//   • targetCollections / userSets — без системной "My Sets" (контейнер Inbox) и без чужих коллекций
+//   • targetCollections / userSets — без системной коллекции Inbox и без чужих коллекций
 //   • beginNewSet — коллекция по умолчанию: коллекция выбранного сета, иначе первая своя
 //   • canAddNewSet — пустое имя, дубль в коллекции, нет коллекции → нельзя
-//   • addNewSet — сет создаётся в выбранной коллекции (регрессия: раньше всегда в "My Sets") и выбирается
+//   • addNewSet — сет создаётся в выбранной коллекции (регрессия: раньше всегда в системную коллекцию) и выбирается
 //   • canSave — во время ввода нового сета сохранить карточку нельзя
 
 @MainActor
@@ -26,25 +26,25 @@ final class AddEditCardViewModelTests: XCTestCase {
 
     // MARK: - targetCollections / userSets
 
-    func testTargetCollections_ExcludeMySetsAndForeign() {
-        let mySets  = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+    func testTargetCollections_ExcludeInboxCollectionAndForeign() {
+        let inboxCollection  = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let own     = Collection(name: "1st collection", ownerFirebaseUID: uid)
         let foreign = Collection(name: "Foreign", ownerFirebaseUID: "otherUID")
         let curated = Collection(name: "Core Vocabulary", isUserCreated: false)
 
-        let result = makeVM().targetCollections(allCollections: [mySets, own, foreign, curated], firebaseUID: uid)
+        let result = makeVM().targetCollections(allCollections: [inboxCollection, own, foreign, curated], firebaseUID: uid)
 
         XCTAssertEqual(result.map(\.id), [own.id])
     }
 
-    func testUserSets_ExcludeInboxAndSetsOfMySets() {
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+    func testUserSets_ExcludeInboxAndSetsOfInboxCollection() {
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let own    = Collection(name: "1st collection", ownerFirebaseUID: uid)
-        let inbox  = CardSet(name: "Inbox", collectionId: mySets.id)
-        let legacy = CardSet(name: "My own set", collectionId: mySets.id)
+        let inbox  = CardSet(name: "Inbox", collectionId: inboxCollection.id)
+        let legacy = CardSet(name: "My own set", collectionId: inboxCollection.id)
         let first  = CardSet(name: "1st set", collectionId: own.id)
 
-        let result = makeVM().userSets(allSets: [inbox, legacy, first], allCollections: [mySets, own], firebaseUID: uid)
+        let result = makeVM().userSets(allSets: [inbox, legacy, first], allCollections: [inboxCollection, own], firebaseUID: uid)
 
         XCTAssertEqual(result.map(\.id), [first.id])
     }
@@ -64,21 +64,21 @@ final class AddEditCardViewModelTests: XCTestCase {
         XCTAssertEqual(vm.selectedSetId, setInB.id, "выбранный сет не сбрасывается — «Back» вернёт к нему")
     }
 
-    func testBeginNewSet_WithoutSelectedSet_DefaultsToFirstOwnCollectionNotMySets() {
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+    func testBeginNewSet_WithoutSelectedSet_DefaultsToFirstOwnCollectionNotInboxCollection() {
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let own    = Collection(name: "1st collection", ownerFirebaseUID: uid)
         let vm = makeVM()
 
-        vm.beginNewSet(allSets: [], allCollections: [mySets, own], firebaseUID: uid)
+        vm.beginNewSet(allSets: [], allCollections: [inboxCollection, own], firebaseUID: uid)
 
         XCTAssertEqual(vm.newSetCollectionId, own.id)
     }
 
     func testBeginNewSet_NoOwnCollections_LeavesCollectionEmpty() {
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let vm = makeVM()
 
-        vm.beginNewSet(allSets: [], allCollections: [mySets], firebaseUID: uid)
+        vm.beginNewSet(allSets: [], allCollections: [inboxCollection], firebaseUID: uid)
 
         XCTAssertNil(vm.newSetCollectionId)
     }
@@ -138,11 +138,11 @@ final class AddEditCardViewModelTests: XCTestCase {
 
     func testAddNewSet_CreatesSetInChosenCollectionAndSelectsIt() throws {
         let context = try makeContext()
-        let mySets = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
+        let inboxCollection = Collection(name: Collection.inboxCollectionName, ownerFirebaseUID: uid)
         let own    = Collection(name: "1st collection", ownerFirebaseUID: uid)
-        context.insert(mySets)
+        context.insert(inboxCollection)
         context.insert(own)
-        let collections = [mySets, own]
+        let collections = [inboxCollection, own]
         let vm = makeVM()
         vm.beginNewSet(allSets: [], allCollections: collections, firebaseUID: uid)
         vm.newSetName = " My new set "
@@ -153,7 +153,7 @@ final class AddEditCardViewModelTests: XCTestCase {
         let sets = try context.fetch(FetchDescriptor<CardSet>())
         XCTAssertEqual(sets.count, 1)
         XCTAssertEqual(sets.first?.name, "My new set")
-        XCTAssertEqual(sets.first?.collectionId, own.id, "регрессия: новый сет уходил в скрытую My Sets")
+        XCTAssertEqual(sets.first?.collectionId, own.id, "регрессия: новый сет уходил в скрытую системную коллекцию")
         XCTAssertEqual(vm.selectedSetId, sets.first?.id)
         XCTAssertFalse(vm.isCreatingNewSet)
         XCTAssertEqual(vm.newSetName, "")

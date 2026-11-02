@@ -43,7 +43,7 @@ struct RestoreBackupView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                Text("Restores Inbox and My Sets cards from a SwipeLingo backup file. Cards that already exist are not modified.")
+                Text("Restores cards in Inbox and your collections from a SwipeLingo backup file. Cards that already exist are not modified.")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.mySecondary)
                     .multilineTextAlignment(.leading)

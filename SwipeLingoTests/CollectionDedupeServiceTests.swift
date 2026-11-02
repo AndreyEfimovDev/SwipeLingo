@@ -4,11 +4,11 @@ import SwiftData
 
 // MARK: - CollectionDedupeServiceTests
 //
-// "My Sets" is the only protected Collection name (see CollectionDedupeService.
-// protectedNames) — Inbox is a regular CardSet inside it, not a Collection of its own
-// (see SystemSeeder), so these tests use "My Sets" as the example protected name
+// The system Inbox collection (Collection.inboxCollectionName) is the only protected
+// Collection name (see CollectionDedupeService.protectedNames) — Inbox itself is a regular
+// CardSet inside it (see SystemSeeder), so these tests use that name as the protected name
 // throughout. testMerge_ReparentsCardSets_AndCollapsesSameNameSets_MovingCards below
-// still exercises the realistic Inbox scenario: two duplicate "My Sets" collections,
+// still exercises the realistic Inbox scenario: two duplicate system collections,
 // each with its own "Inbox" CardSet, collapsing into one.
 //
 // Tests cover:
@@ -28,14 +28,14 @@ import SwiftData
 @MainActor
 final class CollectionDedupeServiceTests: XCTestCase {
 
-    // MARK: - Ключ "My Sets"
+    // MARK: - Ключ системной коллекции Inbox
 
-    /// "My Sets" хранится в `Collection.name` у существующих пользователей — смена константы
+    /// Ключ системной коллекции ("My Sets") хранится в `Collection.name` у существующих пользователей — смена константы
     /// сломала бы поиск системной коллекции (SystemSeeder создал бы вторую). Тест фиксирует ключ.
-    func testMySetsKey_IsStoredNameAndProtected() {
+    func testInboxCollectionKey_IsStoredNameAndProtected() {
         XCTAssertEqual(Collection.inboxCollectionName, "My Sets")
         XCTAssertEqual(CollectionDedupeService.protectedNames, ["My Sets"])
-        XCTAssertTrue(Collection(name: "My Sets").isInbox)
+        XCTAssertTrue(Collection(name: Collection.inboxCollectionName).isInbox)
         XCTAssertFalse(Collection(name: "my sets").isInbox, "проверка точная, как и прежние литералы")
     }
 
@@ -96,12 +96,12 @@ final class CollectionDedupeServiceTests: XCTestCase {
 
     func testClaim_EmptyFirebaseUID_DoesNothing() throws {
         let ctx = try makeContext()
-        makeCollection(name: "My Sets", ownerFirebaseUID: "", context: ctx)
+        makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "", context: ctx)
 
         service.claimSystemCollections(firebaseUID: "", context: ctx)
 
-        let mySets = try fetchCollections(ctx).first { $0.name == "My Sets" }
-        XCTAssertEqual(mySets?.ownerFirebaseUID, "")
+        let inboxCollection = try fetchCollections(ctx).first { $0.isInbox }
+        XCTAssertEqual(inboxCollection?.ownerFirebaseUID, "")
     }
 
     func testClaim_NoCollections_DoesNothing() throws {
@@ -112,20 +112,20 @@ final class CollectionDedupeServiceTests: XCTestCase {
 
     func testClaim_BootstrapCollection_GetsClaimed() throws {
         let ctx = try makeContext()
-        let mySets = makeCollection(name: "My Sets", ownerFirebaseUID: "", context: ctx)
+        let inboxCollection = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "", context: ctx)
 
         service.claimSystemCollections(firebaseUID: "uid1", context: ctx)
 
-        XCTAssertEqual(mySets.ownerFirebaseUID, "uid1")
+        XCTAssertEqual(inboxCollection.ownerFirebaseUID, "uid1")
     }
 
     func testClaim_AlreadyOwn_IsIdempotent() throws {
         let ctx = try makeContext()
-        let mySets = makeCollection(name: "My Sets", ownerFirebaseUID: "uid1", context: ctx)
+        let inboxCollection = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", context: ctx)
 
         service.claimSystemCollections(firebaseUID: "uid1", context: ctx)
 
-        XCTAssertEqual(mySets.ownerFirebaseUID, "uid1")
+        XCTAssertEqual(inboxCollection.ownerFirebaseUID, "uid1")
         XCTAssertEqual(try fetchCollections(ctx).count, 1)
     }
 
@@ -136,8 +136,8 @@ final class CollectionDedupeServiceTests: XCTestCase {
         // иначе он навсегда остаётся непривязанным и виден как "лишняя" третья
         // копия (Collection.isMine трактует пустого владельца как видимого всем).
         let ctx = try makeContext()
-        let ownedFromBefore = makeCollection(name: "My Sets", ownerFirebaseUID: "uid1", context: ctx)
-        let freshBootstrap = makeCollection(name: "My Sets", ownerFirebaseUID: "", context: ctx)
+        let ownedFromBefore = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", context: ctx)
+        let freshBootstrap = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "", context: ctx)
 
         service.claimSystemCollections(firebaseUID: "uid1", context: ctx)
 
@@ -147,7 +147,7 @@ final class CollectionDedupeServiceTests: XCTestCase {
 
     func testClaim_OnlyForeignExists_UntouchedNoCreation() throws {
         let ctx = try makeContext()
-        let foreign = makeCollection(name: "My Sets", ownerFirebaseUID: "otherUID", context: ctx)
+        let foreign = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "otherUID", context: ctx)
 
         service.claimSystemCollections(firebaseUID: "uid1", context: ctx)
 
@@ -157,8 +157,8 @@ final class CollectionDedupeServiceTests: XCTestCase {
 
     func testClaim_MultipleBootstrapDuplicates_AllClaimed_NotMerged() throws {
         let ctx = try makeContext()
-        let first = makeCollection(name: "My Sets", ownerFirebaseUID: "", context: ctx)
-        let second = makeCollection(name: "My Sets", ownerFirebaseUID: "", context: ctx)
+        let first = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "", context: ctx)
+        let second = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "", context: ctx)
 
         service.claimSystemCollections(firebaseUID: "uid1", context: ctx)
 
@@ -169,7 +169,7 @@ final class CollectionDedupeServiceTests: XCTestCase {
 
     func testClaim_NonUserCreatedCollectionWithProtectedName_Untouched() throws {
         let ctx = try makeContext()
-        let curated = makeCollection(name: "My Sets", ownerFirebaseUID: "", isUserCreated: false, context: ctx)
+        let curated = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "", isUserCreated: false, context: ctx)
 
         service.claimSystemCollections(firebaseUID: "uid1", context: ctx)
 
@@ -180,7 +180,7 @@ final class CollectionDedupeServiceTests: XCTestCase {
 
     func testMerge_NoDuplicates_DoesNothing() throws {
         let ctx = try makeContext()
-        makeCollection(name: "My Sets", ownerFirebaseUID: "uid1", context: ctx)
+        makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", context: ctx)
 
         service.mergeProtectedCollections(context: ctx)
 
@@ -190,9 +190,9 @@ final class CollectionDedupeServiceTests: XCTestCase {
     func testMerge_BootstrapDuplicates_OldestSurvives() throws {
         let ctx = try makeContext()
         let older = makeCollection(
-            name: "My Sets", ownerFirebaseUID: "", createdAt: .now.addingTimeInterval(-100), context: ctx
+            name: Collection.inboxCollectionName, ownerFirebaseUID: "", createdAt: .now.addingTimeInterval(-100), context: ctx
         )
-        makeCollection(name: "My Sets", ownerFirebaseUID: "", createdAt: .now, context: ctx)
+        makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "", createdAt: .now, context: ctx)
 
         service.mergeProtectedCollections(context: ctx)
 
@@ -203,8 +203,8 @@ final class CollectionDedupeServiceTests: XCTestCase {
 
     func testMerge_DifferentOwners_NotMerged() throws {
         let ctx = try makeContext()
-        makeCollection(name: "My Sets", ownerFirebaseUID: "uid1", context: ctx)
-        makeCollection(name: "My Sets", ownerFirebaseUID: "otherUID", context: ctx)
+        makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", context: ctx)
+        makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "otherUID", context: ctx)
 
         service.mergeProtectedCollections(context: ctx)
 
@@ -213,8 +213,8 @@ final class CollectionDedupeServiceTests: XCTestCase {
 
     func testMerge_BootstrapVsClaimed_NotMerged() throws {
         let ctx = try makeContext()
-        makeCollection(name: "My Sets", ownerFirebaseUID: "", context: ctx)
-        makeCollection(name: "My Sets", ownerFirebaseUID: "uid1", context: ctx)
+        makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "", context: ctx)
+        makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", context: ctx)
 
         service.mergeProtectedCollections(context: ctx)
 
@@ -222,13 +222,13 @@ final class CollectionDedupeServiceTests: XCTestCase {
     }
 
     func testMerge_ReparentsCardSets_AndCollapsesSameNameSets_MovingCards() throws {
-        // Реалистичный сценарий: две дублирующиеся "My Sets" (гонка CloudKit), у каждой
+        // Реалистичный сценарий: две дублирующиеся системные коллекции (гонка CloudKit), у каждой
         // свой Inbox CardSet — после мержа коллекций Inbox-сеты должны схлопнуться в один.
         let ctx = try makeContext()
         let older = makeCollection(
-            name: "My Sets", ownerFirebaseUID: "uid1", createdAt: .now.addingTimeInterval(-100), context: ctx
+            name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", createdAt: .now.addingTimeInterval(-100), context: ctx
         )
-        let newer = makeCollection(name: "My Sets", ownerFirebaseUID: "uid1", createdAt: .now, context: ctx)
+        let newer = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", createdAt: .now, context: ctx)
 
         let olderSet = makeCardSet(
             name: "Inbox", collectionId: older.id, createdAt: .now.addingTimeInterval(-100), context: ctx
@@ -256,9 +256,9 @@ final class CollectionDedupeServiceTests: XCTestCase {
     func testMerge_DifferentlyNamedCardSets_StaySeparateAfterReparenting() throws {
         let ctx = try makeContext()
         let older = makeCollection(
-            name: "My Sets", ownerFirebaseUID: "uid1", createdAt: .now.addingTimeInterval(-100), context: ctx
+            name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", createdAt: .now.addingTimeInterval(-100), context: ctx
         )
-        let newer = makeCollection(name: "My Sets", ownerFirebaseUID: "uid1", createdAt: .now, context: ctx)
+        let newer = makeCollection(name: Collection.inboxCollectionName, ownerFirebaseUID: "uid1", createdAt: .now, context: ctx)
 
         let travelSet = makeCardSet(name: "Travel", collectionId: older.id, context: ctx)
         let foodSet = makeCardSet(name: "Food", collectionId: newer.id, context: ctx)

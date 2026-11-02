@@ -75,7 +75,7 @@ final class AddEditCardViewModel {
         || samplesItem.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty }
     }
 
-    /// Сеты из своих коллекций пользователя (см. `targetCollections`) — без системной "My Sets"
+    /// Сеты из своих коллекций пользователя (см. `targetCollections`) — без системной коллекции Inbox
     /// и, значит, без Inbox: Inbox — отдельная сущность, в пикере карточки его нет. Двойная
     /// фильтрация — по CardSet.isUserCreated И по parent Collection — чтобы покрыть
     /// legacy-дефолты миграции.
@@ -84,7 +84,7 @@ final class AddEditCardViewModel {
         return allSets.filter { $0.isUserCreated && userCollectionIds.contains($0.collectionId) }
     }
 
-    /// Коллекции, в которых можно создать сет: пользовательские и свои, кроме системной "My Sets"
+    /// Коллекции, в которых можно создать сет: пользовательские и свои, кроме системной коллекции Inbox
     /// (контейнер Inbox). `firebaseUID` отсекает чужие коллекции, оставшиеся локально после гонки
     /// CloudKit (см. `Collection.isMine(firebaseUID:)`).
     func targetCollections(allCollections: [Collection], firebaseUID: String) -> [Collection] {
