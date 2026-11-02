@@ -208,6 +208,7 @@
 		47FD94CC30979081005EEE30 /* FreeDictionaryPronunciationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94CB30979081005EEE30 /* FreeDictionaryPronunciationTests.swift */; };
 		47FD94D0309791F9005EEE30 /* PairsPileBuilderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94CF309791F9005EEE30 /* PairsPileBuilderViewModelTests.swift */; };
 		47FD94D2309895CE005EEE30 /* DictionaryRefreshIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D1309895CD005EEE30 /* DictionaryRefreshIndicator.swift */; };
+		47FD94D43098C4D8005EEE30 /* LibraryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FD94D33098C4D7005EEE30 /* LibraryViewModelTests.swift */; };
 		60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8FAF3878C375B91DBB97533 /* UserProfileDedupeService.swift */; };
 		62D8B5E8D03B6003BCBF13DB /* CollectionDedupeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC792857683B85A032A0EB2 /* CollectionDedupeObserver.swift */; };
 		6FE278252FC459EB4C630666 /* UIAppearanceConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A82D8D0281793C14C0FB802 /* UIAppearanceConfigurator.swift */; };
@@ -446,6 +447,7 @@
 		47FD94CB30979081005EEE30 /* FreeDictionaryPronunciationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeDictionaryPronunciationTests.swift; sourceTree = "<group>"; };
 		47FD94CF309791F9005EEE30 /* PairsPileBuilderViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairsPileBuilderViewModelTests.swift; sourceTree = "<group>"; };
 		47FD94D1309895CD005EEE30 /* DictionaryRefreshIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryRefreshIndicator.swift; sourceTree = "<group>"; };
+		47FD94D33098C4D7005EEE30 /* LibraryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModelTests.swift; sourceTree = "<group>"; };
 		563AAC9FE583F096F9BBF2AD /* CollectionDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDedupeService.swift; sourceTree = "<group>"; };
 		704BC42AFC427BD3BA442868 /* ForeignAccountWarningServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeignAccountWarningServiceTests.swift; sourceTree = "<group>"; };
 		81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
@@ -812,6 +814,7 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
+				47FD94D33098C4D7005EEE30 /* LibraryViewModelTests.swift */,
 				47FD94C5309769AA005EEE30 /* DictionaryTests.swift */,
 				47FD94C730978B00005EEE30 /* DictionaryLookupViewModelTests.swift */,
 				47FD94CB30979081005EEE30 /* FreeDictionaryPronunciationTests.swift */,
@@ -1472,6 +1475,7 @@
 				B0E372C47591FA8C805CB807 /* AppSyncStateManagerTests.swift in Sources */,
 				47FD94C6309769AA005EEE30 /* DictionaryTests.swift in Sources */,
 				47467C7E305964A300987D2D /* ImportFSServiceTests.swift in Sources */,
+				47FD94D43098C4D8005EEE30 /* LibraryViewModelTests.swift in Sources */,
 				AC9B3B55D40DE0238EFE55AD /* ErrorManagerTests.swift in Sources */,
 				47FD94C830978B00005EEE30 /* DictionaryLookupViewModelTests.swift in Sources */,
 				43107E790C124A55A0BD3B9D /* ForeignAccountWarningServiceTests.swift in Sources */,

@@ -113,9 +113,6 @@ struct CardsLibraryView: View {
 //                    }
 //                }
 //            }
-            .overlay {
-                if myCollections.isEmpty && piles.isEmpty { emptyState }
-            }
             .confirmationDialog(
                 "Delete \"\(collectionToDelete?.name ?? "Collection")\"?",
                 isPresented: Binding(
@@ -331,9 +328,20 @@ struct CardsLibraryView: View {
     private var setsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
 
+            // ── Inbox ─────────────────────────────────────────────
+            // Однострочная плашка без заголовка: Inbox — точка входа для новых слов (Share
+            // Extension, книги), а не коллекция. В данных он по-прежнему сет внутри "My Sets".
+            if let inbox, let mySets = collections.first(where: { $0.id == inbox.collectionId }) {
+                setRow(inbox, in: mySets, backTitle: "Cards Library")
+                    .background(Color.myColors.myBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .myShadow()
+                    .padding(.horizontal, 16)
+            }
+
             // ── Заголовок ─────────────────────────────────────────
             HStack {
-                Text("MY LESSONS")
+                Text("MY COLLECTIONS")
                     .font(.footnote.weight(.semibold))
                 Spacer()
                 Button { isShowingAddCollection = true } label: {
@@ -365,7 +373,7 @@ struct CardsLibraryView: View {
 
             // ── Кураторские коллекции ─────────────────────────────
             if !curatedCollections.isEmpty {
-                Text("CURATED")
+                Text("CURATED COLLECTIONS")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color.myColors.myAccent)
                     .padding(.horizontal, 32)
@@ -451,8 +459,11 @@ struct CardsLibraryView: View {
         .padding(.horizontal, 16)
     }
 
+    /// Строка сета со ссылкой на `CardSetDetailView`.
+    /// - Parameter backTitle: заголовок кнопки «назад»; `nil` — название коллекции (для Inbox,
+    ///   который показывается вне блока коллекции, передаётся явно).
     @ViewBuilder
-    private func setRow(_ cardSet: CardSet, in collection: Collection) -> some View {
+    private func setRow(_ cardSet: CardSet, in collection: Collection, backTitle: String? = nil) -> some View {
         NavigationLink {
             // Inbox (cardSet.name == "Inbox") больше не отдельная Collection — просто
             // сет внутри "My Sets"; CardSetDetailView сама подавляет для него editing
@@ -460,7 +471,7 @@ struct CardsLibraryView: View {
             CardSetDetailView(
                 cardSet: cardSet,
                 allowsEditing: collection.isUserCreated,
-                backTitle: collection.name,
+                backTitle: backTitle ?? collection.name,
                 authService: authService, userService: userService,
                 appSyncStateService: appSyncStateService
             )
@@ -594,12 +605,17 @@ struct CardsLibraryView: View {
 
     }
 
-    // Inbox + My Sets + остальные пользовательские коллекции
+    // My Sets (если в ней есть сеты, кроме Inbox) + остальные пользовательские коллекции
     private var myCollections: [Collection] {
         vm.myCollections(
             from: collections, cardSets: cardSets, allCards: allCards,
-            firebaseUID: authService.currentUser?.uid ?? ""
+            firebaseUID: authService.currentUser?.uid ?? "", userLevel: userLevel
         )
+    }
+
+    // Inbox своего аккаунта — отдельная плашка над коллекциями
+    private var inbox: CardSet? {
+        vm.inboxSet(collections: collections, cardSets: cardSets, firebaseUID: authService.currentUser?.uid ?? "")
     }
 
     // Кураторские (Firestore) коллекции — показываем только если есть хотя бы один сет.
@@ -608,22 +624,6 @@ struct CardsLibraryView: View {
     private var curatedCollections: [Collection] {
         vm.curatedCollections(from: collections, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
     }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "tray")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            Text("No collections yet")
-                .font(.title3.bold())
-            Text("Tap + to create your first collection")
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-        }
-    }
-
 }
 
 // MARK: - PileSheet
