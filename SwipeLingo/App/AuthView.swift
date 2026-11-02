@@ -127,8 +127,7 @@ struct AuthView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button("Cancel") { dismiss() }
-                                .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
+                            NavBarButtonForSheet(title: "Cancel", color: Color.myColors.myRed) { dismiss() }
                         }
                     }
             }

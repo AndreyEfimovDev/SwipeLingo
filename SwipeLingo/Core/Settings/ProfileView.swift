@@ -91,9 +91,7 @@ struct ProfileView: View {
                         .foregroundStyle(Color.myColors.myGreen)
                         .transition(.scale.combined(with: .opacity))
                 } else if hasChanges {
-                    Button("Save") { saveChanges() }
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myBlue)
+                    NavBarButtonForSheet(title: "Save") { saveChanges() }
                         .transition(.opacity)
                 }
             }

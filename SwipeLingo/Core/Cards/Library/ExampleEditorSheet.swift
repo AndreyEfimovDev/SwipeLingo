@@ -43,12 +43,13 @@ struct ExampleEditorSheet: View {
             .sheetNavigationBar("Examples")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.myColors.myRed)
+                    NavBarButtonForSheet(title: "Cancel", color: Color.myColors.myRed) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .foregroundStyle(hasChanges ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.4))
+                    NavBarButtonForSheet(
+                        title: "Save",
+                        color: hasChanges ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8)
+                    ) { save() }
                         .disabled(!hasChanges)
                 }
             }

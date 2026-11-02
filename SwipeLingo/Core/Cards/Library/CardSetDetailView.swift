@@ -173,7 +173,7 @@ struct CardSetDetailView: View {
                             }
                         }
                         if !filteredCards.isEmpty {
-                            Button("Edit") { editMode = .active }
+                            NavBarButtonForSheet(title: "Edit") { editMode = .active }
                         }
                     }
                 }

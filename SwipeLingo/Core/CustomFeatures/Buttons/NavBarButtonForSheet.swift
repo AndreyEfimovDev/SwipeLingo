@@ -7,6 +7,9 @@
 
 import SwiftUI
 
+/// Текстовая кнопка nav bar (Cancel/Save/Create/Done/Edit) — единый вид на всех экранах.
+/// Цвета по стандарту: Cancel — `myRed`, Save/Create — `myBlue` (неактивная — `myAccent.opacity(0.8)`),
+/// Done/Edit — `myBlue` (по умолчанию).
 struct NavBarButtonForSheet: View {
 
     let title: String
@@ -15,7 +18,7 @@ struct NavBarButtonForSheet: View {
 
     init(
         title: String = "Done",
-        color: Color = Color.myColors.myAccent,
+        color: Color = Color.myColors.myBlue,
         action: @escaping () -> Void
     ) {
         self.title = title
