@@ -35,6 +35,7 @@ final class AuthFBService {
         self.db = db
         auth.addStateDidChangeListener { [weak self] user in
             Task { @MainActor in
+                log("Auth state: \(user.map { "uid=\($0.uid) anonymous=\($0.isAnonymous)" } ?? "no user")", level: .info)
                 self?.currentUser = user
                 // Держим isLoading = true, пока сессия не подтверждена, чтобы UI
                 // никогда не отрисовал AppView с непроверенным (возможно удалённым) пользователем.
@@ -128,7 +129,10 @@ final class AuthFBService {
     private func verifyAndFinishLoading() async {
         guard isLoading else { return }
         defer { isLoading = false }
-        guard let user = auth.currentUser else { return }
+        guard let user = auth.currentUser else {
+            log("Launch verify: no current user — skipping", level: .warning)
+            return
+        }
         do {
             // Ограничиваем reload() 8 секундами. При реальном "нет интернета" (-1009) ошибка
             // приходит сразу, так что таймаут срабатывает только когда сеть есть, но auth-сервер
@@ -144,6 +148,7 @@ final class AuthFBService {
             }
             isSessionVerified = true
             currentUser = auth.currentUser
+            log("Launch verify: session confirmed", level: .info)
         } catch let error as NSError {
             // Firebase оборачивает исходные NSURLError в AuthErrorCode.networkError (17020).
             // Любая сетевая ошибка/таймаут → сохраняем сессию (повтор при следующем запуске).
