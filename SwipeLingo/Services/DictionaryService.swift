@@ -75,6 +75,10 @@ struct DictionaryService: DictionaryLookingUp {
     enum DictionaryError: LocalizedError {
         case invalidWord
         case notFound
+        /// Сервис ответил кодом, отличным от 200 и 404 (429 — лимит запросов, 5xx): слово может быть
+        /// нормальным, просто источник сейчас не отвечает. Без этого тело ответа-ошибки шло в декодер,
+        /// и пользователь видел «Data error» вместо понятного текста.
+        case serviceUnavailable(statusCode: Int)
         case networkError(Error)
         case decodingError(Error)
 
@@ -84,6 +88,8 @@ struct DictionaryService: DictionaryLookingUp {
                 return "Invalid word"
             case .notFound:
                 return "Word not found in dictionary"
+            case .serviceUnavailable:
+                return "Dictionary is temporarily unavailable. Try again later."
             case .networkError(let error):
                 return error.localizedDescription
             case .decodingError(let error):
@@ -483,8 +489,12 @@ struct DictionaryService: DictionaryLookingUp {
         let data: Data
         do {
             let (responseData, response) = try await session.data(from: url)
-            if let http = response as? HTTPURLResponse, http.statusCode == 404 {
-                throw DictionaryError.notFound
+            if let http = response as? HTTPURLResponse {
+                if http.statusCode == 404 { throw DictionaryError.notFound }
+                if http.statusCode != 200 {
+                    log("Free Dictionary responded with HTTP \(http.statusCode)", level: .warning)
+                    throw DictionaryError.serviceUnavailable(statusCode: http.statusCode)
+                }
             }
             data = responseData
         } catch let e as DictionaryError { throw e

@@ -384,6 +384,24 @@ final class DictionaryServiceTests: XCTestCase {
         }
     }
 
+    func testFreeHTTPErrorThrowsServiceUnavailableNotDecodingError() async {
+        // Регрессия: Free ответил 429 (лимит запросов), тело ответа уходило в декодер — пользователь
+        // видел «Data error: The data couldn't be read…» вместо понятного текста.
+        setReplies(mw: .status(404), free: .status(429))
+
+        do {
+            _ = try await collect(makeService())
+            XCTFail("ожидалась ошибка")
+        } catch let error as DictionaryService.DictionaryError {
+            guard case .serviceUnavailable(let statusCode) = error else {
+                return XCTFail("ожидалась .serviceUnavailable, получили \(error)")
+            }
+            XCTAssertEqual(statusCode, 429)
+        } catch {
+            XCTFail("неожиданный тип ошибки: \(error)")
+        }
+    }
+
     func testEmptyWordThrowsInvalidWord() async {
         do {
             _ = try await collect(makeService(), word: "   ")
