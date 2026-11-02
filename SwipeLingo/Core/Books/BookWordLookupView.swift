@@ -108,10 +108,16 @@ struct BookWordLookupView: View {
                     definitionsSection(entry)
                 }
 
+                // Пока догружается Merriam-Webster — строка с пояснением (как в DictionaryLookupView)
+                if let status = vm.refreshStatusText {
+                    DictionaryRefreshIndicator(text: status)
+                }
+
                 // Кнопка "Save to Inbox"
                 saveButton
             }
             .padding(20)
+            .animation(.easeInOut(duration: 0.2), value: vm.refreshStatusText)
         }
     }
 
@@ -247,7 +253,20 @@ struct BookWordLookupView: View {
         )) ?? []
 
         if !existing.contains(where: { $0.en.lowercased() == word.lowercased() }) {
-            let card = Card(en: word, item: translatedWord, setId: inboxSet.id)
+            // Запись словаря уже на экране — кладём её в кэш новой карточки, чтобы DictionaryLookupView
+            // открылся сразу с ней, без полноэкранного спиннера. Те же поля, что пишет его cacheEntry;
+            // если MW ещё догружался и сохранилась запись Free, при открытии словаря её заменит MW.
+            // В ветке .error записи нет — карточка остаётся без словарных данных.
+            var shownEntry: DictionaryEntry?
+            if case .loaded(let entry) = vm.phase { shownEntry = entry }
+            let card = Card(
+                en: word,
+                item: translatedWord,
+                dictTranscription: shownEntry?.transcription ?? "",
+                dictAudioURL: shownEntry?.audioURL ?? "",
+                dictDefinition: shownEntry?.meanings.first?.definitions.first?.text ?? "",
+                setId: inboxSet.id
+            )
             context.insert(card)
             context.saveWithErrorHandling()
             log("Saved '\(word)' to Inbox", level: .info)
