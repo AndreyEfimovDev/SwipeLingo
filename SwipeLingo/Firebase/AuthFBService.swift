@@ -12,6 +12,8 @@ import CryptoKit
 final class AuthFBService {
 
     private(set) var currentUser: FirebaseAuth.User? = nil
+    /// True до первого ответа auth-листенера (состояние из локального кэша Firebase). Проверку сессии
+    /// сервером не ждёт — она идёт в фоне (`verifyLaunchSession`), иначе при плохой сети старт висел до 8 с.
     private(set) var isLoading = true
     /// True только после того, как закэшированная сессия подтверждена Firebase (либо после свежего входа).
     /// Firebase-вызовы, пишущие данные, должны быть защищены этим флагом, чтобы избежать записей по протухшему токену.
@@ -29,6 +31,9 @@ final class AuthFBService {
     /// Абстракция над `Firestore.firestore()` — нужна только для удаления документа
     /// пользователя при удалении аккаунта (см. `deleteAccount`/`deleteAccountWithApple`).
     private let db: FirestoreClient
+    /// Проверка сессии на старте запускается ровно один раз: листенер срабатывает и повторно
+    /// (в т.ч. после входа), а флаг ставится синхронно, до первого await.
+    private var didStartLaunchVerify = false
 
     init(auth: AuthClient = Auth.auth(), db: FirestoreClient = Firestore.firestore()) {
         self.auth = auth
@@ -36,10 +41,15 @@ final class AuthFBService {
         auth.addStateDidChangeListener { [weak self] user in
             Task { @MainActor in
                 log("Auth state: \(user.map { "uid=\($0.uid) anonymous=\($0.isAnonymous)" } ?? "no user")", level: .info)
-                self?.currentUser = user
-                // Держим isLoading = true, пока сессия не подтверждена, чтобы UI
-                // никогда не отрисовал AppView с непроверенным (возможно удалённым) пользователем.
-                await self?.verifyAndFinishLoading()
+                guard let self else { return }
+                self.currentUser = user
+                guard !self.didStartLaunchVerify else { return }
+                self.didStartLaunchVerify = true
+                // UI — сразу по закэшированному пользователю; подтверждение сервером — в фоне. Если аккаунт
+                // удалён, пользователь увидит свои локальные данные секунду-другую, пока проверка не выведет его.
+                // Записи в Firestore по-прежнему ждут isSessionVerified.
+                self.isLoading = false
+                await self.verifyLaunchSession()
             }
         }
     }
@@ -122,13 +132,11 @@ final class AuthFBService {
         }
     }
 
-    /// Вызывается один раз из auth-state листенера при первом запуске приложения.
-    /// Держит isLoading = true, пока Firebase не подтвердит валидность сессии.
+    /// Вызывается один раз из auth-state листенера при запуске приложения, в фоне — UI уже показан.
+    /// Успех → `isSessionVerified = true` (запускает claim и синк в SwipeLingoApp).
     /// Проверяются все типы пользователей (включая анонимных) — удалённые аккаунты выходят из системы.
     /// Выход — только по явным ошибкам авторизации (`shouldSignOut`), остальные ошибки не мешают работать офлайн.
-    private func verifyAndFinishLoading() async {
-        guard isLoading else { return }
-        defer { isLoading = false }
+    private func verifyLaunchSession() async {
         guard let user = auth.currentUser else {
             log("Launch verify: no current user — skipping", level: .warning)
             return
@@ -146,10 +154,12 @@ final class AuthFBService {
                 _ = try await group.next()
                 group.cancelAll()
             }
+            guard isStillCurrent(user) else { return }
             isSessionVerified = true
             currentUser = auth.currentUser
             log("Launch verify: session confirmed", level: .info)
         } catch let error as NSError {
+            guard isStillCurrent(user) else { return }
             let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError
             let details = "domain:\(error.domain) code:\(error.code) underlying:\(String(describing: underlying?.code))"
             if Self.shouldSignOut(afterLaunchVerifyError: error) {
@@ -160,6 +170,14 @@ final class AuthFBService {
                 log("Launch verify: not an auth error (\(details)) — keeping session", level: .warning)
             }
         }
+    }
+
+    /// Проверка идёт в фоне, при уже показанном UI — пользователь мог успеть выйти или войти в другой
+    /// аккаунт. Результат применяется, только если текущий пользователь всё ещё тот, кого проверяли.
+    private func isStillCurrent(_ user: FirebaseAuth.User) -> Bool {
+        let isCurrent = auth.currentUser?.uid == user.uid
+        if !isCurrent { log("Launch verify: user changed during verification — result ignored", level: .info) }
+        return isCurrent
     }
 
     /// Нужно ли выходить из аккаунта после ошибки проверки сессии на старте.

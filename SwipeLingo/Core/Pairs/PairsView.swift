@@ -390,6 +390,7 @@ struct PairsView: View {
             Text(activePile != nil ? "No sets in this pile" : "No sets available or try to increase your English level")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
+                .multilineTextAlignment(.center)
             Text(activePile != nil
                  ? "Add sets to \"\(activePile!.name)\" to get started"
                  : "Pairs sets will appear here once downloaded")
