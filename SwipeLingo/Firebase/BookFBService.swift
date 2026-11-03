@@ -45,8 +45,11 @@ struct BookFBService: BookCatalogSyncing {
                 snapshot = try await db.collection("books").getDocuments()
             }
 
+            // Сначала схлопываем дубли (гонка CloudKit), затем строим словарь без падения на повторе ключа:
+            // uniqueKeysWithValues трапит на дубле, а он мог появиться между дедупом и fetch.
+            BookCatalogDedupeService().mergeDuplicates(context: context)
             let existing = (try? context.fetch(FetchDescriptor<Book>())) ?? []
-            let existingByFirestoreId = Dictionary(uniqueKeysWithValues: existing.map { ($0.firestoreId, $0) })
+            let existingByFirestoreId = Dictionary(existing.map { ($0.firestoreId, $0) }, uniquingKeysWith: { first, _ in first })
 
             for doc in snapshot.documents {
                 guard let fsBook = parseBook(doc) else { continue }

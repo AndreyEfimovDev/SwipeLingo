@@ -65,6 +65,8 @@ struct BooksView: View {
                 BookReaderView(book: book, appSyncStateService: appSyncStateService, appSettings: appSettings, authService: authService, audioService: audioService)
             }
         }
+        // Дубли книг от гонки CloudKit — схлопываем при каждом входе в раздел, в любой сборке.
+        .onAppear { vm.mergeDuplicateBooks(context: context) }
         #if !DEBUG
         // В релизе каталог тихо обновляется при входе в раздел; в DEBUG мок-книги грузятся только кнопкой.
         .task { syncTask = Task { await vm.syncBooks(context: context) } }

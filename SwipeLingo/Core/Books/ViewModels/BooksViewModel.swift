@@ -46,5 +46,12 @@ final class BooksViewModel {
         isSyncing = true
         defer { isSyncing = false }
         await catalog.syncBooks(into: context, forceFullSync: false)
+        mergeDuplicateBooks(context: context)
+    }
+
+    /// Схлопывает дубли книг с одним firestoreId — в т.ч. те, что CloudKit довёз уже после синка каталога.
+    /// Вызывается после синка и при каждом появлении раздела Books (дёшево: книг единицы).
+    func mergeDuplicateBooks(context: ModelContext) {
+        BookCatalogDedupeService().mergeDuplicates(context: context)
     }
 }
