@@ -33,14 +33,14 @@ struct BooksListView: View {
             set: { if !$0 { confirmDelete = nil } }
         )) {
             Button("Cancel", role: .cancel) { confirmDelete = nil }
-            Button("Delete from Firestore", role: .destructive) {
+            Button("Delete Forever", role: .destructive) {
                 if let book = confirmDelete {
                     deployTask = Task { await store.deleteBookForever(id: book.id) }
                 }
                 confirmDelete = nil
             }
         } message: {
-            Text("This will delete the book document from Firestore. Storage files (cover + chapters) must be removed manually from Firebase Console.")
+            Text("This will delete the book from Firestore and all its files (cover, chapters, images) from Storage. This cannot be undone.")
         }
         .onDisappear { deployTask?.cancel() }
     }

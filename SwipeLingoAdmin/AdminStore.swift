@@ -295,14 +295,19 @@ final class AdminStore {
     }
 
     func deployBook(id: String) async {
-        guard let book = books.first(where: { $0.id == id }) else { return }
+        guard var book = books.first(where: { $0.id == id }) else { return }
         isDeploying = true
         deployError = nil
+        // updatedAt документа = время публикации, а не время последней правки: приложение
+        // забирает только документы с updatedAt > своего lastSyncAt, и правка, сделанная до его
+        // синка, но опубликованная после, иначе до него не дошла бы.
+        let publishedAt = Date.now
+        book.updatedAt = publishedAt
         do {
             try await FirestoreService().deployBook(book)
             if let idx = books.firstIndex(where: { $0.id == id }) {
                 books[idx].deployStatus = .live
-                books[idx].updatedAt   = .now
+                books[idx].updatedAt   = publishedAt
             }
             save()
         } catch {
@@ -334,14 +339,19 @@ final class AdminStore {
     /// Deploys a CardSet (plus its cards and parent collection) to Firestore.
     /// On success marks the set as .live. On failure stores deployError.
     func deployCardSet(id: String) async {
-        guard let set = cardSets.first(where: { $0.id == id }),
-              let collection = collections.first(where: { $0.id == set.collectionId })
+        guard var set = cardSets.first(where: { $0.id == id }),
+              var collection = collections.first(where: { $0.id == set.collectionId })
         else { return }
 
         let setCards = cards(for: id)
 
         isDeploying = true
         deployError = nil
+
+        // updatedAt = время публикации — см. комментарий в deployBook.
+        let publishedAt = Date.now
+        set.updatedAt = publishedAt
+        collection.updatedAt = publishedAt
 
         do {
             try await FirestoreService().deployCardSet(
@@ -352,12 +362,12 @@ final class AdminStore {
             // Mark set as .live
             if let idx = cardSets.firstIndex(where: { $0.id == id }) {
                 cardSets[idx].deployStatus = .live
-                cardSets[idx].updatedAt    = .now
+                cardSets[idx].updatedAt    = publishedAt
             }
             // Mark collection as synced
             if let idx = collections.firstIndex(where: { $0.id == collection.id }) {
                 collections[idx].isSynced  = true
-                collections[idx].updatedAt = .now
+                collections[idx].updatedAt = publishedAt
             }
             save()
         } catch {
@@ -371,12 +381,17 @@ final class AdminStore {
     /// Deploys a PairsSet (plus parent collection) to Firestore.
     /// On success marks the set as .live. On failure stores deployError.
     func deployPairsSet(id: String) async {
-        guard let set = pairsSets.first(where: { $0.id == id }),
-              let collection = collections.first(where: { $0.id == set.collectionId })
+        guard var set = pairsSets.first(where: { $0.id == id }),
+              var collection = collections.first(where: { $0.id == set.collectionId })
         else { return }
 
         isDeploying = true
         deployError = nil
+
+        // updatedAt = время публикации — см. комментарий в deployBook.
+        let publishedAt = Date.now
+        set.updatedAt = publishedAt
+        collection.updatedAt = publishedAt
 
         do {
             try await FirestoreService().deployPairsSet(
@@ -386,12 +401,12 @@ final class AdminStore {
             // Mark set as .live
             if let idx = pairsSets.firstIndex(where: { $0.id == id }) {
                 pairsSets[idx].deployStatus = .live
-                pairsSets[idx].updatedAt    = .now
+                pairsSets[idx].updatedAt    = publishedAt
             }
             // Mark collection as synced
             if let idx = collections.firstIndex(where: { $0.id == collection.id }) {
                 collections[idx].isSynced  = true
-                collections[idx].updatedAt = .now
+                collections[idx].updatedAt = publishedAt
             }
             save()
         } catch {
