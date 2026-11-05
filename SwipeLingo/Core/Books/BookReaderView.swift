@@ -393,6 +393,7 @@ struct BookReaderView: View {
                         vm.addBookmark(context: context)
                     } label: {
                         Label("Add Bookmark", systemImage: "bookmark")
+                            .foregroundStyle(Color.myColors.myAccent)
                     }
                 }
                 Divider()
@@ -400,6 +401,7 @@ struct BookReaderView: View {
                     vm.showBookmarks = true
                 } label: {
                     Label("Show All Bookmarks", systemImage: "bookmark.fill")
+                        .foregroundStyle(Color.myColors.myAccent)
                 }
             }
 

@@ -111,6 +111,7 @@ struct BooksView: View {
                         vm.removeDownload(of: book)
                     } label: {
                         Label("Remove download", systemImage: "arrow.down.circle")
+                            .foregroundStyle(Color.myColors.myAccent)
                     }
                 }
             }
