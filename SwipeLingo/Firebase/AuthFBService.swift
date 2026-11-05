@@ -262,7 +262,9 @@ final class AuthFBService {
         guard let user = auth.currentUser else { return }
         // Сначала удаляем документ Firestore, пока auth-токен ещё валиден.
         // user.delete() удаляет запись Auth, но оставляет данные Firestore нетронутыми.
-        try? await db.collection("users").document(user.uid).delete()
+        // Ошибку не глушим: без аккаунта документ уже никто не удалит (правила пускают только владельца),
+        // поэтому при сбое останавливаемся, не удаляя аккаунт, — пользователь увидит ошибку и повторит.
+        try await db.collection("users").document(user.uid).delete()
         try await user.delete()
         currentUser = nil
         isSessionVerified = false
@@ -280,8 +282,10 @@ final class AuthFBService {
             let authCode = String(data: authCodeData, encoding: .utf8)
         else { throw AuthError.invalidAppleCredential }
 
+        // Документ — первым и без try? (см. deleteAccount): если он не удалился, токен Apple ещё не отозван
+        // и аккаунт цел — повтор пройдёт тем же путём.
+        try await db.collection("users").document(user.uid).delete()
         try await auth.revokeToken(withAuthorizationCode: authCode)
-        try? await db.collection("users").document(user.uid).delete()
         try await user.delete()
         currentUser = nil
         isSessionVerified = false

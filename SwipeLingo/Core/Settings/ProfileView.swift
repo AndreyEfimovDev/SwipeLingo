@@ -134,7 +134,7 @@ struct ProfileView: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Your account and all associated data will be permanently deleted. This cannot be undone.")
+            Text("Your SwipeLingo account and profile will be permanently deleted. This cannot be undone.\n\nCards and progress stored in your iCloud stay on your devices — you can remove them in iPhone Settings → [your name] → iCloud.")
         }
         .sheet(isPresented: $needsAppleReauthForDeletion) {
             AppleDeletionSheet(authService: authService) { authorization in
