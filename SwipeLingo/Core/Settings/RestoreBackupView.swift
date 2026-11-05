@@ -15,6 +15,7 @@ struct RestoreBackupView: View {
     @State private var showDocumentPicker = false
     @State private var importResult: ExportService.ImportResult? = nil
     @State private var importError: String? = nil
+    @State private var importTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
@@ -34,6 +35,7 @@ struct RestoreBackupView: View {
                 isImporting = false
             }
         }
+        .onDisappear { importTask?.cancel() }
     }
 
     private var restoreCard: some View {
@@ -119,15 +121,19 @@ struct RestoreBackupView: View {
 
     private func handleDocumentPicked(url: URL) {
         let ctx = modelContext
-        // Читаем firebaseUID здесь, на MainActor, до входа в Task.detached —
-        // authService MainActor-изолирован, внутри detached-задачи обратиться
-        // к нему без доп. hop'а нельзя (тот же паттерн, что уже применён к ctx).
         let firebaseUID = authService.currentUser?.uid ?? ""
-        Task.detached {
-            let r = await ExportService().importBackup(from: url, into: ctx, firebaseUID: firebaseUID)
-            await MainActor.run {
-                isImporting  = false
+        // ExportService работает на MainActor (изоляция по умолчанию), так что Task.detached ничего не давал.
+        // yield — чтобы спиннер успел появиться до синхронного восстановления.
+        importTask = Task {
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            let result = ExportService().importBackup(from: url, into: ctx, firebaseUID: firebaseUID)
+            isImporting = false
+            switch result {
+            case .success(let r):
                 importResult = r
+            case .failure:
+                importError = "Couldn't restore from this file. Make sure it's a SwipeLingo backup."
             }
         }
     }

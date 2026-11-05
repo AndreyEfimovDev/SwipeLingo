@@ -11,6 +11,7 @@ import SwiftData
 //   • сеты одной коллекции не плодят одноимённые коллекции; существующая коллекция переиспользуется
 //   • в системную коллекцию (контейнер Inbox) новые сеты не попадают — регрессия: раньше попадали все
 //   • экспорт берёт сеты только своего аккаунта — сеты другого Firebase-аккаунта на том же iCloud не попадают
+//   • битый файл — ошибка, а не «добавлено 0»; ничего не добавляется
 
 @MainActor
 final class ExportServiceTests: XCTestCase {
@@ -46,7 +47,7 @@ final class ExportServiceTests: XCTestCase {
         let targetInbox = seedInbox(in: target)
         try target.save()
 
-        let result = service.importBackup(from: try export(source), into: target, firebaseUID: uid)
+        let result = try service.importBackup(from: try export(source), into: target, firebaseUID: uid).get()
 
         XCTAssertEqual(result.newSets, 1, "Inbox не считается новым сетом")
         XCTAssertEqual(result.newCards, 2)
@@ -130,6 +131,22 @@ final class ExportServiceTests: XCTestCase {
         XCTAssertTrue(names.contains("Verbs"))
         XCTAssertFalse(names.contains("Hidden"), "сеты другого аккаунта в бэкап не попадают")
         XCTAssertFalse(try target.fetch(FetchDescriptor<Collection>()).contains { $0.name == "Foreign" })
+    }
+
+    /// Регрессия: битый файл возвращался как «добавлено 0», и экран писал «Everything is already up to date».
+    func testImport_InvalidFile_ReturnsFailure_NothingAdded() throws {
+        let target = try makeContext()
+        _ = seedInbox(in: target)
+        try target.save()
+        let setsBefore = try target.fetchCount(FetchDescriptor<CardSet>())
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("broken-\(UUID().uuidString).json")
+        try Data("not a backup".utf8).write(to: url)
+        tempFiles.append(url)
+
+        let result = service.importBackup(from: url, into: target, firebaseUID: uid)
+
+        guard case .failure = result else { return XCTFail("битый файл должен давать ошибку") }
+        XCTAssertEqual(try target.fetchCount(FetchDescriptor<CardSet>()), setsBefore)
     }
 
     // MARK: - Helpers
