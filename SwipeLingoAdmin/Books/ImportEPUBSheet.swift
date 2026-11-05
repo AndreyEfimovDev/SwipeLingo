@@ -279,6 +279,7 @@ struct ImportEPUBSheet: View {
                 coverStoragePath: result.coverStoragePath,
                 totalChapters:    result.totalChapters,
                 chapters:         result.chapters,
+                isPublished:      false,   // черновик: сначала проверка в приложении тестировщиком
                 deployStatus:     .new,
                 updatedAt:        now,
                 createdAt:        now

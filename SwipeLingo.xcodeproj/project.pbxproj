@@ -84,6 +84,8 @@
 		477300233099315800402B80 /* AuthFBServiceLaunchVerifyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477300223099315800402B80 /* AuthFBServiceLaunchVerifyTests.swift */; };
 		477300253099D84A00402B80 /* BookCatalogDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477300243099D84900402B80 /* BookCatalogDedupeService.swift */; };
 		477300273099D85E00402B80 /* BookCatalogDedupeServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477300263099D85E00402B80 /* BookCatalogDedupeServiceTests.swift */; };
+		47730029309CA67100402B80 /* BookCatalogVisibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47730028309CA67100402B80 /* BookCatalogVisibilityTests.swift */; };
+		4773002B309CA6CF00402B80 /* BookCatalogVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773002A309CA6CF00402B80 /* BookCatalogVisibility.swift */; };
 		4777A64D69CD08532A3CD45F /* MainScreenToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472631E6B19501091864466C /* MainScreenToolbar.swift */; };
 		4785898E2FF3DCF100BF3C8F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4785898D2FF3DCF100BF3C8F /* ActivityView.swift */; };
 		478589912FF3DD4800BF3C8F /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478589902FF3DD4800BF3C8F /* ExportService.swift */; };
@@ -350,6 +352,8 @@
 		477300223099315800402B80 /* AuthFBServiceLaunchVerifyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFBServiceLaunchVerifyTests.swift; sourceTree = "<group>"; };
 		477300243099D84900402B80 /* BookCatalogDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCatalogDedupeService.swift; sourceTree = "<group>"; };
 		477300263099D85E00402B80 /* BookCatalogDedupeServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCatalogDedupeServiceTests.swift; sourceTree = "<group>"; };
+		47730028309CA67100402B80 /* BookCatalogVisibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCatalogVisibilityTests.swift; sourceTree = "<group>"; };
+		4773002A309CA6CF00402B80 /* BookCatalogVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCatalogVisibility.swift; sourceTree = "<group>"; };
 		477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4785898D2FF3DCF100BF3C8F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		4785898F2FF3DD4800BF3C8F /* BackupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupModels.swift; sourceTree = "<group>"; };
@@ -851,6 +855,7 @@
 				4773001F3099051500402B80 /* BookDownloadServiceTests.swift */,
 				4773001B3098FF7300402B80 /* BooksViewModelTests.swift */,
 				477300263099D85E00402B80 /* BookCatalogDedupeServiceTests.swift */,
+				47730028309CA67100402B80 /* BookCatalogVisibilityTests.swift */,
 				4773001C3098FF7300402B80 /* MockBookCatalogTests.swift */,
 				477300153098EDDD00402B80 /* FlashCardsViewModelTests.swift */,
 				477300133098EA1700402B80 /* CardSamplesTests.swift */,
@@ -1107,6 +1112,7 @@
 		47FD94C030960AA9005EEE30 /* Books */ = {
 			isa = PBXGroup;
 			children = (
+				4773002A309CA6CF00402B80 /* BookCatalogVisibility.swift */,
 				477300243099D84900402B80 /* BookCatalogDedupeService.swift */,
 				477300173098FEE000402B80 /* BookCatalogSyncing.swift */,
 				477300183098FEE000402B80 /* MockBookCatalog.swift */,
@@ -1481,6 +1487,7 @@
 				47DE7EEE2F8000E500F6BCF3 /* AccessTier.swift in Sources */,
 				478C78742F794487005FBDFE /* ShuffleMethod.swift in Sources */,
 				474F1FEC2F7DAAD900128E83 /* CircleStrokeButtonView.swift in Sources */,
+				4773002B309CA6CF00402B80 /* BookCatalogVisibility.swift in Sources */,
 				478C78752F794487005FBDFE /* UserProfile.swift in Sources */,
 				478C78762F794487005FBDFE /* AudioPlayerService.swift in Sources */,
 				47D280332F938D0000BBD66B /* ExpandableSection.swift in Sources */,
@@ -1523,6 +1530,7 @@
 				4773001E3098FF7300402B80 /* MockBookCatalogTests.swift in Sources */,
 				477300143098EA1700402B80 /* CardSamplesTests.swift in Sources */,
 				477300203099051500402B80 /* BookDownloadServiceTests.swift in Sources */,
+				47730029309CA67100402B80 /* BookCatalogVisibilityTests.swift in Sources */,
 				47FD94DC3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift in Sources */,
 				EA5914D21CB5AB9F6C4E4EBE /* UserProfileDedupeServiceTests.swift in Sources */,
 				47FD94CC30979081005EEE30 /* FreeDictionaryPronunciationTests.swift in Sources */,

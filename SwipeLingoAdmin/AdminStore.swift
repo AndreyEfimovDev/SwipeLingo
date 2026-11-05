@@ -317,6 +317,21 @@ final class AdminStore {
         isDeploying = false
     }
 
+    /// Публикует книгу для всех пользователей или возвращает её в черновики (видна только тестировщику).
+    /// Пишет документ целиком через deployBook — тот же updatedAt = время публикации, иначе дельта-синк
+    /// приложения изменение флага не увидит.
+    func setBookPublished(id: String, _ isPublished: Bool) async {
+        guard let idx = books.firstIndex(where: { $0.id == id }) else { return }
+        let previous = books[idx].isPublished
+        books[idx].isPublished = isPublished
+        await deployBook(id: id)
+        // Не записалось в Firestore — локальный флаг возвращаем, чтобы Admin не показывал неправду.
+        if deployError != nil, let idx = books.firstIndex(where: { $0.id == id }) {
+            books[idx].isPublished = previous
+            save()
+        }
+    }
+
     func deleteBookForever(id: String) async {
         isDeleting  = true
         deleteError = nil

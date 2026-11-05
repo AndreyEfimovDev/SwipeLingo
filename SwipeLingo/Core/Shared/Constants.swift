@@ -19,12 +19,13 @@ enum Constants {
 
     /// Длительность триала в днях для новых подписчиков Go/Pro.
     static let trialDurationDays = 30
-
+    
     /// Дней до истечения для отправки первого напоминания о продлении.
     static let notificationReminderDays1 = 7
 
     /// Дней до истечения для отправки второго напоминания о продлении.
     static let notificationReminderDays2 = 1
+
 
     // MARK: - Цены (EUR / USD / RUB)
     // Заглушка — заменить на реальные StoreKit product ID, когда будет подключён биллинг.

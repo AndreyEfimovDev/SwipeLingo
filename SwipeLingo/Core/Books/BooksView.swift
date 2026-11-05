@@ -192,16 +192,16 @@ private struct BookCard: View {
                     .frame(maxWidth: .infinity, minHeight: 180, maxHeight: 180)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(alignment: .bottomTrailing) {
-                        if book.isNew {
-                            Text("NEW")
-                                .font(.caption2)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(Color.myColors.buttonTextAccent)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 3)
-                                .background(Color.myColors.myRed.opacity(0.8), in: Capsule())
-                                .padding(8)
+                        HStack(spacing: 4) {
+                            // Черновик из Firestore (isPublished != true) — виден только тестировщику.
+                            if book.isTesting {
+                                coverBadge("TESTING", color: Color.myColors.myOrange)
+                            }
+                            if book.isNew {
+                                coverBadge("NEW", color: Color.myColors.myRed)
+                            }
                         }
+                        .padding(8)
                     }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -240,6 +240,17 @@ private struct BookCard: View {
             loadTask = Task { await loadCover() }
         }
         .onDisappear { loadTask?.cancel() }
+    }
+
+    /// Плашка в углу обложки (NEW, TESTING).
+    private func coverBadge(_ title: String, color: Color) -> some View {
+        Text(title)
+            .font(.caption2)
+            .fontWeight(.semibold)
+            .foregroundStyle(Color.myColors.buttonTextAccent)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.8), in: Capsule())
     }
 
     @ViewBuilder

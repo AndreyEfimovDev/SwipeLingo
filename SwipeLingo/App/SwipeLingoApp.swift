@@ -41,15 +41,16 @@ struct SwipeLingoApp: App {
             /// гарантируеv существовани системной коллекции Inbox и сета `Inbox`
             SystemSeeder.ensureSystemCollections(into: container.mainContext)
             
+            let authFBService = AuthFBService()
             let dependencies = AppDependencies(
-                authFBService: AuthFBService(),
+                authFBService: authFBService,
                 userFBService: UserFBService(),
                 appSyncStateService: AppSyncStateService(modelContext: container.mainContext),
                 collectionDedupeObserver: CollectionDedupeObserver(container: container),
                 appViewModel: AppViewModel(),
                 appSettings: AppSettings(),
                 audioService: AudioPlayerService(),
-                bookCatalog: Self.makeBookCatalog()
+                bookCatalog: Self.makeBookCatalog(authService: authFBService)
             )
             startup = .ready(container: container, dependencies: dependencies)
         } else {
@@ -58,12 +59,12 @@ struct SwipeLingoApp: App {
     }
 
     /// Источник каталога книг: в DEBUG — мок-книги без сети (загружаются кнопкой в BooksView),
-    /// в релизе — Firestore.
-    private static func makeBookCatalog() -> BookCatalogSyncing {
+    /// в релизе — Firestore (черновики видны тестировщику — по UID из authService).
+    private static func makeBookCatalog(authService: AuthFBService) -> BookCatalogSyncing {
         #if DEBUG
         MockBookCatalog()
         #else
-        BookFBService()
+        BookFBService(currentUID: { authService.currentUser?.uid })
         #endif
     }
 

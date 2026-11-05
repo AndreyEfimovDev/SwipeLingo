@@ -12,14 +12,24 @@ import FirebaseFirestore
 //     title, author, description, cefrLevel, accessTier,
 //     coverStoragePath, totalChapters,
 //     chapters: [{index, title}],
+//     isPublished,
 //     updatedAt, createdAt
 //
 // Логика upsert: сопоставление по firestoreId. Никогда не удаляет локальные книги
-// (у пользователя может быть прогресс чтения).
+// (у пользователя может быть прогресс чтения). Неопубликованные книги загружаются только
+// тестировщику — см. BookCatalogVisibility.
 
 struct BookFBService: BookCatalogSyncing {
 
     private static let lastSyncAtKey = "booksLastSyncAt"
+
+    /// Firebase UID текущего пользователя — по нему решается, видны ли черновики книг.
+    private let currentUID: @MainActor () -> String?
+
+    /// - Parameter currentUID: UID текущего пользователя из AuthFBService (composition root).
+    init(currentUID: @escaping @MainActor () -> String?) {
+        self.currentUID = currentUID
+    }
 
     // MARK: - Sync
 
@@ -30,8 +40,11 @@ struct BookFBService: BookCatalogSyncing {
         }
 
         let db = Firestore.firestore()
+        let isTester = BookCatalogVisibility.isTester(uid: currentUID())
 
-        let lastSyncAt: Date = forceFullSync
+        // Тестировщику — всегда полный синк: дельта по updatedAt не вернёт черновики, залитые до его входа
+        // в аккаунт, и не снимет плашку TESTING. Книг единицы, полный запрос дешёвый.
+        let lastSyncAt: Date = forceFullSync || isTester
             ? .distantPast
             : (UserDefaults.standard.object(forKey: Self.lastSyncAtKey) as? Date ?? .distantPast)
 
@@ -53,7 +66,12 @@ struct BookFBService: BookCatalogSyncing {
 
             for doc in snapshot.documents {
                 guard let fsBook = parseBook(doc) else { continue }
-                upsert(fsBook, into: context, existing: existingByFirestoreId)
+                switch BookCatalogVisibility.decide(isPublished: fsBook.isPublished, isTester: isTester) {
+                case .show(let isTesting):
+                    upsert(fsBook, isTesting: isTesting, into: context, existing: existingByFirestoreId)
+                case .skip:
+                    continue
+                }
             }
 
             try? context.save()
@@ -69,6 +87,7 @@ struct BookFBService: BookCatalogSyncing {
 
     private func upsert(
         _ fsBook: FSBook,
+        isTesting: Bool,
         into context: ModelContext,
         existing: [String: Book]
     ) {
@@ -84,6 +103,7 @@ struct BookFBService: BookCatalogSyncing {
             local.totalChapters    = fsBook.totalChapters
             local.chaptersJSON     = encodeChapters(chapters)
             local.updatedAt        = fsBook.updatedAt
+            local.isTesting        = isTesting
         } else {
             let book = Book(
                 firestoreId:      fsBook.id,
@@ -95,6 +115,7 @@ struct BookFBService: BookCatalogSyncing {
                 coverStoragePath: fsBook.coverStoragePath,
                 totalChapters:    fsBook.totalChapters,
                 chapters:         chapters,
+                isTesting:        isTesting,
                 createdAt:        fsBook.createdAt,
                 updatedAt:        fsBook.updatedAt
             )
@@ -138,6 +159,7 @@ struct BookFBService: BookCatalogSyncing {
             coverStoragePath: coverStoragePath,
             totalChapters:    totalChapters,
             chapters:         chapters,
+            isPublished:      d["isPublished"] as? Bool,
             updatedAt:        updatedAtTS.dateValue(),
             createdAt:        createdAtTS.dateValue()
         )
