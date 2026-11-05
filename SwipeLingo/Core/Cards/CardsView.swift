@@ -146,7 +146,7 @@ struct CardsView: View {
             )
         }
         // Лёгкое обновление счётчиков (не полный reload сессии — studyCards/sessionID/
-        // currentIndex/isCaughtUp не трогаются) один раз при закрытии ЛЮБОГО sheet
+        // currentIndex не трогаются) один раз при закрытии ЛЮБОГО sheet
         // (Library/Settings/...) — а не при каждой мутации статуса карточки. Статус может
         // поменяться вне активной сессии (напр. swipe action "Restore" в CardSetDetailView,
         // или restore из DeletedCardsView в Settings), allCards.count при этом не меняется,
@@ -170,10 +170,6 @@ struct CardsView: View {
     private var content: some View {
         if !hasActiveLevelCards {
             emptyStateView
-        } else if vm.isCaughtUp {
-            caughtUpView
-                .id(vm.sessionID)
-                .transition(.scale(scale: 0.95).combined(with: .opacity))
         } else if vm.studyCards.isEmpty {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -214,7 +210,7 @@ struct CardsView: View {
                 } : nil,
                 hasDueCards: hasDueCards,
                 onDone: {
-                    vm.onSessionComplete(
+                    vm.continueWithAllCards(
                         piles: piles, allCards: allCards,
                         cardSets: levelFilteredCardSets, collections: collections,
                         dueHour: studyStartHour, userPlan: userPlan
@@ -228,7 +224,7 @@ struct CardsView: View {
         }
     }
 
-    /// Отступ между значком Pile и содержимым (карточки / экран "all caught up"). В портрете
+    /// Отступ между значком Pile и содержимым (карточки). В портрете
     /// небольшой; в ландшафте прежний 16 — там вместе с `TinderCardsView.landscapeBody` он даёт запас
     /// под выглядывающие вверх карточки стопки, меньше нельзя (они наедут на значок).
     private var contentTopPadding: CGFloat { isLandscape ? 16 : 4 }
@@ -241,64 +237,6 @@ struct CardsView: View {
         return PileBadgeView(title: hasActivePile ? name : "All Cards", isActive: hasActivePile) {
             appViewModel.activeSheet = .cardsLibrary
         }
-    }
-
-    // MARK: - Caught-up Screen
-
-    private var caughtUpView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.myColors.myBackground)
-
-            VStack(spacing: 0) {
-                Spacer()
-
-                VStack(spacing: 16) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(Color.myColors.myGreen)
-
-                    Text("You're all caught up!")
-                        .font(.title2.bold())
-
-                    if !vm.nextReviewLabel.isEmpty {
-                        Text("Next review: \(vm.nextReviewLabel)")
-                            .font(.subheadline)
-                            .foregroundStyle(Color.myColors.myAccent.opacity(0.6))
-                    }
-                }
-                .multilineTextAlignment(.center)
-
-                Spacer()
-
-                Button {
-                    vm.studyAll(
-                        piles: piles, allCards: allCards,
-                        cardSets: levelFilteredCardSets, collections: collections,
-                        userPlan: userPlan
-                    )
-                } label: {
-                    Text("Study anyway  ·  All: \(vm.allActiveCount)")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color.myColors.myBlue.opacity(0.12))
-                        .foregroundStyle(Color.myColors.myBlue)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .overlay(RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.myColors.myBlue.opacity(0.2), lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 28)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .myShadow()
-        .padding(.horizontal, 16)
-        .padding(.top, contentTopPadding)
-        .padding(.bottom, 16)
     }
 
     @ToolbarContentBuilder

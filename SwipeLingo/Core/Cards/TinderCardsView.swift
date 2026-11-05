@@ -956,7 +956,7 @@ struct TinderCardsView: View {
         VStack(spacing: 10) {
             // В режиме Due повторять только что оценённые карточки бессмысленно (их dueDate уже
             // сдвинут) — вместо "Study again" переход ко всем активным карточкам через onDone
-            // (FlashCardsViewModel.onSessionComplete переключает сессию в режим All).
+            // (FlashCardsViewModel.continueWithAllCards переключает сессию в режим All).
             Button {
                 if isDueMode {
                     vm.onDone?()

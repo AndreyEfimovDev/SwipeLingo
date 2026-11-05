@@ -5,7 +5,7 @@ import XCTest
 //
 // Переход Due → All по завершении Due-сессии:
 //   • при наличии due-карточек сессия стартует в режиме Due и содержит только их
-//   • onSessionComplete в режиме Due переключает сессию в All со всеми активными карточками
+//   • continueWithAllCards по завершении Due переключает сессию в All со всеми активными карточками
 //     (кнопка "Study all cards" на экране завершения TinderCardsView)
 
 @MainActor
@@ -25,7 +25,7 @@ final class FlashCardsViewModelTests: XCTestCase {
         XCTAssertEqual(vm.studyCards.map(\.id), [due.id])
     }
 
-    func testOnSessionComplete_InDueMode_SwitchesToAllWithAllActiveCards() {
+    func testContinueWithAllCards_AfterDue_SwitchesToAllWithAllActiveCards() {
         let due = card("due", dueDate: .distantPast)
         let later = card("later", dueDate: .distantFuture)
         let learnt = card("learnt", dueDate: .distantPast, status: .learnt)
@@ -35,13 +35,12 @@ final class FlashCardsViewModelTests: XCTestCase {
                            collections: [], dueHour: 0, srsEnabled: true)
         let dueSessionID = vm.sessionID
 
-        vm.onSessionComplete(piles: [], allCards: allCards, cardSets: [set],
-                             collections: [], dueHour: 0)
+        vm.continueWithAllCards(piles: [], allCards: allCards, cardSets: [set],
+                                collections: [], dueHour: 0)
 
         XCTAssertEqual(vm.studyMode, .all)
         XCTAssertEqual(Set(vm.studyCards.map(\.id)), [due.id, later.id])
         XCTAssertNotEqual(vm.sessionID, dueSessionID)
-        XCTAssertFalse(vm.isCaughtUp)
     }
 
     // MARK: - Helpers
