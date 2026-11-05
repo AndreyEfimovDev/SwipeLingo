@@ -134,7 +134,7 @@ struct ProfileView: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Your account and all associated data will be permanently deleted. This cannot be undone.")
+            Text("Your SwipeLingo account and profile will be permanently deleted. This cannot be undone.\n\nCards and progress stored in your iCloud stay on your devices — you can remove them in iPhone Settings → [your name] → iCloud.")
         }
         .sheet(isPresented: $needsAppleReauthForDeletion) {
             AppleDeletionSheet(authService: authService) { authorization in
@@ -538,8 +538,8 @@ struct ProfileView: View {
                     .padding(.horizontal, 16)
                 }
 
-                // MONETIZATION_STUB: кнопка Subscribe/Manage скрыта — монетизация отключена.
-                // Когда будет готова: убрать эту заглушку и раскомментировать блок ниже.
+                // Кнопка Subscribe/Manage скрыта, пока Monetization.isEnabled == false (сам planSection сейчас
+                // нигде не выводится). При включении монетизации — вернуть блок ниже под этим флагом.
                 //
                 // Divider().padding(.leading, 16)
                 // Button { showPlans = true } label: {

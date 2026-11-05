@@ -1,6 +1,7 @@
 import Foundation
 import FirebaseCore
 import FirebaseCrashlytics
+import FirebaseAnalytics
 import GoogleSignIn
 
 // MARK: - FirebaseBootstrap
@@ -23,11 +24,14 @@ enum FBBootstrap {
                 if let clientID = FirebaseApp.app()?.options.clientID {
                     GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
                 }
-                // В DEBUG крашлитика отключена — тестовые креши из симулятора/отладки не должны засорять прод-дашборд.
+                // В DEBUG крашлитика и аналитика отключены — тестовые креши и события из симулятора/отладки
+                // не должны засорять прод-дашборды (проект Firebase один на обе сборки).
                 #if DEBUG
                 Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
+                Analytics.setAnalyticsCollectionEnabled(false)
                 #else
                 Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+                Analytics.setAnalyticsCollectionEnabled(true)
                 #endif
                 log("App configured", level: .info)
             } else {

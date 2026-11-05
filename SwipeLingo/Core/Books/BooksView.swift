@@ -31,7 +31,6 @@ struct BooksView: View {
     @State private var vm: BooksViewModel
     @State private var syncTask: Task<Void, Never>?
     @State private var readerBook: Book? = nil
-    @State private var bookToDelete: Book? = nil
 
     private let columns = [GridItem(.adaptive(minimum: 155, maximum: 190), spacing: 16)]
 
@@ -107,26 +106,14 @@ struct BooksView: View {
                     readerBook = book
                 }
                 .contextMenu {
-                    Button(role: .destructive) {
-                        bookToDelete = book
+                    // Книга остаётся в каталоге, прогресс и закладки — тоже; главы скачаются заново при открытии.
+                    Button {
+                        vm.removeDownload(of: book)
                     } label: {
-                        Label("Delete book", systemImage: "trash")
+                        Label("Remove download", systemImage: "arrow.down.circle")
+                            .foregroundStyle(Color.myColors.myAccent)
                     }
                 }
-            }
-        }
-        .confirmationDialog(
-            "Delete \"\(bookToDelete?.title ?? "")\"?",
-            isPresented: Binding(get: { bookToDelete != nil }, set: { if !$0 { bookToDelete = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                if let book = bookToDelete {
-                    BookDownloadService.shared.clearCache(firestoreId: book.firestoreId)
-                    context.delete(book)
-                    try? context.save()
-                }
-                bookToDelete = nil
             }
         }
     }

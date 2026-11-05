@@ -38,6 +38,15 @@ final class BooksViewModel {
             }
     }
 
+    // MARK: - Download
+
+    /// Удаляет скачанные главы книги с диска, освобождая место. Книга остаётся в каталоге (удалить запись
+    /// нельзя: полный синк каталога вернул бы её), прогресс чтения и закладки сохраняются, обложка тоже.
+    /// - Parameter book: книга каталога.
+    func removeDownload(of book: Book) {
+        BookDownloadService.shared.removeDownloadedChapters(of: book)
+    }
+
     // MARK: - Sync
 
     /// Загружает каталог книг из внедрённого источника. Повторный вызов во время идущего синка игнорируется.
@@ -45,7 +54,7 @@ final class BooksViewModel {
         guard !isSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
-        await catalog.syncBooks(into: context, forceFullSync: false)
+        await catalog.syncBooks(into: context)
         mergeDuplicateBooks(context: context)
     }
 

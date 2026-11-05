@@ -77,7 +77,7 @@ struct SettingsView: View {
                 HStack {
                     Label("Your profile", systemImage: "person.circle")
                         .labelStyle(.fixedIcon)
-                    // MONETIZATION_STUB: badge плана скрыт. Раскомментировать когда монетизация включена:
+                    // Бейдж плана скрыт, пока Monetization.isEnabled == false. При включении — вернуть под этим флагом:
                     // AccessTierBadge(tier: userService.effectivePlan())
 
                     Spacer()

@@ -80,7 +80,7 @@ final class AppViewModel {
         var label: String {
             switch self {
             case .cards: return "Cards"
-            case .pairs: return "Pairs"
+            case .pairs: return "Level Up"   // в UI раздел называется Level Up, в коде — pairs (решение 2026-11-05)
             case .books: return "Books"
             }
         }

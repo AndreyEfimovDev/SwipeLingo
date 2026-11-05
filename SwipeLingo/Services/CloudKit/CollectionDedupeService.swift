@@ -26,8 +26,9 @@ import SwiftData
 
 struct CollectionDedupeService {
 
-    /// Имена защищённых коллекций, подлежащих claim/dedupe-логике. Курируемый
-    /// контент сюда не входит — тот уже дедуплицируется по `firestoreId`. Inbox сюда
+    /// Имена защищённых коллекций, подлежащих claim/dedupe-логике. Облачный
+    /// контент сюда не входит — его дубли по `firestoreId` схлопывает
+    /// `CloudContentDedupeService`. Inbox сюда
     /// не входит — с рефакторинга сентября 2026 это обычный CardSet внутри системной коллекции,
     /// не отдельная Collection (см. SystemSeeder); дубли одноимённых CardSet внутри
     /// объединённой коллекции всё равно схлопывает `mergeDuplicateCardSets` ниже.

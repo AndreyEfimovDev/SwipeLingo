@@ -25,7 +25,7 @@ struct OnboardingIntroView: View {
                         .foregroundStyle(Color.myColors.myAccent)
                         .multilineTextAlignment(.center)
 
-                    Text("Learn new English words through flashcards, books, and pairs. Save words from any app directly to your vocabulary. Study at your own pace with spaced repetition.")
+                    Text("Learn new English words through flashcards and books, and level up the words you already know. Save words from any app directly to your vocabulary. Study at your own pace with spaced repetition.")
                         .font(.body)
                         .foregroundStyle(Color.myColors.myAccent.opacity(0.65))
                         .multilineTextAlignment(.center)
@@ -43,7 +43,7 @@ struct OnboardingIntroView: View {
                            text: "Flashcards with spaced repetition")
                 featureRow(icon: "sparkles",
                            color: Color.myColors.myPurple,
-                           text: "Pairs — deepen word meaning through synonyms and examples")
+                           text: "Level Up — say it better: synonyms and more advanced words")
                 featureRow(icon: "book",
                            color: Color.myColors.myOrange,
                            text: "Books — read and save new words")

@@ -194,6 +194,14 @@ final class BookDownloadService {
 
     // MARK: - Cache management
 
+    /// Удаляет скачанные главы и их картинки, оставляя обложку (она нужна карточке книги в каталоге).
+    /// - Parameter book: книга, чьи главы удалить.
+    func removeDownloadedChapters(of book: Book) {
+        try? fm.removeItem(at: chaptersDir(book))
+        try? fm.removeItem(at: imagesDir(book))
+        log("Removed downloaded chapters of '\(book.title)'", level: .info)
+    }
+
     func clearCache(firestoreId: String) {
         let dir = booksRoot().appendingPathComponent(firestoreId, isDirectory: true)
         try? fm.removeItem(at: dir)

@@ -32,6 +32,8 @@ struct AppView: View {
             .fullScreenCover(item: Bindable(vm).activeSheet) { sheet in
                 sheetView(for: sheet)
                     .preferredColorScheme(dependencies.appSettings.theme.colorScheme)
+                    // Алерт AppView не показывается поверх открытого fullScreenCover — у модалки свой хост.
+                    .errorAlert()
             }
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()

@@ -6,7 +6,7 @@ import SwiftUI
 // Параметр title — название предыдущего экрана (как в стандартной iOS-кнопке).
 //
 // Использование:
-//   .customBackButton("Pairs")   // в PairsSetPlayerView
+//   .customBackButton("Level Up")   // в PairsSetPlayerView
 //   .customBackButton("Settings")   // в VoiceSettingsView
 //   .customBackButton("", isHidden: editMode == .active)   // экран с Edit-режимом
 //     (CardSetDetailView) — на время редактирования кнопку нужно СКРЫТЬ целиком (не просто

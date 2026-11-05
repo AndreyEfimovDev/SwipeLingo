@@ -13,6 +13,8 @@ struct ExportAndShareView: View {
     @State private var isExporting    = false
     @State private var shareURL: URL? = nil
     @State private var showShareSheet = false
+    @State private var exportError: String? = nil
+    @State private var exportTask: Task<Void, Never>?
 
     private let service = ExportService()
 
@@ -27,6 +29,7 @@ struct ExportAndShareView: View {
         .customBackButton("")
         .navigationTitle("Export / Share")
         .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { exportTask?.cancel() }
         .sheet(isPresented: $showShareSheet) {
             if let url = shareURL {
                 ActivityView(activityItems: [url], applicationActivities: nil) { result in
@@ -76,6 +79,16 @@ struct ExportAndShareView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isExporting)
+
+                if let error = exportError {
+                    Divider().padding(.leading, 16)
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(Color.myColors.myRed)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                }
             }
             .background(Color.myColors.myBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -86,20 +99,25 @@ struct ExportAndShareView: View {
 
     private func prepareExport() {
         isExporting = true
+        exportError = nil
         let ctx = modelContext
-        // Читаем firebaseUID здесь, на MainActor, до входа в Task.detached — как в RestoreBackupView.
         let firebaseUID = authService.currentUser?.uid ?? ""
-        Task.detached {
-            let result = await ExportService().exportAll(from: ctx, firebaseUID: firebaseUID)
-            await MainActor.run {
-                isExporting = false
-                switch result {
-                case .success(let url):
-                    shareURL = url
-                    showShareSheet = true
-                case .failure(let error):
-                    log("Export error: \(error)", level: .error)
-                }
+        // ExportService работает на MainActor (изоляция по умолчанию), так что Task.detached ничего не давал.
+        // yield — чтобы спиннер успел появиться до синхронного экспорта.
+        exportTask = Task {
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            let result = service.exportAll(from: ctx, firebaseUID: firebaseUID)
+            isExporting = false
+            switch result {
+            case .success(let url):
+                shareURL = url
+                showShareSheet = true
+            case .failure(let error):
+                // Показываем на самом экране: общий алерт ErrorManager висит на AppView и поверх
+                // полноэкранных Settings не виден.
+                log("Export error: \(error)", level: .error)
+                exportError = "Couldn't create the backup file. Please try again."
             }
         }
     }

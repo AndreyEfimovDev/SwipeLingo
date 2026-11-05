@@ -114,11 +114,16 @@ enum ImportError {
 
 extension ModelContext {
     /// Сохраняет context, направляя любую ошибку через ErrorManager.
-    func saveWithErrorHandling() {
+    /// - Returns: `true`, если сохранение прошло; `false` — ошибка уже показана. Результат нужен тем,
+    ///   кто после сохранения двигает метку синка (см. `SyncCursor`), остальные его игнорируют.
+    @discardableResult
+    func saveWithErrorHandling() -> Bool {
         do {
             try save()
+            return true
         } catch {
             ErrorManager.shared.handle(error, message: SwiftDataError.saveFailed.message)
+            return false
         }
     }
 

@@ -524,6 +524,8 @@ struct CardsLibraryView: View {
                         vm.toggleSet(cardSet, in: pile, context: context)
                     } label: {
                         Label(pile.name, systemImage: inPile ? "checkmark.circle" : "circle")
+                            // Сет уже в пайле — пункт неактивен: приглушённый цвет, как у неактивных элементов.
+                            .foregroundStyle(inPile ? Color.myColors.myAccent.opacity(0.8) : Color.myColors.myAccent)
                     }
                     .disabled(inPile)
                 }
@@ -532,9 +534,11 @@ struct CardsLibraryView: View {
                     setForNewPile = cardSet
                 } label: {
                     Label("New Pile…", systemImage: "plus")
+                        .foregroundStyle(Color.myColors.myAccent)
                 }
             } label: {
                 Label("Add to Pile", systemImage: "square.stack.3d.up")
+                    .foregroundStyle(Color.myColors.myAccent)
             }
 
             if cardSet.name != "Inbox" {   // Inbox set никогда не удаляем — единственная цель захвата слов

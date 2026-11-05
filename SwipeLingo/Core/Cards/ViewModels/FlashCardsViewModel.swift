@@ -30,10 +30,6 @@ final class FlashCardsViewModel {
     // MARK: Study mode
 
     private(set) var studyMode: StudyMode = .all
-    /// True, только когда пользователь завершил сессию в режиме All (действительно закончил на сегодня).
-    private(set) var isCaughtUp: Bool = false
-    /// "tomorrow · 9 cards" — подзаголовок на экране "всё пройдено".
-    private(set) var nextReviewLabel: String = ""
     /// Всего активных карточек в текущем pile — показывается как левая статистика в строке прогресса.
     private(set) var allActiveCount: Int = 0
     /// Карточки, уже находящиеся в статусе .learnt в текущем pile на старте сессии.
@@ -61,7 +57,7 @@ final class FlashCardsViewModel {
         collections: [Collection], dueHour: Int, srsEnabled: Bool = true,
         userPlan: AccessTier = .free
     ) {
-        guard studyCards.isEmpty && !isCaughtUp else { return }
+        guard studyCards.isEmpty else { return }
         load(piles: piles, allCards: allCards, cardSets: cardSets,
              collections: collections, dueHour: dueHour, dueOnly: srsEnabled,
              userPlan: userPlan)
@@ -73,7 +69,6 @@ final class FlashCardsViewModel {
         collections: [Collection], dueHour: Int, srsEnabled: Bool = true,
         userPlan: AccessTier = .free
     ) {
-        isCaughtUp = false
         load(piles: piles, allCards: allCards, cardSets: cardSets,
              collections: collections, dueHour: dueHour, dueOnly: srsEnabled,
              userPlan: userPlan)
@@ -91,43 +86,25 @@ final class FlashCardsViewModel {
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
         collections: [Collection], userPlan: AccessTier = .free
     ) {
-        isCaughtUp = false
         load(piles: piles, allCards: allCards, cardSets: cardSets,
              collections: collections, dueHour: 0, dueOnly: false,
              userPlan: userPlan)
     }
 
-    /// Вызывается TinderCardsView, когда все карточки сессии просвайпаны/оценены.
-    /// - Режим Due завершён → автопереключение на режим All.
-    /// - Режим All завершён → показать экран "всё пройдено".
-    func onSessionComplete(
+    /// Due-сессия завершена — кнопка "Study all cards" на экране завершения TinderCardsView:
+    /// продолжает сессию всеми активными карточками в режиме All.
+    func continueWithAllCards(
         piles: [Pile], allCards: [Card], cardSets: [CardSet],
         collections: [Collection], dueHour: Int, userPlan: AccessTier = .free
     ) {
-        switch studyMode {
-        case .due:
-            // Сессия Due завершена → продолжаем всеми активными карточками
-            load(piles: piles, allCards: allCards, cardSets: cardSets,
-                 collections: collections, dueHour: dueHour, dueOnly: false,
-                 userPlan: userPlan)
-        case .all:
-            // Сессия All завершена → пользователь действительно закончил на сегодня
-            let pileCards: [Card]
-            if let pile = piles.first(where: { $0.isActive }) {
-                pileCards = pileService.activeCards(for: pile, from: allCards)
-            } else {
-                pileCards = allCards.filter { $0.status == .active }
-            }
-            studyCards      = []
-            isCaughtUp      = true
-            nextReviewLabel = makeNextReviewLabel(from: pileCards)
-            sessionID       = UUID()
-        }
+        load(piles: piles, allCards: allCards, cardSets: cardSets,
+             collections: collections, dueHour: dueHour, dueOnly: false,
+             userPlan: userPlan)
     }
 
     /// Лёгкое обновление pile-уровневых счётчиков (`allActiveCount`/`pileLearntCount`) от
     /// живых данных — в отличие от `startNewSession`, НЕ трогает `studyCards`/`sessionID`/
-    /// `currentIndex`/`isCaughtUp`. Нужно, когда статус карточки меняется вне активной
+    /// `currentIndex`. Нужно, когда статус карточки меняется вне активной
     /// сессии (напр. swipe action "Restore" в `CardSetDetailView` возвращает Learnt-карточку
     /// в Active) — такое изменение не задевает состав уже загруженной сессии, но делает эти
     /// два счётчика устаревшими; полноценный `startNewSession` в этот момент сбросил бы
@@ -268,25 +245,6 @@ final class FlashCardsViewModel {
     }
 
     // MARK: - Labels
-
-    /// "tomorrow · 9 cards" или "in 3 days · 4 cards" для экрана "всё пройдено".
-    private func makeNextReviewLabel(from cards: [Card]) -> String {
-        let upcoming = cards.filter { $0.dueDate > Date.now }
-        guard let earliest = upcoming.min(by: { $0.dueDate < $1.dueDate }) else { return "" }
-
-        let cal     = Calendar.current
-        let today   = cal.startOfDay(for: .now)
-        let dueDay  = cal.startOfDay(for: earliest.dueDate)
-        let diff    = cal.dateComponents([.day], from: today, to: dueDay).day ?? 1
-        let dayText: String
-        switch diff {
-        case 0:  dayText = "today"
-        case 1:  dayText = "tomorrow"
-        default: dayText = "in \(diff) days"
-        }
-        let count = upcoming.filter { cal.startOfDay(for: $0.dueDate) == dueDay }.count
-        return "\(dayText) · \(count) \(count == 1 ? "card" : "cards")"
-    }
 
     /// "Collection › Set1 · Set2 · +N (X cards)" под стопкой карточек.
     private func makePileTagsLine(pile: Pile, cardSets: [CardSet],

@@ -19,7 +19,7 @@ struct MockBookCatalog: BookCatalogSyncing {
         self.chapterURL = chapterURL
     }
 
-    func syncBooks(into context: ModelContext, forceFullSync: Bool) async {
+    func syncBooks(into context: ModelContext) async {
         let existing = context.fetchWithErrorHandling(FetchDescriptor<Book>())
         let existingByFirestoreId = Dictionary(existing.map { ($0.firestoreId, $0) }, uniquingKeysWith: { first, _ in first })
 

@@ -87,7 +87,7 @@ struct PairsLibraryView: View {
             .padding(.vertical, 16)
         }
         .background(Color.myColors.myBackground.ignoresSafeArea())
-        .navigationTitle("Pairs Library")
+        .navigationTitle("Level Up Library")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {

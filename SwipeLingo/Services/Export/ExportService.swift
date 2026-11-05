@@ -121,7 +121,15 @@ final class ExportService {
         let pairsSRSRestored: Int
     }
 
-    func importBackup(from url: URL, into context: ModelContext, firebaseUID: String) -> ImportResult {
+    /// Восстанавливает карточки из файла бэкапа.
+    /// - Parameters:
+    ///   - url: файл бэкапа (копия из DocumentPicker).
+    ///   - context: контекст SwiftData.
+    ///   - firebaseUID: текущий аккаунт — по нему резолвятся свои коллекции и Inbox.
+    /// - Returns: сколько добавлено, либо ошибку чтения/разбора/сохранения. При ошибке контекст откатывается —
+    ///   частично восстановленное не сохранится автосохранением. Раньше ошибка возвращалась как «добавлено 0»,
+    ///   и экран показывал «Everything is already up to date» для битого файла.
+    func importBackup(from url: URL, into context: ModelContext, firebaseUID: String) -> Result<ImportResult, Error> {
         do {
             let data    = try Data(contentsOf: url)
             let decoder = JSONDecoder()
@@ -134,10 +142,11 @@ final class ExportService {
 
             let result = ImportResult(newSets: sets, newCards: cards, pairsSRSRestored: pairsCount)
             log("Imported: \(sets) sets, \(cards) cards, \(pairsCount) pairs SRS", level: .info)
-            return result
+            return .success(result)
         } catch {
+            context.rollback()
             log("Import failed: \(error)", level: .error)
-            return ImportResult(newSets: 0, newCards: 0, pairsSRSRestored: 0)
+            return .failure(error)
         }
     }
 
