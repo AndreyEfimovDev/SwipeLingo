@@ -15,6 +15,9 @@ import SwiftData
 // Новый статус "erased" не понадобился именно потому, что applyRemoteContent никогда не
 // трогает status — это осознанный tombstone-инвариант, зафиксированный тестом, чтобы
 // будущая правка (напр. "заодно синхронизировать status") не сломала его молча.
+//
+// Плюс `SyncCursor.next` — выбор метки дельта-синка (общая для контента и книг): самый поздний updatedAt
+// полученных документов, а не время устройства.
 
 @MainActor
 final class ImportFSServiceTests: XCTestCase {
@@ -98,5 +101,30 @@ final class ImportFSServiceTests: XCTestCase {
         XCTAssertEqual(card.sampleItem, ["Пример"])
         XCTAssertEqual(card.dictTranscription, "/nuː/")
         XCTAssertEqual(card.updatedAt, newUpdatedAt)
+    }
+
+    // MARK: - SyncCursor
+
+    func testSyncCursor_NothingFetched_KeepsPrevious() {
+        let previous = Date(timeIntervalSince1970: 1_000)
+        XCTAssertEqual(SyncCursor.next(previous: previous, fetched: []), previous)
+    }
+
+    func testSyncCursor_LatestFetchedUpdatedAtWins_EvenIfEarlierThanPrevious() {
+        // Прежняя метка поставлена по спешащим часам устройства — полный синк возвращает её к часам Admin.
+        let previous = Date(timeIntervalSince1970: 5_000)
+        let fetched: [Date?] = [Date(timeIntervalSince1970: 3_000), Date(timeIntervalSince1970: 4_000)]
+        XCTAssertEqual(SyncCursor.next(previous: previous, fetched: fetched), Date(timeIntervalSince1970: 4_000))
+    }
+
+    func testSyncCursor_FirstSync_LatestFetched() {
+        let fetched: [Date?] = [Date(timeIntervalSince1970: 2_000), Date(timeIntervalSince1970: 1_000)]
+        XCTAssertEqual(SyncCursor.next(previous: nil, fetched: fetched), Date(timeIntervalSince1970: 2_000))
+    }
+
+    func testSyncCursor_DocumentsWithoutUpdatedAt_Ignored() {
+        let previous = Date(timeIntervalSince1970: 1_000)
+        XCTAssertEqual(SyncCursor.next(previous: previous, fetched: [nil, nil]), previous)
+        XCTAssertNil(SyncCursor.next(previous: nil, fetched: [nil]))
     }
 }

@@ -74,8 +74,19 @@ struct BookFBService: BookCatalogSyncing {
                 }
             }
 
-            try? context.save()
-            UserDefaults.standard.set(Date.now, forKey: Self.lastSyncAtKey)
+            // Метка двигается только после успешного сохранения (иначе несохранённое уже не придёт дельтой);
+            // при ошибке — откат, чтобы автосохранение не записало синк наполовину.
+            guard context.saveWithErrorHandling() else {
+                context.rollback()
+                log("Books not saved — rolled back, cursor kept", level: .error)
+                return
+            }
+            // Метка — самый поздний updatedAt полученных книг (часы Admin), не время устройства — см. SyncCursor.
+            let fetchedUpdatedAts = snapshot.documents.map { ($0.data()["updatedAt"] as? Timestamp)?.dateValue() }
+            let previousCursor = UserDefaults.standard.object(forKey: Self.lastSyncAtKey) as? Date
+            if let cursor = SyncCursor.next(previous: previousCursor, fetched: fetchedUpdatedAts) {
+                UserDefaults.standard.set(cursor, forKey: Self.lastSyncAtKey)
+            }
             log("Synced \(snapshot.documents.count) book(s)", level: .info)
 
         } catch {

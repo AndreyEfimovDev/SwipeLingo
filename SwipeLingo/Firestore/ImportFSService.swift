@@ -495,10 +495,21 @@ struct ImportFSService {
                 }
             }
 
-            context.saveWithErrorHandling()
+            // Метка двигается только после успешного сохранения: иначе несохранённое уже не придёт дельтой.
+            // При ошибке откатываем контекст, чтобы автосохранение не записало синк наполовину.
+            guard context.saveWithErrorHandling() else {
+                context.rollback()
+                log("Sync not saved — rolled back, cursor kept", level: .error)
+                return
+            }
 
-            // Сохраняем метку времени успешного синка — следующий запрос будет delta.
-            UserDefaults.standard.set(Date.now, forKey: Self.lastSyncAtKey)
+            // Метка — самый поздний updatedAt полученных сетов (часы Admin), не время устройства — см. SyncCursor.
+            let fetchedUpdatedAts = (setSnap.documents + pairsSnap.documents)
+                .map { ($0.data()["updatedAt"] as? Timestamp)?.dateValue() }
+            let previousCursor = UserDefaults.standard.object(forKey: Self.lastSyncAtKey) as? Date
+            if let cursor = SyncCursor.next(previous: previousCursor, fetched: fetchedUpdatedAts) {
+                UserDefaults.standard.set(cursor, forKey: Self.lastSyncAtKey)
+            }
             log("Sync complete", level: .info)
 
         } catch {

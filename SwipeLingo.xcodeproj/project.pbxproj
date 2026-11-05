@@ -90,6 +90,7 @@
 		4773002F309CD36000402B80 /* CloudContentDedupeServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773002E309CD36000402B80 /* CloudContentDedupeServiceTests.swift */; };
 		47730031309CD54300402B80 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 47730030309CD54300402B80 /* PrivacyInfo.xcprivacy */; };
 		47730034309CD5A700402B80 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 47730033309CD5A700402B80 /* PrivacyInfo.xcprivacy */; };
+		47730036309CD94500402B80 /* SyncCursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47730035309CD94500402B80 /* SyncCursor.swift */; };
 		4777A64D69CD08532A3CD45F /* MainScreenToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472631E6B19501091864466C /* MainScreenToolbar.swift */; };
 		4785898E2FF3DCF100BF3C8F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4785898D2FF3DCF100BF3C8F /* ActivityView.swift */; };
 		478589912FF3DD4800BF3C8F /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478589902FF3DD4800BF3C8F /* ExportService.swift */; };
@@ -362,6 +363,7 @@
 		4773002E309CD36000402B80 /* CloudContentDedupeServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudContentDedupeServiceTests.swift; sourceTree = "<group>"; };
 		47730030309CD54300402B80 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		47730033309CD5A700402B80 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		47730035309CD94500402B80 /* SyncCursor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCursor.swift; sourceTree = "<group>"; };
 		477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4785898D2FF3DCF100BF3C8F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		4785898F2FF3DD4800BF3C8F /* BackupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupModels.swift; sourceTree = "<group>"; };
@@ -772,6 +774,7 @@
 		4785898C2FF3D86C00BF3C8F /* Firestore */ = {
 			isa = PBXGroup;
 			children = (
+				47730035309CD94500402B80 /* SyncCursor.swift */,
 				4757D5D830555E100064F5F0 /* FirestoreClient.swift */,
 				4757D5E23055CAAD0064F5F0 /* FBBootstrap.swift */,
 				47C09A852F853B940049858B /* FSModels.swift */,
@@ -1443,6 +1446,7 @@
 				478589922FF3DD4800BF3C8F /* BackupModels.swift in Sources */,
 				475070502FBA2A4000350F5C /* BookDownloadService.swift in Sources */,
 				478C78592F794487005FBDFE /* Views.swift in Sources */,
+				47730036309CD94500402B80 /* SyncCursor.swift in Sources */,
 				4757D5E03055C7DA0064F5F0 /* DatabaseErrorView.swift in Sources */,
 				47DE7F862F83CB0300F6BCF3 /* PairsPileService.swift in Sources */,
 				478C785A2F794487005FBDFE /* AddCardSetView.swift in Sources */,
