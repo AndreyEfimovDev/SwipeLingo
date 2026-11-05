@@ -75,9 +75,20 @@ final class PairsSetPlayerViewModel {
 
     // MARK: Init
 
-    init(set: PairsSet, audioService: AudioPlayerService) {
+    /// Пишет пройденные сеты в историю занятий (Statistics, серия дней).
+    private let activityRecorder: StudyActivityRecorder
+
+    init(set: PairsSet, audioService: AudioPlayerService, activityRecorder: StudyActivityRecorder) {
         self.set = set
         self.audioService = audioService
+        self.activityRecorder = activityRecorder
+    }
+
+    /// Отмечает в истории занятий, что сет досмотрен до конца. Вызывается из View при `showCompletion`
+    /// (одно место и для одиночного просмотра, и для сессии из нескольких сетов).
+    func recordCompletion(context: ModelContext) {
+        activityRecorder.record(.levelUpSetCompleted, context: context)
+        context.saveWithErrorHandling()
     }
 
     // MARK: - Жизненный цикл экрана

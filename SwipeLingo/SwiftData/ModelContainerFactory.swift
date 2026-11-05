@@ -18,7 +18,7 @@ enum ModelContainerFactory {
     /// оставил бы пользователя с нерабочим приложением без самостоятельного
     /// выхода). Возвращает `nil`, только если и это не помогло.
     static func make() -> ModelContainer? {
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        let schema = Schema(versionedSchema: CurrentSchema.self)
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,

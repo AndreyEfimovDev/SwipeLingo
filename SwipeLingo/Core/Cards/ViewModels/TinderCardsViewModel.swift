@@ -102,13 +102,18 @@ final class TinderCardsViewModel {
 
     // MARK: Init
 
+    /// Пишет свайпы и оценки в историю занятий (Statistics, серия дней).
+    private let activityRecorder: StudyActivityRecorder
+
     init(
         cards: [Card],
+        activityRecorder: StudyActivityRecorder,
         contextLabels: [UUID: String] = [:],
         onDone: (() -> Void)? = nil
     ) {
         self.cards = cards
         self.originalCards = cards
+        self.activityRecorder = activityRecorder
         self.contextLabels = contextLabels
         self.onDone = onDone
     }
@@ -145,6 +150,7 @@ final class TinderCardsViewModel {
             card.status = .learnt
             swipedLearntIDs.insert(card.id)
         }
+        activityRecorder.record(.cardSwiped(learnt: direction == .right), context: context)
         context.saveWithErrorHandling()
         advance()
     }
@@ -154,6 +160,7 @@ final class TinderCardsViewModel {
         guard let card = currentCard else { return }
         card.isNew = false
         card.status = .deleted
+        activityRecorder.record(.cardDeleted, context: context)
         context.saveWithErrorHandling()
         advance()
     }
@@ -167,6 +174,7 @@ final class TinderCardsViewModel {
             weakCards.append(card)
         }
         if rating == .easy { easyRatedIDs.insert(card.id) }
+        activityRecorder.record(.cardRated(rating), context: context)
         context.saveWithErrorHandling()
         advance()
     }
