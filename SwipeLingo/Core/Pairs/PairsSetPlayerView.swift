@@ -190,7 +190,7 @@ struct PairsSetPlayerView: View {
         // В session-режиме (onComplete != nil) заголовок и back button задаёт PairsSessionView
         .if(onComplete == nil) { $0
             .customBackButton("")
-            .navigationTitle(set.title ?? "Pairs")
+            .navigationTitle(set.title ?? "Level Up")
             .navigationBarTitleDisplayMode(.inline)
         }
         .toolbar { toolbarContent }

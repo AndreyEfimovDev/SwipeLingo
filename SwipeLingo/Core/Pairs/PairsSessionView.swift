@@ -87,7 +87,7 @@ struct PairsSessionView: View {
         // встроен сюда (onComplete != nil) — см. комментарий там же — рассчитывая, что его
         // поставит именно этот, внешний экран.
         .customBackButton("")
-        .navigationTitle(currentSet.title ?? "Pairs")
+        .navigationTitle(currentSet.title ?? "Level Up")
         .navigationBarTitleDisplayMode(.inline)
     }
 

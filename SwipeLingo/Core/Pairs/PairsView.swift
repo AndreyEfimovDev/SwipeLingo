@@ -94,7 +94,7 @@ struct PairsView: View {
                     playScreen
                 }
             }
-            .navigationTitle("Pairs")
+            .navigationTitle("Level Up")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { pairsToolbar }
             .background(Color.myColors.myBackground.ignoresSafeArea())
@@ -327,7 +327,7 @@ struct PairsView: View {
         NavigationLink(
             destination: PairsSessionView(
                 sets: displayedSets,
-                pileName: activePile?.name ?? "Pairs",
+                pileName: activePile?.name ?? "Level Up",
                 authService: authService,
                 userService: userService,
                 appSyncStateService: appSyncStateService,
@@ -360,7 +360,7 @@ struct PairsView: View {
             NavigationLink(
                 destination: PairsSessionView(
                     sets: candidateSets,
-                    pileName: activePile?.name ?? "Pairs",
+                    pileName: activePile?.name ?? "Level Up",
                     authService: authService,
                     userService: userService,
                     appSyncStateService: appSyncStateService,
@@ -392,7 +392,7 @@ struct PairsView: View {
                 .foregroundStyle(Color.myColors.myAccent)
                 .multilineTextAlignment(.center)
             Text(activePile.map { "Add sets to \"\($0.name)\" to get started" }
-                 ?? "Pairs sets will appear here once downloaded")
+                 ?? "Level Up sets will appear here once downloaded")
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
