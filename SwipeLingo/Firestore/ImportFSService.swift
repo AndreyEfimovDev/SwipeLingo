@@ -62,11 +62,49 @@ struct ImportFSService {
         }
     }
 
+    /// Последний запущенный синк — общий для всех экземпляров (их создают на месте в нескольких местах).
+    /// Синки идут строго по очереди: два одновременных строили бы кэши `firestoreId` до вставок друг друга
+    /// и вставляли бы один и тот же контент дважды.
+    private static var latestSync: Task<Void, Never>?
+
+    /// Число синков в очереди, включая выполняющийся.
+    private static var pendingSyncCount = 0
+
+    /// Идёт ли сейчас синк (или ждёт в очереди). Дедуп по уведомлениям CloudKit в это время пропускается:
+    /// синк держит модели в своих кэшах между `await`, и удалённый посреди синка дубль он бы потом изменил.
+    /// Сам синк схлопывает дубли в начале, а его итоговое сохранение снова запустит дедуп наблюдателя.
+    static var isSyncInProgress: Bool { pendingSyncCount > 0 }
+
+    /// Синхронизирует авторский контент из Firestore в SwiftData. Если синк уже идёт, новый ждёт его окончания
+    /// и выполняется следом — не пропускается: например, полный синк после повышения уровня нельзя терять.
+    /// - Parameters:
+    ///   - context: контекст SwiftData.
+    ///   - language: родной язык — из него берутся переводы карточек.
+    ///   - upToLevel: максимальный CEFR-уровень загружаемых сетов.
+    ///   - forceFullSync: игнорировать метку последнего синка и загрузить всё.
     func syncFromFirestore(
         into context: ModelContext,
         language: NativeLanguage,
         upToLevel: CEFRLevel = .c2,
         forceFullSync: Bool = false
+    ) async {
+        let previous = Self.latestSync
+        Self.pendingSyncCount += 1
+        let current = Task {
+            defer { Self.pendingSyncCount -= 1 }
+            await previous?.value
+            await performSync(into: context, language: language, upToLevel: upToLevel, forceFullSync: forceFullSync)
+        }
+        Self.latestSync = current
+        await current.value
+    }
+
+    /// Один проход синка — вызывается только через очередь `syncFromFirestore`.
+    private func performSync(
+        into context: ModelContext,
+        language: NativeLanguage,
+        upToLevel: CEFRLevel,
+        forceFullSync: Bool
     ) async {
         guard FirebaseApp.app() != nil else {
             log("Firebase not configured — skipping content sync", level: .warning)
@@ -93,6 +131,10 @@ struct ImportFSService {
 
         do {
             // ── 1. Предзагрузка кэшей SwiftData ──────────────────────────────
+            // Сначала схлопываем дубли облачного контента (гонка CloudKit — см. CloudContentDedupeService),
+            // затем строим словари без падения на повторе ключа: uniqueKeysWithValues трапит на дубле,
+            // а он мог появиться между дедупом и fetch.
+            CloudContentDedupeService().mergeDuplicates(context: context)
             let allCollections = context.fetchWithErrorHandling(
                 FetchDescriptor<Collection>(predicate: #Predicate { !$0.isUserCreated })
             )
@@ -102,13 +144,16 @@ struct ImportFSService {
             let allPairsSets = context.fetchWithErrorHandling(FetchDescriptor<PairsSet>())
 
             var collectionsByFsId: [String: Collection] = Dictionary(
-                uniqueKeysWithValues: allCollections.compactMap { c in c.firestoreId.map { ($0, c) } }
+                allCollections.compactMap { c in c.firestoreId.map { ($0, c) } },
+                uniquingKeysWith: { first, _ in first }
             )
             var cardSetsByFsId: [String: CardSet] = Dictionary(
-                uniqueKeysWithValues: allSets.compactMap { s in s.firestoreId.map { ($0, s) } }
+                allSets.compactMap { s in s.firestoreId.map { ($0, s) } },
+                uniquingKeysWith: { first, _ in first }
             )
             var pairsSetsByFsId: [String: PairsSet] = Dictionary(
-                uniqueKeysWithValues: allPairsSets.compactMap { s in s.firestoreId.map { ($0, s) } }
+                allPairsSets.compactMap { s in s.firestoreId.map { ($0, s) } },
+                uniquingKeysWith: { first, _ in first }
             )
 
             // ── 2. Collections (метаданные — все, без фильтра по уровню) ──
@@ -262,7 +307,8 @@ struct ImportFSService {
                     FetchDescriptor<Card>(predicate: #Predicate { $0.setId == sdSetId })
                 )
                 var cardsByFsId: [String: Card] = Dictionary(
-                    uniqueKeysWithValues: existingCards.compactMap { c in c.firestoreId.map { ($0, c) } }
+                    existingCards.compactMap { c in c.firestoreId.map { ($0, c) } },
+                    uniquingKeysWith: { first, _ in first }
                 )
 
                 for cardDoc in cardSnap.documents {

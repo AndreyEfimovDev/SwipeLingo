@@ -26,6 +26,7 @@ final class CollectionDedupeObserver {
 
     private let container: ModelContainer
     private let dedupeService = CollectionDedupeService()
+    private let cloudContentDedupeService = CloudContentDedupeService()
     private var reloadTask: Task<Void, Never>?
 
     init(container: ModelContainer) {
@@ -38,7 +39,14 @@ final class CollectionDedupeObserver {
     /// на случай если соответствующее CloudKit-уведомление пришло раньше, чем
     /// этот наблюдатель успел зарегистрироваться.
     func runNow() {
-        dedupeService.mergeProtectedCollections(context: container.mainContext)
+        let context = container.mainContext
+        dedupeService.mergeProtectedCollections(context: context)
+        // Дубли облачного контента от той же гонки CloudKit — без этого двойные сеты видны в библиотеке и
+        // сессиях до следующего синка. Карточки читаются, только если схлопнулись сеты: этот вызов идёт
+        // на каждое изменение из CloudKit (и на каждое локальное сохранение), читать все карточки дорого.
+        // Во время синка контента пропускаем — см. ImportFSService.isSyncInProgress.
+        guard !ImportFSService.isSyncInProgress else { return }
+        cloudContentDedupeService.mergeDuplicates(context: context, cardCheck: .onlyAfterSetMerge)
     }
 
     private func observeCloudKitChanges() {
