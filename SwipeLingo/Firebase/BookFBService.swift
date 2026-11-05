@@ -15,13 +15,13 @@ import FirebaseFirestore
 //     isPublished,
 //     updatedAt, createdAt
 //
-// Логика upsert: сопоставление по firestoreId. Никогда не удаляет локальные книги
-// (у пользователя может быть прогресс чтения). Неопубликованные книги загружаются только
-// тестировщику — см. BookCatalogVisibility.
+// Синк всегда полный: каталог — единицы документов, а дельта по updatedAt не сообщает об удалённых и снятых
+// с публикации книгах. Upsert — по firestoreId. После успешного запроса с сервера локальные книги, которых
+// нет в каталоге или которые сняты с публикации (для не-тестировщика), удаляются вместе с главами на диске,
+// прогрессом и закладками — так из Admin можно убрать книгу у всех. Неопубликованные книги загружаются
+// только тестировщику — см. BookCatalogVisibility.
 
 struct BookFBService: BookCatalogSyncing {
-
-    private static let lastSyncAtKey = "booksLastSyncAt"
 
     /// Firebase UID текущего пользователя — по нему решается, видны ли черновики книг.
     private let currentUID: @MainActor () -> String?
@@ -33,7 +33,7 @@ struct BookFBService: BookCatalogSyncing {
 
     // MARK: - Sync
 
-    func syncBooks(into context: ModelContext, forceFullSync: Bool = false) async {
+    func syncBooks(into context: ModelContext) async {
         guard FirebaseApp.app() != nil else {
             log("Firebase not configured — skipping sync", level: .warning)
             return
@@ -42,21 +42,8 @@ struct BookFBService: BookCatalogSyncing {
         let db = Firestore.firestore()
         let isTester = BookCatalogVisibility.isTester(uid: currentUID())
 
-        // Тестировщику — всегда полный синк: дельта по updatedAt не вернёт черновики, залитые до его входа
-        // в аккаунт, и не снимет плашку TESTING. Книг единицы, полный запрос дешёвый.
-        let lastSyncAt: Date = forceFullSync || isTester
-            ? .distantPast
-            : (UserDefaults.standard.object(forKey: Self.lastSyncAtKey) as? Date ?? .distantPast)
-
         do {
-            let snapshot: QuerySnapshot
-            if lastSyncAt > .distantPast {
-                snapshot = try await db.collection("books")
-                    .whereField("updatedAt", isGreaterThan: Timestamp(date: lastSyncAt))
-                    .getDocuments()
-            } else {
-                snapshot = try await db.collection("books").getDocuments()
-            }
+            let snapshot = try await db.collection("books").getDocuments()
 
             // Сначала схлопываем дубли (гонка CloudKit), затем строим словарь без падения на повторе ключа:
             // uniqueKeysWithValues трапит на дубле, а он мог появиться между дедупом и fetch.
@@ -64,33 +51,57 @@ struct BookFBService: BookCatalogSyncing {
             let existing = (try? context.fetch(FetchDescriptor<Book>())) ?? []
             let existingByFirestoreId = Dictionary(existing.map { ($0.firestoreId, $0) }, uniquingKeysWith: { first, _ in first })
 
+            var skippedIds = Set<String>()
             for doc in snapshot.documents {
                 guard let fsBook = parseBook(doc) else { continue }
                 switch BookCatalogVisibility.decide(isPublished: fsBook.isPublished, isTester: isTester) {
                 case .show(let isTesting):
                     upsert(fsBook, isTesting: isTesting, into: context, existing: existingByFirestoreId)
                 case .skip:
-                    continue
+                    skippedIds.insert(fsBook.id)
                 }
             }
 
-            // Метка двигается только после успешного сохранения (иначе несохранённое уже не придёт дельтой);
-            // при ошибке — откат, чтобы автосохранение не записало синк наполовину.
+            // Без сети Firestore молча отдаёт кэш (возможно, пустой или устаревший) — по нему не удаляем ничего.
+            if snapshot.metadata.isFromCache {
+                log("Books snapshot from cache — removal skipped", level: .warning)
+            } else {
+                let removeIds = BookCatalogVisibility.firestoreIdsToRemove(
+                    localIds: existing.map(\.firestoreId),
+                    catalogIds: Set(snapshot.documents.map(\.documentID)),
+                    skippedIds: skippedIds
+                )
+                removeBooks(existing.filter { removeIds.contains($0.firestoreId) }, from: context)
+            }
+
+            // При ошибке сохранения — откат, чтобы автосохранение не записало синк наполовину.
             guard context.saveWithErrorHandling() else {
                 context.rollback()
-                log("Books not saved — rolled back, cursor kept", level: .error)
+                log("Books not saved — rolled back", level: .error)
                 return
-            }
-            // Метка — самый поздний updatedAt полученных книг (часы Admin), не время устройства — см. SyncCursor.
-            let fetchedUpdatedAts = snapshot.documents.map { ($0.data()["updatedAt"] as? Timestamp)?.dateValue() }
-            let previousCursor = UserDefaults.standard.object(forKey: Self.lastSyncAtKey) as? Date
-            if let cursor = SyncCursor.next(previous: previousCursor, fetched: fetchedUpdatedAts) {
-                UserDefaults.standard.set(cursor, forKey: Self.lastSyncAtKey)
             }
             log("Synced \(snapshot.documents.count) book(s)", level: .info)
 
         } catch {
             log("Sync failed: \(error)", level: .error)
+        }
+    }
+
+    // MARK: - Removal
+
+    /// Удаляет книги, убранные из каталога: записи, их прогресс и закладки, папку книги на диске.
+    /// Не сохраняет контекст — это делает `syncBooks`.
+    private func removeBooks(_ books: [Book], from context: ModelContext) {
+        guard !books.isEmpty else { return }
+        let bookIds = Set(books.map(\.id))
+        let progresses = context.fetchWithErrorHandling(FetchDescriptor<BookProgress>())
+        let bookmarks  = context.fetchWithErrorHandling(FetchDescriptor<BookBookmark>())
+        progresses.filter { bookIds.contains($0.bookId) }.forEach { context.delete($0) }
+        bookmarks.filter { bookIds.contains($0.bookId) }.forEach { context.delete($0) }
+        for book in books {
+            BookDownloadService.shared.clearCache(firestoreId: book.firestoreId)
+            log("Removed book '\(book.title)' — no longer in catalog", level: .info)
+            context.delete(book)
         }
     }
 

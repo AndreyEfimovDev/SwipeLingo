@@ -2,8 +2,8 @@ import Foundation
 
 // MARK: - SyncCursor
 //
-// Метка дельта-синка из Firestore (`updatedAt > метка`) — общая для синка контента (ImportFSService) и
-// книг (BookFBService).
+// Метка дельта-синка контента из Firestore (`updatedAt > метка`, ImportFSService). Книги синкаются
+// полностью и метки не используют (см. BookFBService).
 //
 // Метка — самый поздний `updatedAt` среди полученных документов, а не `Date.now` устройства: `updatedAt`
 // ставит Admin по своим часам, и сравнивать его надо с тем же источником. С временем устройства терялись

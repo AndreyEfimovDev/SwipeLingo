@@ -7,6 +7,7 @@ import XCTest
 //   • isPublished == true — видна всем, без плашки TESTING
 //   • false или поля нет — только тестировщику, с плашкой TESTING; остальным не загружается
 //   • тестировщик — только UID из списка; nil и пустой UID — не тестировщик
+//   • после синка удаляются книги, которых нет в каталоге, и снятые с публикации; показанные остаются
 
 @MainActor
 final class BookCatalogVisibilityTests: XCTestCase {
@@ -32,5 +33,23 @@ final class BookCatalogVisibilityTests: XCTestCase {
         XCTAssertFalse(BookCatalogVisibility.isTester(uid: "OTHER_UID", testerUIDs: testers))
         XCTAssertFalse(BookCatalogVisibility.isTester(uid: nil, testerUIDs: testers))
         XCTAssertFalse(BookCatalogVisibility.isTester(uid: "", testerUIDs: [""]))
+    }
+
+    // MARK: - firestoreIdsToRemove
+
+    func testRemove_BookMissingFromCatalog_Removed() {
+        let ids = BookCatalogVisibility.firestoreIdsToRemove(localIds: ["A", "B"], catalogIds: ["A"], skippedIds: [])
+        XCTAssertEqual(ids, ["B"])
+    }
+
+    func testRemove_UnpublishedForRegularUser_Removed() {
+        let ids = BookCatalogVisibility.firestoreIdsToRemove(localIds: ["A", "B"], catalogIds: ["A", "B"], skippedIds: ["B"])
+        XCTAssertEqual(ids, ["B"])
+    }
+
+    func testRemove_ShownBooks_IncludingTesterDrafts_Kept() {
+        // Черновик у тестировщика решается как .show — в skippedIds не попадает.
+        let ids = BookCatalogVisibility.firestoreIdsToRemove(localIds: ["A", "DRAFT"], catalogIds: ["A", "DRAFT"], skippedIds: [])
+        XCTAssertTrue(ids.isEmpty)
     }
 }

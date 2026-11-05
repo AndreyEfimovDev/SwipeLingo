@@ -12,7 +12,7 @@ import SwiftData
 
 @MainActor
 protocol BookCatalogSyncing {
-    /// Загружает книги каталога в `context` (upsert по `firestoreId`, локальные книги не удаляются).
-    /// - Parameter forceFullSync: игнорировать дату последнего синка и загрузить каталог целиком.
-    func syncBooks(into context: ModelContext, forceFullSync: Bool) async
+    /// Загружает книги каталога в `context` (upsert по `firestoreId`). Реализация с сервером удаляет
+    /// локальные книги, убранные из каталога (см. BookFBService).
+    func syncBooks(into context: ModelContext) async
 }

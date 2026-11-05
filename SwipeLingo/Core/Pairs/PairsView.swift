@@ -391,9 +391,8 @@ struct PairsView: View {
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
                 .multilineTextAlignment(.center)
-            Text(activePile != nil
-                 ? "Add sets to \"\(activePile!.name)\" to get started"
-                 : "Pairs sets will appear here once downloaded")
+            Text(activePile.map { "Add sets to \"\($0.name)\" to get started" }
+                 ?? "Pairs sets will appear here once downloaded")
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)

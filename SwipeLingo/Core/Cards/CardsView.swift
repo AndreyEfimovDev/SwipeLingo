@@ -253,9 +253,8 @@ struct CardsView: View {
             Text("No cards to study")
                 .font(.title3.bold())
                 .foregroundStyle(Color.myColors.myAccent)
-            Text(activePile != nil
-                 ? "Pile \"\(activePile!.name)\" has no active cards.\nAdd sets in Library."
-                 : "Add cards in Library or create a Pile")
+            Text(activePile.map { "Pile \"\($0.name)\" has no active cards.\nAdd sets in Library." }
+                 ?? "Add cards in Library or create a Pile")
                 .font(.subheadline)
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)

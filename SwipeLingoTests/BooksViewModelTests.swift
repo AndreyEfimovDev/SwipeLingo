@@ -51,7 +51,7 @@ private final class CountingCatalog: BookCatalogSyncing {
         self.delay = delay
     }
 
-    func syncBooks(into context: ModelContext, forceFullSync: Bool) async {
+    func syncBooks(into context: ModelContext) async {
         callCount += 1
         if let delay { try? await Task.sleep(for: delay) }
     }

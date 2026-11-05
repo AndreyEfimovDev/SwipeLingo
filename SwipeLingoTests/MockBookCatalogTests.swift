@@ -28,9 +28,9 @@ final class MockBookCatalogTests: XCTestCase {
         let context = try makeContext()
         let catalog = makeCatalog()
 
-        await catalog.syncBooks(into: context, forceFullSync: false)
+        await catalog.syncBooks(into: context)
         let firstCount = try context.fetch(FetchDescriptor<Book>()).count
-        await catalog.syncBooks(into: context, forceFullSync: false)
+        await catalog.syncBooks(into: context)
         let books = try context.fetch(FetchDescriptor<Book>())
 
         XCTAssertGreaterThan(firstCount, 0)
@@ -42,7 +42,7 @@ final class MockBookCatalogTests: XCTestCase {
         let context = try makeContext()
         let catalog = makeCatalog()
 
-        await catalog.syncBooks(into: context, forceFullSync: false)
+        await catalog.syncBooks(into: context)
         let books = try context.fetch(FetchDescriptor<Book>())
         for book in books {
             XCTAssertEqual(book.chapters.count, book.totalChapters)
@@ -53,7 +53,7 @@ final class MockBookCatalogTests: XCTestCase {
 
         let book = try XCTUnwrap(books.first)
         try FileManager.default.removeItem(at: chapterURL(book, 0))
-        await catalog.syncBooks(into: context, forceFullSync: false)
+        await catalog.syncBooks(into: context)
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: chapterURL(book, 0).path))
     }
