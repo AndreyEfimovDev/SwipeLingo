@@ -22,6 +22,14 @@ struct SwipeLingoBackup: Codable {
 struct BackupCardSet: Codable {
     let id: UUID
     let name: String
+    /// Сет — Inbox (лежит в системной коллекции). При восстановлении его карточки добавляются
+    /// в текущий Inbox, отдельный сет не создаётся (после переустановки у Inbox другой id).
+    let isInbox: Bool
+    /// Название коллекции сета — при восстановлении сет попадает в свою коллекцию с этим названием
+    /// (создаётся, если её нет). Для Inbox не используется.
+    let collectionName: String
+    /// Иконка коллекции (SF Symbol) — для создаваемой при восстановлении коллекции.
+    let collectionIcon: String?
     let level: String
     let setDescription: String?
     let createdAt: Date

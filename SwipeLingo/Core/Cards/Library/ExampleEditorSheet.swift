@@ -3,29 +3,25 @@ import SwiftData
 
 // MARK: - ExampleEditorSheet
 //
-// Шит управления пользовательскими примерами карточки — открывается с оборота карточки в TinderCards.
-// Показывает только примеры, добавленные пользователем (userSampleEN/userSampleItem).
-// Примеры из Firestore (sampleEN/sampleItem) не редактируются здесь — они управляются через Admin.
-// Работает с локальными копиями массивов — изменения применяются только по нажатию Save.
+// Шит управления примерами карточки — открывается долгим нажатием на пример на обороте карточки в TinderCards.
+// Показывает все примеры карточки. У пользовательской карточки удаляются любые, у облачной — только
+// добавленные со словаря (см. ExampleEditorViewModel). Изменения применяются только по нажатию Save.
 
 struct ExampleEditorSheet: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss)      private var dismiss
 
-    let card: Card
+    private let card: Card
 
-    @State private var samplesEN:   [String]
-    @State private var samplesItem: [String]
+    @State private var vm: ExampleEditorViewModel
 
-    init(card: Card) {
-        self.card    = card
-        _samplesEN   = State(initialValue: card.userSampleEN)
-        _samplesItem = State(initialValue: card.userSampleItem)
-    }
-
-    private var hasChanges: Bool {
-        samplesEN != card.userSampleEN || samplesItem != card.userSampleItem
+    /// - Parameters:
+    ///   - card: карточка, примеры которой редактируются.
+    ///   - isUserCard: карточка из пользовательского сета (`CardSet.isUserCreated`).
+    init(card: Card, isUserCard: Bool) {
+        self.card = card
+        _vm = State(initialValue: ExampleEditorViewModel(card: card, isUserCard: isUserCard))
     }
 
     // MARK: Body
@@ -33,7 +29,7 @@ struct ExampleEditorSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if samplesEN.isEmpty {
+                if vm.rows.isEmpty {
                     emptyState
                 } else {
                     exampleList
@@ -43,13 +39,14 @@ struct ExampleEditorSheet: View {
             .sheetNavigationBar("Examples")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.myColors.myRed)
+                    NavBarButtonForSheet(title: "Cancel", color: Color.myColors.myRed) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .foregroundStyle(hasChanges ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.4))
-                        .disabled(!hasChanges)
+                    NavBarButtonForSheet(
+                        title: "Save",
+                        color: vm.hasChanges ? Color.myColors.myBlue : Color.myColors.myAccent.opacity(0.8)
+                    ) { save() }
+                        .disabled(!vm.hasChanges)
                 }
             }
         }
@@ -59,56 +56,68 @@ struct ExampleEditorSheet: View {
 
     private var exampleList: some View {
         ScrollView {
-            VStack(spacing: 0) {
-                ForEach(samplesEN.indices, id: \.self) { i in
-                    exampleRow(at: i)
-                    if i < samplesEN.count - 1 {
-                        Divider().padding(.leading, 16)
+            VStack(alignment: .leading, spacing: 8) {
+                let rows = vm.rows
+                VStack(spacing: 0) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { position, row in
+                        exampleRow(row, number: position + 1)
+                        if position < rows.count - 1 {
+                            Divider().padding(.leading, 16)
+                        }
                     }
                 }
+                .background(Color.myColors.mySheetBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .myShadow()
+
+                if vm.hasLockedRows {
+                    Text("SwipeLingo examples can't be removed")
+                        .font(.caption)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+                        .padding(.horizontal, 16)
+                }
             }
-            .background(Color.myColors.mySheetBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .myShadow()
             .padding(16)
         }
     }
 
     @ViewBuilder
-    private func exampleRow(at index: Int) -> some View {
+    private func exampleRow(_ row: ExampleEditorViewModel.Row, number: Int) -> some View {
         HStack(alignment: .top, spacing: 12) {
             // Номер примера
-            Text("\(index + 1)")
+            Text("\(number)")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .frame(width: 20, alignment: .center)
                 .padding(.top, 2)
 
             // Текст
             VStack(alignment: .leading, spacing: 4) {
-                Text(samplesEN[index])
+                Text(row.en)
                     .font(.body)
                     .foregroundStyle(Color.myColors.myAccent)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if index < samplesItem.count, !samplesItem[index].isEmpty {
-                    Text(samplesItem[index])
+                if let translation = row.translation {
+                    Text(translation)
                         .font(.subheadline.italic())
-                        .foregroundStyle(Color.myColors.mySecondary)
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 
-            // Удалить
-            Button {
-                withAnimation(.spring(duration: 0.25)) {
-                    deleteExample(at: index)
+            // Удалить — только у удаляемых примеров
+            if row.isRemovable {
+                Button {
+                    withAnimation(.spring(duration: 0.25)) {
+                        vm.delete(row)
+                    }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(Color.myColors.myRed.opacity(0.5))
                 }
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(Color.myColors.myRed.opacity(0.5))
+                .buttonStyle(.borderless)
             }
-            .buttonStyle(.borderless)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -122,12 +131,12 @@ struct ExampleEditorSheet: View {
             Image(systemName: "text.badge.minus")
                 .font(.system(size: 40))
                 .foregroundStyle(Color.myColors.myAccent.opacity(0.3))
-            Text("No user examples")
+            Text("No examples")
                 .font(.subheadline)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             Text("Add examples from the Dictionary view.")
                 .font(.caption)
-                .foregroundStyle(Color.myColors.mySecondary)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
         }
@@ -136,16 +145,8 @@ struct ExampleEditorSheet: View {
 
     // MARK: Actions
 
-    private func deleteExample(at index: Int) {
-        samplesEN.remove(at: index)
-        if index < samplesItem.count {
-            samplesItem.remove(at: index)
-        }
-    }
-
     private func save() {
-        card.userSampleEN   = samplesEN
-        card.userSampleItem = samplesItem
+        vm.apply(to: card)
         context.saveWithErrorHandling()
         dismiss()
     }

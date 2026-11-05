@@ -139,8 +139,6 @@ struct ImportEPUBSheet: View {
             HStack {
                 Button("Back") { step = .pick }
                 Spacer()
-                Button("Export to Disk…") { exportToDisk(book: book) }
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                 Button("Upload & Deploy") {
                     uploadTask = Task { await upload(book: book, epubURL: epubURL) }
                 }
@@ -255,10 +253,12 @@ struct ImportEPUBSheet: View {
         step = .uploading(progress: 0)
 
         do {
+            let pages = HTMLSplitter.pages(from: book.chapters, paragraphsPerPage: paragraphsPerPage)
             let result = try await BookStorageService().uploadBook(
                 bookId:    bookId,
                 coverData: book.coverImageData,
-                chapters:  book.chapters
+                pages:     pages,
+                images:    book.images
             ) { progress in
                 Task { @MainActor in
                     step = .uploading(progress: progress * 0.9)
@@ -279,6 +279,7 @@ struct ImportEPUBSheet: View {
                 coverStoragePath: result.coverStoragePath,
                 totalChapters:    result.totalChapters,
                 chapters:         result.chapters,
+                isPublished:      false,   // черновик: сначала проверка в приложении тестировщиком
                 deployStatus:     .new,
                 updatedAt:        now,
                 createdAt:        now
@@ -297,87 +298,6 @@ struct ImportEPUBSheet: View {
         } catch {
             log("[ImportEPUB] Upload failed: \(error)", level: .error)
             step = .failed(error.localizedDescription)
-        }
-    }
-
-    // MARK: - Export to Disk
-
-    private func exportToDisk(book: EPUBParser.ParsedBook) {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles       = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        panel.prompt               = "Export Here"
-        panel.message              = "Choose a folder to export the parsed book"
-        guard panel.runModal() == .OK, let dest = panel.url else { return }
-
-        _ = dest.startAccessingSecurityScopedResource()
-        defer { dest.stopAccessingSecurityScopedResource() }
-
-        let bookId       = title.uppercased().filter { $0.isLetter || $0.isNumber }.prefix(24).description
-        let baseRaw      = "https://raw.githubusercontent.com/AndreyEfimovDev/Support/main/Books/\(bookId)"
-        let imagesBase   = "\(baseRaw)/images"
-
-        let bookDir = dest.appendingPathComponent(bookId, isDirectory: true)
-        let chapDir = bookDir.appendingPathComponent("chapters", isDirectory: true)
-        let imgDir  = bookDir.appendingPathComponent("images",   isDirectory: true)
-
-        do {
-            try FileManager.default.createDirectory(at: chapDir, withIntermediateDirectories: true)
-            try FileManager.default.createDirectory(at: imgDir,  withIntermediateDirectories: true)
-
-            // Save all images from the EPUB manifest
-            for (filename, data) in book.images {
-                try data.write(to: imgDir.appendingPathComponent(filename))
-            }
-
-            // Split each parsed chapter by headings, rewrite image src to GitHub URLs
-            var allChapters: [[String: Any]] = []
-            var chapterIndex = 0
-
-            for parsedChapter in book.chapters {
-                // Rewrite relative image src → absolute GitHub raw URLs
-                let updatedHTML = HTMLSplitter.rewriteImageSrc(
-                    in: parsedChapter.htmlContent,
-                    imagesBaseURL: imagesBase
-                )
-                // Split large chapter by h3/h2 headings (one fable = one file)
-                let sections = HTMLSplitter.split(html: updatedHTML, fallbackTitle: parsedChapter.title, paragraphsPerPage: paragraphsPerPage)
-
-                for section in sections {
-                    let file = chapDir.appendingPathComponent("\(chapterIndex).html")
-                    try section.htmlContent.write(to: file, atomically: true, encoding: .utf8)
-                    allChapters.append(["index": chapterIndex, "title": section.title])
-                    chapterIndex += 1
-                }
-            }
-
-            // Cover image
-            if let coverData = book.coverImageData {
-                try coverData.write(to: bookDir.appendingPathComponent("cover.jpg"))
-            }
-
-            // metadata.json
-            let meta: [String: Any] = [
-                "firestoreId":    bookId,
-                "title":          title.trimmingCharacters(in: .whitespaces),
-                "author":         author.trimmingCharacters(in: .whitespaces),
-                "description":    description.trimmingCharacters(in: .whitespaces),
-                "cefrLevel":      cefrLevel.rawValue,
-                "accessTier":     accessTier.rawValue,
-                "coverURL":       "\(baseRaw)/cover.jpg",
-                "chapterBaseURL": "\(baseRaw)/chapters",
-                "totalChapters":  allChapters.count,
-                "chapters":       allChapters
-            ]
-            let metaData = try JSONSerialization.data(withJSONObject: meta, options: .prettyPrinted)
-            try metaData.write(to: bookDir.appendingPathComponent("metadata.json"))
-
-            NSWorkspace.shared.open(dest)
-            log("[Export] \(chapterIndex) chapters, \(book.images.count) images → \(bookDir.path)", level: .info)
-
-        } catch {
-            log("[Export] Failed: \(error)", level: .error)
         }
     }
 }

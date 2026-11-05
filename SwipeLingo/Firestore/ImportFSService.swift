@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Network
+import os
 import FirebaseCore
 import FirebaseFirestore
 
@@ -44,7 +45,16 @@ struct ImportFSService {
     private func isNetworkReachable() async -> Bool {
         await withCheckedContinuation { continuation in
             let monitor = NWPathMonitor()
+            // pathUpdateHandler может прийти несколько раз до того, как cancel() вступит в силу
+            // (быстрая смена путей — VPN, авиарежим), а очередь глобальная, т.е. параллельная.
+            // Повторный resume() — фатальная ошибка рантайма, поэтому отвечаем только на первый вызов.
+            let hasResumed = OSAllocatedUnfairLock(initialState: false)
             monitor.pathUpdateHandler = { path in
+                let isFirst = hasResumed.withLock { resumed in
+                    defer { resumed = true }
+                    return !resumed
+                }
+                guard isFirst else { return }
                 monitor.cancel()
                 continuation.resume(returning: path.status == .satisfied)
             }

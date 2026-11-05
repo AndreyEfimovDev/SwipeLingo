@@ -9,7 +9,7 @@ final class Collection {
     var name: String = ""
     var icon: String? // имя SF Symbol или эмодзи
     var isOwned: Bool = true // true = принадлежит пользователю (не paywalled); false = премиум/Firebase
-    // true  → создана пользователем (My Sets, Inbox, пользовательские коллекции) — без бейджа CEFR, без синка с Firebase
+    // true  → создана пользователем (системная коллекция Inbox, пользовательские коллекции) — без бейджа CEFR, без синка с Firebase
     // false → контент от разработчика (IELTS, Psychology) — показывать бейдж CEFR в списке сетов
     var isUserCreated: Bool = true
     var typeRaw: String = CollectionType.cards.rawValue // "cards" | "pairs" — CloudKit-safe
@@ -17,7 +17,7 @@ final class Collection {
     var createdAt: Date = Date()
     var firestoreId: String? = nil // ID документа Firestore для дедупликации при синке
 
-    /// Владелец записи для пользовательских коллекций (Inbox/My Sets) — Firebase UID
+    /// Владелец записи для пользовательских коллекций (в т.ч. системной коллекции Inbox) — Firebase UID
     /// аккаунта, к которому привязана эта коллекция. Пусто = ещё не привязана
     /// (bootstrap-состояние до claim, см. CollectionDedupeService — паттерн зеркалит
     /// AppSyncStateManager.claim(firebaseUID:)). Для курируемых коллекций
@@ -53,8 +53,20 @@ final class Collection {
 }
 
 extension Collection {
+    /// Имя системной коллекции Inbox — это КЛЮЧ в данных (хранится в `name` в SwiftData/CloudKit,
+    /// по нему коллекцию находят `SystemSeeder`, `CollectionDedupeService` и др.), а не текст UI:
+    /// на экран она не выводится. Значение такое, что пользователь не наберёт его как имя своей
+    /// коллекции — проверка точная, поэтому зарезервированные имена в AddCollectionView не нужны.
+    /// Не менять после релиза: коллекцию с прежним именем перестанут узнавать, а `SystemSeeder`
+    /// создаст вторую (до 2026-11-02 значение было "My Sets" — dev-данные сбрасывались).
+    static let inboxCollectionName = "__system_inbox__"
+
+    /// Системная ли это коллекция — контейнер Inbox: в ней лежит сет "Inbox" (см. `SystemSeeder`),
+    /// на экране она сама не показывается. Ключ — `inboxCollectionName`; проверка только по имени.
+    var isInbox: Bool { name == Self.inboxCollectionName }
+
     /// "Своя" ли эта коллекция для указанного аккаунта — использовать везде, где
-    /// отображаются/резолвятся защищённые пользовательские коллекции (Inbox/My Sets),
+    /// отображаются/резолвятся защищённые пользовательские коллекции (системная коллекция Inbox),
     /// чтобы не показывать и не использовать чужие, оставшиеся локально после гонки
     /// CloudKit (claim корректно их не трогает, но ничего не мешает им попасть в
     /// обычный fetch — см. CollectionDedupeService). Курируемые коллекции

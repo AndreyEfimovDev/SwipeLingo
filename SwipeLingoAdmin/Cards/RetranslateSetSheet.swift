@@ -69,8 +69,11 @@ struct RetranslateSetSheet: View {
                 // Race: translation vs 30-second timeout
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { await applyBatch(session: session) }
-                    group.addTask {
-                        try? await Task.sleep(nanoseconds: 30_000_000_000)
+                    // @MainActor: log() и @State currentLang изолированы на MainActor.
+                    // Отменённый сон (перевод успел первым) — выходим без лога: раньше try? глотал
+                    // отмену, и "timeout" писался после каждого успешного перевода.
+                    group.addTask { @MainActor in
+                        guard (try? await Task.sleep(for: .seconds(30))) != nil else { return }
                         log("RetranslateSet: timeout for \(currentLang?.langId ?? "?")", level: .warning)
                     }
                     await group.next()   // first to finish wins

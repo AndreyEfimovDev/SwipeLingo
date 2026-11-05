@@ -4,13 +4,16 @@ import FirebaseCore
 
 // MARK: - BookDownloadService
 //
-// Скачивает и кэширует главы книг (HTML) и обложки из Firebase Storage.
+// Скачивает и кэширует главы книг (HTML), их картинки и обложки из Firebase Storage.
 //
-// Раскладка кэша на диске (Documents/books/):
+// Раскладка кэша на диске (Documents/books/) повторяет Storage (books/{firestoreId}/…):
 //   {firestoreId}/cover.jpg
 //   {firestoreId}/chapters/0.html
 //   {firestoreId}/chapters/1.html
+//   {firestoreId}/images/{файл}     ← глава ссылается на них как "../images/{файл}"
 //   ...
+// Список картинок берётся из HTML скачанной главы (а не из метаданных книги) — так картинки
+// докачиваются и для уже закэшированных глав, а модель Book и Firestore-схема не меняются.
 //
 // Публичный API:
 //   downloadChapter(book:index:)          → кэширует одну главу
@@ -46,10 +49,20 @@ final class BookDownloadService {
         bookDir(book).appendingPathComponent("chapters", isDirectory: true)
     }
 
+    private func imagesDir(_ book: Book) -> URL {
+        bookDir(book).appendingPathComponent("images", isDirectory: true)
+    }
+
     // MARK: - Public URL helpers
 
     func localChapterURL(book: Book, index: Int) -> URL {
         chaptersDir(book).appendingPathComponent("\(index).html")
+    }
+
+    /// Папка книги в кэше — WKWebView нужен доступ к ней целиком: глава лежит в `chapters/`,
+    /// а её картинки — в соседней `images/`.
+    func localBookDirectory(book: Book) -> URL {
+        bookDir(book)
     }
 
     func localCoverURL(book: Book) -> URL {
@@ -70,15 +83,59 @@ final class BookDownloadService {
 
     // MARK: - Download chapter
 
+    /// Кэширует главу (если её ещё нет) и докачивает недостающие картинки, на которые она ссылается.
+    /// Ошибка загрузки картинки не фатальна — глава читается и без неё.
     func downloadChapter(book: Book, index: Int) async throws {
         let dest = localChapterURL(book: book, index: index)
-        guard !fm.fileExists(atPath: dest.path) else { return }
+        if !fm.fileExists(atPath: dest.path) {
+            try createDirectories(for: book)
+            let path = book.chapterStoragePath(at: index)
+            let data = try await fetchFromStorage(path: path)
+            try data.write(to: dest)
+            log("Downloaded chapter \(index) of '\(book.title)'")
+        }
+        await downloadMissingImages(book: book, chapterURL: dest)
+    }
 
-        try createDirectories(for: book)
-        let path = book.chapterStoragePath(at: index)
-        let data = try await fetchFromStorage(path: path)
-        try data.write(to: dest)
-        log("Downloaded chapter \(index) of '\(book.title)'")
+    // MARK: - Download images
+
+    /// Имена файлов картинок, на которые глава ссылается относительным путём `../images/{файл}`
+    /// (так их пишет Admin). Абсолютные ссылки (http, data:) не учитываются. Без повторов, в порядке появления.
+    static func imageFileNames(inChapterHTML html: String) -> [String] {
+        guard let re = try? NSRegularExpression(
+            pattern: #"<img\b[^>]*?\bsrc=["']\.\./images/([^"'/]+)["']"#,
+            options: .caseInsensitive
+        ) else { return [] }
+        let ns = html as NSString
+        var seen = Set<String>()
+        return re.matches(in: html, range: NSRange(location: 0, length: ns.length)).compactMap { match in
+            let name = ns.substring(with: match.range(at: 1))
+            return seen.insert(name).inserted ? name : nil
+        }
+    }
+
+    private func downloadMissingImages(book: Book, chapterURL: URL) async {
+        guard let html = try? String(contentsOf: chapterURL, encoding: .utf8) else { return }
+        let names = Self.imageFileNames(inChapterHTML: html)
+        guard !names.isEmpty else { return }
+
+        let dir = imagesDir(book)
+        do {
+            try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        } catch {
+            log("Images dir create failed: \(error.localizedDescription)", level: .warning)
+            return
+        }
+        for name in names {
+            let dest = dir.appendingPathComponent(name)
+            guard !fm.fileExists(atPath: dest.path) else { continue }
+            do {
+                let data = try await fetchFromStorage(path: "books/\(book.firestoreId)/images/\(name)")
+                try data.write(to: dest)
+            } catch {
+                log("Image '\(name)' download failed: \(error.localizedDescription)", level: .warning)
+            }
+        }
     }
 
     // MARK: - Download all chapters

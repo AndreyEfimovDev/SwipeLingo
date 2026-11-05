@@ -113,9 +113,6 @@ struct CardsLibraryView: View {
 //                    }
 //                }
 //            }
-            .overlay {
-                if myCollections.isEmpty && piles.isEmpty { emptyState }
-            }
             .confirmationDialog(
                 "Delete \"\(collectionToDelete?.name ?? "Collection")\"?",
                 isPresented: Binding(
@@ -331,9 +328,20 @@ struct CardsLibraryView: View {
     private var setsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
 
+            // ── Inbox ─────────────────────────────────────────────
+            // Однострочная плашка без заголовка: Inbox — точка входа для новых слов (Share
+            // Extension, книги), а не коллекция. В данных он по-прежнему сет внутри системной коллекции Inbox.
+            if let inbox, let inboxCollection = collections.first(where: { $0.id == inbox.collectionId }) {
+                setRow(inbox, in: inboxCollection, backTitle: "Cards Library")
+                    .background(Color.myColors.myBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .myShadow()
+                    .padding(.horizontal, 16)
+            }
+
             // ── Заголовок ─────────────────────────────────────────
             HStack {
-                Text("MY SETS")
+                Text("MY COLLECTIONS")
                     .font(.footnote.weight(.semibold))
                 Spacer()
                 Button { isShowingAddCollection = true } label: {
@@ -348,7 +356,7 @@ struct CardsLibraryView: View {
 
             // ── Пользовательские коллекции ────────────────────────────────
             if myCollections.isEmpty {
-                Text("No collections yet — tap + to create one")
+                Text("No own collections yet — tap + to create one")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -365,7 +373,7 @@ struct CardsLibraryView: View {
 
             // ── Кураторские коллекции ─────────────────────────────
             if !curatedCollections.isEmpty {
-                Text("CURATED")
+                Text("CURATED COLLECTIONS")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color.myColors.myAccent)
                     .padding(.horizontal, 32)
@@ -418,7 +426,7 @@ struct CardsLibraryView: View {
             .padding(.vertical, 12)
             .background(Color.myColors.myAccent.opacity(0.04))
             .contextMenu {
-                if collection.name != "My Sets" {
+                if !collection.isInbox {
                     Button(role: .destructive) {
                         collectionToDelete = collection
                     } label: {
@@ -451,16 +459,19 @@ struct CardsLibraryView: View {
         .padding(.horizontal, 16)
     }
 
+    /// Строка сета со ссылкой на `CardSetDetailView`.
+    /// - Parameter backTitle: заголовок кнопки «назад»; `nil` — название коллекции (для Inbox,
+    ///   который показывается вне блока коллекции, передаётся явно).
     @ViewBuilder
-    private func setRow(_ cardSet: CardSet, in collection: Collection) -> some View {
+    private func setRow(_ cardSet: CardSet, in collection: Collection, backTitle: String? = nil) -> some View {
         NavigationLink {
             // Inbox (cardSet.name == "Inbox") больше не отдельная Collection — просто
-            // сет внутри "My Sets"; CardSetDetailView сама подавляет для него editing
+            // сет внутри системной коллекции Inbox; CardSetDetailView сама подавляет для него editing
             // через свой internal isInbox, отдельная ветка навигации не нужна.
             CardSetDetailView(
                 cardSet: cardSet,
                 allowsEditing: collection.isUserCreated,
-                backTitle: collection.name,
+                backTitle: backTitle ?? collection.name,
                 authService: authService, userService: userService,
                 appSyncStateService: appSyncStateService
             )
@@ -545,7 +556,7 @@ struct CardsLibraryView: View {
         // но заголовок/рамка были снаружи, без учёта этого).
         if vm.deletedCardsCount(allCards: allCards) > 0 {
             VStack(alignment: .leading, spacing: 6) {
-                Text("MANAGING CARD")
+                Text("MANAGING CARDS")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color.myColors.myAccent)
                     .padding(.horizontal, 32)
@@ -594,12 +605,17 @@ struct CardsLibraryView: View {
 
     }
 
-    // Inbox + My Sets + остальные пользовательские коллекции
+    // Свои пользовательские коллекции (системная коллекция Inbox не показывается)
     private var myCollections: [Collection] {
         vm.myCollections(
             from: collections, cardSets: cardSets, allCards: allCards,
             firebaseUID: authService.currentUser?.uid ?? ""
         )
+    }
+
+    // Inbox своего аккаунта — отдельная плашка над коллекциями
+    private var inbox: CardSet? {
+        vm.inboxSet(collections: collections, cardSets: cardSets, firebaseUID: authService.currentUser?.uid ?? "")
     }
 
     // Кураторские (Firestore) коллекции — показываем только если есть хотя бы один сет.
@@ -608,22 +624,6 @@ struct CardsLibraryView: View {
     private var curatedCollections: [Collection] {
         vm.curatedCollections(from: collections, cardSets: cardSets, allCards: allCards, userLevel: userLevel)
     }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "tray")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-            Text("No collections yet")
-                .font(.title3.bold())
-            Text("Tap + to create your first collection")
-                .font(.subheadline)
-                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
-        }
-    }
-
 }
 
 // MARK: - PileSheet

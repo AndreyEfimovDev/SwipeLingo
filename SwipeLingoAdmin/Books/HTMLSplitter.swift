@@ -11,13 +11,28 @@ import Foundation
 //   2. Fallback: split by paragraphs (paragraphsPerPage) — for plain chapters with no headings.
 //   - Each split section is wrapped in a complete <html>/<body> document (preserving <head>)
 //   - Content before the first heading is kept only if it contains >80 non-tag characters
-//   - Image src attributes are rewritten to absolute GitHub raw URLs
+//   - Пути картинок переписываются на "../images/{файл}" — раскладка Firebase Storage и кэша приложения
 
 struct HTMLSplitter {
 
     struct Section {
         let title:       String
         let htmlContent: String
+    }
+
+    // MARK: - Pages for upload
+
+    /// Относительный путь к картинкам из главы: глава лежит в `books/{id}/chapters/`, картинки — в
+    /// `books/{id}/images/`. Приложение кэширует ту же раскладку и по этому пути находит, что докачать.
+    static let chapterImagesBase = "../images"
+
+    /// Готовит страницы книги к загрузке: переписывает пути картинок на `chapterImagesBase` и делит каждую
+    /// главу EPUB по заголовкам (или по абзацам). Порядок страниц = порядок глав и разделов внутри них.
+    static func pages(from chapters: [EPUBParser.ParsedChapter], paragraphsPerPage: Int) -> [Section] {
+        chapters.flatMap { chapter in
+            let html = rewriteImageSrc(in: chapter.htmlContent, imagesBaseURL: chapterImagesBase)
+            return split(html: html, fallbackTitle: chapter.title, paragraphsPerPage: paragraphsPerPage)
+        }
     }
 
     // MARK: - Split by headings, then by paragraphs as fallback

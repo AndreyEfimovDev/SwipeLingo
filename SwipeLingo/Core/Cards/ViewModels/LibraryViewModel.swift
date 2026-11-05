@@ -54,10 +54,8 @@ final class LibraryViewModel {
 
     /// Сеты, видимые в `collection`: в пределах уровня CEFR пользователя, не
     /// soft-deleted, и либо пустые (только что созданы), либо всё ещё содержат хотя бы
-    /// одну неудалённую карточку. Внутри "My Sets" сет "Inbox" всегда идёт первым — не
-    /// полагаемся на порядок создания (`@Query(sort: \CardSet.createdAt)` обычно и так
-    /// ставит его первым, раз он создаётся `SystemSeeder` раньше пользовательских сетов,
-    /// но порядок должен быть детерминирован явно, а не как побочный эффект таймингов).
+    /// одну неудалённую карточку. Inbox из системной коллекции сюда не входит — на экране у него
+    /// своя плашка над коллекциями (см. `inboxSet`), в её блоке только остальные сеты.
     func setsForCollection(
         _ collection: Collection, cardSets: [CardSet], allCards: [Card], userLevel: CEFRLevel
     ) -> [CardSet] {
@@ -67,25 +65,29 @@ final class LibraryViewModel {
                 let cards = allCards.filter { $0.setId == set.id }
                 return cards.isEmpty || cards.contains { $0.status != .deleted }
             }
-        guard collection.name == "My Sets" else { return visible }
-        return visible.sorted { ($0.name == "Inbox" ? 0 : 1) < ($1.name == "Inbox" ? 0 : 1) }
+        guard collection.isInbox else { return visible }
+        return visible.filter { $0.name != "Inbox" }
     }
 
-    /// My Sets + остальные пользовательские коллекции с видимым контентом, в этом порядке.
-    /// Inbox отдельно не выделяется — с рефакторинга сентября 2026 это сет внутри
-    /// "My Sets" (см. `SystemSeeder`), не отдельная Collection. `firebaseUID`
-    /// отфильтровывает чужое "My Sets", оставшееся локально после гонки CloudKit
-    /// (см. `Collection.isMine(firebaseUID:)`) — без этого после нескольких
-    /// переустановок/гостевых входов на одном iCloud-аккаунте в списке накапливались
-    /// бы "лишние" My Sets от прошлых аккаунтов.
+    /// Inbox — сет внутри СВОЕЙ системной коллекции Inbox (см. `SystemSeeder`), показывается отдельной плашкой
+    /// над коллекциями. Фильтр `isMine` — как в `InboxDrainService`/`BookWordLookupView`: чужой
+    /// Inbox, оставшийся локально после гонки CloudKit, не показываем. `nil` — Inbox ещё нет.
+    func inboxSet(collections: [Collection], cardSets: [CardSet], firebaseUID: String) -> CardSet? {
+        guard let inboxCollection = collections.first(where: { $0.isInbox && $0.isMine(firebaseUID: firebaseUID) }) else {
+            return nil
+        }
+        return cardSets.first { $0.name == "Inbox" && $0.collectionId == inboxCollection.id }
+    }
+
+    /// Свои пользовательские коллекции с видимым контентом. Системная коллекция Inbox сюда не
+    /// входит никогда — у Inbox своя плашка (см. `inboxSet`), а других сетов в ней не бывает
+    /// (новый сет создаётся только в своей коллекции). `firebaseUID` отфильтровывает чужие
+    /// коллекции, оставшиеся локально после гонки CloudKit (см. `Collection.isMine(firebaseUID:)`).
     func myCollections(from collections: [Collection], cardSets: [CardSet], allCards: [Card], firebaseUID: String) -> [Collection] {
-        let mine     = collections.filter { $0.isMine(firebaseUID: firebaseUID) }
-        let mySets   = mine.filter { $0.name == "My Sets" }
-        let userRest = mine.filter {
-            $0.isUserCreated && $0.name != "My Sets"
+        collections.filter {
+            $0.isMine(firebaseUID: firebaseUID) && $0.isUserCreated && !$0.isInbox
                 && hasVisibleContent($0, cardSets: cardSets, allCards: allCards)
         }
-        return mySets + userRest
     }
 
     /// Облачные (Firestore) коллекции — только те, у которых есть хотя бы один сет для

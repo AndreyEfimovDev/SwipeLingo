@@ -36,7 +36,7 @@ struct AppView: View {
             .foregroundStyle(Color.myColors.myAccent)
             .errorAlert()
             .errorBanner()
-            /// Подстраховочный прогон дедупа My Sets при появлении главного экрана — на
+            /// Подстраховочный прогон дедупа системной коллекции Inbox при появлении главного экрана — на
             /// случай, если CloudKit доставил дубли ДО того, как CollectionDedupeObserver
             /// успел подписаться на NSPersistentStoreRemoteChange (см. его комментарий).
             /// Через уже внедрённый инстанс (dependencies), а не свой собственный — тот же
@@ -80,7 +80,8 @@ struct AppView: View {
                 appSettings: dependencies.appSettings,
                 userService: dependencies.userFBService,
                 authService: dependencies.authFBService,
-                audioService: dependencies.audioService
+                audioService: dependencies.audioService,
+                bookCatalog: dependencies.bookCatalog
             )
         }
     }

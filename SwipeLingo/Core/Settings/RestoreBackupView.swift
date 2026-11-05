@@ -4,9 +4,9 @@ import FirebaseAuth
 
 struct RestoreBackupView: View {
 
-    /// Нужен только для `firebaseUID` — восстанавливать сеты именно в СВОЁМ "My
-    /// Sets" (см. `Collection.isMine(firebaseUID:)`), не в чужом, оставшемся
-    /// локально после гонки CloudKit.
+    /// Нужен только для `firebaseUID` — восстанавливать в СВОИ коллекции и СВОЙ Inbox
+    /// (см. `Collection.isMine(firebaseUID:)`), не в чужие, оставшиеся локально после
+    /// гонки CloudKit.
     let authService: AuthFBService
 
     @Environment(\.modelContext) private var modelContext
@@ -43,7 +43,7 @@ struct RestoreBackupView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                Text("Restores Inbox and My Sets cards from a SwipeLingo backup file. Cards that already exist are not modified.")
+                Text("Restores cards in Inbox and your collections from a SwipeLingo backup file. Cards that already exist are not modified.")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.mySecondary)
                     .multilineTextAlignment(.leading)

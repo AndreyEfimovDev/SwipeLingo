@@ -243,6 +243,8 @@ struct FirestoreService {
             "coverStoragePath": book.coverStoragePath,
             "totalChapters":    book.totalChapters,
             "chapters":         book.chapters.map { ["index": $0.index, "title": $0.title] },
+            // Приложение загружает книгу всем только при true, иначе — только тестировщику.
+            "isPublished":      book.isPublished ?? false,
             "updatedAt":        Timestamp(date: book.updatedAt),
             "createdAt":        Timestamp(date: book.createdAt)
         ]

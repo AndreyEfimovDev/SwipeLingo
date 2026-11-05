@@ -38,22 +38,34 @@ struct SwipeLingoApp: App {
         FreshInstallGuard.clearStaleSessionIfNeeded()
 
         if let container = ModelContainerFactory.make() {
-            /// гарантируеv существовани `Inbox`/`My Sets`
+            /// гарантируеv существовани системной коллекции Inbox и сета `Inbox`
             SystemSeeder.ensureSystemCollections(into: container.mainContext)
             
+            let authFBService = AuthFBService()
             let dependencies = AppDependencies(
-                authFBService: AuthFBService(),
+                authFBService: authFBService,
                 userFBService: UserFBService(),
                 appSyncStateService: AppSyncStateService(modelContext: container.mainContext),
                 collectionDedupeObserver: CollectionDedupeObserver(container: container),
                 appViewModel: AppViewModel(),
                 appSettings: AppSettings(),
-                audioService: AudioPlayerService()
+                audioService: AudioPlayerService(),
+                bookCatalog: Self.makeBookCatalog(authService: authFBService)
             )
             startup = .ready(container: container, dependencies: dependencies)
         } else {
             startup = .failed
         }
+    }
+
+    /// Источник каталога книг: в DEBUG — мок-книги без сети (загружаются кнопкой в BooksView),
+    /// в релизе — Firestore (черновики видны тестировщику — по UID из authService).
+    private static func makeBookCatalog(authService: AuthFBService) -> BookCatalogSyncing {
+        #if DEBUG
+        MockBookCatalog()
+        #else
+        BookFBService(currentUID: { authService.currentUser?.uid })
+        #endif
     }
 
     var body: some Scene {
@@ -166,7 +178,7 @@ struct SwipeLingoApp: App {
             /// чтения appSyncStateService.hasCompletedOnboarding внутри неё (см. claim(firebaseUID:)).
             appSyncStateService.claim(firebaseUID: user.uid)
             /// Тот же bootstrap → account-scoped переход для системных коллекций
-            /// (Inbox/My Sets) — см. CollectionDedupeService.
+            /// (системной коллекции Inbox) — см. CollectionDedupeService.
             CollectionDedupeService().claimSystemCollections(firebaseUID: user.uid, context: container.mainContext)
             let hasForeignSyncState = appSyncStateService.hasForeignAccountData(firebaseUID: user.uid)
             /// Держим роутинг на loadingView, пока не придёт ответ Firestore ниже —

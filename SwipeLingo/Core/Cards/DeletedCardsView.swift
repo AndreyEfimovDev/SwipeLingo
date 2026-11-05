@@ -106,9 +106,7 @@ struct DeletedCardsView: View {
                         let cardSet        = allCardSets.first(where: { $0.id == card.setId })
                         let curated        = !(cardSet?.isUserCreated ?? true)
                         let setName        = cardSet?.name
-                        let collectionName = cardSet.flatMap { set in
-                            allCollections.first(where: { $0.id == set.collectionId })?.name
-                        }
+                        let collectionName = vm.collectionName(for: cardSet, allCollections: allCollections)
                         DeletedCardRow(card: card, setName: setName, collectionName: collectionName, isCurated: curated)
                             .id(card.id)
                             .listRowBackground(Color.myColors.myBackground)
@@ -175,11 +173,13 @@ struct DeletedCardsView: View {
         .navigationTitle("Deleted Cards")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                if !deletedCards.isEmpty {
+            // Условие снаружи ToolbarItem: пустой элемент iOS 26 рисует стеклянным кругом.
+            if !deletedCards.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
                     NavBarButtonForSheet(
                         title: editMode == .active ? "Done" : "Edit",
-                        color: Color.myColors.myBlue
+                        color: Color.myColors.myBlue,
+                        isOutlined: false
                     ) {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             if editMode == .active {
@@ -207,10 +207,9 @@ struct DeletedCardsView: View {
             }
             if editMode == .active {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(isAllSelected ? "Deselect All" : "Select All") {
+                    NavBarButtonForSheet(title: isAllSelected ? "Deselect All" : "Select All", isOutlined: false) {
                         toggleSelectAll()
                     }
-                    .foregroundStyle(Color.myColors.myBlue)
                 }
             }
         }
@@ -347,6 +346,10 @@ struct DeletedCardsView: View {
             // Сет
             Menu {
                 if selectedCollectionId == nil && availableCollections.count > 1 {
+                    // Сеты вне показанных коллекций (Inbox) — отдельными пунктами над секциями
+                    ForEach(availableSets.filter { set in !availableCollections.contains { $0.id == set.collectionId } }) { set in
+                        setMenuButton(set)
+                    }
                     ForEach(availableCollections) { col in
                         let setsForCol = availableSets.filter { $0.collectionId == col.id }
                         if !setsForCol.isEmpty {

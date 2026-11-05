@@ -100,8 +100,10 @@ struct TinderCardsView: View {
         .animation(.spring(duration: 0.4), value: vm.isDone)
         .overlay {
             // Показываем caught-up когда пользователь переключился в Due,
-            // но due карточек нет — сессия не сбрасывается, карточка за оверлеем сохраняется
-            if isDueMode && !hasDueCards {
+            // но due карточек нет — сессия не сбрасывается, карточка за оверлеем сохраняется.
+            // Не поверх экрана завершения: после оценки последней due-карточки hasDueCards
+            // тоже становится false, а переход в All там даёт кнопка "Study all cards".
+            if isDueMode && !hasDueCards && !vm.isDone {
                 cardsCaughtUpOverlay
             }
         }
@@ -113,12 +115,21 @@ struct TinderCardsView: View {
                 audioService: audioService
             )
         }
-        .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0) }
+        .sheet(item: $editExamplesCard) { ExampleEditorSheet(card: $0, isUserCard: isUserCard($0)) }
         .onDisappear { audioService.stop() }
         .onChange(of: vm.currentIndex) { _, _ in
             examplePageIndex = 0
             audioService.stop()
         }
+    }
+
+    /// Карточка из пользовательского сета (её основные примеры можно удалять в `ExampleEditorSheet`).
+    /// Сет не найден — считаем карточку облачной: основные примеры не удаляются.
+    private func isUserCard(_ card: Card) -> Bool {
+        let setId = card.setId
+        var descriptor = FetchDescriptor<CardSet>(predicate: #Predicate { $0.id == setId })
+        descriptor.fetchLimit = 1
+        return context.fetchWithErrorHandling(descriptor).first?.isUserCreated ?? false
     }
 
     // MARK: - Portrait
@@ -678,8 +689,9 @@ struct TinderCardsView: View {
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
                                 audioButton(for: card.allSampleEN[page], isTTS: true)
-                                if page < card.allSampleItem.count {
-                                    Text(card.allSampleItem[page])
+                                let translations = card.allSampleItem
+                                if page < translations.count, !translations[page].isEmpty {
+                                    Text(translations[page])
                                         .multilineTextAlignment(.center)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -942,10 +954,17 @@ struct TinderCardsView: View {
 
     private var doneActionsView: some View {
         VStack(spacing: 10) {
+            // В режиме Due повторять только что оценённые карточки бессмысленно (их dueDate уже
+            // сдвинут) — вместо "Study again" переход ко всем активным карточкам через onDone
+            // (FlashCardsViewModel.onSessionComplete переключает сессию в режим All).
             Button {
-                withAnimation(.spring(duration: 0.4, bounce: 0.2)) { vm.restart() }
+                if isDueMode {
+                    vm.onDone?()
+                } else {
+                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) { vm.restart() }
+                }
             } label: {
-                Text("Study again")
+                Text(isDueMode ? "Study all cards" : "Study again")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)

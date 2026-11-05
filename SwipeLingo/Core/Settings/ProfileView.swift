@@ -84,18 +84,27 @@ struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .customBackButton("")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                if saveConfirmed {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(Color.myColors.myGreen)
-                        .transition(.scale.combined(with: .opacity))
-                } else if hasChanges {
-                    Button("Save") { saveChanges() }
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.myColors.myBlue)
+            // Условие снаружи ToolbarItem: пустой элемент iOS 26 рисует стеклянным кругом.
+            if hasChanges {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavBarButtonForSheet(title: "Save", isOutlined: false) { saveChanges() }
                         .transition(.opacity)
                 }
+            }
+        }
+        // Подтверждение сохранения — по центру экрана, а не в nav bar: там iOS 26 оборачивает
+        // любой ToolbarItem в glass-капсулу, и у галочки появлялся лишний контур.
+        .overlay {
+            if saveConfirmed {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 88))
+                    // Галочка внутри символа прозрачна — красим её в фон, чтобы сквозь неё
+                    // не просвечивал текст экрана под оверлеем.
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(Color.myColors.myBackground, Color.myColors.myGreen)
+                    .myShadow()
+                    .transition(.scale.combined(with: .opacity))
+                    .allowsHitTesting(false)
             }
         }
         .onAppear {

@@ -33,14 +33,14 @@ struct BooksListView: View {
             set: { if !$0 { confirmDelete = nil } }
         )) {
             Button("Cancel", role: .cancel) { confirmDelete = nil }
-            Button("Delete from Firestore", role: .destructive) {
+            Button("Delete Forever", role: .destructive) {
                 if let book = confirmDelete {
                     deployTask = Task { await store.deleteBookForever(id: book.id) }
                 }
                 confirmDelete = nil
             }
         } message: {
-            Text("This will delete the book document from Firestore. Storage files (cover + chapters) must be removed manually from Firebase Console.")
+            Text("This will delete the book from Firestore and all its files (cover, chapters, images) from Storage. This cannot be undone.")
         }
         .onDisappear { deployTask?.cancel() }
     }
@@ -86,6 +86,11 @@ struct BooksListView: View {
             }
             .width(80)
 
+            TableColumn("Visibility") { book in
+                visibilityBadge(isPublished: book.isPublished == true)
+            }
+            .width(80)
+
             TableColumn("Updated") { book in
                 Text(book.updatedAt.formatted(date: .abbreviated, time: .omitted))
                     .font(.caption)
@@ -102,6 +107,16 @@ struct BooksListView: View {
                         Image(systemName: book.deployStatus == .live ? "arrow.clockwise" : "arrow.up.circle")
                     }
                     .help(book.deployStatus == .live ? "Re-deploy to Firestore" : "Deploy to Firestore")
+                    .disabled(store.isDeploying)
+
+                    // Publish / Unpublish — видимость книги пользователям приложения
+                    let isPublished = book.isPublished == true
+                    Button {
+                        deployTask = Task { await store.setBookPublished(id: book.id, !isPublished) }
+                    } label: {
+                        Image(systemName: isPublished ? "eye.slash" : "checkmark.seal")
+                    }
+                    .help(isPublished ? "Unpublish (testers only)" : "Publish to all users")
                     .disabled(store.isDeploying)
 
                     // Edit metadata
@@ -122,7 +137,7 @@ struct BooksListView: View {
                 }
                 .buttonStyle(.borderless)
             }
-            .width(90)
+            .width(120)
         }
     }
 
@@ -159,6 +174,19 @@ struct BooksListView: View {
                 Label("Import EPUB", systemImage: "arrow.down.doc")
             }
         }
+    }
+
+    // MARK: - Visibility badge
+
+    /// Published — книга видна всем; Testing — только тестировщикам (Secrets.bookTesterUIDs в приложении).
+    private func visibilityBadge(isPublished: Bool) -> some View {
+        let (label, color): (String, Color) = isPublished ? ("Published", .green) : ("Testing", .orange)
+        return Text(label)
+            .font(.system(size: 11, weight: .semibold))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.15), in: Capsule())
+            .foregroundStyle(color)
     }
 
     // MARK: - Status badge

@@ -289,7 +289,7 @@ struct PileBuilderView: View {
 
     private var filteredSetGroups: [SetGroup] {
         setGroups.compactMap { group in
-            // Пользовательские коллекции (My Sets и т.д.) показываются всегда, без фильтрации
+            // Пользовательские коллекции показываются всегда, без фильтрации
             if group.isUserCreated { return group }
             let sets = group.sets.filter { set in
                 let matchesLevel  = selectedLevel == nil || set.level == selectedLevel
@@ -302,6 +302,8 @@ struct PileBuilderView: View {
 
     private var setGroups: [SetGroup] {
         collections
+            // Системная коллекция Inbox — не группа сетов (Inbox в пайлы не входит, а её имя — ключ, не текст UI)
+            .filter { !$0.isInbox }
             .compactMap { collection -> SetGroup? in
                 let sets = cardSets.filter {
                     $0.collectionId == collection.id && $0.name != "Inbox"

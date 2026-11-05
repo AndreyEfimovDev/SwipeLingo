@@ -220,9 +220,11 @@ final class BookChapterVC: UIViewController {
         ])
         webView = wv
 
-        let url = BookDownloadService.shared.localChapterURL(book: book, index: index)
+        let service = BookDownloadService.shared
+        let url = service.localChapterURL(book: book, index: index)
         guard FileManager.default.fileExists(atPath: url.path) else { return }
-        wv.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        // Доступ ко всей папке книги: картинки главы лежат в соседней images/ ("../images/…").
+        wv.loadFileURL(url, allowingReadAccessTo: service.localBookDirectory(book: book))
     }
 }
 

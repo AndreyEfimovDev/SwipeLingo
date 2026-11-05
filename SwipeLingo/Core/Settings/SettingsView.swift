@@ -194,7 +194,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                NavigationLink { ExportAndShareView() } label: {
+                NavigationLink { ExportAndShareView(authService: authService) } label: {
                     HStack {
                         Label("Export / Backup", systemImage: "square.and.arrow.up")
                             .labelStyle(.fixedIcon)

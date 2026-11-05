@@ -25,6 +25,7 @@ struct BookChapter: Codable, Identifiable, Hashable {
     var totalChapters:      Int   = 0
     var chaptersJSON:       String = "[]"   // [BookChapter], закодированный в JSON
     var isNew:              Bool   = true   // true после импорта, false после первой полной загрузки
+    var isTesting:          Bool   = false  // черновик (isPublished != true в Firestore), виден только тестировщику
     var createdAt:          Date  = Date()
     var updatedAt:          Date  = Date()
 
@@ -40,6 +41,7 @@ struct BookChapter: Codable, Identifiable, Hashable {
         totalChapters:    Int,
         chapters:         [BookChapter],
         isNew:            Bool = true,
+        isTesting:        Bool = false,
         createdAt:        Date,
         updatedAt:        Date
     ) {
@@ -55,6 +57,7 @@ struct BookChapter: Codable, Identifiable, Hashable {
         self.totalChapters    = totalChapters
         self.chaptersJSON     = Self.encode(chapters)
         self.isNew            = isNew
+        self.isTesting        = isTesting
         self.createdAt        = createdAt
         self.updatedAt        = updatedAt
     }

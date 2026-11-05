@@ -50,6 +50,11 @@ struct CardSetDetailView: View {
 
     private var isInbox: Bool { cardSet.name == "Inbox" }
 
+    /// Есть ли что показать справа в nav bar: Done в режиме выбора, «+» или «Edit».
+    private var hasTrailingButtons: Bool {
+        editMode == .active || (allowsEditing && !isInbox) || !filteredCards.isEmpty
+    }
+
     /// Active + Learnt вместе, один плоский список — .deleted сюда не попадают.
     private var visibleCards: [Card] {
         allCards.filter { $0.setId == cardSet.id && ($0.status == .active || $0.status == .learnt) }
@@ -142,22 +147,24 @@ struct CardSetDetailView: View {
         .toolbar {
             if editMode == .active {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(isAllSelected ? "Deselect All" : "Select All") {
+                    NavBarButtonForSheet(title: isAllSelected ? "Deselect All" : "Select All", isOutlined: false) {
                         toggleSelectAll()
                     }
-                    .foregroundStyle(Color.myColors.myBlue)
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 16) {
-                    if editMode == .active {
+            // ToolbarItem только когда в нём есть кнопки: пустой элемент iOS 26 всё равно рисует
+            // стеклянным кругом (у Inbox без карточек — ни «+», ни «Edit»).
+            if hasTrailingButtons {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 16) {
+                        if editMode == .active {
                         
-                        NavBarButtonForSheet() {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                editMode = .inactive
-                                selectedCardIds = []
+                            NavBarButtonForSheet(isOutlined: false) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    editMode = .inactive
+                                    selectedCardIds = []
+                                }
                             }
-                        }
 
 //                        Button("Done") {
 //                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -165,19 +172,20 @@ struct CardSetDetailView: View {
 //                                selectedCardIds = []
 //                            }
 //                        }
-                    } else {
-                        if allowsEditing && !isInbox {
-                            Button { isShowingAddCard = true } label: {
-                                Image(systemName: "plus")
-                                    .navBarIconStyle()
+                        } else {
+                            if allowsEditing && !isInbox {
+                                Button { isShowingAddCard = true } label: {
+                                    Image(systemName: "plus")
+                                        .navBarIconStyle()
+                                }
+                            }
+                            if !filteredCards.isEmpty {
+                                NavBarButtonForSheet(title: "Edit", isOutlined: false) { editMode = .active }
                             }
                         }
-                        if !filteredCards.isEmpty {
-                            Button("Edit") { editMode = .active }
-                        }
                     }
+                    .foregroundStyle(Color.myColors.myBlue)
                 }
-                .foregroundStyle(Color.myColors.myBlue)
             }
         }
         .safeAreaInset(edge: .bottom) {

@@ -1,7 +1,12 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 struct ExportAndShareView: View {
+
+    /// Нужен только для `firebaseUID` — экспортировать сеты СВОЕГО аккаунта (см.
+    /// `Collection.isMine(firebaseUID:)`), не другого, оставшегося локально на том же iCloud.
+    let authService: AuthFBService
 
     @Environment(\.modelContext) private var modelContext
 
@@ -43,7 +48,7 @@ struct ExportAndShareView: View {
                 .padding(.horizontal, 32)
 
             VStack(spacing: 0) {
-                Text("Exports cards from Inbox and My Sets — including translations, examples, and SRS study progress — to a JSON file. Share via AirDrop, Mail, or save to Files.")
+                Text("Exports cards from Inbox and your collections — including translations, examples, and SRS study progress — to a JSON file. Share via AirDrop, Mail, or save to Files.")
                     .font(.subheadline)
                     .foregroundStyle(Color.myColors.mySecondary)
                     .multilineTextAlignment(.leading)
@@ -82,8 +87,10 @@ struct ExportAndShareView: View {
     private func prepareExport() {
         isExporting = true
         let ctx = modelContext
+        // Читаем firebaseUID здесь, на MainActor, до входа в Task.detached — как в RestoreBackupView.
+        let firebaseUID = authService.currentUser?.uid ?? ""
         Task.detached {
-            let result = await ExportService().exportAll(from: ctx)
+            let result = await ExportService().exportAll(from: ctx, firebaseUID: firebaseUID)
             await MainActor.run {
                 isExporting = false
                 switch result {
@@ -99,5 +106,5 @@ struct ExportAndShareView: View {
 }
 
 #Preview {
-    NavigationStack { ExportAndShareView() }
+    NavigationStack { ExportAndShareView(authService: AuthFBService()) }
 }

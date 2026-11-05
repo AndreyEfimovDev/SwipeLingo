@@ -92,7 +92,16 @@ final class Card {
 
     /// Примеры Firestore + пользовательские вместе, для отображения.
     var allSampleEN: [String]   { sampleEN + userSampleEN }
-    var allSampleItem: [String] { sampleItem + userSampleItem }
+    /// Переводы для `allSampleEN`, индекс в индекс. Переводы основных примеров выравниваются
+    /// по `sampleEN` (недостающие — пустая строка, лишние отбрасываются): у облачной карточки
+    /// переводов может быть меньше, чем примеров, и без выравнивания перевод примера со словаря
+    /// показывался бы под чужим примером.
+    var allSampleItem: [String] {
+        let english = sampleEN
+        let items = sampleItem
+        let aligned = english.indices.map { $0 < items.count ? items[$0] : "" }
+        return aligned + userSampleItem
+    }
 
     var tags: [String] {
         get { decodeArray(tagsRaw) }

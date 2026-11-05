@@ -222,6 +222,9 @@ struct FSBook: Codable, Identifiable {
     var coverStoragePath:     String          // путь в Firebase Storage, напр. "books/{id}/cover.jpg"
     var totalChapters:        Int
     var chapters:             [FSBookChapter]
+    /// Флаг публикации: true — книга видна всем, иначе только тестировщикам (см. BookCatalogVisibility).
+    /// Optional — чтобы локальный JSON Admin, записанный до появления флага, декодировался; nil = не опубликована.
+    var isPublished:          Bool?
     // Только для Admin — не пишется в Firestore
     var deployStatus:         SetDeployStatus
     var previousDeployStatus: SetDeployStatus?
@@ -238,6 +241,7 @@ struct FSBook: Codable, Identifiable {
         coverStoragePath: String,
         totalChapters:    Int,
         chapters:         [FSBookChapter],
+        isPublished:      Bool? = nil,
         deployStatus:     SetDeployStatus = .new,
         updatedAt:        Date,
         createdAt:        Date
@@ -251,6 +255,7 @@ struct FSBook: Codable, Identifiable {
         self.coverStoragePath = coverStoragePath
         self.totalChapters    = totalChapters
         self.chapters         = chapters
+        self.isPublished      = isPublished
         self.deployStatus     = deployStatus
         self.updatedAt        = updatedAt
         self.createdAt        = createdAt

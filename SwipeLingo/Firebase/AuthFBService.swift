@@ -12,6 +12,8 @@ import CryptoKit
 final class AuthFBService {
 
     private(set) var currentUser: FirebaseAuth.User? = nil
+    /// True до первого ответа auth-листенера (состояние из локального кэша Firebase). Проверку сессии
+    /// сервером не ждёт — она идёт в фоне (`verifyLaunchSession`), иначе при плохой сети старт висел до 8 с.
     private(set) var isLoading = true
     /// True только после того, как закэшированная сессия подтверждена Firebase (либо после свежего входа).
     /// Firebase-вызовы, пишущие данные, должны быть защищены этим флагом, чтобы избежать записей по протухшему токену.
@@ -29,16 +31,25 @@ final class AuthFBService {
     /// Абстракция над `Firestore.firestore()` — нужна только для удаления документа
     /// пользователя при удалении аккаунта (см. `deleteAccount`/`deleteAccountWithApple`).
     private let db: FirestoreClient
+    /// Проверка сессии на старте запускается ровно один раз: листенер срабатывает и повторно
+    /// (в т.ч. после входа), а флаг ставится синхронно, до первого await.
+    private var didStartLaunchVerify = false
 
     init(auth: AuthClient = Auth.auth(), db: FirestoreClient = Firestore.firestore()) {
         self.auth = auth
         self.db = db
         auth.addStateDidChangeListener { [weak self] user in
             Task { @MainActor in
-                self?.currentUser = user
-                // Держим isLoading = true, пока сессия не подтверждена, чтобы UI
-                // никогда не отрисовал AppView с непроверенным (возможно удалённым) пользователем.
-                await self?.verifyAndFinishLoading()
+                log("Auth state: \(user.map { "uid=\($0.uid) anonymous=\($0.isAnonymous)" } ?? "no user")", level: .info)
+                guard let self else { return }
+                self.currentUser = user
+                guard !self.didStartLaunchVerify else { return }
+                self.didStartLaunchVerify = true
+                // UI — сразу по закэшированному пользователю; подтверждение сервером — в фоне. Если аккаунт
+                // удалён, пользователь увидит свои локальные данные секунду-другую, пока проверка не выведет его.
+                // Записи в Firestore по-прежнему ждут isSessionVerified.
+                self.isLoading = false
+                await self.verifyLaunchSession()
             }
         }
     }
@@ -121,14 +132,15 @@ final class AuthFBService {
         }
     }
 
-    /// Вызывается один раз из auth-state листенера при первом запуске приложения.
-    /// Держит isLoading = true, пока Firebase не подтвердит валидность сессии.
+    /// Вызывается один раз из auth-state листенера при запуске приложения, в фоне — UI уже показан.
+    /// Успех → `isSessionVerified = true` (запускает claim и синк в SwipeLingoApp).
     /// Проверяются все типы пользователей (включая анонимных) — удалённые аккаунты выходят из системы.
-    /// Сетевые ошибки игнорируются, чтобы пользователь мог работать офлайн.
-    private func verifyAndFinishLoading() async {
-        guard isLoading else { return }
-        defer { isLoading = false }
-        guard let user = auth.currentUser else { return }
+    /// Выход — только по явным ошибкам авторизации (`shouldSignOut`), остальные ошибки не мешают работать офлайн.
+    private func verifyLaunchSession() async {
+        guard let user = auth.currentUser else {
+            log("Launch verify: no current user — skipping", level: .warning)
+            return
+        }
         do {
             // Ограничиваем reload() 8 секундами. При реальном "нет интернета" (-1009) ошибка
             // приходит сразу, так что таймаут срабатывает только когда сеть есть, но auth-сервер
@@ -142,31 +154,48 @@ final class AuthFBService {
                 _ = try await group.next()
                 group.cancelAll()
             }
+            guard isStillCurrent(user) else { return }
             isSessionVerified = true
             currentUser = auth.currentUser
+            log("Launch verify: session confirmed", level: .info)
         } catch let error as NSError {
-            // Firebase оборачивает исходные NSURLError в AuthErrorCode.networkError (17020).
-            // Любая сетевая ошибка/таймаут → сохраняем сессию (повтор при следующем запуске).
-            // Выход из системы — только по явным auth-ошибкам (невалидный credential, пользователь отключён и т.д.).
-            let keepSessionCodes: Set<Int> = [
-                NSURLErrorNotConnectedToInternet,  // -1009 нет интернета
-                NSURLErrorNetworkConnectionLost,   // -1005 соединение прервано
-                NSURLErrorDataNotAllowed,          // -1020 заблокировано в сотовой сети
-                NSURLErrorTimedOut,                // -1001 сервер медленный / прокси / VPN
-                NSURLErrorCannotConnectToHost,     // -1004 хост недоступен
-            ]
+            guard isStillCurrent(user) else { return }
             let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError
-            let isNetworkError = keepSessionCodes.contains(error.code)
-                || (error.code == AuthErrorCode.networkError.rawValue
-                    && underlying.map { keepSessionCodes.contains($0.code) } == true)
-            if isNetworkError {
-                log("Launch verify: network error (\(error.code)) — keeping session", level: .warning)
-            } else {
-                log("Launch verify: session invalid (domain:\(error.domain) code:\(error.code) underlying:\(String(describing: underlying?.code))) — signing out", level: .warning)
+            let details = "domain:\(error.domain) code:\(error.code) underlying:\(String(describing: underlying?.code))"
+            if Self.shouldSignOut(afterLaunchVerifyError: error) {
+                log("Launch verify: session invalid (\(details)) — signing out", level: .warning)
                 try? signOut()
                 currentUser = nil
+            } else {
+                log("Launch verify: not an auth error (\(details)) — keeping session", level: .warning)
             }
         }
+    }
+
+    /// Проверка идёт в фоне, при уже показанном UI — пользователь мог успеть выйти или войти в другой
+    /// аккаунт. Результат применяется, только если текущий пользователь всё ещё тот, кого проверяли.
+    private func isStillCurrent(_ user: FirebaseAuth.User) -> Bool {
+        let isCurrent = auth.currentUser?.uid == user.uid
+        if !isCurrent { log("Launch verify: user changed during verification — result ignored", level: .info) }
+        return isCurrent
+    }
+
+    /// Нужно ли выходить из аккаунта после ошибки проверки сессии на старте.
+    ///
+    /// Выход — только по явным ошибкам авторизации: пользователь удалён или отключён, токен отозван или истёк.
+    /// Любая другая ошибка (сеть, таймаут, TLS, неизвестный код) сессию сохраняет — проверка повторится при
+    /// следующем запуске. Раньше было наоборот (сохраняли только при кодах из короткого списка сетевых), и
+    /// `networkError` 17020 с вложенным TLS-сбоем -1200 (VPN в авиарежиме) разлогинивал пользователя — для
+    /// гостя это потеря UID и доступа к своему Inbox.
+    static func shouldSignOut(afterLaunchVerifyError error: NSError) -> Bool {
+        guard error.domain == AuthErrors.domain else { return false }
+        let authErrorCodes: Set<Int> = [
+            AuthErrorCode.userNotFound.rawValue,      // 17011 аккаунт удалён
+            AuthErrorCode.userDisabled.rawValue,      // 17005 аккаунт отключён
+            AuthErrorCode.invalidUserToken.rawValue,  // 17017 токен недействителен (напр. сменили пароль)
+            AuthErrorCode.userTokenExpired.rawValue   // 17021 токен отозван/истёк, нужен повторный вход
+        ]
+        return authErrorCodes.contains(error.code)
     }
 
     // MARK: - Google
