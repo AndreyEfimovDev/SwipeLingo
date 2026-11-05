@@ -88,6 +88,8 @@
 		4773002B309CA6CF00402B80 /* BookCatalogVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773002A309CA6CF00402B80 /* BookCatalogVisibility.swift */; };
 		4773002D309CD2A500402B80 /* CloudContentDedupeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773002C309CD2A500402B80 /* CloudContentDedupeService.swift */; };
 		4773002F309CD36000402B80 /* CloudContentDedupeServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4773002E309CD36000402B80 /* CloudContentDedupeServiceTests.swift */; };
+		47730031309CD54300402B80 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 47730030309CD54300402B80 /* PrivacyInfo.xcprivacy */; };
+		47730034309CD5A700402B80 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 47730033309CD5A700402B80 /* PrivacyInfo.xcprivacy */; };
 		4777A64D69CD08532A3CD45F /* MainScreenToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472631E6B19501091864466C /* MainScreenToolbar.swift */; };
 		4785898E2FF3DCF100BF3C8F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4785898D2FF3DCF100BF3C8F /* ActivityView.swift */; };
 		478589912FF3DD4800BF3C8F /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478589902FF3DD4800BF3C8F /* ExportService.swift */; };
@@ -358,6 +360,8 @@
 		4773002A309CA6CF00402B80 /* BookCatalogVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCatalogVisibility.swift; sourceTree = "<group>"; };
 		4773002C309CD2A500402B80 /* CloudContentDedupeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudContentDedupeService.swift; sourceTree = "<group>"; };
 		4773002E309CD36000402B80 /* CloudContentDedupeServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudContentDedupeServiceTests.swift; sourceTree = "<group>"; };
+		47730030309CD54300402B80 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		47730033309CD5A700402B80 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4785898D2FF3DCF100BF3C8F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		4785898F2FF3DD4800BF3C8F /* BackupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupModels.swift; sourceTree = "<group>"; };
@@ -843,10 +847,11 @@
 		478729322FA9D99F001282EF /* SwipeLingoShare */ = {
 			isa = PBXGroup;
 			children = (
-				4787292E2FA9D99F001282EF /* Info.plist */,
 				4787292F2FA9D99F001282EF /* ShareExtensionView.swift */,
 				478729302FA9D99F001282EF /* ShareViewController.swift */,
+				4787292E2FA9D99F001282EF /* Info.plist */,
 				478729312FA9D99F001282EF /* SwipeLingoShare.entitlements */,
+				47730033309CD5A700402B80 /* PrivacyInfo.xcprivacy */,
 			);
 			path = SwipeLingoShare;
 			sourceTree = "<group>";
@@ -1016,6 +1021,7 @@
 				478C78442F794487005FBDFE /* Resources */,
 				478C784D2F794487005FBDFE /* SwipeLingo.entitlements */,
 				478729012FA9D977001282EF /* GoogleService-Info.plist */,
+				47730030309CD54300402B80 /* PrivacyInfo.xcprivacy */,
 			);
 			path = SwipeLingo;
 			sourceTree = "<group>";
@@ -1319,6 +1325,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47730031309CD54300402B80 /* PrivacyInfo.xcprivacy in Resources */,
 				478C787D2F794487005FBDFE /* Assets.xcassets in Resources */,
 				478729022FA9D977001282EF /* GoogleService-Info.plist in Resources */,
 			);
@@ -1342,6 +1349,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47730034309CD5A700402B80 /* PrivacyInfo.xcprivacy in Resources */,
 				478C787E2F794487005FBDFE /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1956,7 +1964,7 @@
 				DEVELOPMENT_TEAM = USBAK5HKC6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SwipeLingoShare/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = SwipeLingoShare;
+				INFOPLIST_KEY_CFBundleDisplayName = SwipeLingo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1990,7 +1998,7 @@
 				DEVELOPMENT_TEAM = USBAK5HKC6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SwipeLingoShare/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = SwipeLingoShare;
+				INFOPLIST_KEY_CFBundleDisplayName = SwipeLingo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
