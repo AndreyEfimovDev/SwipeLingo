@@ -37,20 +37,16 @@ struct MainScreenToolbar: ToolbarContent {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
+                // Пункты меню — Label: меню рисует система (UIMenu) и берёт из SwiftUI только Label/Text+Image.
+                // Цвет текста пунктов системный — foregroundStyle и tint его не меняют (проверено 2026-11-05).
                 ForEach(AppViewModel.StudyMode.allCases.filter { $0 != currentMode }, id: \.self) { mode in
                     Button { appViewModel.studyMode = mode } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: mode.icon).frame(width: 20)
-                            Text("Switch to \(mode.label)")
-                        }
+                        Label("Switch to \(mode.label)", systemImage: mode.icon)
                     }
                 }
                 Divider()
                 Button { appViewModel.activeSheet = .statistics } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "chart.line.uptrend.xyaxis").frame(width: 20)
-                        Text("Statistics")
-                    }
+                    Label("Statistics", systemImage: "chart.line.uptrend.xyaxis")
                 }
             } label: {
                 Image(systemName: "ellipsis")
