@@ -91,6 +91,7 @@
 		47730031309CD54300402B80 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 47730030309CD54300402B80 /* PrivacyInfo.xcprivacy */; };
 		47730034309CD5A700402B80 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 47730033309CD5A700402B80 /* PrivacyInfo.xcprivacy */; };
 		47730036309CD94500402B80 /* SyncCursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47730035309CD94500402B80 /* SyncCursor.swift */; };
+		47730038309CEAC400402B80 /* AccessTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47730037309CEAC400402B80 /* AccessTierTests.swift */; };
 		4777A64D69CD08532A3CD45F /* MainScreenToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472631E6B19501091864466C /* MainScreenToolbar.swift */; };
 		4785898E2FF3DCF100BF3C8F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4785898D2FF3DCF100BF3C8F /* ActivityView.swift */; };
 		478589912FF3DD4800BF3C8F /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478589902FF3DD4800BF3C8F /* ExportService.swift */; };
@@ -364,6 +365,7 @@
 		47730030309CD54300402B80 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		47730033309CD5A700402B80 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		47730035309CD94500402B80 /* SyncCursor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCursor.swift; sourceTree = "<group>"; };
+		47730037309CEAC400402B80 /* AccessTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTierTests.swift; sourceTree = "<group>"; };
 		477AAF6F5A30BC9BC2E86E75 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4785898D2FF3DCF100BF3C8F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		4785898F2FF3DD4800BF3C8F /* BackupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupModels.swift; sourceTree = "<group>"; };
@@ -862,6 +864,7 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
+				47730037309CEAC400402B80 /* AccessTierTests.swift */,
 				81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */,
 				477300223099315800402B80 /* AuthFBServiceLaunchVerifyTests.swift */,
 				4773001F3099051500402B80 /* BookDownloadServiceTests.swift */,
@@ -1572,6 +1575,7 @@
 				47FD94CA30978B0C005EEE30 /* WaitUntil.swift in Sources */,
 				CB1D7612C61D84EBFA05175A /* AppViewModelTests.swift in Sources */,
 				47FD94DA3098D093005EEE30 /* DeletedCardsViewModelTests.swift in Sources */,
+				47730038309CEAC400402B80 /* AccessTierTests.swift in Sources */,
 				47FD94D0309791F9005EEE30 /* PairsPileBuilderViewModelTests.swift in Sources */,
 				47FD94D63098CC3D005EEE30 /* AddEditCardViewModelTests.swift in Sources */,
 				477300163098EDDD00402B80 /* FlashCardsViewModelTests.swift in Sources */,

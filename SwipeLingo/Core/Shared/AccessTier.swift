@@ -1,5 +1,15 @@
 import Foundation
 
+// MARK: - Monetization
+
+/// Единый выключатель монетизации. Пока `false` (первый релиз бесплатный — решение 2026-11-05):
+/// весь контент доступен независимо от плана, подписка из Firestore не читается, экраны Plans/Payment
+/// недостижимы. Бейджи GO/PRO на сетах и книгах показываются и при выключенной монетизации — осознанно.
+/// Включать вместе с настоящей оплатой (StoreKit или внешней по entitlement), не раньше.
+enum Monetization {
+    static let isEnabled = false
+}
+
 // MARK: - AccessTier
 // Контролирует доступ к контенту в зависимости от плана подписки пользователя.
 // Применяется к CardSet и PairsSet.
@@ -20,10 +30,20 @@ enum AccessTier: String, Codable, CaseIterable {
         }
     }
 
-    /// Возвращает true, если этот план покрывает требуемый уровень.
-    // MONETIZATION_STUB: всегда true — монетизация отключена до получения ИП/ООО и External Purchase Entitlement.
-    // Когда монетизация будет готова: вернуть `rank >= required.rank`
-    func canAccess(_ required: AccessTier) -> Bool { true }
+    /// Возвращает true, если этот план открывает контент уровня `required`. При выключенной монетизации
+    /// (`Monetization.isEnabled == false`) — всегда true.
+    func canAccess(_ required: AccessTier) -> Bool {
+        canAccess(required, monetizationEnabled: Monetization.isEnabled)
+    }
+
+    /// Проверка доступа с явным положением выключателя — чтобы тест проверил обе ветки.
+    /// - Parameters:
+    ///   - required: уровень доступа контента.
+    ///   - monetizationEnabled: включена ли монетизация.
+    /// - Returns: true, если монетизация выключена или ранг плана не ниже требуемого.
+    func canAccess(_ required: AccessTier, monetizationEnabled: Bool) -> Bool {
+        !monetizationEnabled || rank >= required.rank
+    }
 
     // MARK: - Display
 

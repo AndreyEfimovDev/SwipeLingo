@@ -129,6 +129,9 @@ final class UserFBService {
     /// Сразу после записи вызывает effectivePlan() — grace-period self-healing
     /// (даунгрейд в .free при истёкшей подписке) применяется к кэшу немедленно.
     func syncSubscription(for uid: String) async {
+        // Пока монетизация выключена, подписка ни на что не влияет — не тратим запрос к Firestore
+        // на каждый выход приложения на передний план (см. Monetization).
+        guard Monetization.isEnabled else { return }
         guard FirebaseApp.app() != nil else { return }
         isLoading = true
         defer { isLoading = false }
