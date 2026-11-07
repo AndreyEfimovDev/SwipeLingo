@@ -13,6 +13,11 @@ PRD.md
 DECISIONS.md
 LEVELS.md
 STRATEGY.md
+UserDoc.md
+
+# Claude Code — личные настройки и рабочие копии
+.claude/settings.local.json
+.claude/worktrees/
 
 # Firebase конфигурация (никогда не публиковать)
 GoogleService-Info.plist
