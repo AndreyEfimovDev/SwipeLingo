@@ -33,10 +33,27 @@ enum SchemaV1: VersionedSchema {
     }
 }
 
+// MARK: - SchemaV2
+//
+// + `StudyDay` — история занятий по дням для Statistics, серии дней, виджета и напоминаний
+// (2026-11-05). Остальные модели не менялись. Переход V1 → V2 — лёгкая миграция: новая сущность,
+// существующие данные не трогаются.
+
+enum SchemaV2: VersionedSchema {
+    static var versionIdentifier: Schema.Version = Schema.Version(2, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        SchemaV1.models + [StudyDay.self]
+    }
+}
+
+/// Текущая версия схемы — её открывает `ModelContainerFactory`. При следующем изменении схемы
+/// переключить на новую версию здесь, а не в фабрике.
+typealias CurrentSchema = SchemaV2
+
 // MARK: - SwipeLingoMigrationPlan
 //
-// Единая точка регистрации версий схемы и переходов между ними. Пока
-// зарегистрирована только SchemaV1 — миграций ещё нет.
+// Единая точка регистрации версий схемы и переходов между ними.
 //
 // Паттерн для следующего изменения схемы:
 // 1. Завести SchemaV2 (новый enum: VersionedSchema, versionIdentifier на минор
@@ -49,10 +66,10 @@ enum SchemaV1: VersionedSchema {
 
 enum SwipeLingoMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self]
+        [SchemaV1.self, SchemaV2.self]
     }
 
     static var stages: [MigrationStage] {
-        []
+        [.lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self)]
     }
 }

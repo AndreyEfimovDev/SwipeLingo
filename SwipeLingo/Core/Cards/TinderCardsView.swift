@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 // MARK: - TinderCardsView
 
@@ -71,6 +72,7 @@ struct TinderCardsView: View {
          onDone: (() -> Void)? = nil) {
             _vm = State(initialValue: TinderCardsViewModel(
                 cards: cards,
+                activityRecorder: StudyActivityRecorder(firebaseUID: authService.currentUser?.uid ?? ""),
                 contextLabels: contextLabels,
                 onDone: onDone))
         self.appViewModel      = appViewModel

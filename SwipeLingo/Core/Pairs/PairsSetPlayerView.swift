@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 // MARK: - PairsSetPlayerView
 // Воспроизведение одного PairsSet.
@@ -61,7 +62,11 @@ struct PairsSetPlayerView: View {
         self.onComplete = onComplete
         self.autoStart = autoStart
         self.initialAnimationMode = initialAnimationMode
-        _vm = State(initialValue: PairsSetPlayerViewModel(set: set, audioService: audioService))
+        _vm = State(initialValue: PairsSetPlayerViewModel(
+            set: set,
+            audioService: audioService,
+            activityRecorder: StudyActivityRecorder(firebaseUID: authService.currentUser?.uid ?? "")
+        ))
     }
 
     /// Единственный источник правды — AppSettings (см. AppSettings.swift).
@@ -171,6 +176,7 @@ struct PairsSetPlayerView: View {
                 // Завершение сета: в session-режиме вызываем onComplete, иначе прокручиваем к SRS
                 .onChange(of: vm.showCompletion) { _, show in
                     guard show else { return }
+                    vm.recordCompletion(context: context)
                     if let onComplete {
                         onComplete()
                         return
