@@ -59,6 +59,8 @@
 		4757D5E7305694770064F5F0 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4757D5E6305694770064F5F0 /* AppSettings.swift */; };
 		4757D5E93056A1750064F5F0 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783B2F794487005FBDFE /* Collection.swift */; };
 		4758E074431285AD6E3CADF1 /* AddEditCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474529BD8FAC3FD67A8654CC /* AddEditCardViewModel.swift */; };
+		4762B29930A1C3E900D37C88 /* StudyStatisticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4762B29830A1C3E900D37C88 /* StudyStatisticsService.swift */; };
+		4762B29D30A1C44D00D37C88 /* StudyStatisticsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4762B29C30A1C44D00D37C88 /* StudyStatisticsServiceTests.swift */; };
 		47631B022F86941C002F1666 /* CEFRLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C783A2F794487005FBDFE /* CEFRLevel.swift */; };
 		47631B032F86949F002F1666 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478C78462F794487005FBDFE /* DictionaryService.swift */; };
 		47631B572F86B78F002F1666 /* OnboardingConfirmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */; };
@@ -348,6 +350,8 @@
 		4757D5E33055CAAD0064F5F0 /* FreshInstallGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreshInstallGuard.swift; sourceTree = "<group>"; };
 		4757D5E6305694770064F5F0 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		475E5BE6DDCDBD62D051061F /* OnboardingLevelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLevelViewModel.swift; sourceTree = "<group>"; };
+		4762B29830A1C3E900D37C88 /* StudyStatisticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyStatisticsService.swift; sourceTree = "<group>"; };
+		4762B29C30A1C44D00D37C88 /* StudyStatisticsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyStatisticsServiceTests.swift; sourceTree = "<group>"; };
 		47631B562F86B78F002F1666 /* OnboardingConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingConfirmView.swift; sourceTree = "<group>"; };
 		47631B582F86B82F002F1666 /* NativeLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLanguage.swift; sourceTree = "<group>"; };
 		47631B7A2F86F048002F1666 /* Translation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Translation.framework; path = System/Library/Frameworks/Translation.framework; sourceTree = SDKROOT; };
@@ -790,6 +794,7 @@
 		4773003E309D06AE00402B80 /* Statistics */ = {
 			isa = PBXGroup;
 			children = (
+				4762B29830A1C3E900D37C88 /* StudyStatisticsService.swift */,
 				4773003D309D06AE00402B80 /* StudyActivityRecorder.swift */,
 			);
 			path = Statistics;
@@ -886,6 +891,7 @@
 		478729382FA9D9A3001282EF /* SwipeLingoTests */ = {
 			isa = PBXGroup;
 			children = (
+				4762B29C30A1C44D00D37C88 /* StudyStatisticsServiceTests.swift */,
 				47730040309D06F000402B80 /* StudyActivityRecorderTests.swift */,
 				47730037309CEAC400402B80 /* AccessTierTests.swift */,
 				81A501CC0F5193730F652CA8 /* AppViewModelTests.swift */,
@@ -1560,6 +1566,7 @@
 				476830EDD9538F9B48E88EA1 /* UserSessionSyncService.swift in Sources */,
 				60A6E2289826F1C4CD5DF426 /* UserProfileDedupeService.swift in Sources */,
 				E9A3364B0341D1A63C5621AE /* CollectionDedupeService.swift in Sources */,
+				4762B29930A1C3E900D37C88 /* StudyStatisticsService.swift in Sources */,
 				62D8B5E8D03B6003BCBF13DB /* CollectionDedupeObserver.swift in Sources */,
 				FC6AB36DB800A4A62E39D36E /* ForeignAccountWarningService.swift in Sources */,
 				47A658EBD2F43A83CA4D7D2D /* LibraryViewModel.swift in Sources */,
@@ -1585,6 +1592,7 @@
 				477300203099051500402B80 /* BookDownloadServiceTests.swift in Sources */,
 				47730029309CA67100402B80 /* BookCatalogVisibilityTests.swift in Sources */,
 				47FD94DC3098E7E4005EEE30 /* ExampleEditorViewModelTests.swift in Sources */,
+				4762B29D30A1C44D00D37C88 /* StudyStatisticsServiceTests.swift in Sources */,
 				EA5914D21CB5AB9F6C4E4EBE /* UserProfileDedupeServiceTests.swift in Sources */,
 				47FD94CC30979081005EEE30 /* FreeDictionaryPronunciationTests.swift in Sources */,
 				77A96E47883A5C6E9F1A56C4 /* CollectionDedupeServiceTests.swift in Sources */,
