@@ -107,7 +107,7 @@ struct AppView: View {
             }
             .errorBanner()
         case .statistics:
-            StatisticsView()
+            StatisticsView(authService: dependencies.authFBService)
         case .settings:
             SettingsView(syncState: dependencies.appSyncStateService,
                          authService: dependencies.authFBService,

@@ -57,7 +57,7 @@ struct UnderlineSegmentedPickerNotOptional<T: Hashable>: View {
 
 fileprivate struct UnderlineSermentedPickerNotOptionalPreview: View {
     
-    @State private var theme: TimeRange = .week
+    @State private var theme: StatisticsPeriod = .week
     
     var body: some View {
         VStack(spacing: 20) {
@@ -66,7 +66,7 @@ fileprivate struct UnderlineSermentedPickerNotOptionalPreview: View {
             
             UnderlineSegmentedPickerNotOptional(
                 selection: $theme,
-                allItems: TimeRange.allCases,
+                allItems: StatisticsPeriod.allCases,
                 titleForCase: { $0.displayName },
                 selectedTextColor: Color.myColors.myBlue,
                 unselectedTextColor: Color.myColors.myAccent.opacity(0.8)

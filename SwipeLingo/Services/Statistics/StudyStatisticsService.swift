@@ -64,6 +64,18 @@ struct CollectionProgress: Equatable, Identifiable {
 /// Период для графиков активности.
 enum StatisticsPeriod: CaseIterable {
     case today, week, month, year, all
+    
+    /// Название периода в пикере.
+    var displayName: String {
+        switch self {
+        case .today: return "Today"
+        case .week: return "Week"
+        case .month: return "Month"
+        case .year: return "Year"
+        case .all: return "All"
+        }
+    }
+
 }
 
 // MARK: - StudyStatisticsService

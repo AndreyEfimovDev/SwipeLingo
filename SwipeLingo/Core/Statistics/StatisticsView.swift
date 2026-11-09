@@ -1,118 +1,46 @@
 import SwiftUI
-
-// MARK: - Data Models
-
-struct DailyActivity {
-    let date: Date
-    let cardsStudied: Int
-    let easy: Int
-    let hard: Int
-    let forgot: Int
-}
-
-struct DeckProgress {
-    let name: String
-    let studied: Int
-    let total: Int
-    var percent: Double { Double(studied) / Double(max(1, total)) }
-}
-
-enum TimeRange: String, CaseIterable {
-    case today = "Today"
-    case week  = "Week"
-    case month = "Month"
-    case year  = "Year"
-    case all   = "All"
-    
-    var displayName: String {
-        switch self {
-        case .today: return "Today"
-        case .week: return "Week"
-        case .month: return "Month"
-        case .year: return "Year"
-        case .all: return "All"
-        }
-    }
-}
-
-// MARK: - Mock Data
-#warning("STUB: Remove before App Store release.")
-struct StatisticsMockData {
-
-    static let activities: [DailyActivity] = {
-        var result: [DailyActivity] = []
-        let cal = Calendar.current
-        let today = Date()
-        var rng = SystemRandomNumberGenerator()
-
-        for daysAgo in 0..<365 {
-            guard let date = cal.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
-            // В некоторые дни активности нет
-            let studied = daysAgo % 3 == 0 ? 0 : Int.random(in: 1...45, using: &rng)
-            if studied == 0 {
-                result.append(DailyActivity(date: date, cardsStudied: 0, easy: 0, hard: 0, forgot: 0))
-            } else {
-                let easy   = max(0, Int(Double(studied) * Double.random(in: 0.45...0.70, using: &rng)))
-                let hard   = max(0, Int(Double(studied) * Double.random(in: 0.10...0.25, using: &rng)))
-                let forgot = max(0, studied - easy - hard)
-                result.append(DailyActivity(date: date, cardsStudied: studied, easy: easy, hard: hard, forgot: forgot))
-            }
-        }
-        return result
-    }()
-
-    static let deckProgress: [DeckProgress] = [
-        DeckProgress(name: "IELTS Vocabulary",  studied: 142, total: 200),
-        DeckProgress(name: "Academic Words",    studied:  67, total: 120),
-        DeckProgress(name: "Business English",  studied:  30, total:  80),
-        DeckProgress(name: "Phrasal Verbs",     studied:  12, total: 150),
-    ]
-
-    static let currentStreak: Int = 7
-    static let bestStreak:    Int = 23
-}
+import SwiftData
+import FirebaseAuth
 
 // MARK: - StatisticsView
+//
+// Экран статистики (открывается из AppView как `.fullScreenCover`). Данные — `@Query` здесь, расчёт —
+// `StatisticsViewModel` → `StudyStatisticsService`. История занятий пишется `StudyActivityRecorder`.
 
 struct StatisticsView: View {
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
 
-    @State private var selectedRange: TimeRange    = .week
-    @State private var isCalendarCompact: Bool     = false
+    private let authService: AuthFBService
 
-    // MARK: Filtered helpers
+    @Query private var studyDays: [StudyDay]
+    @Query private var allCards: [Card]
+    @Query private var cardSets: [CardSet]
+    @Query private var collections: [Collection]
+    @Query private var profiles: [UserProfile]
 
-    private var filteredActivities: [DailyActivity] {
-        let cal  = Calendar.current
-        let now  = Date()
-        switch selectedRange {
-        case .today:
-            return StatisticsMockData.activities.filter { cal.isDateInToday($0.date) }
-        case .week:
-            guard let weekAgo = cal.date(byAdding: .day, value: -7, to: now) else { return [] }
-            return StatisticsMockData.activities.filter { $0.date >= weekAgo }
-        case .month:
-            return StatisticsMockData.activities.filter {
-                cal.component(.month, from: $0.date) == cal.component(.month, from: now) &&
-                cal.component(.year,  from: $0.date) == cal.component(.year,  from: now)
-            }
-        case .year:
-            return StatisticsMockData.activities.filter {
-                cal.component(.year, from: $0.date) == cal.component(.year, from: now)
-            }
-        case .all:
-            return StatisticsMockData.activities
-        }
+    @State private var vm = StatisticsViewModel()
+    @State private var isCalendarCompact = false
+
+    /// - Parameter authService: текущий аккаунт — чтобы не считать данные чужого аккаунта на общем iCloud.
+    init(authService: AuthFBService) {
+        self.authService = authService
     }
 
-    private var totalStudied: Int { filteredActivities.reduce(0) { $0 + $1.cardsStudied } }
-    private var totalEasy:    Int { filteredActivities.reduce(0) { $0 + $1.easy    } }
-    private var totalHard:    Int { filteredActivities.reduce(0) { $0 + $1.hard    } }
-    private var totalForgot:  Int { filteredActivities.reduce(0) { $0 + $1.forgot  } }
+    private var firebaseUID: String { authService.currentUser?.uid ?? "" }
 
-    private var isEmpty: Bool {
-        totalStudied == 0 && StatisticsMockData.currentStreak == 0
+    /// Уровень пользователя — как в CardsView: свой профиль по firebaseUID, не `profiles.first`.
+    private var userLevel: CEFRLevel {
+        UserProfileDedupeService().resolveProfile(
+            firebaseUID: firebaseUID, allProfiles: profiles, context: context
+        )?.cefrLevel ?? .c2
+    }
+
+    /// Меняется при появлении/удалении записей — повод пересчитать. Статусы карточек, пока экран открыт,
+    /// не меняются: учиться можно только после его закрытия.
+    private var dataVersion: [Int] {
+        [studyDays.count, allCards.count, cardSets.count, collections.count, profiles.count]
     }
 
     // MARK: Body
@@ -121,34 +49,28 @@ struct StatisticsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    
-                    if isEmpty {
+                    if vm.isEmpty {
                         emptyState
                     } else {
+                        StreakCard(streak: vm.streak)
+                        UpcomingCard(upcoming: vm.upcoming)
                         UnderlineSegmentedPickerNotOptional(
-                            selection: $selectedRange,
-                            allItems: TimeRange.allCases,
+                            selection: $vm.period,
+                            allItems: StatisticsPeriod.allCases,
                             titleForCase: { $0.displayName }
-                        ).padding(.vertical, 8)
-                        CardsStudiedCard(
-                            total:  totalStudied,
-                            easy:   totalEasy,
-                            hard:   totalHard,
-                            forgot: totalForgot
                         )
-                        StreakCard(
-                            current: StatisticsMockData.currentStreak,
-                            best:    StatisticsMockData.bestStreak
-                        )
-                        ActivityCalendarCard(
-                            activities: StatisticsMockData.activities,
-                            isCompact:  $isCalendarCompact
-                        )
-                        DeckProgressCard(decks: StatisticsMockData.deckProgress)
+                        .padding(.vertical, 8)
+                        CardsStudiedCard(summary: vm.periodSummary)
+                        ActivityCalendarCard(activityByDay: vm.activityByDay, isCompact: $isCalendarCompact)
+                        VocabularyCard(vocabulary: vm.vocabulary)
+                        if !vm.collectionProgress.isEmpty {
+                            CollectionProgressCard(collections: vm.collectionProgress)
+                        }
                     }
                 }
+                .foregroundStyle(Color.myColors.myAccent)
                 .padding(.horizontal, 16)
-                .padding(.bottom, 32)
+                .padding(.vertical, 16)
             }
             .background(Color.myColors.myBackground.ignoresSafeArea())
             .navigationTitle("Statistics")
@@ -157,23 +79,20 @@ struct StatisticsView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { dismiss() } label: {
                         Image(systemName: "chevron.left")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.myColors.myBlue)
+                            .navBarIconStyle()
                     }
                 }
             }
         }
+        .onAppear(perform: refresh)
+        .onChange(of: dataVersion) { refresh() }
+        .onChange(of: firebaseUID) { refresh() }
     }
 
-    // MARK: - Time Range Picker
-
-    private var timeRangePicker: some View {
-        Picker("Range", selection: $selectedRange) {
-            ForEach(TimeRange.allCases, id: \.self) {
-                Text($0.displayName).tag($0)
-            }
-        }
-        .pickerStyle(.segmented)
+    /// Пересчитывает статистику по текущим данным.
+    private func refresh() {
+        vm.update(days: studyDays, cards: allCards, sets: cardSets, collections: collections,
+                  firebaseUID: firebaseUID, userLevel: userLevel)
     }
 
     // MARK: - Empty State
@@ -187,6 +106,7 @@ struct StatisticsView: View {
                 .font(.title3.bold())
             Text("Start studying to see your progress")
                 .font(.subheadline)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 .multilineTextAlignment(.center)
             Spacer(minLength: 60)
         }
@@ -194,16 +114,49 @@ struct StatisticsView: View {
     }
 }
 
+// MARK: - Card Container
+
+private extension View {
+    /// Плашка блока статистики: фон страницы + скругление + тень (стандарт проекта).
+    func statisticsCard(cornerRadius: CGFloat = 16) -> some View {
+        self
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .myShadow()
+    }
+}
+
+/// Горизонтальная полоска прогресса `value` из `total`.
+private struct ProgressBar: View {
+    let value: Int
+    let total: Int
+    var height: CGFloat = 6
+
+    private var fraction: Double {
+        guard total > 0 else { return 0 }
+        return min(Double(value) / Double(total), 1)
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: height / 2)
+                    .fill(Color.myColors.myAccent.opacity(0.15))
+                RoundedRectangle(cornerRadius: height / 2)
+                    .fill(Color.myColors.myGreen)
+                    .frame(width: geo.size.width * fraction)
+            }
+        }
+        .frame(height: height)
+    }
+}
+
 // MARK: - Streak Card
 
 private struct StreakCard: View {
-    let current: Int
-    let best: Int
-
-    private var progress: Double {
-        guard best > 0 else { return 0 }
-        return min(Double(current) / Double(best), 1.0)
-    }
+    let streak: StreakInfo
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -211,90 +164,133 @@ private struct StreakCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Streak")
                         .font(.caption.uppercaseSmallCaps())
+                        .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(current)")
+                        Text("\(streak.current)")
                             .font(.title)
                             .fontWeight(.medium)
-                        Text("days")
+                        Text(streak.current == 1 ? "day" : "days")
                             .font(.subheadline)
                     }
                 }
                 Spacer()
-                Text("Best \(best) days")
+                Text("Best \(streak.best) days")
                     .font(.caption.uppercaseSmallCaps())
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             }
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.myColors.myAccent.opacity(0.5))
-                        .frame(height: 4)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.myColors.myGreen)
-                        .frame(width: geo.size.width * progress, height: 4)
-                }
+            ProgressBar(value: streak.current, total: streak.best, height: 4)
+
+            if let hint {
+                Text(hint)
+                    .font(.caption)
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
             }
-            .frame(height: 4)
         }
-        .padding(16)
-        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 14))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .myShadow()
+        .statisticsCard(cornerRadius: 14)
+    }
+
+    /// Подсказка, пока сегодня ещё не занимался: серия держится до конца дня.
+    private var hint: String? {
+        guard !streak.isTodayDone else { return nil }
+        return streak.current > 0 ? "Study today to keep your streak" : "Study today to start a streak"
+    }
+}
+
+// MARK: - Upcoming Card
+
+private struct UpcomingCard: View {
+    let upcoming: UpcomingReviews
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Due for Review")
+                .font(.caption.uppercaseSmallCaps())
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            HStack {
+                column(title: "Today", value: upcoming.today)
+                column(title: "Tomorrow", value: upcoming.tomorrow)
+                column(title: "7 days", value: upcoming.nextSevenDays)
+            }
+        }
+        .statisticsCard()
+    }
+
+    private func column(title: String, value: Int) -> some View {
+        VStack(spacing: 2) {
+            Text("\(value)")
+                .font(.title2.weight(.semibold))
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
 // MARK: - Cards Studied Card
 
 private struct CardsStudiedCard: View {
-    let total: Int
-    let easy: Int
-    let hard: Int
-    let forgot: Int
+    let summary: PeriodSummary
+
+    /// Сегменты полоски: оценки + пройденные без оценки (свайп/удаление).
+    private var segments: [(label: String, count: Int, color: Color)] {
+        [("Easy", summary.easy, Color.myColors.myGreen),
+         ("Hard", summary.hard, Color.myColors.myOrange),
+         ("Forgot", summary.forgot, Color.myColors.myRed),
+         ("Swiped", summary.swiped, Color.myColors.myAccent.opacity(0.3))]
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Cards Studied")
                 .font(.caption.uppercaseSmallCaps())
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
 
-            Text("\(total)")
-                .font(.system(size: 52, weight: .bold, design: .rounded))
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(summary.cardsReviewed)")
+                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Learnt \(summary.cardsLearnt)")
+                    Text("Level Up sets \(summary.levelUpSets)")
+                }
+                .font(.caption)
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+            }
 
-            if total > 0 {
-                // Пропорциональный бар
+            if summary.cardsReviewed > 0 {
+                // Пропорциональная полоска
                 GeometryReader { geo in
                     HStack(spacing: 2) {
-                        let w = geo.size.width
-                        barSegment(color: .green,  width: w * CGFloat(easy)   / CGFloat(total))
-                        barSegment(color: .orange, width: w * CGFloat(hard)   / CGFloat(total))
-                        barSegment(color: .indigo, width: w * CGFloat(forgot) / CGFloat(total))
+                        ForEach(segments.indices, id: \.self) { i in
+                            let segment = segments[i]
+                            if segment.count > 0 {
+                                Rectangle()
+                                    .fill(segment.color)
+                                    .frame(width: max(0, geo.size.width * CGFloat(segment.count)
+                                                         / CGFloat(summary.cardsReviewed) - 2))
+                            }
+                        }
                     }
                 }
                 .frame(height: 12)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             } else {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(.systemGray5))
+                    .fill(Color.myColors.myAccent.opacity(0.15))
                     .frame(height: 12)
             }
 
             // Легенда
-            HStack(spacing: 20) {
-                legendDot(color: .green,  label: "Easy",   count: easy)
-                legendDot(color: .orange, label: "Hard",   count: hard)
-                legendDot(color: .indigo, label: "Forgot", count: forgot)
+            HStack(spacing: 14) {
+                ForEach(segments.indices, id: \.self) { i in
+                    legendDot(color: segments[i].color, label: segments[i].label, count: segments[i].count)
+                }
             }
             .frame(maxWidth: .infinity)
         }
-        .padding()
-        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 16))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .myShadow()
-    }
-
-    private func barSegment(color: Color, width: CGFloat) -> some View {
-        Rectangle()
-            .fill(color)
-            .frame(width: max(width, 0), height: 12)
+        .statisticsCard()
     }
 
     private func legendDot(color: Color, label: String, count: Int) -> some View {
@@ -310,21 +306,9 @@ private struct CardsStudiedCard: View {
 
 private struct ActivityCalendarCard: View {
 
-    let activities: [DailyActivity]
+    /// Пройдено карточек по ключу дня (`StudyDay.dayKey`).
+    let activityByDay: [String: Int]
     @Binding var isCompact: Bool
-
-    private let activityMap: [String: Int]
-    private static let dayKey: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
-    }()
-
-    init(activities: [DailyActivity], isCompact: Binding<Bool>) {
-        self.activities  = activities
-        self._isCompact  = isCompact
-        var map: [String: Int] = [:]
-        for a in activities { map[Self.dayKey.string(from: a.date)] = a.cardsStudied }
-        self.activityMap = map
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -374,20 +358,17 @@ private struct ActivityCalendarCard: View {
             .frame(maxWidth: .infinity)
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.82), value: isCompact)
-        .padding()
-        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 16))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .myShadow()
+        .statisticsCard()
     }
 
     // MARK: Интенсивность
 
     private func intensityColor(cards: Int) -> Color {
         switch cards {
-        case 0:       return Color(.systemGray6)
-        case 1...10:  return Color.green.opacity(0.30)
-        case 11...30: return Color.green.opacity(0.65)
-        default:      return Color.green
+        case 0:       return Color.myColors.myAccent.opacity(0.08)
+        case 1...10:  return Color.myColors.myGreen.opacity(0.30)
+        case 11...30: return Color.myColors.myGreen.opacity(0.65)
+        default:      return Color.myColors.myGreen
         }
     }
 
@@ -529,7 +510,7 @@ private struct ActivityCalendarCard: View {
     // MARK: Вспомогательные функции
 
     private func cardsCount(for date: Date) -> Int {
-        activityMap[Self.dayKey.string(from: date)] ?? 0
+        activityByDay[StudyDay.dayKey(for: date)] ?? 0
     }
 
     private func last12Months() -> [Date] {
@@ -570,46 +551,88 @@ private struct ActivityCalendarCard: View {
     }
 }
 
-// MARK: - Deck Progress Card
+// MARK: - Vocabulary Card
 
-private struct DeckProgressCard: View {
-    let decks: [DeckProgress]
+private struct VocabularyCard: View {
+    let vocabulary: VocabularySummary
+
+    /// Уровни, по которым есть карточки, по возрастанию.
+    private var levels: [(level: CEFRLevel, counts: VocabularyCounts)] {
+        CEFRLevel.allCases.compactMap { level in
+            guard let counts = vocabulary.byLevel[level], counts.total > 0 else { return nil }
+            return (level, counts)
+        }
+    }
+
+    private var totalLearnt: Int {
+        vocabulary.byLevel.values.reduce(vocabulary.myWords.learnt) { $0 + $1.learnt }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Deck Progress")
-                .font(.caption.uppercaseSmallCaps())
-
-            ForEach(decks.indices, id: \.self) { i in
-                deckRow(decks[i])
-                if i < decks.count - 1 { Divider() }
-            }
-        }
-        .padding()
-        .background(Color.myColors.myBackground, in: RoundedRectangle(cornerRadius: 16))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .myShadow()
-    }
-
-    private func deckRow(_ deck: DeckProgress) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(deck.name).font(.subheadline)
+            HStack(alignment: .firstTextBaseline) {
+                Text("Vocabulary")
+                    .font(.caption.uppercaseSmallCaps())
+                    .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
                 Spacer()
-                Text("\(Int(deck.percent * 100))%")
+                Text("\(totalLearnt) learnt")
                     .font(.subheadline.weight(.semibold))
             }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.myColors.myAccent.opacity(0.5))
-                        .frame(height: 6)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.myColors.myGreen)
-                        .frame(width: geo.size.width * deck.percent, height: 6)
-                }
+
+            ForEach(levels.indices, id: \.self) { i in
+                let item = levels[i]
+                row(badge: CEFRBadgeView(level: item.level), title: item.level.displayName, counts: item.counts)
+                if i < levels.count - 1 || vocabulary.myWords.total > 0 { Divider() }
             }
-            .frame(height: 6)
+            if vocabulary.myWords.total > 0 {
+                row(badge: EmptyView(), title: "My words", counts: vocabulary.myWords)
+            }
+        }
+        .statisticsCard()
+    }
+
+    private func row(badge: some View, title: String, counts: VocabularyCounts) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                badge
+                Text(title).font(.subheadline)
+                Spacer()
+                Text("\(counts.learnt) / \(counts.total)")
+                    .font(.subheadline.weight(.semibold))
+            }
+            ProgressBar(value: counts.learnt, total: counts.total)
+        }
+    }
+}
+
+// MARK: - Collection Progress Card
+
+private struct CollectionProgressCard: View {
+    let collections: [CollectionProgress]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Collection Progress")
+                .font(.caption.uppercaseSmallCaps())
+                .foregroundStyle(Color.myColors.myAccent.opacity(0.8))
+
+            ForEach(collections) { collection in
+                row(collection)
+                if collection.id != collections.last?.id { Divider() }
+            }
+        }
+        .statisticsCard()
+    }
+
+    private func row(_ collection: CollectionProgress) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(collection.name).font(.subheadline)
+                Spacer()
+                Text("\(collection.learnt) / \(collection.total)")
+                    .font(.subheadline.weight(.semibold))
+            }
+            ProgressBar(value: collection.learnt, total: collection.total)
         }
     }
 }
@@ -626,5 +649,7 @@ private extension Calendar {
 // MARK: - Preview
 
 #Preview {
-    StatisticsView()
+    StatisticsView(authService: AuthFBService())
+        .modelContainer(for: [StudyDay.self, Card.self, CardSet.self, Collection.self, UserProfile.self],
+                        inMemory: true)
 }
